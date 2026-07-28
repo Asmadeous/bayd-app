@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+# Starts the whole stack at once (Rails API + Next.js client) via Foreman.
+# Override the Procfile with: bin/dev -f Procfile.other
+exec "foreman", "start", "-f", "Procfile.dev", *ARGV

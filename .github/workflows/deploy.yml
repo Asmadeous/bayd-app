@@ -1,0 +1,144 @@
+name: Deploy
+
+# Deploys after CI passes on main. Also runnable manually — tick "bootstrap"
+# the very first time to run `kamal setup` (installs kamal-proxy + first boot).
+on:
+  workflow_dispatch:
+    inputs:
+      bootstrap:
+        description: "First-time bootstrap (kamal setup instead of kamal deploy)"
+        type: boolean
+        default: false
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  # ── API: build image, push to GHCR, deploy with Kamal ──────────────────────
+  deploy-api:
+    # Only run if CI succeeded (or when dispatched manually)
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write        # push image to ghcr.io
+    env:
+      # kamal-proxy/registry
+      KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      # .kamal/secrets reads these from the environment:
+      SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
+      DB_USERNAME: ${{ secrets.DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      HELCIM_API_TOKEN: ${{ secrets.HELCIM_API_TOKEN }}
+      HELCIM_WEBHOOK_VERIFIER_TOKEN: ${{ secrets.HELCIM_WEBHOOK_VERIFIER_TOKEN }}
+      MONERIS_API_TOKEN: ${{ secrets.MONERIS_API_TOKEN }}
+      MONERIS_WEBHOOK_SECRET: ${{ secrets.MONERIS_WEBHOOK_SECRET }}
+      SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+      SQUARE_WEBHOOK_SIGNATURE_KEY: ${{ secrets.SQUARE_WEBHOOK_SIGNATURE_KEY }}
+      SIMPLYBOOK_LOGIN: ${{ secrets.SIMPLYBOOK_LOGIN }}
+      SIMPLYBOOK_PASSWORD: ${{ secrets.SIMPLYBOOK_PASSWORD }}
+      SIMPLYBOOK_WEBHOOK_SECRET: ${{ secrets.SIMPLYBOOK_WEBHOOK_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.2"
+
+      - name: Install Kamal
+        run: gem install kamal -v 2.11.0
+
+      - uses: docker/setup-buildx-action@v3
+
+      # config/master.key is gitignored; .kamal/secrets does `cat config/master.key`.
+      - name: Write master key
+        run: |
+          echo "${{ secrets.RAILS_MASTER_KEY }}" > config/master.key
+          chmod 600 config/master.key
+
+      - name: Load deploy SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Trust the server host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ vars.SSH_PORT || '22' }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Kamal deploy (or bootstrap)
+        run: |
+          if [ "${{ inputs.bootstrap }}" = "true" ]; then
+            kamal setup      # first time: install kamal-proxy + boot + deploy
+          else
+            kamal deploy
+          fi
+
+  # ── Frontend: build image on the runner → push to GHCR → run it on the box ─
+  # No git/npm/build on the server — same image pipeline as the API.
+  deploy-frontend:
+    needs: deploy-api
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/bayd-frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./client
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://api.baydspa.ca/api/v1
+
+      - name: Load deploy SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Trust the server host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ vars.SSH_PORT || '22' }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Pull & run the container on the server
+        run: |
+          ssh -p "${{ vars.SSH_PORT || '22' }}" deploy@"${{ secrets.SSH_HOST }}" bash -lc "
+            set -e
+            echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
+            docker pull '${{ env.IMAGE }}:${{ github.sha }}'
+            docker rm -f bayd-frontend 2>/dev/null || true
+            docker run -d --name bayd-frontend --restart unless-stopped \
+              -p 127.0.0.1:3001:3000 '${{ env.IMAGE }}:${{ github.sha }}'
+            docker image prune -f
+          "

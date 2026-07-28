@@ -1,0 +1,6 @@
+<%= @notification.title %>
+
+<% if @notification.body.present? %><%= @notification.body %>
+
+<% end %><% if @action_url.present? %><%= @notification.metadata["cta"] || "View details" %>: <%= @action_url %>
+<% end %>

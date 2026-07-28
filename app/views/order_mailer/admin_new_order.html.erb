@@ -1,0 +1,12 @@
+<h1 style="font-size:20px; margin:16px 0 8px;">New product order ##<%= @order.id %></h1>
+<p style="font-size:14px; color:#4f535a;">
+  <strong><%= [@order.user&.first_name, @order.user&.last_name].compact.join(" ") %></strong>
+  (<%= @order.user&.email %>) placed an order totalling
+  <strong>$<%= format("%.2f", @order.total) %></strong>.
+</p>
+<ul style="font-size:14px; color:#4f535a;">
+  <% @order.order_items.each do |item| %>
+    <li><%= item.name %> &times; <%= item.quantity %></li>
+  <% end %>
+</ul>
+<p style="font-size:13px; color:#5f6268;">Process and ship from the admin dashboard.</p>

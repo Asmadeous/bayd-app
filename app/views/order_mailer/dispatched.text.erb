@@ -1,0 +1,7 @@
+Your order is on its way!
+
+Order #<%= @order.id %> has shipped.
+<% if @order.carrier.present? -%>Carrier: <%= @order.carrier %>
+<% end -%>
+<% if @order.tracking_number.present? -%>Tracking #: <%= @order.tracking_number %>
+<% end -%>

@@ -1,0 +1,111 @@
+# Kamal deploy config for B.A.Y.D API (api.baydspa.ca).
+# Front door is nginx on this host (TLS via certbot). kamal-proxy runs bound to
+# 127.0.0.1:8080 with TLS OFF; nginx forwards api.baydspa.ca → 127.0.0.1:8080.
+
+service: b_a_y_d_api
+
+# Image name on your registry. EDIT the registry user.
+image: ghcr.io/your-github-user/b_a_y_d_api
+
+# EDIT: your server's public IP (or api.baydspa.ca once DNS points at it).
+servers:
+  web:
+    - 1.2.3.4
+
+# nginx terminates TLS and forwards to kamal-proxy, which listens on localhost
+# only (no public port, no Let's Encrypt — nginx handles certs). It still does
+# gapless routing to the app container and trusts nginx's X-Forwarded-* headers.
+proxy:
+  ssl: false
+  host: api.baydspa.ca
+  app_port: 3000
+  forward_headers: true
+  run:
+    http_port: 8080
+    https_port: 8443
+    bind_ips:
+      - "127.0.0.1"
+
+# EDIT: container registry. GHCR shown; alternatives: docker.io, registry.digitalocean.com …
+registry:
+  server: ghcr.io
+  username: asmadeous
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+# Connect as the non-root deploy user on the custom SSH port (root login disabled).
+ssh:
+  user: deploy
+  port: 2206
+
+builder:
+  arch: amd64
+
+# Persist Active Storage files (invoices, job-application PDFs) across deploys.
+# The host path is created by deploy/server-setup.sh.
+volumes:
+  - "/var/lib/bayd/storage:/rails/storage"
+
+env:
+  clear:
+    # Jobs run inside Puma (Solid Queue) — no separate worker machine.
+    SOLID_QUEUE_IN_PUMA: true
+
+    # Hosts / URLs
+    APP_HOST: api.baydspa.ca
+    APP_URL: https://baydspa.ca
+    ALLOWED_ORIGINS: https://baydspa.ca
+
+    # Database — 172.17.0.1 = the host's docker bridge (local Postgres from
+    # deploy/server-setup.sh). For a managed DB, put its host here instead.
+    DB_HOST: 172.17.0.1
+    DB_PORT: 5432
+
+    # Behaviour
+    BOOKING_TIMEZONE: America/Toronto
+    CHECKOUT_GATEWAY: helcim
+    SIMPLYBOOK_WEB_ONLY: false
+    JITSI_HOST: meet.jit.si
+    SUPPORT_EMAIL: support@baydspa.ca
+    FUEL_RATE_PER_KM: "0.68"
+
+    # Payments (non-secret ids / URLs)
+    SQUARE_BASE_URL: https://connect.squareup.com
+    SQUARE_LOCATION_ID: ""
+    SQUARE_WEBHOOK_NOTIFICATION_URL: https://api.baydspa.ca/api/v1/webhooks/square
+    HELCIM_HOSTED_URL: ""
+
+    # SimplyBook / mail (non-secret)
+    SIMPLYBOOK_COMPANY: ""
+    SMTP_ADDRESS: ""
+    SMTP_PORT: "587"
+
+    # Ops
+    RAILS_LOG_LEVEL: info
+    SENTRY_TRACES_SAMPLE_RATE: "0.1"
+    REQUEST_TIMEOUT_SECONDS: "15"
+
+  # Values resolved from .kamal/secrets (which reads your shell env / env file).
+  secret:
+    - RAILS_MASTER_KEY
+    - SECRET_KEY_BASE
+    - DB_USERNAME
+    - DB_PASSWORD
+    - SMTP_USERNAME
+    - SMTP_PASSWORD
+    - GOOGLE_MAPS_API_KEY
+    - GOOGLE_CLIENT_ID
+    - SENTRY_DSN
+    - HELCIM_API_TOKEN
+    - HELCIM_WEBHOOK_VERIFIER_TOKEN
+    - SQUARE_ACCESS_TOKEN
+    - SQUARE_WEBHOOK_SIGNATURE_KEY
+    - SIMPLYBOOK_LOGIN
+    - SIMPLYBOOK_PASSWORD
+    - SIMPLYBOOK_WEBHOOK_SECRET
+
+aliases:
+  console: app exec --interactive --reuse "bin/rails console"
+  shell:   app exec --interactive --reuse "bash"
+  logs:    app logs -f
+  dbc:     app exec --interactive --reuse "bin/rails dbconsole --include-password"

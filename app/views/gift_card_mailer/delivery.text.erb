@@ -1,0 +1,11 @@
+You've received a Beauty at Your Door gift card!
+
+<% if @gift_card.message.present? -%>
+"<%= @gift_card.message %>"<% if @gift_card.sender_name.present? %> — <%= @gift_card.sender_name %><% end %>
+
+<% end -%>
+Value: $<%= format("%.2f", @gift_card.current_balance) %>
+Redeem code: <%= @gift_card.code %>
+<%= @gift_card.expires_at ? "Expires #{@gift_card.expires_at.strftime('%b %-d, %Y')}" : "No expiry" %>
+
+Redeem at checkout or toward any mobile beauty booking.

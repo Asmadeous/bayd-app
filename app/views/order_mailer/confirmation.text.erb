@@ -1,0 +1,10 @@
+Thanks for your order, <%= @user.first_name.presence || "there" %>!
+
+Your order is confirmed. Invoice <%= @invoice.invoice_number %> is attached as a PDF.
+
+<% @order.order_items.each do |item| -%>
+- <%= item.name %> x<%= item.quantity %> — $<%= format("%.2f", item.price.to_f * item.quantity) %>
+<% end -%>
+Total: $<%= format("%.2f", @order.total) %>
+
+We'll email tracking details as soon as it ships.

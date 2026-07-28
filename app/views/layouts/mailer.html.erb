@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+      body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:#f4f1eb; margin:0; padding:24px; color:#101217; }
+      .card { max-width:560px; margin:0 auto; background:#fff; border-radius:16px; padding:32px; }
+      .brand { font-size:18px; font-weight:800; letter-spacing:-0.01em; }
+      .btn { display:inline-block; background:#c96c83; color:#fff !important; text-decoration:none; padding:12px 22px; border-radius:10px; font-weight:700; margin-top:20px; }
+      .muted { color:#5f6268; font-size:13px; margin-top:28px; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <p class="brand">Beauty at Your Door</p>
+      <%= yield %>
+      <p class="muted">You're receiving this because you have an account with Beauty at Your Door.</p>
+    </div>
+  </body>
+</html>

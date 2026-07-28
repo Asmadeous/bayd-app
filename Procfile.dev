@@ -1,0 +1,2 @@
+web: bin/rails server -p 3000
+client: npm --prefix client run dev -- -p 3001

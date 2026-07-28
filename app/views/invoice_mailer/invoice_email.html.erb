@@ -1,0 +1,15 @@
+<h1 style="font-size:20px; margin:16px 0 8px;">Invoice <%= @invoice.invoice_number %></h1>
+
+<p style="font-size:15px; line-height:1.6; color:#4f535a;">
+  Hi <%= @user.first_name.presence || "there" %>, thanks for your purchase. Your
+  invoice for <strong><%= number_to_currency(@invoice.total) %> <%= @invoice.currency %></strong>
+  is attached as a PDF.
+</p>
+
+<p style="font-size:14px; color:#4f535a;">
+  You can also view and download all your invoices anytime from your dashboard.
+</p>
+
+<% if @invoice.pdf.attached? %>
+  <p style="font-size:13px; color:#5f6268;">📎 <%= @invoice.invoice_number %>.pdf attached</p>
+<% end %>

@@ -1,0 +1,41 @@
+# Bundler
+/.bundle
+/vendor/bundle
+
+# Rails
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/tmp/pids/*
+!/tmp/pids/.keep
+
+# Database
+/db/*.sqlite3
+/db/*.sqlite3-journal
+
+# Secrets and env
+.env
+.env.*
+!.env.example
+deploy/production.env
+/config/master.key
+/config/credentials/*.key
+
+# Storage
+/storage/*
+!/storage/.keep
+/public/assets
+
+# Node / JS
+/node_modules
+/yarn-error.log
+
+# Editor
+.DS_Store
+.idea/
+*.swp
+*.swo
+
+# Coverage
+/coverage

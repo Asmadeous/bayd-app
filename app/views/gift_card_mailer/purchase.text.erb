@@ -1,0 +1,9 @@
+Gift card purchase confirmed
+
+Thanks, <%= @user.first_name.presence || "there" %>! Invoice <%= @invoice.invoice_number %> is attached.
+
+Value: $<%= format("%.2f", @gift_card.current_balance) %>
+Code: <%= @gift_card.code %>
+<% if @gift_card.recipient_email.present? -%>
+Sent to: <%= @gift_card.recipient_email %>
+<% end -%>

@@ -1,0 +1,15 @@
+<h1 style="font-size:22px; margin:16px 0 8px;">Gift card purchase confirmed</h1>
+<p style="font-size:15px; line-height:1.6; color:#4f535a;">
+  Thanks, <%= @user.first_name.presence || "there" %>! Your gift card purchase is confirmed and
+  invoice <strong><%= @invoice.invoice_number %></strong> is attached.
+</p>
+
+<%= render "card" %>
+
+<p style="font-size:14px; color:#4f535a;">
+  <% if @gift_card.recipient_email.present? %>
+    We've emailed the card to <strong><%= @gift_card.recipient_email %></strong>.
+  <% else %>
+    The card and its code are shown above and saved in your dashboard.
+  <% end %>
+</p>

@@ -1,0 +1,17 @@
+<h1 style="font-size:22px; margin:16px 0 8px;">Your order is on its way 📦</h1>
+<p style="font-size:15px; line-height:1.6; color:#4f535a;">
+  Good news, <%= @user.first_name.presence || "there" %> — order #<%= @order.id %> has shipped.
+</p>
+
+<% if @order.carrier.present? || @order.tracking_number.present? %>
+  <div style="background:#f4f1eb; border-radius:12px; padding:16px; margin-top:12px; font-size:14px;">
+    <% if @order.carrier.present? %><p style="margin:0 0 4px;"><strong>Carrier:</strong> <%= @order.carrier %></p><% end %>
+    <% if @order.tracking_number.present? %><p style="margin:0;"><strong>Tracking #:</strong> <%= @order.tracking_number %></p><% end %>
+  </div>
+<% end %>
+
+<% if @order.shipping_address %>
+  <p style="font-size:13px; color:#5f6268; margin-top:16px;">
+    Shipping to: <%= [@order.shipping_address.line1, @order.shipping_address.city, @order.shipping_address.province].compact.join(", ") %>
+  </p>
+<% end %>

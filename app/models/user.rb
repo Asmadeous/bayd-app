@@ -1,0 +1,52 @@
+class User < ApplicationRecord
+  has_secure_password validations: false
+
+  enum :role, { customer: "customer", employee: "employee", admin: "admin" }
+
+  has_one  :employee_profile, dependent: :destroy
+  has_many :addresses, dependent: :destroy
+  has_many :booking_requests, dependent: :destroy
+  has_many :bookings, dependent: :destroy
+  has_one  :loyalty_account, dependent: :destroy
+  has_many :gift_cards, foreign_key: :purchaser_id, dependent: :nullify
+  has_many :reviews, dependent: :nullify
+  has_many :orders, dependent: :destroy
+  has_many :blog_posts, foreign_key: :author_id, dependent: :nullify
+  has_many :blog_comments, dependent: :nullify
+  has_many :forum_topics, dependent: :destroy
+  has_many :forum_posts, dependent: :destroy
+  has_one  :newsletter_subscriber, dependent: :destroy
+  has_many :notifications, dependent: :destroy
+  has_many :invoices, dependent: :destroy
+  has_many :subscriptions, dependent: :destroy
+
+  # Referrals — a user can be referred by one other user and refer many.
+  belongs_to :referred_by, class_name: "User", optional: true
+  has_many   :referrals, class_name: "User", foreign_key: :referred_by_id, dependent: :nullify
+
+  validates :email, presence: true, uniqueness: { case_sensitive: false },
+                    format: { with: URI::MailTo::EMAIL_REGEXP }
+  validates :role, presence: true
+  # Password required on create for non-SSO users; optional on update
+  validates :password, presence: true, on: :create, if: -> { google_uid.blank? }
+  validates :password, length: { minimum: 8 }, allow_nil: true
+
+  before_validation { email&.downcase! }
+  before_create :assign_referral_code
+  after_create :create_loyalty_account
+
+  def card_on_file?
+    square_card_id.present?
+  end
+
+  private
+
+  def assign_referral_code
+    return if referral_code.present?
+
+    loop do
+      candidate = SecureRandom.alphanumeric(8).upcase
+      break self.referral_code = candidate unless User.exists?(referral_code: candidate)
+    end
+  end
+end

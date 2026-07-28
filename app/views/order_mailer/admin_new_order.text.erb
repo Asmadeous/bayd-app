@@ -1,0 +1,6 @@
+New product order #<%= @order.id %>
+
+<%= [@order.user&.first_name, @order.user&.last_name].compact.join(" ") %> (<%= @order.user&.email %>) — total $<%= format("%.2f", @order.total) %>
+<% @order.order_items.each do |item| -%>
+- <%= item.name %> x<%= item.quantity %>
+<% end -%>

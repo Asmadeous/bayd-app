@@ -1,0 +1,15 @@
+<h1 style="font-size:22px; margin:16px 0 8px;">You've received a gift card! 🎁</h1>
+
+<% if @gift_card.message.present? %>
+  <p style="font-size:15px; line-height:1.6; color:#4f535a; font-style:italic;">
+    "<%= @gift_card.message %>"
+    <% if @gift_card.sender_name.present? %><br>— <%= @gift_card.sender_name %><% end %>
+  </p>
+<% end %>
+
+<%= render "card" %>
+
+<p style="font-size:14px; color:#4f535a;">
+  Redeem your gift card at checkout, or apply it toward any mobile beauty booking.
+  Keep your code safe — it's like cash.
+</p>

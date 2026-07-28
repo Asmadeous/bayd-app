@@ -1,0 +1,31 @@
+default: &default
+  adapter: postgis
+  encoding: unicode
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  username: <%= ENV.fetch("DB_USERNAME", nil) %>
+  password: <%= ENV.fetch("DB_PASSWORD", nil) %>
+
+development:
+  <<: *default
+  database: bayd_development
+
+test:
+  <<: *default
+  database: bayd_test
+
+production:
+  primary: &primary_production
+    <<: *default
+    host: <%= ENV.fetch("DB_HOST", "localhost") %>
+    port: <%= ENV.fetch("DB_PORT", 5432) %>
+    database: bayd_production
+    username: <%= ENV["DB_USERNAME"] %>
+    password: <%= ENV["DB_PASSWORD"] %>
+  cache:
+    <<: *primary_production
+    database: bayd_production_cache
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    database: bayd_production_queue
+    migrations_paths: db/queue_migrate

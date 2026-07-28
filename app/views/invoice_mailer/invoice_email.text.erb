@@ -1,0 +1,6 @@
+Invoice <%= @invoice.invoice_number %>
+
+Hi <%= @user.first_name.presence || "there" %>, thanks for your purchase.
+Your invoice for <%= number_to_currency(@invoice.total) %> <%= @invoice.currency %> is attached as a PDF.
+
+You can also view and download all your invoices from your dashboard.
