@@ -1,0 +1,10 @@
+{
+  "ignored_warnings": [
+    {
+      "fingerprint": "058e98b83b0c67a8de48d1294fb2f9cc5bdc24c52150e283afd3d7aec330fac5",
+      "note": "Admin-only endpoint; role is an enum validated at the model level (customer/employee/admin). Privilege escalation is acceptable here since only admins can reach this controller."
+    }
+  ],
+  "updated": "2026-07-28",
+  "brakeman_version": "8.0.5"
+}

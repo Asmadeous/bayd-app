@@ -63,10 +63,10 @@ class CreateBeautyAtYourDoorSchema < ActiveRecord::Migration[8.0]
       t.decimal :longitude,      precision: 10, scale: 6, null: false
       t.integer :accuracy_meters
       t.datetime :recorded_at,   null: false
-      t.string  :source
+      t.string :source
       t.timestamps
     end
-    add_index :location_pings, [:employee_profile_id, :recorded_at]
+    add_index :location_pings, [ :employee_profile_id, :recorded_at ]
 
     create_table :service_areas do |t|
       t.string  :name,        null: false
@@ -83,7 +83,7 @@ class CreateBeautyAtYourDoorSchema < ActiveRecord::Migration[8.0]
       t.integer :max_travel_km
       t.timestamps
     end
-    add_index :employee_service_areas, [:employee_profile_id, :service_area_id],
+    add_index :employee_service_areas, [ :employee_profile_id, :service_area_id ],
               unique: true, name: "index_emp_service_areas_unique"
 
     create_table :service_categories do |t|
@@ -114,7 +114,7 @@ class CreateBeautyAtYourDoorSchema < ActiveRecord::Migration[8.0]
       t.decimal :price_override, precision: 10, scale: 2
       t.timestamps
     end
-    add_index :employee_services, [:employee_profile_id, :service_id],
+    add_index :employee_services, [ :employee_profile_id, :service_id ],
               unique: true, name: "index_employee_services_unique"
 
     create_table :addresses do |t|
@@ -153,9 +153,9 @@ class CreateBeautyAtYourDoorSchema < ActiveRecord::Migration[8.0]
 
     create_table :assignment_attempts do |t|
       t.references :booking_request, null: false, foreign_key: true
-      t.jsonb   :candidates, null: false, default: {}
+      t.jsonb :candidates, null: false, default: {}
       t.references :chosen_employee, foreign_key: { to_table: :employee_profiles }
-      t.string  :reason
+      t.string :reason
       t.timestamps
     end
 
@@ -182,7 +182,7 @@ class CreateBeautyAtYourDoorSchema < ActiveRecord::Migration[8.0]
     end
     add_index :bookings, :simplybook_id, unique: true, where: "simplybook_id IS NOT NULL"
     add_index :bookings, :status
-    add_index :bookings, [:employee_profile_id, :starts_at]
+    add_index :bookings, [ :employee_profile_id, :starts_at ]
 
     create_table :sync_events do |t|
       t.string  :provider,   null: false
@@ -193,7 +193,7 @@ class CreateBeautyAtYourDoorSchema < ActiveRecord::Migration[8.0]
       t.datetime :processed_at
       t.timestamps
     end
-    add_index :sync_events, [:provider, :external_id], unique: true,
+    add_index :sync_events, [ :provider, :external_id ], unique: true,
               where: "external_id IS NOT NULL"
 
     create_table :payments do |t|
@@ -208,7 +208,7 @@ class CreateBeautyAtYourDoorSchema < ActiveRecord::Migration[8.0]
     end
 
     create_table :gift_cards do |t|
-      t.string  :code, null: false
+      t.string :code, null: false
       t.references :purchaser, foreign_key: { to_table: :users }
       t.decimal :initial_balance, precision: 10, scale: 2, null: false
       t.decimal :current_balance, precision: 10, scale: 2, null: false
@@ -334,12 +334,12 @@ class CreateBeautyAtYourDoorSchema < ActiveRecord::Migration[8.0]
       t.boolean :approved, null: false, default: true
       t.timestamps
     end
-    add_index :forum_posts, [:forum_topic_id, :created_at]
+    add_index :forum_posts, [ :forum_topic_id, :created_at ]
 
     create_table :newsletter_subscribers do |t|
-      t.string  :email, null: false
+      t.string :email, null: false
       t.references :user, foreign_key: true
-      t.string  :status, null: false, default: "subscribed"
+      t.string :status, null: false, default: "subscribed"
       t.datetime :confirmed_at
       t.string  :unsubscribe_token, null: false
       t.string  :source

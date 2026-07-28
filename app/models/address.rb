@@ -11,7 +11,7 @@ class Address < ApplicationRecord
   after_validation :geocode, if: :address_changed?
 
   def full_address
-    [line1, line2, city, province, postal_code].compact.join(", ")
+    [ line1, line2, city, province, postal_code ].compact.join(", ")
   end
 
   private

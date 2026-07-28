@@ -8,7 +8,7 @@ class BlogPostSerializer < Blueprinter::Base
 
   field :read_time do |post, _opts|
     words = post.body.to_s.split.size
-    mins = [(words / 200.0).ceil, 1].max
+    mins = [ (words / 200.0).ceil, 1 ].max
     "#{mins} min read"
   end
 end
