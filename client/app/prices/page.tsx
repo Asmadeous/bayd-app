@@ -65,11 +65,17 @@ export default async function Prices() {
   const BASE_URL =
     process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
 
-  const res = await fetch(`${BASE_URL}/service_categories`, {
-    next: { revalidate: 60 },
-  });
-
-  const apiCategories: ApiServiceCategory[] = res.ok ? await res.json() : [];
+  let apiCategories: ApiServiceCategory[] = [];
+  try {
+    const res = await fetch(`${BASE_URL}/service_categories`, {
+      next: { revalidate: 60 },
+    });
+    if (res.ok) {
+      apiCategories = await res.json();
+    }
+  } catch {
+    apiCategories = [];
+  }
   const categories = apiCategories.map(mapApiCategory);
 
   return <PricingPage categories={categories} />;

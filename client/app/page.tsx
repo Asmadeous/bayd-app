@@ -78,11 +78,17 @@ export default async function Home() {
   const BASE_URL =
     process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
 
-  const res = await fetch(`${BASE_URL}/services`, {
-    next: { revalidate: 60 },
-  });
-
-  const apiServices: ApiService[] = res.ok ? await res.json() : [];
+  let apiServices: ApiService[] = [];
+  try {
+    const res = await fetch(`${BASE_URL}/services`, {
+      next: { revalidate: 60 },
+    });
+    if (res.ok) {
+      apiServices = await res.json();
+    }
+  } catch {
+    apiServices = [];
+  }
   const services = apiServices.map(mapApiService);
 
   return <HomePage content={{ services, benefits: BENEFITS }} />;

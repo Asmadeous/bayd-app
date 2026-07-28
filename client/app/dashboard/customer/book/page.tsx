@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { Suspense, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { CalendarDays, CheckCircle2, ChevronDown, Clock, MapPin, Sparkles, X } from "lucide-react"
@@ -82,7 +82,7 @@ const FREQUENCIES = [
 ] as const
 
 /* ─── Component ─── */
-export default function CustomerBookPage() {
+function CustomerBookPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedService = searchParams.get("service")
@@ -599,5 +599,13 @@ export default function CustomerBookPage() {
         </Button>
       </form>
     </div>
+  )
+}
+
+export default function CustomerBookPage() {
+  return (
+    <Suspense fallback={null}>
+      <CustomerBookPageContent />
+    </Suspense>
   )
 }

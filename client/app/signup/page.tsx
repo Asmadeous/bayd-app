@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
 import { AuthPage } from "@/features/auth/components/auth-page";
@@ -10,5 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default function SignUpPage() {
-  return <AuthPage content={authPages.signup} />;
+  return (
+    <Suspense fallback={null}>
+      <AuthPage content={authPages.signup} />
+    </Suspense>
+  );
 }

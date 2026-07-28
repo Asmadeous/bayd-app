@@ -47,11 +47,15 @@ function mapApiBlogPost(p: ApiBlogPost): BlogPost {
 async function fetchPost(slug: string): Promise<BlogPost | null> {
   const BASE_URL =
     process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
-  const res = await fetch(`${BASE_URL}/blog_posts/${slug}`, {
-    next: { revalidate: 60 },
-  });
-  if (!res.ok) return null;
-  return mapApiBlogPost(await res.json());
+  try {
+    const res = await fetch(`${BASE_URL}/blog_posts/${slug}`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    return mapApiBlogPost(await res.json());
+  } catch {
+    return null;
+  }
 }
 
 export async function generateMetadata({

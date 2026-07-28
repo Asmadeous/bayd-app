@@ -59,11 +59,18 @@ export default async function Blog() {
   const BASE_URL =
     process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
 
-  const res = await fetch(`${BASE_URL}/blog_posts`, {
-    next: { revalidate: 60 },
-  });
-
-  const apiPosts: ApiBlogPost[] = res.ok ? ((await res.json()).data ?? []) : [];
+  let apiPosts: ApiBlogPost[] = [];
+  try {
+    const res = await fetch(`${BASE_URL}/blog_posts`, {
+      next: { revalidate: 60 },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      apiPosts = data.data ?? [];
+    }
+  } catch {
+    apiPosts = [];
+  }
   const posts = apiPosts.map(mapApiBlogPost);
 
   return (
