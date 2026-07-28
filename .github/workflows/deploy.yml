@@ -76,7 +76,7 @@ jobs:
       - name: Trust the server host key
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ vars.SSH_PORT || '22' }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Kamal deploy (or bootstrap)
         run: |
@@ -129,11 +129,11 @@ jobs:
       - name: Trust the server host key
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ vars.SSH_PORT || '22' }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Pull & run the container on the server
         run: |
-          ssh -p "${{ vars.SSH_PORT || '22' }}" deploy@"${{ secrets.SSH_HOST }}" bash -lc "
+          ssh -p "${{ vars.SSH_PORT || '2206' }}" deploy@"${{ secrets.SSH_HOST }}" bash -lc "
             set -e
             echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
             docker pull '${{ env.IMAGE }}:${{ github.sha }}'
