@@ -5,12 +5,12 @@
 service: b_a_y_d_api
 
 # Image name on your registry. EDIT the registry user.
-image: ghcr.io/your-github-user/b_a_y_d_api
+image: ghcr.io/asmadeous/bayd-app
 
 # EDIT: your server's public IP (or api.baydspa.ca once DNS points at it).
 servers:
   web:
-    - 1.2.3.4
+    - 64.6.175.177
 
 # nginx terminates TLS and forwards to kamal-proxy, which listens on localhost
 # only (no public port, no Let's Encrypt — nginx handles certs). It still does
