@@ -76,7 +76,8 @@ jobs:
       - name: Trust the server host key
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Kamal deploy (or bootstrap)
         run: |
@@ -129,7 +130,8 @@ jobs:
       - name: Trust the server host key
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Pull & run the container on the server
         run: |
