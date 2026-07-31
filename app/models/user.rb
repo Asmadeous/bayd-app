@@ -11,6 +11,7 @@ class User < ApplicationRecord
   has_many :gift_cards, foreign_key: :purchaser_id, dependent: :nullify
   has_many :reviews, dependent: :nullify
   has_many :orders, dependent: :destroy
+  has_many :callback_requests, dependent: :nullify
   has_many :blog_posts, foreign_key: :author_id, dependent: :nullify
   has_many :blog_comments, dependent: :nullify
   has_many :forum_topics, dependent: :destroy

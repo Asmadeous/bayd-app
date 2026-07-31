@@ -40,8 +40,7 @@ class Meeting < ApplicationRecord
         title: "Work-scope video call scheduled",
         body: "Join the video call to confirm the details of your appointment before service.",
         booking: booking,
-        action_url: url,
-        sms_body: "Your Beauty at Your Door work-scope call: #{url}"
+        action_url: url
       )
     end
   end

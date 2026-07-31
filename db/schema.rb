@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_25_133828) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_31_100004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -132,16 +132,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_133828) do
   create_table "bookings", force: :cascade do |t|
     t.bigint "address_id"
     t.boolean "auto_charge", default: false, null: false
+    t.string "booked_for_name"
+    t.string "booked_for_phone"
     t.bigint "booking_request_id"
     t.string "cancellation_reason"
     t.string "client_type", default: "adult", null: false
     t.datetime "created_at", null: false
+    t.decimal "deposit_amount", precision: 10, scale: 2, default: "0.0", null: false
     t.bigint "employee_profile_id", null: false
     t.datetime "ends_at", null: false
     t.text "notes"
     t.bigint "parent_booking_id"
     t.bigint "partner_id"
     t.bigint "partner_payout_id"
+    t.string "payment_status", default: "unpaid", null: false
+    t.string "payment_timing", default: "pay_after", null: false
     t.jsonb "raw", default: {}, null: false
     t.boolean "recurrence_active", default: false, null: false
     t.integer "recurrence_interval_weeks"
@@ -165,12 +170,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_133828) do
     t.index ["parent_booking_id"], name: "index_bookings_on_parent_booking_id"
     t.index ["partner_id"], name: "index_bookings_on_partner_id"
     t.index ["partner_payout_id"], name: "index_bookings_on_partner_payout_id"
+    t.index ["payment_status"], name: "index_bookings_on_payment_status"
     t.index ["service_id"], name: "index_bookings_on_service_id"
     t.index ["simplybook_id"], name: "index_bookings_on_simplybook_id", unique: true, where: "(simplybook_id IS NOT NULL)"
     t.index ["status"], name: "index_bookings_on_status"
     t.index ["subscription_id"], name: "index_bookings_on_subscription_id"
     t.index ["user_id"], name: "index_bookings_on_user_id"
     t.exclusion_constraint "employee_profile_id WITH =, tsrange(starts_at, ends_at) WITH &&", where: "(status)::text = ANY ((ARRAY['pending'::character varying, 'confirmed'::character varying, 'in_progress'::character varying])::text[])", using: :gist, name: "no_double_booking"
+  end
+
+  create_table "callback_requests", force: :cascade do |t|
+    t.string "contact_name"
+    t.string "contact_phone"
+    t.datetime "created_at", null: false
+    t.text "notes"
+    t.string "postal_code"
+    t.bigint "service_id"
+    t.string "status", default: "new", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["service_id"], name: "index_callback_requests_on_service_id"
+    t.index ["status"], name: "index_callback_requests_on_status"
+    t.index ["user_id"], name: "index_callback_requests_on_user_id"
   end
 
   create_table "contact_messages", force: :cascade do |t|
@@ -630,6 +651,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_133828) do
     t.index ["simplybook_event_id"], name: "index_services_on_simplybook_event_id", unique: true, where: "(simplybook_event_id IS NOT NULL)"
   end
 
+  create_table "settings", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "key", null: false
+    t.datetime "updated_at", null: false
+    t.string "value"
+    t.index ["key"], name: "index_settings_on_key", unique: true
+  end
+
   create_table "shifts", force: :cascade do |t|
     t.datetime "clock_in_at", null: false
     t.decimal "clock_in_latitude", precision: 10, scale: 6, null: false
@@ -683,6 +712,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_133828) do
     t.boolean "signature_verified", default: false, null: false
     t.datetime "updated_at", null: false
     t.index ["provider", "external_id"], name: "index_sync_events_on_provider_and_external_id", unique: true, where: "(external_id IS NOT NULL)"
+  end
+
+  create_table "tips", force: :cascade do |t|
+    t.decimal "amount", precision: 10, scale: 2, default: "0.0", null: false
+    t.bigint "booking_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "employee_profile_id", null: false
+    t.string "method", default: "card", null: false
+    t.datetime "paid_out_at"
+    t.string "processor_ref"
+    t.string "status", default: "collected", null: false
+    t.datetime "updated_at", null: false
+    t.index ["booking_id"], name: "index_tips_on_booking_id"
+    t.index ["employee_profile_id", "status"], name: "index_tips_on_employee_profile_id_and_status"
+    t.index ["employee_profile_id"], name: "index_tips_on_employee_profile_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -741,6 +785,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_133828) do
   add_foreign_key "bookings", "services"
   add_foreign_key "bookings", "subscriptions"
   add_foreign_key "bookings", "users"
+  add_foreign_key "callback_requests", "services"
+  add_foreign_key "callback_requests", "users"
   add_foreign_key "employee_current_locations", "employee_profiles"
   add_foreign_key "employee_profiles", "partners"
   add_foreign_key "employee_profiles", "users"
@@ -780,5 +826,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_133828) do
   add_foreign_key "subscriptions", "addresses"
   add_foreign_key "subscriptions", "services"
   add_foreign_key "subscriptions", "users"
+  add_foreign_key "tips", "bookings"
+  add_foreign_key "tips", "employee_profiles"
   add_foreign_key "users", "users", column: "referred_by_id"
 end

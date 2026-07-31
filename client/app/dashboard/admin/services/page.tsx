@@ -14,6 +14,7 @@ interface Service {
   price: string
   active: boolean
   image_url: string | null
+  simplybook_event_id: string | null
   service_category: { id: number; name: string }
   prices?: Record<string, string>
   tier_prices?: Record<string, number>
@@ -30,6 +31,7 @@ const TIER_FIELDS: { key: "kids" | "elderly" | "group"; label: string }[] = [
 
 const BLANK = {
   name: "", description: "", duration_minutes: 60, price: "", active: true, image_url: "", service_category_id: "",
+  simplybook_event_id: "",
   prices: { kids: "", elderly: "", group: "" } as Record<"kids" | "elderly" | "group", string>,
 }
 
@@ -67,6 +69,7 @@ export default function AdminServicesPage() {
     setForm({
       name: s.name, description: s.description ?? "", duration_minutes: s.duration_minutes, price: s.price,
       active: s.active, image_url: s.image_url ?? "", service_category_id: String(s.service_category?.id ?? ""),
+      simplybook_event_id: s.simplybook_event_id ?? "",
       prices: {
         kids: tp.kids != null ? String(tp.kids) : "",
         elderly: tp.elderly != null ? String(tp.elderly) : "",
@@ -88,7 +91,7 @@ export default function AdminServicesPage() {
         <div className="rounded-xl border border-black/8 bg-white p-6 space-y-4">
           <h3 className="font-semibold text-sm text-[#101217]">{modal === "create" ? "New Service" : "Edit Service"}</h3>
           <div className="grid grid-cols-2 gap-4">
-            {[["name", "Name", "text"], ["price", "Price ($)", "number"], ["duration_minutes", "Duration (min)", "number"], ["image_url", "Image URL", "url"]].map(([field, label, type]) => (
+            {[["name", "Name", "text"], ["price", "Price ($)", "number"], ["duration_minutes", "Duration (min)", "number"], ["image_url", "Image URL", "url"], ["simplybook_event_id", "SimplyBook Service ID", "text"]].map(([field, label, type]) => (
               <div key={field}>
                 <label className="block text-xs font-medium text-[#5f6268] mb-1">{label}</label>
                 <input type={type} value={(form as Record<string, unknown>)[field] as string} onChange={(e) => setForm((f) => ({ ...f, [field]: type === "number" ? Number(e.target.value) : e.target.value }))}

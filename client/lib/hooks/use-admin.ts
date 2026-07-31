@@ -143,6 +143,8 @@ export interface EmployeeInput {
   base_latitude?: string | null
   base_longitude?: string | null
   service_fsas?: string[]
+  simplybook_unit_id?: string
+  traccar_device_id?: string
 }
 
 export function useUpdateEmployee(id: number) {

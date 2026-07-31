@@ -22,7 +22,7 @@ class SimplyBookReconcileJob < ApplicationJob
 
   def pull_inbound(client, days_back, days_forward)
     list = client.bookings(date_from: Date.current - days_back, date_to: Date.current + days_forward)
-    Array(list.is_a?(Hash) ? (list["data"] || []) : list).each do |detail|
+    Array(list).each do |detail|
       SimplyBook::BookingMirror.upsert(detail)
     rescue StandardError => e
       Rails.logger.warn("[SimplyBookReconcileJob] inbound upsert failed: #{e.message}")

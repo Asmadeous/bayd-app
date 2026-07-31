@@ -24,6 +24,21 @@ module Api
           Booking.find(params[:id]).destroy!
           head :no_content
         end
+
+        # Staff-triggered collection for an agreed amount (e.g. negotiated
+        # out-of-area travel fee, or after-service balance). Auto-charges an
+        # existing customer's card, or returns a payment link for a new one.
+        def payment_link
+          booking = Booking.find(params[:id])
+          amount  = params[:amount].present? ? params[:amount].to_d : booking.outstanding_balance
+          result  = BookingPaymentService.new(booking).collect(amount: amount, tip: params[:tip].to_d)
+
+          if result.success?
+            render json: { mode: result.mode.to_s, url: result.url }
+          else
+            render json: { error: result.error }, status: :unprocessable_entity
+          end
+        end
       end
     end
   end

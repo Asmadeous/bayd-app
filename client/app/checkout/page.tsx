@@ -13,14 +13,19 @@ import { buttonVariants } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/stores/auth-store";
 import { useCartStore } from "@/lib/stores/cart-store";
 import api from "@/lib/api";
+import { openHelcimPay } from "@/lib/helcim-pay";
 import { cn } from "@/lib/utils";
 
-// The backend creates the order + payment session and returns the gateway's
-// hosted-payment URL. The frontend only redirects there — no payment logic,
-// no card data ever touches the browser app or our servers (PCI). Confirmation
-// arrives via the payment webhook on the backend.
+// The backend creates the order + payment session. Depending on the gateway it
+// returns either a Helcim checkout_token (we open the HelcimPay.js modal on this
+// page) or a Square redirect_url (we send the browser there). No card data ever
+// touches the browser app or our servers (PCI). Confirmation is authoritative
+// via the payment webhook on the backend.
 interface CheckoutResponse {
-  redirect_url: string;
+  gateway: "helcim" | "square";
+  order_id: number;
+  redirect_url?: string;
+  checkout_token?: string;
 }
 
 export default function CheckoutPage() {
@@ -50,10 +55,33 @@ export default function CheckoutPage() {
       });
       return res.data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setPayError(null);
-      clearCart();
-      window.location.href = data.redirect_url; // gateway hosted payment page
+
+      if (data.gateway === "square" && data.redirect_url) {
+        clearCart();
+        window.location.href = data.redirect_url; // Square hosted payment page
+        return;
+      }
+
+      if (data.gateway === "helcim" && data.checkout_token) {
+        try {
+          const result = await openHelcimPay(data.checkout_token);
+          if (result === "success") {
+            // The webhook is authoritative; confirmation page polls order status.
+            clearCart();
+            router.push(`/checkout/confirmation?order=${data.order_id}`);
+          } else if (result === "error") {
+            setPayError("Payment could not be completed. Please try again.");
+          }
+          // "abort" — customer closed the modal; keep the cart, no error.
+        } catch {
+          setPayError("Could not open the payment window. Please try again.");
+        }
+        return;
+      }
+
+      setPayError("Checkout is not configured. Please contact support.");
     },
     onError: () => setPayError("Could not start checkout. Please try again."),
   });

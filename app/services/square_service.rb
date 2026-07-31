@@ -100,6 +100,38 @@ class SquareService
     { success: false, error: e.message }
   end
 
+  # Hosted payment link for a booking (deposit, balance, or admin-negotiated
+  # amount). reference "BKG-<id>" lets the webhook reconcile it to the booking.
+  # `line_items` is [{ name:, quantity:, price_cents: }]; total is their sum.
+  def self.create_booking_link(booking_id:, line_items:, redirect_url:)
+    items = line_items.map do |i|
+      {
+        name: i[:name].to_s,
+        quantity: (i[:quantity] || 1).to_s,
+        base_price_money: { amount: i[:price_cents].to_i, currency: "CAD" }
+      }
+    end
+
+    response = connection.post("/v2/online-checkout/payment-links") do |req|
+      req.body = {
+        idempotency_key: SecureRandom.uuid,
+        order: { location_id: location_id, reference_id: "BKG-#{booking_id}", line_items: items },
+        checkout_options: {
+          redirect_url: redirect_url,
+          merchant_support_email: ENV.fetch("SUPPORT_EMAIL", "support@baydspa.ca")
+        }
+      }
+    end
+
+    if response.status == 200
+      { success: true, url: response.body.dig("payment_link", "url") }
+    else
+      { success: false, error: error_message(response) }
+    end
+  rescue Faraday::Error => e
+    { success: false, error: e.message }
+  end
+
   # ── Customer identity ───────────────────────────────────────────────────────
   # Creates a Square customer record for a user. Returns the customer id.
   def self.create_customer(user)

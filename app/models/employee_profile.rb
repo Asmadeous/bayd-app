@@ -10,6 +10,7 @@ class EmployeeProfile < ApplicationRecord
   has_many :employee_service_areas, dependent: :destroy
   has_many :service_areas, through: :employee_service_areas
   has_many :bookings, dependent: :restrict_with_error
+  has_many :tips, dependent: :restrict_with_error
   has_many :assignment_attempts, foreign_key: :chosen_employee_id, dependent: :nullify
   has_many :reviews, dependent: :nullify
 

@@ -78,6 +78,7 @@ const adminNavGroups: NavGroup[] = [
       { label: "Invoices", href: "/dashboard/admin/invoices", icon: <DocumentIcon /> },
       { label: "Gift Cards", href: "/dashboard/admin/gift-cards", icon: <GiftIcon /> },
       { label: "Loyalty", href: "/dashboard/admin/loyalty", icon: <StarIcon /> },
+      { label: "Tips", href: "/dashboard/admin/tips", icon: <ReceiptIcon /> },
     ],
   },
   {
@@ -94,6 +95,8 @@ const adminNavGroups: NavGroup[] = [
     items: [
       { label: "Service Areas", href: "/dashboard/admin/service-areas", icon: <MapPinIcon /> },
       { label: "Inquiries", href: "/dashboard/admin/inquiries", icon: <InboxIcon /> },
+      { label: "Callbacks", href: "/dashboard/admin/callbacks", icon: <InboxIcon /> },
+      { label: "Payments", href: "/dashboard/admin/settings", icon: <DocumentIcon /> },
     ],
   },
 ]
