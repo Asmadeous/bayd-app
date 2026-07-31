@@ -42,6 +42,10 @@ Rails.application.configure do
   # Replace the default in-process memory cache store with a durable alternative.
   config.cache_store = :solid_cache_store
 
+  # We don't generate image variants, so skip the image_processing gem / libvips
+  # dependency (Active Storage otherwise warns it's required).
+  config.active_storage.variant_processor = :disabled
+
   # Replace the default in-process and non-durable queuing backend for Active Job.
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.connects_to = { database: { writing: :queue } }
