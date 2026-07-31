@@ -71,21 +71,16 @@ env:
 
     # Payments (non-secret ids / URLs)
     SQUARE_BASE_URL: https://connect.squareup.com
-    SQUARE_LOCATION_ID: ""
     SQUARE_WEBHOOK_NOTIFICATION_URL: https://api.baydspa.ca/api/v1/webhooks/square
-    HELCIM_HOSTED_URL: ""
 
-    # SimplyBook / mail (non-secret)
-    SIMPLYBOOK_COMPANY: ""
-    SMTP_ADDRESS: ""             # set this or NO email sends
+    # Mail
     SMTP_PORT: "587"
 
     # Google OAuth callback (must exactly match a redirect URI in Google Console)
     GOOGLE_REDIRECT_URI: https://api.baydspa.ca/api/v1/auth/google/callback
 
-    # Live GPS (Traccar) — non-secret bits; blank = feature off
-    TRACCAR_URL: ""
-    TRACCAR_USER: ""
+    # NOTE: SIMPLYBOOK_COMPANY, SQUARE_LOCATION_ID, SMTP_ADDRESS, TRACCAR_URL,
+    # TRACCAR_USER are injected from GitHub (see env.secret) — no values here.
 
     # Ops
     RAILS_LOG_LEVEL: info
@@ -111,6 +106,11 @@ env:
     - SIMPLYBOOK_LOGIN
     - SIMPLYBOOK_API_USER_KEY
     - SIMPLYBOOK_WEBHOOK_SECRET
+    - SIMPLYBOOK_COMPANY
+    - SQUARE_LOCATION_ID
+    - SMTP_ADDRESS
+    - TRACCAR_URL
+    - TRACCAR_USER
     - TRACCAR_PASSWORD
     - TRACCAR_WEBHOOK_SECRET
 

@@ -8,7 +8,12 @@ module Api
 
         def receive
           raw = request.raw_post
-          verified = HelcimService.verify_webhook(raw, request.headers["webhook-signature"])
+          verified = HelcimService.verify_webhook(
+            raw,
+            request.headers["webhook-signature"],
+            webhook_id:        request.headers["webhook-id"],
+            webhook_timestamp: request.headers["webhook-timestamp"]
+          )
           return head :unauthorized if verifier_configured? && !verified
 
           body = request.parsed_body || {}

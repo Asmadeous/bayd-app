@@ -128,7 +128,8 @@ Rails.application.routes.draw do
       namespace :webhooks do
         post "traccar",    to: "traccar#positions"
         post "simplybook", to: "simplybook#receive"
-        post "helcim",     to: "helcim#receive"
+        # Path must NOT contain "helcim" — Helcim rejects such webhook URLs (400).
+        post "hpay",       to: "helcim#receive"
         post "square",     to: "square#receive"
       end
 

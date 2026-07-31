@@ -54,14 +54,24 @@ class HelcimService
     nil
   end
 
-  # Verify an inbound webhook. Helcim signs with a verifier token (HMAC-SHA256
-  # over the raw body, base64). Lenient when no token is configured (dev).
-  def self.verify_webhook(raw_body, signature)
+  # Verify an inbound Helcim webhook (Svix-style signing, per Helcim docs):
+  #   signedContent = "<webhook-id>.<webhook-timestamp>.<raw body>"
+  #   key           = base64-decode(verifier token)
+  #   signature     = base64( HMAC-SHA256(key, signedContent) )
+  # The `webhook-signature` header is a space-delimited list of "v1,<sig>"
+  # entries; a match against any is valid. Returns false when unconfigured.
+  def self.verify_webhook(raw_body, signature_header, webhook_id:, webhook_timestamp:)
     token = ENV["HELCIM_WEBHOOK_VERIFIER_TOKEN"].presence
-    return false if token.blank? || signature.blank?
+    return false if token.blank? || signature_header.blank?
 
-    expected = Base64.strict_encode64(OpenSSL::HMAC.digest("SHA256", token, raw_body.to_s))
-    ActiveSupport::SecurityUtils.secure_compare(expected, signature.to_s)
+    signed_content = "#{webhook_id}.#{webhook_timestamp}.#{raw_body}"
+    key      = Base64.decode64(token)
+    expected = Base64.strict_encode64(OpenSSL::HMAC.digest("SHA256", key, signed_content))
+
+    signature_header.to_s.split(/\s+/).any? do |entry|
+      provided = entry.split(",", 2).last.to_s   # strip the "v1," version prefix
+      provided.present? && ActiveSupport::SecurityUtils.secure_compare(expected, provided)
+    end
   end
 
   # Charge a stored card token (auto-billing recurring bookings).

@@ -49,6 +49,11 @@ jobs:
       SIMPLYBOOK_LOGIN: ${{ secrets.SIMPLYBOOK_LOGIN }}
       SIMPLYBOOK_API_USER_KEY: ${{ secrets.SIMPLYBOOK_API_USER_KEY }}
       SIMPLYBOOK_WEBHOOK_SECRET: ${{ secrets.SIMPLYBOOK_WEBHOOK_SECRET }}
+      SIMPLYBOOK_COMPANY: ${{ secrets.SIMPLYBOOK_COMPANY }}
+      SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+      SMTP_ADDRESS: ${{ secrets.SMTP_ADDRESS }}
+      TRACCAR_URL: ${{ secrets.TRACCAR_URL }}
+      TRACCAR_USER: ${{ secrets.TRACCAR_USER }}
       TRACCAR_PASSWORD: ${{ secrets.TRACCAR_PASSWORD }}
       TRACCAR_WEBHOOK_SECRET: ${{ secrets.TRACCAR_WEBHOOK_SECRET }}
     steps:
@@ -77,8 +82,8 @@ jobs:
       - name: Trust the server host key
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
-          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ secrets.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ secrets.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Kamal deploy (or bootstrap)
         run: |
@@ -122,13 +127,13 @@ jobs:
             ${{ env.IMAGE }}:latest
           build-args: |
             NEXT_PUBLIC_API_URL=https://api.baydspa.ca/api/v1
-            NEXT_PUBLIC_SQUARE_APP_ID=${{ vars.SQUARE_APP_ID }}
-            NEXT_PUBLIC_SQUARE_LOCATION_ID=${{ vars.SQUARE_LOCATION_ID }}
+            NEXT_PUBLIC_SQUARE_APP_ID=${{ secrets.SQUARE_APP_ID }}
+            NEXT_PUBLIC_SQUARE_LOCATION_ID=${{ secrets.SQUARE_LOCATION_ID }}
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            NEXT_PUBLIC_SIMPLYBOOK_PWA_URL=${{ vars.SIMPLYBOOK_PWA_URL }}
-            NEXT_PUBLIC_TAWK_PROPERTY_ID=${{ vars.TAWK_PROPERTY_ID }}
-            NEXT_PUBLIC_TAWK_WIDGET_ID=${{ vars.TAWK_WIDGET_ID }}
-            NEXT_PUBLIC_COMPANY_PHONE=${{ vars.COMPANY_PHONE }}
+            NEXT_PUBLIC_SIMPLYBOOK_PWA_URL=${{ secrets.SIMPLYBOOK_PWA_URL }}
+            NEXT_PUBLIC_TAWK_PROPERTY_ID=${{ secrets.TAWK_PROPERTY_ID }}
+            NEXT_PUBLIC_TAWK_WIDGET_ID=${{ secrets.TAWK_WIDGET_ID }}
+            NEXT_PUBLIC_COMPANY_PHONE=${{ secrets.COMPANY_PHONE }}
 
       - name: Load deploy SSH key
         uses: webfactory/ssh-agent@v0.9.0
@@ -138,12 +143,12 @@ jobs:
       - name: Trust the server host key
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
-          ssh-keyscan -p "${{ vars.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ secrets.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "${{ secrets.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Pull & run the container on the server
         run: |
-          ssh -p "${{ vars.SSH_PORT || '2206' }}" deploy@"${{ secrets.SSH_HOST }}" bash -lc "
+          ssh -p "${{ secrets.SSH_PORT || '2206' }}" deploy@"${{ secrets.SSH_HOST }}" bash -lc "
             set -e
             echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
             docker pull '${{ env.IMAGE }}:${{ github.sha }}'
