@@ -8,7 +8,8 @@ Rails.application.routes.draw do
       post  "auth/login",    to: "auth#login"
       get   "auth/me",       to: "auth#me"
       patch "auth/me",       to: "auth#update_me"
-      post  "auth/google",   to: "google_auth#callback"
+      get   "auth/google",          to: "google_auth#start"
+      get   "auth/google/callback", to: "google_auth#callback"
 
       # Catalog (public)
       resources :service_categories, only: :index
@@ -19,8 +20,14 @@ Rails.application.routes.draw do
       # Booking flow
       resources :booking_requests, only: %i[index show create]
       resources :bookings, only: %i[index show] do
-        member { post :cancel }
+        member do
+          post :cancel
+          post :pay
+        end
       end
+
+      # Out-of-area enquiry (no tech covers the postal code → request a callback)
+      resources :callback_requests, only: :create
 
       # Customer resources
       resources :addresses
@@ -151,9 +158,23 @@ Rails.application.routes.draw do
         end
 
         # Bookings & scheduling
-        resources :bookings,            only: %i[index show update destroy]
+        resources :bookings,            only: %i[index show update destroy] do
+          member { post :payment_link }
+        end
         resources :booking_requests,    only: %i[index show]
         resources :assignment_attempts, only: %i[index show]
+
+        # Out-of-area callback queue
+        resources :callback_requests, only: %i[index update]
+
+        # Tip payout tracking (owed per technician)
+        resources :tips, only: :index do
+          collection { post :payout }
+        end
+
+        # Admin-editable settings (group deposit %, …)
+        get   "settings", to: "settings#index"
+        patch "settings", to: "settings#update"
 
         # Staff time clock / fuel-compensation report
         resources :shifts,   only: %i[index show destroy]

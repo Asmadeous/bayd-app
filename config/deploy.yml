@@ -77,8 +77,15 @@ env:
 
     # SimplyBook / mail (non-secret)
     SIMPLYBOOK_COMPANY: ""
-    SMTP_ADDRESS: ""
+    SMTP_ADDRESS: ""             # set this or NO email sends
     SMTP_PORT: "587"
+
+    # Google OAuth callback (must exactly match a redirect URI in Google Console)
+    GOOGLE_REDIRECT_URI: https://api.baydspa.ca/api/v1/auth/google/callback
+
+    # Live GPS (Traccar) — non-secret bits; blank = feature off
+    TRACCAR_URL: ""
+    TRACCAR_USER: ""
 
     # Ops
     RAILS_LOG_LEVEL: info
@@ -95,14 +102,17 @@ env:
     - SMTP_PASSWORD
     - GOOGLE_MAPS_API_KEY
     - GOOGLE_CLIENT_ID
+    - GOOGLE_CLIENT_SECRET
     - SENTRY_DSN
     - HELCIM_API_TOKEN
     - HELCIM_WEBHOOK_VERIFIER_TOKEN
     - SQUARE_ACCESS_TOKEN
     - SQUARE_WEBHOOK_SIGNATURE_KEY
     - SIMPLYBOOK_LOGIN
-    - SIMPLYBOOK_PASSWORD
+    - SIMPLYBOOK_API_USER_KEY
     - SIMPLYBOOK_WEBHOOK_SECRET
+    - TRACCAR_PASSWORD
+    - TRACCAR_WEBHOOK_SECRET
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"

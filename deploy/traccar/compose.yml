@@ -1,0 +1,31 @@
+# Traccar GPS server for B.A.Y.D live technician tracking.
+#
+# Runs on the VM (64.6.175.177), bound to LOCALHOST ONLY — nginx is the public
+# front door (traccar.baydspa.ca → 127.0.0.1:8082), same pattern as the API and
+# frontend. Traccar's phone app forwards positions to its own server here, which
+# then forwards each position to the Rails webhook (see traccar.xml).
+#
+# Bring up:   cd /opt/traccar && docker compose up -d
+# Logs:       docker compose logs -f
+# Data (H2 db + logs) persists in ./data — back that up.
+services:
+  traccar:
+    image: traccar/traccar:latest
+    container_name: traccar
+    restart: unless-stopped
+    ports:
+      # Web UI + REST API — localhost only; nginx terminates TLS in front.
+      - "127.0.0.1:8082:8082"
+      # Device protocol ports. The Traccar Client phone app (OsmAnd protocol)
+      # uses 5055. These must be reachable by the phones, so they bind to all
+      # interfaces — open ONLY the protocol(s) you actually use in the firewall.
+      - "5055:5055"
+    volumes:
+      - ./traccar.xml:/opt/traccar/conf/traccar.xml:ro
+      - ./data:/opt/traccar/data
+      - ./logs:/opt/traccar/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

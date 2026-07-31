@@ -119,6 +119,8 @@ interface Employee {
   dispatchable: boolean
   base_latitude: string | null
   base_longitude: string | null
+  simplybook_unit_id: string | null
+  traccar_device_id: string | null
   service_fsas: string[]
   partner_id: number | null
   partner_name: string | null
@@ -292,6 +294,8 @@ function StaffModal({ mode, partners, onClose }: { mode: "create" | Employee; pa
     dispatchable: emp?.dispatchable ?? true,
     base_latitude: emp?.base_latitude ?? "",
     base_longitude: emp?.base_longitude ?? "",
+    simplybook_unit_id: emp?.simplybook_unit_id ?? "",
+    traccar_device_id: emp?.traccar_device_id ?? "",
   })
   const set = (patch: Partial<EmployeeInput>) => setForm((f) => ({ ...f, ...patch }))
 
@@ -301,6 +305,8 @@ function StaffModal({ mode, partners, onClose }: { mode: "create" | Employee; pa
       first_name: form.first_name, last_name: form.last_name, email: form.email, phone: form.phone,
       title: form.title, partner_id: form.partner_id, active: form.active, dispatchable: form.dispatchable,
       base_latitude: form.base_latitude || null, base_longitude: form.base_longitude || null,
+      simplybook_unit_id: form.simplybook_unit_id,
+      traccar_device_id: form.traccar_device_id,
     }
     if (isCreate && form.password) payload.password = form.password
     const opts = {
@@ -338,6 +344,8 @@ function StaffModal({ mode, partners, onClose }: { mode: "create" | Employee; pa
         </Field>
         <Field label="Base latitude"><input value={form.base_latitude ?? ""} onChange={(e) => set({ base_latitude: e.target.value })} placeholder="43.65" className={inputCls} /></Field>
         <Field label="Base longitude"><input value={form.base_longitude ?? ""} onChange={(e) => set({ base_longitude: e.target.value })} placeholder="-79.38" className={inputCls} /></Field>
+        <Field label="SimplyBook Provider (unit) ID"><input value={form.simplybook_unit_id ?? ""} onChange={(e) => set({ simplybook_unit_id: e.target.value })} placeholder="e.g. 3" className={inputCls} /></Field>
+        <Field label="Traccar Device ID"><input value={form.traccar_device_id ?? ""} onChange={(e) => set({ traccar_device_id: e.target.value })} placeholder="matches the device ID in the Traccar phone app" className={inputCls} /></Field>
       </div>
       <div className="flex items-center gap-5">
         <label className="flex items-center gap-2 text-sm text-[#101217] cursor-pointer">

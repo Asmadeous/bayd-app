@@ -15,6 +15,8 @@ interface EmployeeProfile {
   dispatchable: boolean
   base_latitude: string | null
   base_longitude: string | null
+  simplybook_unit_id: string | null
+  traccar_device_id: string | null
   service_fsas: string[]
   partner_id: number | null
   partner_name: string | null

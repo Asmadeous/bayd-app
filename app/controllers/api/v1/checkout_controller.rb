@@ -1,9 +1,10 @@
 module Api
   module V1
-    # Online shopping checkout — Helcim, backend-driven.
-    # Creates a pending Order + a hosted payment session, and returns the gateway
-    # hosted-page URL for the frontend to redirect to. The order is marked paid
-    # by the Helcim webhook (see Webhooks::HelcimController) — never by the client.
+    # Online shopping checkout — backend-driven.
+    #   • Helcim → HelcimPay.js: returns a checkout_token; the frontend renders the
+    #     pay modal with it. The order is marked paid by the Helcim webhook
+    #     (Webhooks::HelcimController) — authoritative, never by the client.
+    #   • Square → hosted checkout: returns a redirect_url the browser goes to.
     class CheckoutController < ApplicationController
       def create
         items = Array(params[:items])
@@ -17,22 +18,29 @@ module Api
         order.recalculate_total!
 
         gateway = (params[:gateway].presence || ENV.fetch("CHECKOUT_GATEWAY", "helcim")).to_s.downcase
-        url = gateway == "square" ? square_url(order) : helcim_url(order)
-        return if performed? # a gateway error already rendered
-
-        return fail_checkout(order, "Hosted checkout not configured") if url.blank?
-        render json: { redirect_url: url, order_id: order.id, gateway: gateway }
+        gateway == "square" ? render_square(order) : render_helcim(order)
       end
 
       private
 
-      def helcim_url(order)
+      # HelcimPay.js: hand the checkout token to the frontend to open the modal.
+      def render_helcim(order)
         session = HelcimService.initialize_session(
           payment_type: "purchase", amount: order.total.to_f.round(2), invoice_number: "ORD-#{order.id}"
         )
-        return fail_checkout(order, session[:error]) && nil unless session[:success]
+        return fail_checkout(order, session[:error]) unless session[:success]
+        return fail_checkout(order, "Helcim did not return a checkout token") if session[:checkout_token].blank?
 
-        HelcimService.hosted_url(session[:checkout_token])
+        render json: { gateway: "helcim", order_id: order.id, checkout_token: session[:checkout_token] }
+      end
+
+      # Square hosted checkout: browser redirects to the returned URL.
+      def render_square(order)
+        url = square_url(order)
+        return if performed? # a gateway error already rendered
+        return fail_checkout(order, "Hosted checkout not configured") if url.blank?
+
+        render json: { gateway: "square", order_id: order.id, redirect_url: url }
       end
 
       def square_url(order)

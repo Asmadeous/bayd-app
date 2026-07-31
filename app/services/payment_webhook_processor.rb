@@ -28,10 +28,10 @@ class PaymentWebhookProcessor
       ref = SquareService.get_order(payment["order_id"])&.dig("reference_id")
     end
 
-    order = order_for(ref)
-    if order
+    payable = payable_for(ref)
+    if payable
       cents = payment.dig("amount_money", "amount").to_i
-      order.mark_paid!(processor: "square", reference: payment["id"], amount: cents / 100.0)
+      payable.mark_paid!(processor: "square", reference: payment["id"], amount: cents / 100.0)
     end
     event.mark_processed!
   rescue StandardError => e
@@ -41,6 +41,16 @@ class PaymentWebhookProcessor
   def self.order_for(invoice_number)
     id = invoice_number.to_s.delete_prefix("ORD-")
     Order.find_by(id: id)
+  end
+
+  # Square references may point at an Order ("ORD-<id>") or a Booking ("BKG-<id>").
+  def self.payable_for(reference)
+    ref = reference.to_s
+    if ref.start_with?("BKG-")
+      Booking.find_by(id: ref.delete_prefix("BKG-"))
+    else
+      order_for(ref)
+    end
   end
 
   def self.approved?(status)

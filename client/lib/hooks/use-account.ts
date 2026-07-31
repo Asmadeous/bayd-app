@@ -57,12 +57,17 @@ export function usePaymentMethod() {
   })
 }
 
-// Backend creates a Moneris hosted tokenization session and returns its URL;
-// the frontend just redirects there to capture/vault the card.
-export function useCardSession() {
+// Save a card on file. `source_id` is a single-use token from the Square Web
+// Payments SDK (raw card data never touches our servers).
+export function useSaveCard() {
+  const qc = useQueryClient()
   return useMutation({
-    mutationFn: () =>
-      api.post<{ redirect_url: string }>("/payment_method/session").then((r) => r.data),
+    mutationFn: (source_id: string) =>
+      api.post<PaymentMethod>("/payment_method", { source_id }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["payment-method"] })
+      qc.invalidateQueries({ queryKey: ["auth-me-card"] })
+    },
   })
 }
 

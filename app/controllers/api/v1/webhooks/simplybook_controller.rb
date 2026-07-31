@@ -24,13 +24,18 @@ module Api
 
         private
 
-        # If a webhook secret is configured, require it (header or ?secret=).
-        # When unset (e.g. local dev) we accept and mark the event unverified.
+        # SimplyBook signs each callback: sign = md5(booking_id + booking_hash + secret_key),
+        # where secret_key is the "Secret key" from the API custom feature settings
+        # (SIMPLYBOOK_WEBHOOK_SECRET). We recompute and compare — the secret is never
+        # sent over the wire. When no secret is configured (e.g. local dev) we accept
+        # and mark the event unverified.
         def verify_secret
           return unless secret_configured?
 
-          provided = request.headers["X-Simplybook-Secret"] || params[:secret].to_s
-          head :unauthorized unless ActiveSupport::SecurityUtils.secure_compare(webhook_secret, provided)
+          body     = request.parsed_body || {}
+          expected = Digest::MD5.hexdigest("#{body['booking_id']}#{body['booking_hash']}#{webhook_secret}")
+          provided = (body["sign"] || body["signature"]).to_s
+          head :unauthorized unless ActiveSupport::SecurityUtils.secure_compare(expected, provided)
         end
 
         def secret_configured?

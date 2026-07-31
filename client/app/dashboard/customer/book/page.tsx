@@ -46,10 +46,13 @@ interface ApiAddress {
 interface BookingRequestResponse {
   booking_request: { id: number; status: string }
   booking?: { id: number }
+  payment?: { mode: string; url?: string; error?: string }
   error?: string
 }
 
 /* ─── Helpers ─── */
+const COMPANY_PHONE = process.env.NEXT_PUBLIC_COMPANY_PHONE ?? ""
+
 const TIME_SLOTS = Array.from({ length: 21 }, (_, i) => {
   const totalMins = 9 * 60 + i * 30
   const h = Math.floor(totalMins / 60)
@@ -108,6 +111,10 @@ function CustomerBookPageContent() {
   const [clientType, setClientType] = useState<ClientType>("adult")
   const [recurrence, setRecurrence] = useState<string>("none")
   const [autoCharge, setAutoCharge] = useState(false)
+  const [payUpfront, setPayUpfront] = useState(false)
+  const [tip, setTip] = useState<string>("")
+  const [bookedForName, setBookedForName] = useState("")
+  const [bookedForPhone, setBookedForPhone] = useState("")
   const [result, setResult] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   /* ─── Card on file (enables auto-charge for recurring bookings) ─── */
@@ -181,10 +188,31 @@ function CustomerBookPageContent() {
       recurrence_interval_unit?: string | null
       recurrence_interval_count?: number
       auto_charge?: boolean
+      payment_timing?: "pay_upfront" | "pay_after"
+      tip?: number
+      booked_for_name?: string
+      booked_for_phone?: string
     }) =>
       api
         .post<BookingRequestResponse>("/booking_requests", { booking_request: payload })
         .then((r) => r.data),
+  })
+
+  /* ─── Out-of-area callback request ─── */
+  const requestCallback = useMutation({
+    mutationFn: () =>
+      api.post("/callback_requests", {
+        callback_request: {
+          service_id: serviceId ? Number(serviceId) : undefined,
+          postal_code: activePostal,
+          contact_phone: bookedForPhone.trim() || undefined,
+        },
+      }),
+    onSuccess: () =>
+      setResult({
+        type: "success",
+        message: "Thanks! We'll call you to check for a technician near you and arrange your booking.",
+      }),
   })
 
   /* ─── Submit ─── */
@@ -218,10 +246,26 @@ function CustomerBookPageContent() {
         recurrence_interval_unit: isRecurring ? freq.unit : undefined,
         recurrence_interval_count: isRecurring ? freq.count : undefined,
         auto_charge: isRecurring && autoCharge && hasCard,
+        payment_timing: payUpfront ? "pay_upfront" : "pay_after",
+        tip: tip ? Number(tip) : undefined,
+        booked_for_name: bookedForName.trim() || undefined,
+        booked_for_phone: bookedForPhone.trim() || undefined,
       })
 
+      // If a payment link was created (new customer / no card), send them to it.
+      if (data.payment?.mode === "link" && data.payment.url) {
+        window.location.href = data.payment.url
+        return
+      }
+
+      const charged = data.payment?.mode === "charged"
       if (data.booking) {
-        setResult({ type: "success", message: "Your appointment is confirmed! An employee has been assigned." })
+        setResult({
+          type: "success",
+          message: charged
+            ? "Your appointment is confirmed and payment was received. Thank you!"
+            : "Your appointment is confirmed! An employee has been assigned.",
+        })
       } else {
         setResult({ type: "success", message: "Booking request submitted. We will confirm coverage and notify you shortly." })
       }
@@ -580,6 +624,64 @@ function CustomerBookPageContent() {
           )}
         </div>
 
+        {/* ── Payment & tip ── */}
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-[#101217]">Payment</p>
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { key: false, label: "Pay after service" },
+              { key: true, label: "Pay now" },
+            ].map((opt) => (
+              <button
+                key={String(opt.key)}
+                type="button"
+                onClick={() => setPayUpfront(opt.key)}
+                className="px-4 py-1.5 rounded-full text-xs font-semibold transition-colors"
+                style={
+                  payUpfront === opt.key
+                    ? { background: "#c96c83", color: "#fff" }
+                    : { background: "#f4f1eb", color: "#5f6268" }
+                }
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {clientType === "group" && (
+            <p className="rounded-xl bg-[#f4f1eb] px-4 py-3 text-xs text-[#5f6268] leading-5">
+              Group bookings require a deposit, collected now. The balance is due after service.
+            </p>
+          )}
+          <div>
+            <label className="text-xs text-[#5f6268]">Add a tip for your technician (optional)</label>
+            <input
+              type="number" min="0" step="1" inputMode="decimal" placeholder="$0"
+              value={tip} onChange={(e) => setTip(e.target.value)}
+              className="mt-1 w-full h-10 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
+            />
+          </div>
+          <p className="text-[11px] text-[#8a8d93] leading-4">
+            {hasCard
+              ? "We'll charge your card on file."
+              : "We'll email you a secure payment link to complete payment."}
+          </p>
+        </div>
+
+        {/* ── Booking for someone else ── */}
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-[#101217]">Booking for someone else? (optional)</p>
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              placeholder="Their name" value={bookedForName} onChange={(e) => setBookedForName(e.target.value)}
+              className="h-10 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
+            />
+            <input
+              placeholder="Their phone" value={bookedForPhone} onChange={(e) => setBookedForPhone(e.target.value)}
+              className="h-10 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
+            />
+          </div>
+        </div>
+
         {/* ── Error ── */}
         {result?.type === "error" && (
           <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
@@ -588,15 +690,44 @@ function CustomerBookPageContent() {
           </div>
         )}
 
-        {/* ── Submit ── */}
-        <Button
-          type="submit"
-          disabled={!canSubmit || isPending}
-          className="w-full h-12 text-base font-bold rounded-xl"
-          style={{ background: "#c96c83", border: "none", color: "#fff" }}
-        >
-          {isPending ? "Submitting…" : "Confirm Booking"}
-        </Button>
+        {/* ── Out-of-area: no dead end — offer a callback ── */}
+        {notServiced ? (
+          <div className="space-y-3 rounded-xl border border-[#c96c83]/30 bg-[#f4f1eb] px-4 py-4">
+            <p className="text-sm text-[#101217]">
+              We don&apos;t have a technician in your area yet. Call us and we&apos;ll check for someone nearby.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {COMPANY_PHONE && (
+                <a
+                  href={`tel:${COMPANY_PHONE}`}
+                  className="px-4 h-10 inline-flex items-center rounded-xl text-sm font-semibold"
+                  style={{ background: "#c96c83", color: "#fff" }}
+                >
+                  Call {COMPANY_PHONE}
+                </a>
+              )}
+              <Button
+                type="button"
+                onClick={() => requestCallback.mutate()}
+                disabled={requestCallback.isPending || !activePostal}
+                className="h-10 rounded-xl text-sm font-semibold"
+                style={{ background: "#fff", border: "1px solid #c96c83", color: "#c96c83" }}
+              >
+                {requestCallback.isPending ? "Sending…" : "Request a callback"}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          /* ── Submit ── */
+          <Button
+            type="submit"
+            disabled={!canSubmit || isPending}
+            className="w-full h-12 text-base font-bold rounded-xl"
+            style={{ background: "#c96c83", border: "none", color: "#fff" }}
+          >
+            {isPending ? "Submitting…" : payUpfront ? "Confirm & Pay" : "Confirm Booking"}
+          </Button>
+        )}
       </form>
     </div>
   )

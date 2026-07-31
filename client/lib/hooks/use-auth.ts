@@ -42,14 +42,13 @@ export function useAuth() {
     },
   })
 
-  const googleMutation = useMutation({
-    mutationFn: (id_token: string) =>
-      api.post<{ token: string; user: AuthUser }>("/auth/google", { id_token }).then((r) => r.data),
-    onSuccess: ({ token, user }) => {
-      setAuth(user, token)
-      router.push(roleDashboard(user.role))
-    },
-  })
+  // Google OAuth (authorization-code, backend-redirect). We just send the browser
+  // to the API's /auth/google, which bounces through Google and 302s back to
+  // /auth/callback?token=… (handled by app/auth/callback/page.tsx).
+  function loginWithGoogle() {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? ""
+    window.location.href = `${base}/auth/google`
+  }
 
   const updateMeMutation = useMutation({
     mutationFn: (data: {
@@ -74,7 +73,7 @@ export function useAuth() {
     logout,
     login: loginMutation,
     register: registerMutation,
-    loginWithGoogle: googleMutation,
+    loginWithGoogle,
     updateMe: updateMeMutation,
   }
 }

@@ -40,16 +40,17 @@ jobs:
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
       SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
       HELCIM_API_TOKEN: ${{ secrets.HELCIM_API_TOKEN }}
       HELCIM_WEBHOOK_VERIFIER_TOKEN: ${{ secrets.HELCIM_WEBHOOK_VERIFIER_TOKEN }}
-      MONERIS_API_TOKEN: ${{ secrets.MONERIS_API_TOKEN }}
-      MONERIS_WEBHOOK_SECRET: ${{ secrets.MONERIS_WEBHOOK_SECRET }}
       SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
       SQUARE_WEBHOOK_SIGNATURE_KEY: ${{ secrets.SQUARE_WEBHOOK_SIGNATURE_KEY }}
       SIMPLYBOOK_LOGIN: ${{ secrets.SIMPLYBOOK_LOGIN }}
-      SIMPLYBOOK_PASSWORD: ${{ secrets.SIMPLYBOOK_PASSWORD }}
+      SIMPLYBOOK_API_USER_KEY: ${{ secrets.SIMPLYBOOK_API_USER_KEY }}
       SIMPLYBOOK_WEBHOOK_SECRET: ${{ secrets.SIMPLYBOOK_WEBHOOK_SECRET }}
+      TRACCAR_PASSWORD: ${{ secrets.TRACCAR_PASSWORD }}
+      TRACCAR_WEBHOOK_SECRET: ${{ secrets.TRACCAR_WEBHOOK_SECRET }}
     steps:
       - uses: actions/checkout@v4
 
@@ -121,6 +122,13 @@ jobs:
             ${{ env.IMAGE }}:latest
           build-args: |
             NEXT_PUBLIC_API_URL=https://api.baydspa.ca/api/v1
+            NEXT_PUBLIC_SQUARE_APP_ID=${{ vars.SQUARE_APP_ID }}
+            NEXT_PUBLIC_SQUARE_LOCATION_ID=${{ vars.SQUARE_LOCATION_ID }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            NEXT_PUBLIC_SIMPLYBOOK_PWA_URL=${{ vars.SIMPLYBOOK_PWA_URL }}
+            NEXT_PUBLIC_TAWK_PROPERTY_ID=${{ vars.TAWK_PROPERTY_ID }}
+            NEXT_PUBLIC_TAWK_WIDGET_ID=${{ vars.TAWK_WIDGET_ID }}
+            NEXT_PUBLIC_COMPANY_PHONE=${{ vars.COMPANY_PHONE }}
 
       - name: Load deploy SSH key
         uses: webfactory/ssh-agent@v0.9.0

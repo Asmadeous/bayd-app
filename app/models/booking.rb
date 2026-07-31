@@ -6,6 +6,7 @@ class Booking < ApplicationRecord
   belongs_to :address, optional: true
 
   has_many :payments, as: :payable, dependent: :destroy
+  has_many :tips, dependent: :destroy
   has_many :gift_card_transactions, dependent: :nullify
   has_many :loyalty_transactions, dependent: :nullify
   has_one  :review, dependent: :destroy
@@ -33,6 +34,20 @@ class Booking < ApplicationRecord
     elderly: "elderly",
     group:   "group"
   }, prefix: true
+
+  # WHEN the customer chose to pay. Group bookings still take a deposit upfront.
+  enum :payment_timing, {
+    pay_upfront: "pay_upfront",
+    pay_after:   "pay_after"
+  }, prefix: :timing
+
+  # Payment lifecycle, independent of timing.
+  enum :payment_status, {
+    unpaid:       "unpaid",
+    deposit_paid: "deposit_paid",
+    paid:         "paid",
+    refunded:     "refunded"
+  }, prefix: :payment
 
   validates :starts_at, :ends_at, presence: true
   validates :subtotal, :travel_fee, :total, numericality: { greater_than_or_equal_to: 0 }
@@ -74,6 +89,52 @@ class Booking < ApplicationRecord
   end
 
   def recurring? = recurrence_active? && recurrence_interval_weeks.present?
+
+  # ── Payment helpers ─────────────────────────────────────────────────────────
+
+  # Group bookings require a deposit (admin-configurable %). Returns the $ amount
+  # to collect upfront, or 0 for non-group bookings.
+  def required_deposit
+    return 0.to_d unless client_type_group?
+    (total.to_d * Setting.group_deposit_pct / 100).round(2)
+  end
+
+  def amount_paid
+    payments.where(status: "paid").sum(:amount)
+  end
+
+  # What still needs collecting to settle the booking in full.
+  def outstanding_balance
+    [ total.to_d - amount_paid, 0.to_d ].max
+  end
+
+  def fully_paid?
+    outstanding_balance <= 0
+  end
+
+  # Settle a confirmed payment (from auto-charge or a webhook). Reuses a pending
+  # payment row if one exists (payment-link path), else creates one.
+  def mark_paid!(processor:, reference: nil, amount: nil)
+    amt = (amount || outstanding_balance).to_d
+    payment = payments.find_by(status: "pending")
+    if payment
+      payment.update!(status: "paid", processor: processor, processor_ref: reference,
+                      amount: amt, paid_at: Time.current)
+    else
+      payments.create!(amount: amt, status: "paid", method: "card",
+                       processor: processor, processor_ref: reference, paid_at: Time.current)
+    end
+    refresh_payment_status!
+  end
+
+  # Recompute payment_status from what's actually been paid.
+  def refresh_payment_status!
+    if fully_paid?
+      payment_paid!
+    elsif amount_paid.positive?
+      payment_deposit_paid!
+    end
+  end
 
   # When the next appointment in this series should start.
   def next_occurrence_at
