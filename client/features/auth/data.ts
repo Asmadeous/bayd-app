@@ -1,21 +1,4 @@
-import { CalendarCheck, Gem, ShoppingBag } from "lucide-react";
-
-import type { AuthBenefit, AuthPageContent } from "@/features/auth/types";
-
-export const authBenefits: AuthBenefit[] = [
-  {
-    icon: CalendarCheck,
-    label: "Manage bookings",
-  },
-  {
-    icon: ShoppingBag,
-    label: "Save beauty products",
-  },
-  {
-    icon: Gem,
-    label: "Track loyalty perks",
-  },
-];
+import type { AuthPageContent } from "@/features/auth/types";
 
 const sharedHero = {
   badge: "Beauty Member Access",

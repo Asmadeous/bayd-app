@@ -1,5 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-
 export type AuthField = {
   autoComplete: string;
   label: string;
@@ -36,9 +34,4 @@ export type AuthPageContent = {
   primaryAction: string;
   supportText: string;
   title: string;
-};
-
-export type AuthBenefit = {
-  icon: LucideIcon;
-  label: string;
 };

@@ -8,12 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ArrowRight,
-  ArrowUpRight,
-  Check,
   Expand,
-  Images,
-  MapPin,
-  Sparkles,
   X,
 } from "lucide-react";
 
@@ -180,7 +175,6 @@ function GalleryHero() {
                 href="#work"
               >
                 Explore the work
-                <Images aria-hidden="true" />
               </Link>
               <BookButton
                 className={cn(
@@ -189,7 +183,6 @@ function GalleryHero() {
                 )}
               >
                 Book your look
-                <ArrowUpRight aria-hidden="true" />
               </BookButton>
             </div>
           </ScrollReveal>
@@ -198,18 +191,9 @@ function GalleryHero() {
             className="mt-10 grid gap-3 border-t border-black/10 pt-6 text-sm font-semibold text-[#4f535a] sm:grid-cols-3"
             delay={120}
           >
-            <span className="inline-flex items-center gap-2">
-              <Check aria-hidden="true" className="size-4 text-[#a36f4d]" />
-              Finished results
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <Sparkles aria-hidden="true" className="size-4 text-[#a36f4d]" />
-              Service details
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <MapPin aria-hidden="true" className="size-4 text-[#a36f4d]" />
-              Mobile appointments
-            </span>
+            <span>Finished results</span>
+            <span>Service details</span>
+            <span>Mobile appointments</span>
           </ScrollReveal>
         </div>
 
@@ -396,7 +380,6 @@ function GalleryTrustBand() {
                 )}
               >
                 Plan my appointment
-                <ArrowUpRight aria-hidden="true" />
               </BookButton>
             </div>
           </div>

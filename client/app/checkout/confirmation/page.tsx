@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { CheckCircle2, Calendar, ShoppingBag } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -50,7 +50,6 @@ export default function CheckoutConfirmationPage() {
               className={cn(buttonVariants(), "h-12 px-6 text-base font-bold")}
             >
               Book a service
-              <Calendar aria-hidden="true" />
             </Link>
             <Link
               href="/shop"
@@ -60,7 +59,6 @@ export default function CheckoutConfirmationPage() {
               )}
             >
               Continue shopping
-              <ShoppingBag aria-hidden="true" />
             </Link>
           </div>
         </div>

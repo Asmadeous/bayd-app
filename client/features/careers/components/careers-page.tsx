@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useMemo, useState } from "react"
-import { ArrowUpRight, Briefcase, MapPin } from "lucide-react"
+import { Briefcase, MapPin } from "lucide-react"
 
 import { SiteFooter } from "@/components/layout/site-footer"
 import { SiteHeader } from "@/components/layout/site-header"
@@ -58,7 +58,7 @@ export function CareersPage() {
                 <button
                   key={f.value}
                   onClick={() => setFilter(f.value)}
-                  className="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+                  className="shrink-0 border border-black/10 px-4 py-2 text-sm font-semibold transition-colors"
                   style={
                     filter === f.value
                       ? { background: "#c96c83", color: "#fff" }
@@ -99,11 +99,10 @@ function JobCard({ job }: { job: JobPosting }) {
       href={`/careers/${job.slug}`}
       className="group flex h-full flex-col border border-black/10 bg-white p-6 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10"
     >
-      <div className="flex items-start justify-between gap-3">
-        <span className="rounded-full bg-[#f0c8d3]/40 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#a36f4d]">
+      <div>
+        <span className="bg-[#f0c8d3]/40 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#a36f4d]">
           {EMPLOYMENT_LABELS[job.employment_type]}
         </span>
-        <ArrowUpRight className="size-5 shrink-0 text-[#c96c83] transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
       </div>
       <h3 className="mt-4 text-2xl font-extrabold leading-tight tracking-tight text-[#101217]">
         {job.title}

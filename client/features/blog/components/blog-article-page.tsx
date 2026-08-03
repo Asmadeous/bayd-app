@@ -1,6 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, Clock3, Sparkles } from "lucide-react";
+import { ArrowLeft, CalendarDays, Clock3 } from "lucide-react";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -116,7 +118,6 @@ export function BlogArticlePage({ post }: BlogArticlePageProps) {
                   )}
                 >
                   Ask about this
-                  <Sparkles aria-hidden="true" />
                 </BookButton>
               </div>
             </ScrollReveal>
