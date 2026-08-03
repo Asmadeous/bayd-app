@@ -1,4 +1,5 @@
-import { Award, MapPin, Sparkles } from "lucide-react";
+"use client";
+
 import { ScrollReveal } from "@/components/scroll-reveal";
 
 const teamMembers = [
@@ -83,7 +84,7 @@ export function TeamSection() {
               </div>
 
               <div className="p-6">
-                <div className="flex items-start justify-between gap-4">
+                <div>
                   <div>
                     <h3 className="text-2xl font-extrabold text-[#101217]">
                       {member.name}
@@ -92,14 +93,9 @@ export function TeamSection() {
                       {member.role}
                     </p>
                   </div>
-                  <Sparkles
-                    aria-hidden="true"
-                    className="mt-1 size-5 shrink-0 text-[#c96c83]"
-                  />
                 </div>
 
-                <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-[#62666d]">
-                  <MapPin aria-hidden="true" className="size-4" />
+                <div className="mt-5 text-sm font-semibold text-[#62666d]">
                   {member.location}
                 </div>
 
@@ -107,8 +103,7 @@ export function TeamSection() {
                   {member.bio}
                 </p>
 
-                <div className="mt-6 flex items-center gap-2 border-t border-black/10 pt-4 text-sm font-bold text-[#101217]">
-                  <Award aria-hidden="true" className="size-4" />
+                <div className="mt-6 border-t border-black/10 pt-4 text-sm font-bold text-[#101217]">
                   Experienced Beauty Professional
                 </div>
               </div>

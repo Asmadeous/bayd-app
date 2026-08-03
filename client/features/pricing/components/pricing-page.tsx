@@ -1,6 +1,7 @@
+"use client";
+
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowUpRight, Check, Clock, MapPin, Phone } from "lucide-react";
+import { Phone } from "lucide-react";
 
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -37,15 +38,15 @@ function PricingHero({ categories }: { categories: PriceCategory[] }) {
         <div className="flex min-h-[520px] flex-col justify-between">
           <ScrollReveal variant="fade-right">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#a36f4d]">
-              Service Prices
+              Services &amp; Pricing
             </p>
             <h1 className="mt-5 max-w-4xl text-5xl font-extrabold leading-[0.95] tracking-tight sm:text-7xl lg:text-8xl">
-              Simple pricing for beauty at home.
+              Beauty services with clear pricing.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-[#4f535a] sm:text-lg">
-              Browse starting prices for mobile nails, massage, feet, waxing,
-              and lashes across Ontario. Choose one service or combine a few
-              into a private booking.
+              Explore mobile nails, massage, feet, waxing, and lashes alongside
+              clear starting prices. Choose one service or combine a few into a
+              private booking.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <BookButton
@@ -55,7 +56,6 @@ function PricingHero({ categories }: { categories: PriceCategory[] }) {
                 )}
               >
                 Book a service
-                <ArrowUpRight aria-hidden="true" />
               </BookButton>
               <a
                 className={cn(
@@ -75,18 +75,9 @@ function PricingHero({ categories }: { categories: PriceCategory[] }) {
             delay={120}
             variant="fade-up"
           >
-            <span className="inline-flex items-center gap-2">
-              <MapPin aria-hidden="true" className="size-4 text-[#a36f4d]" />
-              Mobile service
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <Clock aria-hidden="true" className="size-4 text-[#a36f4d]" />
-              Flexible timing
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <Check aria-hidden="true" className="size-4 text-[#a36f4d]" />
-              Group-ready
-            </span>
+            <span>Mobile service</span>
+            <span>Flexible timing</span>
+            <span>Group-ready</span>
           </ScrollReveal>
         </div>
 
@@ -158,8 +149,22 @@ function PriceDirectory({ categories }: { categories: PriceCategory[] }) {
             variant="fade-right"
           >
             <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-              Clear service prices, arranged for quick scanning.
+              Find a service category.
             </h2>
+            <nav className="mt-7 grid border-t border-black/10">
+              {categories.map((category, index) => (
+                <a
+                  className="flex items-center justify-between border-b border-black/10 py-3 text-sm font-extrabold text-[#101217] transition-colors hover:text-[#c96c83]"
+                  href={`#${category.id}`}
+                  key={category.id}
+                >
+                  <span>{category.title}</span>
+                  <span className="font-mono text-xs text-[#8a817a]">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                </a>
+              ))}
+            </nav>
             <div className="mt-7 space-y-4">
               {bookingNotes.map((note) => (
                 <p
@@ -172,54 +177,140 @@ function PriceDirectory({ categories }: { categories: PriceCategory[] }) {
             </div>
           </ScrollReveal>
 
-          <div className="grid gap-4 xl:grid-cols-2">
-            {categories.map((category, index) => (
-              <ScrollReveal
-                as="article"
-                className={cn(
-                  "border border-black/10 bg-white p-5 shadow-sm",
-                  category.id === "nails" ? "xl:row-span-2" : "",
-                )}
-                delay={(index % 2) * 80}
-                key={category.id}
-                variant="fade-up"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#a36f4d]">
-                      {category.id}
+          <div className="space-y-6">
+            {categories.map((category, index) => {
+              const groups = groupCategoryItems(category);
+
+              return (
+                <ScrollReveal
+                  as="article"
+                  className="scroll-mt-24 border border-black/10 bg-white p-5 shadow-sm sm:p-7"
+                  delay={(index % 2) * 80}
+                  id={category.id}
+                  key={category.id}
+                  variant="fade-up"
+                >
+                  <p className="font-mono text-xs text-[#a36f4d]">
+                    {String(index + 1).padStart(2, "0")}
+                  </p>
+                  <h3 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
+                    {category.title}
+                  </h3>
+                  {category.summary && (
+                    <p className="mt-3 max-w-2xl text-sm leading-6 text-[#5f6268]">
+                      {category.summary}
                     </p>
-                    <h3 className="mt-2 text-3xl font-extrabold tracking-[0.08em]">
-                      {category.title}
-                    </h3>
+                  )}
+
+                  <div className="mt-8 grid gap-8 xl:grid-cols-2">
+                    {groups.map(([groupName, items]) => (
+                      <section key={`${category.id}-${groupName}`}>
+                        <h4 className="border-b-2 border-[#101217] pb-2 text-sm font-extrabold uppercase tracking-[0.14em]">
+                          {groupName}
+                        </h4>
+                        <div className="mt-3 space-y-2">
+                          {items.map((item) => (
+                            <div
+                              className={
+                                item.duration
+                                  ? "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 border-b border-black/8 py-2 text-sm"
+                                  : "grid grid-cols-[auto_1fr_auto] items-baseline gap-2 text-sm"
+                              }
+                              key={`${category.id}-${item.name}-${item.price}`}
+                            >
+                              <span className="min-w-0 font-medium text-[#101217]">
+                                {item.name}
+                              </span>
+                              {item.duration ? (
+                                <>
+                                  <span className="font-extrabold text-[#101217]">
+                                    {item.price}
+                                  </span>
+                                  <span className="text-xs italic text-[#8a817a]">
+                                    {item.duration}
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <span
+                                    aria-hidden="true"
+                                    className="h-px border-b border-dotted border-[#df8d72]/70"
+                                  />
+                                  <span className="font-extrabold text-[#101217]">
+                                    {item.price}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    ))}
                   </div>
-                </div>
-                <div className="mt-6 space-y-2">
-                  {category.items.map((item) => (
-                    <div
-                      className="grid grid-cols-[auto_1fr_auto] items-baseline gap-2 text-sm"
-                      key={`${category.id}-${item.name}-${item.price}`}
-                    >
-                      <span className="min-w-0 font-medium text-[#101217]">
-                        {item.name}
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        className="h-px border-b border-dotted border-[#df8d72]/70"
-                      />
-                      <span className="font-extrabold text-[#101217]">
-                        {item.price}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </ScrollReveal>
-            ))}
+                </ScrollReveal>
+              );
+            })}
           </div>
         </div>
       </div>
     </section>
   );
+}
+
+function groupCategoryItems(category: PriceCategory) {
+  const groups = new Map<string, PriceCategory["items"]>();
+
+  category.items.forEach((item) => {
+    const group = getSubcategory(category.id, item.name);
+    groups.set(group, [...(groups.get(group) ?? []), item]);
+  });
+
+  return Array.from(groups.entries());
+}
+
+function getSubcategory(categoryId: string, itemName: string) {
+  const name = itemName.toLowerCase();
+
+  if (categoryId === "nails") {
+    if (/refill|removal|overlay|full set|bio gel|gel x/.test(name)) {
+      return "Extensions & maintenance";
+    }
+    if (/pedicure/.test(name)) return "Combined hand & foot care";
+    return "Manicures & polish";
+  }
+
+  if (categoryId === "massages") {
+    if (/deep tissue|cupping/.test(name)) return "Therapeutic massage";
+    if (/back|shoulder|foot/.test(name)) return "Focused massage";
+    return "Body treatments";
+  }
+
+  if (categoryId === "feet") {
+    if (/medical|clip/.test(name)) return "Advanced foot care";
+    if (/princess/.test(name)) return "Kids foot care";
+    return "Pedicures & polish";
+  }
+
+  if (categoryId === "waxing") {
+    if (/bikini|brazilian/.test(name)) return "Intimate waxing";
+    if (/eyebrow|chin|lip|face/.test(name)) return "Facial waxing";
+    return "Body waxing";
+  }
+
+  if (categoryId === "lashes") {
+    return /refill/.test(name) ? "Refills" : "Full sets";
+  }
+
+  if (categoryId === "facials") {
+    if (/massage/.test(name)) return "Massage & add-ons";
+    if (/peel|back facial/.test(name)) return "Peels & back care";
+    if (/anti-aging|acne|brightening|sensitive/.test(name)) {
+      return "Targeted treatments";
+    }
+    return "Essential facials";
+  }
+
+  return "Services";
 }
 
 function BookingStrip() {
@@ -243,7 +334,6 @@ function BookingStrip() {
             )}
           >
             Plan a booking
-            <ArrowUpRight aria-hidden="true" />
           </BookButton>
         </ScrollReveal>
       </div>

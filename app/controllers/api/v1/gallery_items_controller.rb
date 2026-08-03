@@ -1,6 +1,8 @@
 module Api
   module V1
     class GalleryItemsController < ApplicationController
+      skip_before_action :authenticate_user!, only: :index
+
       def index
         scope = GalleryItem.active.ordered
         scope = scope.where(category: params[:category]) if params[:category].present?

@@ -19,6 +19,7 @@ type ScrollRevealProps = {
   className?: string;
   delay?: number;
   href?: string;
+  id?: string;
   once?: boolean;
   variant?: RevealVariant;
 };
@@ -52,6 +53,7 @@ export function ScrollReveal({
   className,
   delay = 0,
   href,
+  id,
   once = true,
   variant = "fade-up",
 }: ScrollRevealProps) {
@@ -62,6 +64,7 @@ export function ScrollReveal({
     <MotionComponent
       className={cn("will-change-transform", className)}
       href={as === "a" ? href : undefined}
+      id={id}
       initial="hidden"
       transition={{
         delay: delay / 1000,

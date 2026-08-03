@@ -1,11 +1,3 @@
-import {
-  BadgePercent,
-  Footprints,
-  Hand,
-  HeartPulse,
-  Sparkles,
-} from "lucide-react";
-
 import type { PriceCategory } from "@/features/pricing/types";
 
 export const pricingCategories: PriceCategory[] = [
@@ -14,7 +6,6 @@ export const pricingCategories: PriceCategory[] = [
     title: "Nails",
     summary: "Gel, shellac, refills, polish changes, and hand care.",
     accent: "bg-white/80",
-    icon: Hand,
     items: [
       { name: "Bio Gel", price: "$70" },
       { name: "Gel X", price: "$80" },
@@ -42,7 +33,6 @@ export const pricingCategories: PriceCategory[] = [
     title: "Massages",
     summary: "Focused body work and relaxation services brought home.",
     accent: "bg-white/80",
-    icon: HeartPulse,
     items: [
       { name: "30 min Back", price: "$50" },
       { name: "45 min Thai foot massage", price: "$70" },
@@ -58,7 +48,6 @@ export const pricingCategories: PriceCategory[] = [
     title: "Feet",
     summary: "Pedicures, foot care, polish, and comfort-focused add-ons.",
     accent: "bg-white/80",
-    icon: Footprints,
     items: [
       { name: "Pedicure starting at", price: "$50" },
       { name: "Paraffin add-on", price: "$20" },
@@ -75,7 +64,6 @@ export const pricingCategories: PriceCategory[] = [
     title: "Waxing",
     summary: "Face and body waxing options for at-home appointments.",
     accent: "bg-white/80",
-    icon: BadgePercent,
     items: [
       { name: "Eyebrows & shaping", price: "$20" },
       { name: "Chin & upper lip", price: "$20" },
@@ -99,7 +87,6 @@ export const pricingCategories: PriceCategory[] = [
     title: "Lashes",
     summary: "Classic, hybrid, volume, glam, and mega volume sets.",
     accent: "bg-white/80",
-    icon: Sparkles,
     items: [
       { name: "Classic Set", price: "$135" },
       { name: "Refill Classic", price: "$80" },

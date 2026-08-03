@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, CreditCard, ShoppingBag } from "lucide-react";
+import { ArrowLeft, CreditCard } from "lucide-react";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -110,11 +110,7 @@ export default function CheckoutPage() {
             {items.length === 0 ? (
               <div className="mt-8 grid min-h-64 place-items-center border border-dashed border-black/20 bg-[#f4f1eb] p-8 text-center">
                 <div>
-                  <ShoppingBag
-                    aria-hidden="true"
-                    className="mx-auto size-10 text-[#a36f4d]"
-                  />
-                  <p className="mt-4 text-xl font-extrabold text-[#101217]">
+                  <p className="text-xl font-extrabold text-[#101217]">
                     Your cart is empty.
                   </p>
                   <Link

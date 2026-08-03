@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 
 import { buttonVariants } from "@/components/ui/button"
@@ -93,8 +93,7 @@ export function AuthPage({ content }: AuthPageProps) {
             </Link>
 
             <div className="max-w-4xl">
-              <p className="inline-flex items-center gap-2 bg-white px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-[#101217]">
-                <ShieldCheck aria-hidden="true" className="size-4" />
+              <p className="inline-flex bg-white px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-[#101217]">
                 {content.hero.badge}
               </p>
               <h1 className="mt-5 max-w-3xl text-5xl font-extrabold leading-[0.94] tracking-tight sm:text-7xl">
@@ -289,7 +288,6 @@ export function AuthPage({ content }: AuthPageProps) {
                 disabled={loading}
               >
                 {loading ? "Please wait…" : content.primaryAction}
-                {!loading && <ArrowRight aria-hidden="true" />}
               </button>
             </form>
 

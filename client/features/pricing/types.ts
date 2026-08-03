@@ -1,8 +1,7 @@
-import type { LucideIcon } from "lucide-react";
-
 export type PriceItem = {
   name: string;
   price: string;
+  duration?: string;
   note?: string;
 };
 
@@ -11,6 +10,5 @@ export type PriceCategory = {
   title: string;
   summary?: string;
   accent: string;
-  icon?: LucideIcon;
   items: PriceItem[];
 };

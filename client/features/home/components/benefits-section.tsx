@@ -1,3 +1,5 @@
+"use client";
+
 import type { Benefit } from "@/features/home/types/home-content";
 import { ScrollReveal } from "@/components/scroll-reveal";
 
@@ -35,33 +37,25 @@ export function BenefitsSection({ benefits }: BenefitsSectionProps) {
           </ScrollReveal>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {benefits.map((benefit, index) => {
-              const Icon = benefit.icon;
-
-              return (
+            {benefits.map((benefit, index) => (
                 <ScrollReveal
                   as="article"
-                  className="group relative min-h-56 overflow-hidden border border-black/10 bg-white/75 p-6 shadow-sm transition-all hover:-translate-y-1 hover:bg-white hover:shadow-2xl hover:shadow-black/10"
+                  className="relative min-h-56 overflow-hidden border border-black/10 bg-white/75 p-6 shadow-sm transition-all hover:-translate-y-1 hover:bg-white hover:shadow-2xl hover:shadow-black/10"
                   delay={index * 70}
                   key={benefit.title}
                   variant={index % 2 === 0 ? "fade-left" : "fade-up"}
                 >
-                  <Icon
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -bottom-9 -right-7 size-32 stroke-[1.15] text-[#f1d5df] transition-all group-hover:-bottom-7 group-hover:-right-5 group-hover:text-[#e8baca]"
-                  />
-                  <span className="relative grid size-11 place-items-center bg-[#17110d] text-white">
-                    <Icon aria-hidden="true" className="size-5" />
-                  </span>
-                  <h3 className="relative mt-8 text-xl font-extrabold">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+                    {String(index + 1).padStart(2, "0")}
+                  </p>
+                  <h3 className="relative mt-10 text-xl font-extrabold">
                     {benefit.title}
                   </h3>
                   <p className="relative mt-3 max-w-md text-sm leading-6 text-[#62666d]">
                     {benefit.description}
                   </p>
                 </ScrollReveal>
-              );
-            })}
+              ))}
           </div>
         </div>
       </div>

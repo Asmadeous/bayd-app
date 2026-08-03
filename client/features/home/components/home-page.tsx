@@ -18,7 +18,7 @@ export function HomePage({ content }: HomePageProps) {
       <SiteHeader />
       <main>
         <HeroSection />
-        <ServicesSection services={content.services} />
+        <ServicesSection />
         <BenefitsSection benefits={content.benefits} />
         <TeamSection />
         <TestimonialsSection />

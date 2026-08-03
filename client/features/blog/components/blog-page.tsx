@@ -1,12 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  BookOpenText,
-  CalendarDays,
-  Clock3,
-  Sparkles,
-} from "lucide-react";
+import { CalendarDays, Clock3 } from "lucide-react";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -88,7 +84,6 @@ function BlogHero({ featuredPost }: { featuredPost: BlogPost }) {
                 href="#latest"
               >
                 Read latest
-                <BookOpenText aria-hidden="true" />
               </Link>
               <Link
                 className={cn(
@@ -98,7 +93,6 @@ function BlogHero({ featuredPost }: { featuredPost: BlogPost }) {
                 href="/shop"
               >
                 Shop aftercare
-                <Sparkles aria-hidden="true" />
               </Link>
             </div>
           </ScrollReveal>
@@ -280,7 +274,6 @@ function LeadArticle({ post }: { post: BlogPost }) {
         </div>
         <span className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-[#101217] transition-colors group-hover:text-[#c96c83]">
           Read full guide
-          <ArrowUpRight aria-hidden="true" className="size-4" />
         </span>
       </div>
     </Link>
@@ -315,7 +308,6 @@ function ClippingCard({ post }: { post: BlogPost }) {
         </p>
         <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-extrabold text-[#101217] transition-colors group-hover:text-[#c96c83]">
           Read guide
-          <ArrowUpRight aria-hidden="true" className="size-4" />
         </span>
       </div>
     </Link>
@@ -369,7 +361,6 @@ function BlogBookingBand() {
             )}
           >
             Plan a booking
-            <Sparkles aria-hidden="true" />
           </BookButton>
         </ScrollReveal>
       </div>

@@ -1,16 +1,7 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowDown,
-  ArrowUpRight,
-  BadgeCheck,
-  CalendarCheck,
-  HeartHandshake,
-  Home,
-  MapPin,
-  Sparkles,
-  UsersRound,
-} from "lucide-react";
 
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -25,25 +16,21 @@ const values = [
     title: "Care comes first",
     description:
       "Every appointment should feel respectful, comfortable, and shaped around the person receiving it.",
-    icon: HeartHandshake,
   },
   {
     title: "Prepared to travel",
     description:
       "We bring the tools, setup, and service plan needed to create a professional experience in your space.",
-    icon: Home,
   },
   {
     title: "Personal, never generic",
     description:
       "Services, timing, and finishes are discussed around your preferences rather than forced into one fixed routine.",
-    icon: Sparkles,
   },
   {
     title: "Experience you can trust",
     description:
       "Our team brings deep beauty-industry knowledge across nails, lashes, massage, waxing, and foot care.",
-    icon: BadgeCheck,
   },
 ];
 
@@ -111,7 +98,6 @@ function AboutHero() {
                 href="#story"
               >
                 Read our story
-                <ArrowDown aria-hidden="true" />
               </Link>
               <Link
                 className={cn(
@@ -121,7 +107,6 @@ function AboutHero() {
                 href="/gallery"
               >
                 See our work
-                <ArrowUpRight aria-hidden="true" />
               </Link>
             </div>
           </ScrollReveal>
@@ -218,12 +203,10 @@ function OurStory() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#101217]/82 via-transparent to-transparent" />
           <div className="absolute inset-x-0 bottom-0 grid grid-cols-2 gap-3 p-5 text-white sm:p-7">
             <div className="border border-white/20 bg-black/20 p-4 backdrop-blur-sm">
-              <UsersRound aria-hidden="true" className="size-5 text-[#f0c8d3]" />
-              <p className="mt-3 text-sm font-bold">Private and group care</p>
+              <p className="text-sm font-bold">Private and group care</p>
             </div>
             <div className="border border-white/20 bg-black/20 p-4 backdrop-blur-sm">
-              <MapPin aria-hidden="true" className="size-5 text-[#f0c8d3]" />
-              <p className="mt-3 text-sm font-bold">Delivered across the GTA</p>
+              <p className="text-sm font-bold">Delivered across the GTA</p>
             </div>
           </div>
         </ScrollReveal>
@@ -284,33 +267,25 @@ function OurValues() {
         </ScrollReveal>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {values.map((value, index) => {
-            const Icon = value.icon;
-
-            return (
+          {values.map((value, index) => (
               <ScrollReveal
                 as="article"
-                className="group relative min-h-72 overflow-hidden border border-black/10 bg-white/75 p-6 transition-all hover:-translate-y-1 hover:bg-white hover:shadow-2xl hover:shadow-black/10"
+                className="relative min-h-72 overflow-hidden border border-black/10 bg-white/75 p-6 transition-all hover:-translate-y-1 hover:bg-white hover:shadow-2xl hover:shadow-black/10"
                 delay={index * 80}
                 key={value.title}
                 variant="scale-up"
               >
-                <Icon
-                  aria-hidden="true"
-                  className="absolute -bottom-8 -right-7 size-36 stroke-[1.1] text-[#f1d5df] transition-transform group-hover:-translate-x-2 group-hover:-translate-y-2"
-                />
-                <span className="relative grid size-12 place-items-center bg-[#101217] text-white">
-                  <Icon aria-hidden="true" className="size-5" />
-                </span>
-                <h3 className="relative mt-12 text-2xl font-extrabold tracking-tight">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+                  {String(index + 1).padStart(2, "0")}
+                </p>
+                <h3 className="relative mt-16 text-2xl font-extrabold tracking-tight">
                   {value.title}
                 </h3>
                 <p className="relative mt-3 max-w-sm text-sm leading-6 text-[#5f6268]">
                   {value.description}
                 </p>
               </ScrollReveal>
-            );
-          })}
+            ))}
         </div>
       </div>
     </section>
@@ -342,7 +317,6 @@ function HowItWorks() {
               href="#contact"
             >
               Start a booking
-              <CalendarCheck aria-hidden="true" />
             </Link>
           </ScrollReveal>
 

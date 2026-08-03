@@ -68,7 +68,7 @@ export function JobDetailPage({ slug }: { slug: string }) {
             <div className="mt-8 grid gap-10 lg:grid-cols-[1.3fr_1fr]">
               {/* Role */}
               <div>
-                <span className="rounded-full bg-[#f0c8d3]/40 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#a36f4d]">
+                <span className="bg-[#f0c8d3]/40 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#a36f4d]">
                   {EMPLOYMENT_LABELS[job.employment_type]}
                 </span>
                 <h1 className="mt-4 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
@@ -98,7 +98,7 @@ export function JobDetailPage({ slug }: { slug: string }) {
               </div>
 
               {/* Apply */}
-              <div className="h-fit rounded-2xl border border-black/10 bg-white p-6 lg:sticky lg:top-24">
+              <div className="h-fit border border-black/10 bg-white p-6 lg:sticky lg:top-24">
                 {done ? (
                   <div className="py-6 text-center">
                     <CheckCircle2 className="mx-auto size-12 text-[#c96c83]" />
@@ -120,7 +120,7 @@ export function JobDetailPage({ slug }: { slug: string }) {
                           required={field !== "phone"}
                           value={form[field]}
                           onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))}
-                          className="h-10 w-full rounded-lg border border-black/15 px-3 text-sm focus:border-[#c96c83] focus:outline-none"
+                          className="h-10 w-full border border-black/15 px-3 text-sm focus:border-[#c96c83] focus:outline-none"
                         />
                       </div>
                     ))}
@@ -130,7 +130,7 @@ export function JobDetailPage({ slug }: { slug: string }) {
                         rows={3}
                         value={form.message}
                         onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                        className="w-full resize-none rounded-lg border border-black/15 px-3 py-2 text-sm focus:border-[#c96c83] focus:outline-none"
+                        className="w-full resize-none border border-black/15 px-3 py-2 text-sm focus:border-[#c96c83] focus:outline-none"
                       />
                     </div>
 
@@ -148,12 +148,12 @@ export function JobDetailPage({ slug }: { slug: string }) {
                       <button
                         type="button"
                         onClick={() => fileRef.current?.click()}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-black/25 px-3 py-3 text-sm font-semibold text-[#5f6268] hover:border-[#c96c83]"
+                        className="flex w-full items-center justify-center gap-2 border border-dashed border-black/25 px-3 py-3 text-sm font-semibold text-[#5f6268] hover:border-[#c96c83]"
                       >
                         <Upload className="size-4" /> Choose PDF{files.length ? "(s)" : ""}
                       </button>
                       {files.map((f) => (
-                        <div key={f.name} className="mt-2 flex items-center justify-between rounded-lg bg-[#f4f1eb] px-3 py-1.5 text-xs text-[#101217]">
+                        <div key={f.name} className="mt-2 flex items-center justify-between bg-[#f4f1eb] px-3 py-1.5 text-xs text-[#101217]">
                           <span className="truncate">{f.name}</span>
                           <button type="button" onClick={() => setFiles((fs) => fs.filter((x) => x !== f))}>
                             <X className="size-3.5 text-[#5f6268]" />
@@ -170,7 +170,7 @@ export function JobDetailPage({ slug }: { slug: string }) {
                     <Button
                       type="submit"
                       disabled={apply.isPending}
-                      className="h-11 w-full font-bold"
+                      className="h-11 w-full rounded-none font-bold"
                       style={{ background: "#c96c83", border: "none", color: "#fff" }}
                     >
                       {apply.isPending ? "Submitting…" : "Submit application"}

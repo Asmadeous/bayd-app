@@ -1,3 +1,5 @@
+"use client";
+
 import { Mail, Phone } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
