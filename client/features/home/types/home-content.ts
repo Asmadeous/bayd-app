@@ -1,5 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-
 export type HeroImage = {
   src: string;
   alt: string;
@@ -19,7 +17,6 @@ export type Service = {
 };
 
 export type Benefit = {
-  icon: LucideIcon;
   title: string;
   description: string;
 };

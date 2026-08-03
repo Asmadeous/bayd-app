@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import type { MouseEvent } from "react";
 import { ArrowUpRight, Clock, Star } from "lucide-react";

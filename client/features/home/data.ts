@@ -1,12 +1,3 @@
-import {
-  BadgeCheck,
-  Clock,
-  HeartHandshake,
-  MapPin,
-  Sparkles,
-  Users,
-} from "lucide-react";
-
 import type { HomePageContent } from "@/features/home/types/home-content";
 
 export function getHomePageContent(): HomePageContent {
@@ -225,37 +216,31 @@ export function getHomePageContent(): HomePageContent {
     ],
     benefits: [
       {
-        icon: MapPin,
         title: "We come to you",
         description:
           "Book in-home, workplace, hotel, bridal suite, or event-space service across the GTA.",
       },
       {
-        icon: Users,
         title: "Built for groups",
         description:
           "Spa parties, birthdays, corporate wellness days, and bridal mornings can be tailored by guest count.",
       },
       {
-        icon: Clock,
         title: "Flexible scheduling",
         description:
           "Appointments are planned around your timing, setup needs, and preferred service mix.",
       },
       {
-        icon: BadgeCheck,
         title: "Professional finish",
         description:
           "A calm, prepared team brings the tools, setup, and polish needed for a reliable experience.",
       },
       {
-        icon: Sparkles,
         title: "Custom packages",
         description:
           "Combine nails, massage, skincare, lashes, waxing, and beauty prep into one coordinated booking.",
       },
       {
-        icon: HeartHandshake,
         title: "Team opportunities",
         description:
           "Independent beauty professionals can connect for mobile appointment and event work.",

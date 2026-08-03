@@ -1,3 +1,5 @@
+"use client";
+
 import { ArrowUpRight, ShoppingCart } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
