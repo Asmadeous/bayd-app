@@ -6,7 +6,7 @@ import { AppCalendar } from "@/components/dashboard/app-calendar"
 import { BookingCard } from "@/components/dashboard/booking-card"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { TimeClock } from "@/components/dashboard/time-clock"
-import { MeetingButton } from "@/components/dashboard/meeting-button"
+import { StaffBookingActions } from "@/components/dashboard/staff-booking-actions"
 import { useEmployeeProfile, useEmployeeSchedule } from "@/lib/hooks/use-employee"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
@@ -58,11 +58,7 @@ export default function EmployeeDashboardPage() {
               <BookingCard
                 key={b.id}
                 booking={b}
-                actions={
-                  b.status === "confirmed" || b.status === "in_progress" ? (
-                    <MeetingButton booking={b} />
-                  ) : undefined
-                }
+                actions={<StaffBookingActions booking={b} />}
               />
             ))
           )}
