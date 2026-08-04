@@ -58,6 +58,21 @@ module Api
         render json: { data: ShiftSerializer.render_as_hash(records), totals: totals, pagination: meta }
       end
 
+      # ── Gift-card top-up at the customer (POS/cash) ─────────────────────────
+      # Staff look up a customer's card by code and add funds; payment is taken
+      # in person, so "mark paid" credits the balance immediately.
+      def show_gift_card
+        render json: GiftCardSerializer.render_as_hash(GiftCard.find_by!(code: params[:code]))
+      end
+
+      def topup_gift_card
+        card = GiftCard.find_by!(code: params[:code])
+        card.topup!(params[:amount], method: params[:method].presence || "pos")
+        render json: GiftCardSerializer.render_as_hash(card.reload)
+      rescue RuntimeError => e
+        render json: { error: e.message }, status: :unprocessable_entity
+      end
+
       private
 
       def location_params

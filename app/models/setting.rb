@@ -5,7 +5,8 @@ class Setting < ApplicationRecord
   validates :key, presence: true, uniqueness: true
 
   DEFAULTS = {
-    "group_deposit_pct" => "25" # % of the total collected upfront for group bookings
+    "group_deposit_pct" => "25", # % of the total collected upfront for group bookings
+    "group_deposit_min" => "50"  # minimum group deposit in $ (floor on the % above)
   }.freeze
 
   def self.get(key)
@@ -19,5 +20,10 @@ class Setting < ApplicationRecord
   # Group-booking deposit percentage, admin-configurable. Returns a BigDecimal.
   def self.group_deposit_pct
     get("group_deposit_pct").to_d
+  end
+
+  # Minimum group-booking deposit in dollars. Returns a BigDecimal.
+  def self.group_deposit_min
+    get("group_deposit_min").to_d
   end
 end

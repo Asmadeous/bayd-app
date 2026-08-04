@@ -10,6 +10,7 @@ import {
   useSaveGiftCard,
   useDeleteGiftCard,
   useDeliverGiftCard,
+  useTopupGiftCard,
 } from "@/lib/hooks/use-admin"
 import type { GiftCard } from "@/lib/hooks/use-gift-cards"
 
@@ -93,6 +94,16 @@ function AdminCard({ card, onToggle, onDelete, onSend, sending }: {
   sending: boolean
 }) {
   const to = card.recipient_email || card.purchaser?.email
+  const topup = useTopupGiftCard()
+  const [amount, setAmount] = useState("")
+  const [method, setMethod] = useState("pos")
+
+  function markPaid() {
+    const value = Number(amount)
+    if (!value || value <= 0) return
+    topup.mutate({ id: card.id, amount: value, method }, { onSuccess: () => setAmount("") })
+  }
+
   return (
     <div className="space-y-2">
       <GiftCardVisual code={card.code} balance={card.current_balance} expiresAt={card.expires_at} recipientName={card.recipient_name} active={card.active} />
@@ -105,6 +116,24 @@ function AdminCard({ card, onToggle, onDelete, onSend, sending }: {
           <Button size="xs" variant="outline" onClick={onToggle}>{card.active ? "Disable" : "Enable"}</Button>
           <Button size="xs" variant="outline" onClick={onDelete}><Trash2 className="size-3.5 text-[#d4754a]" /></Button>
         </div>
+      </div>
+
+      {/* Staff top-up — payment taken on POS/cash, credited on "Mark paid" */}
+      <div className="flex items-center gap-1.5 px-1">
+        <input
+          type="number" min="0" step="1" inputMode="decimal" placeholder="Top-up $"
+          value={amount} onChange={(e) => setAmount(e.target.value)}
+          className="h-8 w-24 rounded-lg border border-black/15 px-2 text-sm focus:border-[#c96c83] focus:outline-none"
+        />
+        <select value={method} onChange={(e) => setMethod(e.target.value)}
+          className="h-8 rounded-lg border border-black/15 px-2 text-xs focus:border-[#c96c83] focus:outline-none">
+          <option value="pos">POS</option>
+          <option value="card">Card</option>
+          <option value="cash">Cash</option>
+        </select>
+        <Button size="xs" variant="outline" disabled={topup.isPending || !amount} onClick={markPaid}>
+          {topup.isPending ? "…" : "Mark paid"}
+        </Button>
       </div>
     </div>
   )

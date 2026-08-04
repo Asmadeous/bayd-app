@@ -31,7 +31,9 @@ module Api
         def payment_link
           booking = Booking.find(params[:id])
           amount  = params[:amount].present? ? params[:amount].to_d : booking.outstanding_balance
-          result  = BookingPaymentService.new(booking).collect(amount: amount, tip: params[:tip].to_d)
+          result  = BookingPaymentService.new(booking).collect(
+            amount: amount, tip: params[:tip].to_d, gift_card_code: params[:gift_card_code]
+          )
 
           if result.success?
             render json: { mode: result.mode.to_s, url: result.url }

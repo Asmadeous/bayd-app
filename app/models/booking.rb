@@ -94,9 +94,13 @@ class Booking < ApplicationRecord
 
   # Group bookings require a deposit (admin-configurable %). Returns the $ amount
   # to collect upfront, or 0 for non-group bookings.
+  # Group bookings take a deposit up front: the higher of the admin percentage
+  # or the minimum (default $50), never more than the total.
   def required_deposit
     return 0.to_d unless client_type_group?
-    (total.to_d * Setting.group_deposit_pct / 100).round(2)
+
+    pct_based = (total.to_d * Setting.group_deposit_pct / 100).round(2)
+    [ [ pct_based, Setting.group_deposit_min ].max, total.to_d ].min
   end
 
   def amount_paid

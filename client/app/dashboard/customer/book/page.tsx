@@ -113,6 +113,7 @@ function CustomerBookPageContent() {
   const [autoCharge, setAutoCharge] = useState(false)
   const [payUpfront, setPayUpfront] = useState(false)
   const [tip, setTip] = useState<string>("")
+  const [giftCardCode, setGiftCardCode] = useState("")
   const [bookedForName, setBookedForName] = useState("")
   const [bookedForPhone, setBookedForPhone] = useState("")
   const [result, setResult] = useState<{ type: "success" | "error"; message: string } | null>(null)
@@ -190,6 +191,7 @@ function CustomerBookPageContent() {
       auto_charge?: boolean
       payment_timing?: "pay_upfront" | "pay_after"
       tip?: number
+      gift_card_code?: string
       booked_for_name?: string
       booked_for_phone?: string
     }) =>
@@ -248,6 +250,7 @@ function CustomerBookPageContent() {
         auto_charge: isRecurring && autoCharge && hasCard,
         payment_timing: payUpfront ? "pay_upfront" : "pay_after",
         tip: tip ? Number(tip) : undefined,
+        gift_card_code: giftCardCode.trim() || undefined,
         booked_for_name: bookedForName.trim() || undefined,
         booked_for_phone: bookedForPhone.trim() || undefined,
       })
@@ -659,6 +662,18 @@ function CustomerBookPageContent() {
               value={tip} onChange={(e) => setTip(e.target.value)}
               className="mt-1 w-full h-10 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
             />
+          </div>
+          <div>
+            <label className="text-xs text-[#5f6268]">Gift card code (optional)</label>
+            <input
+              placeholder="BAYD-…"
+              value={giftCardCode}
+              onChange={(e) => setGiftCardCode(e.target.value)}
+              className="mt-1 w-full h-10 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
+            />
+            <p className="mt-1 text-[11px] text-[#8a8d93] leading-4">
+              Its balance is applied first; anything remaining is charged as above.
+            </p>
           </div>
           <p className="text-[11px] text-[#8a8d93] leading-4">
             {hasCard

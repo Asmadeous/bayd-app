@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, MouseEvent } from "react";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Minus,
   PackageCheck,
@@ -21,6 +21,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { buttonVariants } from "@/components/ui/button";
 import type { ShopProduct } from "@/features/shop/types";
 import api from "@/lib/api";
+import { openHelcimPay } from "@/lib/helcim-pay";
 import { BookButton } from "@/components/ui/book-button";
 import type { CartItem, CartProduct } from "@/lib/stores/cart-store";
 import { useCartStore } from "@/lib/stores/cart-store";
@@ -111,6 +112,23 @@ export function ShopPage() {
     [apiData],
   );
 
+  const [tab, setTab] = useState<"products" | "gift-cards">("products");
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  const { data: categories = [] } = useQuery<{ id: number; name: string }[]>({
+    queryKey: ["product-categories"],
+    queryFn: () =>
+      api.get<{ id: number; name: string }[]>("/product_categories").then((r) => r.data),
+  });
+
+  const visibleProducts = useMemo(
+    () =>
+      activeCategory
+        ? products.filter((p) => p.category === activeCategory)
+        : products,
+    [products, activeCategory],
+  );
+
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   function openProduct(
@@ -150,7 +168,61 @@ export function ShopPage() {
       <SiteHeader cartCount={cartCount} onOpenCart={openCart} />
       <main>
         <ShopHero products={products} />
-        <ProductShowcase onSelectProduct={openProduct} products={products} />
+
+        {/* Tabs: Products / Gift Cards */}
+        <div className="mx-auto w-full max-w-[1760px] px-4 pt-4 sm:px-6 lg:px-8 2xl:px-10">
+          <div className="flex gap-2 border-b border-black/10">
+            {([["products", "Products"], ["gift-cards", "Gift Cards"]] as const).map(
+              ([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setTab(key)}
+                  className="relative px-5 py-3 text-sm font-extrabold transition-colors"
+                  style={{ color: tab === key ? "#101217" : "#8a8d93" }}
+                >
+                  {label}
+                  {tab === key ? (
+                    <span className="absolute inset-x-0 -bottom-px h-0.5" style={{ background: "#c96c83" }} />
+                  ) : null}
+                </button>
+              ),
+            )}
+          </div>
+        </div>
+
+        {tab === "products" ? (
+          <>
+            {/* Category filter */}
+            <div className="mx-auto w-full max-w-[1760px] px-4 pt-6 sm:px-6 lg:px-8 2xl:px-10">
+              <div className="flex flex-wrap gap-2">
+                {[{ id: 0, name: "All" }, ...categories].map((c) => {
+                  const value = c.name === "All" ? null : c.name;
+                  const active = activeCategory === value;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setActiveCategory(value)}
+                      className="rounded-full px-4 py-1.5 text-xs font-bold transition-colors"
+                      style={
+                        active
+                          ? { background: "#c96c83", color: "#fff" }
+                          : { background: "#f4f1eb", color: "#5f6268" }
+                      }
+                    >
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <ProductShowcase onSelectProduct={openProduct} products={visibleProducts} />
+          </>
+        ) : (
+          <GiftCardTab />
+        )}
+
         <ShopBookingBand />
       </main>
       <SiteFooter />
@@ -717,5 +789,134 @@ function CartDialog({
         </div>
       </aside>
     </div>
+  );
+}
+
+const GIFT_CARD_AMOUNTS = [25, 50, 75, 100];
+const giftInputCls =
+  "h-11 rounded-lg border border-black/15 px-3 text-sm text-[#101217] focus:border-[#c96c83] focus:outline-none";
+
+function GiftCardTab() {
+  const [amount, setAmount] = useState(50);
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [senderName, setSenderName] = useState("");
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(
+    null,
+  );
+
+  const purchase = useMutation({
+    mutationFn: () =>
+      api
+        .post<{ gateway: string; gift_card_id: number; checkout_token?: string }>(
+          "/gift_cards",
+          {
+            amount,
+            recipient_name: recipientName.trim() || undefined,
+            recipient_email: recipientEmail.trim() || undefined,
+            sender_name: senderName.trim() || undefined,
+            message: message.trim() || undefined,
+          },
+        )
+        .then((r) => r.data),
+    onSuccess: async (data) => {
+      setStatus(null);
+      if (!data.checkout_token) {
+        setStatus({ type: "error", text: "Could not start the payment. Please try again." });
+        return;
+      }
+      const result = await openHelcimPay(data.checkout_token);
+      if (result === "success") {
+        setStatus({
+          type: "success",
+          text: "Gift card purchased! It's emailed to the recipient once payment clears.",
+        });
+      } else if (result === "error") {
+        setStatus({ type: "error", text: "Payment could not be completed. Please try again." });
+      }
+    },
+    onError: () =>
+      setStatus({ type: "error", text: "Could not start the purchase. Please sign in and try again." }),
+  });
+
+  return (
+    <section className="mx-auto w-full max-w-[1760px] px-4 py-10 sm:px-6 lg:px-8 2xl:px-10">
+      <h2 className="text-3xl font-extrabold tracking-tight text-[#101217] sm:text-4xl">
+        Gift Cards
+      </h2>
+      <p className="mt-3 max-w-xl text-sm leading-6 text-[#5f6268]">
+        A Beauty at Your Door gift card is an amount redeemable toward any service. The balance is
+        deducted as it&apos;s used, so it never has to be spent all at once.
+      </p>
+
+      <div className="mt-7 flex flex-wrap gap-3">
+        {GIFT_CARD_AMOUNTS.map((a) => (
+          <button
+            key={a}
+            type="button"
+            onClick={() => setAmount(a)}
+            className="h-14 w-24 rounded-xl text-lg font-extrabold transition-colors"
+            style={
+              amount === a
+                ? { background: "#c96c83", color: "#fff" }
+                : { background: "#f4f1eb", color: "#101217" }
+            }
+          >
+            ${a}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6 grid max-w-xl gap-3 sm:grid-cols-2">
+        <input
+          placeholder="Recipient name (optional)"
+          value={recipientName}
+          onChange={(e) => setRecipientName(e.target.value)}
+          className={giftInputCls}
+        />
+        <input
+          type="email"
+          placeholder="Recipient email"
+          value={recipientEmail}
+          onChange={(e) => setRecipientEmail(e.target.value)}
+          className={giftInputCls}
+        />
+        <input
+          placeholder="Your name (optional)"
+          value={senderName}
+          onChange={(e) => setSenderName(e.target.value)}
+          className={giftInputCls}
+        />
+      </div>
+      <textarea
+        placeholder="Message (optional)"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        rows={3}
+        className={cn(giftInputCls, "mt-3 block h-auto w-full max-w-xl py-2")}
+      />
+
+      {status ? (
+        <p
+          className={cn(
+            "mt-4 text-sm font-semibold",
+            status.type === "success" ? "text-green-700" : "text-red-700",
+          )}
+        >
+          {status.text}
+        </p>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => purchase.mutate()}
+        disabled={purchase.isPending}
+        className="mt-6 h-12 rounded-xl px-8 text-base font-bold text-white disabled:opacity-60"
+        style={{ background: "#c96c83" }}
+      >
+        {purchase.isPending ? "Processing…" : `Buy $${amount} gift card`}
+      </button>
+    </section>
   );
 }
