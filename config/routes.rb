@@ -117,6 +117,8 @@ Rails.application.routes.draw do
         # Gift-card top-up at the customer (POS/cash → mark paid)
         get    "gift_cards/:code",       to: "employees#show_gift_card"
         post   "gift_cards/:code/topup", to: "employees#topup_gift_card"
+        # Overtime charge when a service runs over its allocated time
+        post   "bookings/:id/overtime",  to: "employees#booking_overtime"
       end
 
       # Work-scope video calls (customer ↔ staff)
@@ -166,13 +168,20 @@ Rails.application.routes.draw do
 
         # Bookings & scheduling
         resources :bookings,            only: %i[index show update destroy] do
-          member { post :payment_link }
+          member do
+            post  :payment_link
+            get   :candidates      # eligible staff ranked by proximity
+            patch :assign          # (re)assign to a technician
+          end
         end
         resources :booking_requests,    only: %i[index show]
         resources :assignment_attempts, only: %i[index show]
 
         # Out-of-area callback queue
         resources :callback_requests, only: %i[index update]
+
+        # Live staff locations + travel/fuel metrics (server-rendered map)
+        get "staff_locations", to: "staff_locations#index"
 
         # Tip payout tracking (owed per technician)
         resources :tips, only: :index do

@@ -5,6 +5,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { BookingCard } from "@/components/dashboard/booking-card"
 import { Button } from "@/components/ui/button"
 import { useAdminBookings, useUpdateBooking } from "@/lib/hooks/use-admin"
+import { ReassignControl } from "@/components/dashboard/reassign-control"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
 const STATUSES: Array<Booking["status"] | "all"> = [
@@ -55,6 +56,9 @@ export default function AdminBookingsPage() {
               booking={b}
               actions={
                 <div className="flex gap-1.5 flex-wrap">
+                  {(b.status === "pending" || b.status === "confirmed" || b.status === "in_progress") && (
+                    <ReassignControl bookingId={b.id} />
+                  )}
                   {b.status === "confirmed" && (
                     <Button
                       size="xs"

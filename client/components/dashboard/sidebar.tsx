@@ -63,6 +63,7 @@ const adminNavGroups: NavGroup[] = [
     group: "Workforce",
     items: [
       { label: "Fuel & Shifts", href: "/dashboard/admin/shifts", icon: <FuelIcon /> },
+      { label: "Staff Map", href: "/dashboard/admin/staff-locations", icon: <MapPinIcon /> },
     ],
   },
   {

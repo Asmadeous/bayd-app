@@ -20,6 +20,9 @@ export interface Booking {
   recurrence_active: boolean
   recurrence_interval_weeks: number | null
   auto_charge: boolean
+  overtime_amount: string
+  service_latitude: string | null
+  service_longitude: string | null
   created_at: string
   service: { id: number; name: string; duration_minutes: number; price: string; image_url: string | null }
   employee_profile: {
