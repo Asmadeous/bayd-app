@@ -8,9 +8,9 @@ class PaymentWebhookProcessor
 
     txn = HelcimService.get_transaction(txn_id)
     if txn
-      order = order_for(txn["invoiceNumber"])
-      if order && approved?(txn["status"])
-        order.mark_paid!(processor: "helcim", reference: txn_id, amount: txn["amount"])
+      payable = payable_for(txn["invoiceNumber"])
+      if payable && approved?(txn["status"])
+        payable.mark_paid!(processor: "helcim", reference: txn_id, amount: txn["amount"])
       end
     end
     event.mark_processed!
@@ -43,11 +43,14 @@ class PaymentWebhookProcessor
     Order.find_by(id: id)
   end
 
-  # Square references may point at an Order ("ORD-<id>") or a Booking ("BKG-<id>").
+  # A payment reference points at an Order ("ORD-<id>"), Booking ("BKG-<id>"),
+  # or GiftCard ("GC-<id>"). All three respond to mark_paid!.
   def self.payable_for(reference)
     ref = reference.to_s
     if ref.start_with?("BKG-")
       Booking.find_by(id: ref.delete_prefix("BKG-"))
+    elsif ref.start_with?("GC-")
+      GiftCard.find_by(id: ref.delete_prefix("GC-"))
     else
       order_for(ref)
     end

@@ -79,7 +79,6 @@ export const pricingCategories: PriceCategory[] = [
       { name: "Brazilian", price: "$75" },
       { name: "Back", price: "$35" },
       { name: "Full body", price: "$175" },
-      { name: "Full face", price: "$35" },
     ],
   },
   {

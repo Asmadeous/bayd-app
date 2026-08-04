@@ -10,8 +10,9 @@ class GiftCard < ApplicationRecord
 
   scope :active, -> { where(active: true) }
 
-  # On purchase: invoice the buyer (if any) and deliver the card to the recipient.
-  after_create_commit :on_purchase, if: -> { purchaser_id.present? || recipient_email.present? }
+  # Deliver immediately only for cards that are already active (admin-issued).
+  # Customer purchases are created inactive and delivered on payment (mark_paid!).
+  after_create_commit :on_purchase, if: -> { active? && (purchaser_id.present? || recipient_email.present?) }
 
   def ensure_invoice
     Invoice.generate_for(self) unless invoice
@@ -21,6 +22,15 @@ class GiftCard < ApplicationRecord
   # and by the admin "send to user" action.
   def deliver!
     GiftCardMailer.delivery(self).deliver_later
+  end
+
+  # Payment confirmed (webhook) → activate a pending purchase, invoice the buyer,
+  # and deliver the card. Idempotent. Signature matches Order/Booking#mark_paid!.
+  def mark_paid!(processor: nil, reference: nil, amount: nil)
+    return if active?
+    update!(active: true)
+    Invoice.generate_for(self) if purchaser_id.present?
+    deliver!
   end
 
   def redeemable?

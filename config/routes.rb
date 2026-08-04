@@ -63,7 +63,7 @@ Rails.application.routes.draw do
       end
 
       # Gift cards
-      resources :gift_cards, only: %i[index show], param: :code do
+      resources :gift_cards, only: %i[index show create], param: :code do
         member { post :redeem }
       end
 

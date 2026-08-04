@@ -1,7 +1,10 @@
-# Error tracking. Only activates when SENTRY_DSN is set, so dev/test stay quiet.
-if ENV["SENTRY_DSN"].present?
+# Error tracking. Only activates for a real DSN URL — a blank, commented, or
+# otherwise malformed value stays disabled (dev/test quiet) instead of crashing
+# Sentry's URI parser at boot.
+sentry_dsn = ENV["SENTRY_DSN"].to_s.strip
+if sentry_dsn.match?(%r{\Ahttps?://})
   Sentry.init do |config|
-    config.dsn = ENV["SENTRY_DSN"]
+    config.dsn = sentry_dsn
     config.breadcrumbs_logger = %i[active_support_logger http_logger]
     config.environment = ENV.fetch("SENTRY_ENVIRONMENT", Rails.env)
     config.release = ENV["SENTRY_RELEASE"] if ENV["SENTRY_RELEASE"].present?
