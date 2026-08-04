@@ -64,7 +64,10 @@ Rails.application.routes.draw do
 
       # Gift cards
       resources :gift_cards, only: %i[index show create], param: :code do
-        member { post :redeem }
+        member do
+          post :redeem
+          post :topup
+        end
       end
 
       # Gallery (public read)
@@ -111,6 +114,9 @@ Rails.application.routes.draw do
         post   "clock_out",     to: "employees#clock_out"
         get    "current_shift", to: "employees#current_shift"
         get    "shifts",        to: "employees#shifts"
+        # Gift-card top-up at the customer (POS/cash → mark paid)
+        get    "gift_cards/:code",       to: "employees#show_gift_card"
+        post   "gift_cards/:code/topup", to: "employees#topup_gift_card"
       end
 
       # Work-scope video calls (customer ↔ staff)
@@ -207,7 +213,10 @@ Rails.application.routes.draw do
           end
         end
         resources :gift_cards, only: %i[index show create update destroy] do
-          member { post :deliver }
+          member do
+            post :deliver
+            post :topup
+          end
         end
         resources :loyalty,   only: %i[index show]
 

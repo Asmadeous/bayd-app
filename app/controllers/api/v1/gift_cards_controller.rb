@@ -38,6 +38,23 @@ module Api
         render json: GiftCardSerializer.render_as_hash(find_card)
       end
 
+      # Online top-up by card — returns a Helcim checkout token; the balance is
+      # credited by the payment webhook (GCT-<id>).
+      def topup
+        card   = find_card
+        amount = params[:amount].to_i
+        return render json: { error: "Enter a valid amount." }, status: :unprocessable_entity unless amount.positive?
+
+        session = HelcimService.initialize_session(
+          payment_type: "purchase", amount: amount.to_f, invoice_number: "GCT-#{card.id}"
+        )
+        if session[:success] && session[:checkout_token].present?
+          render json: { gateway: "helcim", gift_card_id: card.id, checkout_token: session[:checkout_token] }
+        else
+          render json: { error: session[:error] || "Could not start payment." }, status: :unprocessable_entity
+        end
+      end
+
       def redeem
         card    = find_card
         amount  = BigDecimal(params[:amount].to_s)
@@ -54,7 +71,9 @@ module Api
       private
 
       def find_card
-        GiftCard.active.find_by!(code: params[:id])
+        # Route uses `param: :code`, so the value arrives as params[:code];
+        # fall back to :id for safety.
+        GiftCard.active.find_by!(code: params[:code] || params[:id])
       end
     end
   end

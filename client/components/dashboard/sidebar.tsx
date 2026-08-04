@@ -25,6 +25,7 @@ const customerNav: NavItem[] = [
 const employeeNav: NavItem[] = [
   { label: "My Schedule", href: "/dashboard/employee", icon: <CalendarIcon /> },
   { label: "Shifts", href: "/dashboard/employee/shifts", icon: <ClockIcon /> },
+  { label: "Gift Cards", href: "/dashboard/employee/gift-cards", icon: <GiftIcon /> },
   { label: "Profile", href: "/dashboard/employee/profile", icon: <UserIcon /> },
   { label: "Reviews", href: "/dashboard/employee/reviews", icon: <StarIcon /> },
 ]

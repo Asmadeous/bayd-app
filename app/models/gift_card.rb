@@ -37,6 +37,18 @@ class GiftCard < ApplicationRecord
     active? && (expires_at.nil? || expires_at.future?) && current_balance > 0
   end
 
+  # Add funds to the card. Used by staff (POS/cash, marked paid) and by the
+  # online top-up webhook. Atomic; activates the card if it was inactive.
+  def topup!(amount, method: nil)
+    amount = amount.to_d
+    raise "Top-up amount must be positive" unless amount.positive?
+
+    with_lock do
+      gift_card_transactions.create!(amount: amount, kind: "topup", method: method)
+      update!(active: true, current_balance: current_balance + amount)
+    end
+  end
+
   def redeem!(amount, booking: nil)
     # with_lock takes a row lock (SELECT … FOR UPDATE) and reloads, so the
     # balance check and decrement are atomic — concurrent redeems can't overspend.

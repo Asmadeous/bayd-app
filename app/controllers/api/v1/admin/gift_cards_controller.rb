@@ -52,6 +52,17 @@ module Api
           card.deliver!
           render json: GiftCardSerializer.render_as_hash(card)
         end
+
+        # Staff top-up: payment was taken in person (POS terminal / cash), so we
+        # credit the balance immediately — this IS the "mark as paid" step.
+        def topup
+          card   = GiftCard.find(params[:id])
+          method = params[:method].presence || "pos"
+          card.topup!(params[:amount], method: method)
+          render json: GiftCardSerializer.render_as_hash(card.reload)
+        rescue RuntimeError => e
+          render json: { error: e.message }, status: :unprocessable_entity
+        end
       end
     end
   end

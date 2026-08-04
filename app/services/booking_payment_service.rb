@@ -17,16 +17,47 @@ class BookingPaymentService
 
   # amount   — service $ to collect now (e.g. full total, deposit, or balance)
   # tip      — optional gratuity $ for the assigned technician
-  # note     — Square note / invoice context
-  def collect(amount:, tip: 0, note: nil)
+  # note           — Square note / invoice context
+  # gift_card_code — optional; its balance is applied to the service amount first,
+  #                  then only the remainder (plus tip) is charged.
+  def collect(amount:, tip: 0, note: nil, gift_card_code: nil)
     amount = amount.to_d
     tip    = tip.to_d
-    return Result.new(success: true, mode: :nothing_due) if amount + tip <= 0
+
+    gift_applied = apply_gift_card(gift_card_code, amount)
+    amount -= gift_applied
+
+    if amount + tip <= 0
+      return Result.new(success: true, mode: gift_applied.positive? ? :gift_card_paid : :nothing_due)
+    end
 
     @user.card_on_file? ? auto_charge(amount, tip, note) : payment_link(amount, tip)
   end
 
   private
+
+  # Redeem up to `amount` from the gift card toward this booking; records a paid
+  # gift-card payment and returns the dollar amount applied (0 if unusable).
+  def apply_gift_card(code, amount)
+    return 0.to_d if code.blank? || amount <= 0
+
+    card = GiftCard.active.find_by(code: code.to_s.strip)
+    return 0.to_d unless card&.redeemable?
+
+    redeem = [ card.current_balance.to_d, amount ].min
+    return 0.to_d if redeem <= 0
+
+    card.redeem!(redeem, booking: @booking)
+    @booking.payments.create!(
+      amount: redeem, status: "paid", method: "gift_card",
+      processor: "gift_card", processor_ref: card.code, paid_at: Time.current
+    )
+    @booking.refresh_payment_status!
+    redeem
+  rescue StandardError => e
+    Rails.logger.warn("[BookingPaymentService] gift card #{code} failed: #{e.message}")
+    0.to_d
+  end
 
   def auto_charge(amount, tip, note)
     return Result.new(success: false, error: "no_card_on_file") unless @user.card_on_file?
