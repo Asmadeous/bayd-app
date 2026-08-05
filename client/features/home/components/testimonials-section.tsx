@@ -105,7 +105,16 @@ export function TestimonialsSection() {
                 Why clients love
               </p>
               <h2 className="mt-2 max-w-4xl text-5xl font-black italic leading-[0.9] tracking-tight text-white drop-shadow-[0_3px_14px_rgba(0,0,0,0.45)] sm:text-7xl lg:text-8xl">
-                Beauty at Your Door
+                <span className="sr-only">Beauty at Your Door</span>
+                <Image
+                  alt=""
+                  aria-hidden="true"
+                  className="mt-3 h-24 w-auto object-contain drop-shadow-[0_3px_14px_rgba(0,0,0,0.45)] sm:h-32 lg:h-40"
+                  height={936}
+                  src="/images/brand/bayd-logo-white.png"
+                  unoptimized
+                  width={3264}
+                />
               </h2>
             </div>
 

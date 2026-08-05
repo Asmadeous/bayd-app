@@ -522,7 +522,14 @@ function GalleryViewer({
                 <span>
                   {current} / {total}
                 </span>
-                <span>Beauty at Your Door</span>
+                <Image
+                  alt="Beauty at Your Door"
+                  className="h-9 w-auto object-contain"
+                  height={936}
+                  src="/images/brand/bayd-logo-black.png"
+                  unoptimized
+                  width={3264}
+                />
               </div>
             </motion.div>
           </AnimatePresence>

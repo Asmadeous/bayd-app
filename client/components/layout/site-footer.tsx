@@ -1,13 +1,19 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export function SiteFooter() {
   return (
     <footer className="relative overflow-hidden border-t border-black/10 bg-[#101217] text-white">
       <div className="mx-auto grid w-full max-w-[1760px] gap-10 px-4 pb-44 pt-16 sm:px-6 md:grid-cols-[1.35fr_0.7fr_0.7fr_0.7fr] lg:px-8 lg:pb-52 lg:pt-20 2xl:px-10">
         <div className="max-w-3xl">
-          <p className="text-sm font-bold uppercase tracking-[0.24em] text-[#f0c8d3]">
-            Beauty at Your Door
-          </p>
+          <Image
+            alt="Beauty at Your Door"
+            className="h-16 w-auto object-contain sm:h-20"
+            height={936}
+            src="/images/brand/bayd-logo-white.png"
+            unoptimized
+            width={3264}
+          />
           <h2 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
             Mobile beauty care, thoughtful service, and professional polish
             wherever you are.

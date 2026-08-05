@@ -79,6 +79,7 @@ export function AuthPage({ content }: AuthPageProps) {
             priority
             sizes="(min-width: 1024px) 68vw, 100vw"
             src={content.hero.image.src}
+            unoptimized
           />
           <div className="absolute inset-0 -z-20 bg-[linear-gradient(90deg,rgba(16,18,23,0.82),rgba(16,18,23,0.36)_58%,rgba(16,18,23,0.14))]" />
           <div className="absolute inset-x-0 bottom-0 -z-20 h-2/3 bg-[linear-gradient(180deg,transparent,rgba(16,18,23,0.78))]" />
@@ -132,6 +133,15 @@ export function AuthPage({ content }: AuthPageProps) {
             </Link>
 
             <div>
+              <Image
+                alt="Beauty at Your Door"
+                className="mb-8 h-16 w-auto object-contain"
+                height={936}
+                priority
+                src="/images/brand/bayd-logo-black.png"
+                unoptimized
+                width={3264}
+              />
               <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#a36f4d]">
                 {content.eyebrow}
               </p>

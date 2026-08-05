@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 interface GiftCardVisualProps {
   code: string
   balance: string | number
@@ -23,7 +25,14 @@ export function GiftCardVisual({ code, balance, expiresAt, recipientName, active
         style={{ background: "rgba(255,255,255,0.12)" }}
       />
       <div className="flex items-start justify-between text-[11px] font-bold uppercase tracking-[0.18em] opacity-90">
-        <span>Beauty at Your Door</span>
+        <Image
+          alt="Beauty at Your Door"
+          className="h-9 w-auto object-contain"
+          height={936}
+          src="/images/brand/bayd-logo-white.png"
+          unoptimized
+          width={3264}
+        />
         <span>Gift Card</span>
       </div>
 
