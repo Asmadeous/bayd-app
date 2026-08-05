@@ -137,47 +137,27 @@ function AboutHero() {
         </div>
 
         <ScrollReveal
-          className="grid min-h-[600px] grid-cols-[1.1fr_0.9fr] grid-rows-2 gap-3 sm:gap-4 lg:min-h-[700px]"
+          className="relative min-h-[520px] overflow-hidden bg-[#d9b8a5] lg:min-h-[680px]"
           delay={80}
           variant="clip-up"
         >
-          <div className="relative row-span-2 overflow-hidden bg-[#d9b8a5]">
-            <Image
-              alt="Client enjoying a relaxing mobile massage"
-              className="object-cover"
-              fill
-              priority
-              sizes="(min-width: 1024px) 34vw, 55vw"
-              src="/images/massage.jpg"
-            />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#101217]/75 to-transparent p-6 pt-24 text-white sm:p-8">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f0c8d3]">
-                Our belief
-              </p>
-              <p className="mt-3 max-w-sm text-3xl font-extrabold leading-tight tracking-tight">
-                Professional care can still feel deeply personal.
-              </p>
-            </div>
-          </div>
-          <div className="relative overflow-hidden bg-[#101217]">
-            <Image
-              alt="Detailed manicure result"
-              className="object-cover"
-              fill
-              priority
-              sizes="(min-width: 1024px) 24vw, 45vw"
-              src="/images/nails7.jpg"
-            />
-          </div>
-          <div className="relative overflow-hidden bg-[#e8ded6]">
-            <Image
-              alt="Natural lash extension result"
-              className="object-cover"
-              fill
-              priority
-              sizes="(min-width: 1024px) 24vw, 45vw"
-              src="/images/lashes7.jpg"
-            />
+          <Image
+            alt="Beauty at Your Door team wearing branded shirts"
+            className="object-cover object-center"
+            fill
+            priority
+            sizes="(min-width: 1024px) 52vw, 100vw"
+            src="/images/new-pics-for-the-ladies/beauty-team-group-portrait-06.webp"
+            unoptimized
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#101217]/72 via-[#101217]/10 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-8">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f0c8d3]">
+              Our belief
+            </p>
+            <p className="mt-3 max-w-md text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl">
+              Professional care can still feel deeply personal.
+            </p>
           </div>
         </ScrollReveal>
       </div>
@@ -194,11 +174,12 @@ function OurStory() {
           variant="fade-right"
         >
           <Image
-            alt="Nail professional preparing a manicure"
-            className="object-cover"
+            alt="Beauty at Your Door mobile beauty professionals"
+            className="object-cover object-center"
             fill
             sizes="(min-width: 1024px) 42vw, 100vw"
-            src="/images/Medicure1.jpg"
+            src="/images/new-pics-for-the-ladies/beauty-team-group-portrait-02.webp"
+            unoptimized
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#101217]/82 via-transparent to-transparent" />
           <div className="absolute inset-x-0 bottom-0 grid grid-cols-2 gap-3 p-5 text-white sm:p-7">

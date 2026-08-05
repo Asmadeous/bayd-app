@@ -19,16 +19,16 @@ export function getHomePageContent(): HomePageContent {
           "Hand massage and cuticle oil finish",
         ],
         image: {
-          src: "/images/nails2.jpg",
+          src: "/images/new-pics-for-the-ladies/gel-manicure-service-02.webp",
           alt: "A manicure service with a nail technician using an electric file",
         },
         gallery: [
           {
-            src: "/images/nails6.jpg",
+            src: "/images/new-pics-for-the-ladies/nail-technician-at-work-01.webp",
             alt: "A manicure service with a nail technician using an electric file",
           },
           {
-            src: "/images/nails7.jpg",
+            src: "/images/new-pics-for-the-ladies/finished-manicure-result-03.webp",
             alt: "A pedicure service being performed in a spa chair",
           },
         ],
@@ -49,16 +49,16 @@ export function getHomePageContent(): HomePageContent {
           "Polish application and cuticle oil finish",
         ],
         image: {
-          src: "/images/Medicure1.jpg",
+          src: "/images/new-pics-for-the-ladies/mobile-manicure-service-01.webp",
           alt: "A manicure service with a nail technician using an electric file",
         },
         gallery: [
           {
-            src: "/images/Medicure1.jpg",
+            src: "/images/new-pics-for-the-ladies/manicure-appointment-detail-01.webp",
             alt: "A manicure service with a nail technician using an electric file",
           },
           {
-            src: "/images/lashes4.jpg",
+            src: "/images/new-pics-for-the-ladies/finished-manicure-result-01.webp",
             alt: "Close-up beauty service result",
           },
         ],
@@ -139,16 +139,16 @@ export function getHomePageContent(): HomePageContent {
           "Post-wax cleanup and skin calming finish",
         ],
         image: {
-          src: "/images/waxing.jpg",
+          src: "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-02.webp",
           alt: "A close-up beauty treatment image",
         },
         gallery: [
           {
-            src: "/images/waxing2.jpg",
+            src: "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-01.webp",
             alt: "A close-up beauty treatment image",
           },
           {
-            src: "/images/waxing3.jpg",
+            src: "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-03.webp",
             alt: "A smiling client with under-eye pads during lash care",
           },
         ],
@@ -169,16 +169,16 @@ export function getHomePageContent(): HomePageContent {
           "Curing under UV or LED lamp with gel polish finish",
         ],
         image: {
-          src: "/images/Medicure1.jpg",
+          src: "/images/new-pics-for-the-ladies/gel-manicure-service-01.webp",
           alt: "A manicure service with a nail technician using an electric file",
         },
         gallery: [
           {
-            src: "/images/Medicure1.jpg",
+            src: "/images/new-pics-for-the-ladies/gel-manicure-service-02.webp",
             alt: "A manicure service with a nail technician using an electric file",
           },
           {
-            src: "/images/pedicure2.jpg",
+            src: "/images/new-pics-for-the-ladies/finished-manicure-result-02.webp",
             alt: "A pedicure service being performed in a spa chair",
           },
         ],
@@ -199,16 +199,16 @@ export function getHomePageContent(): HomePageContent {
           "Removal and 2-3 week refill services",
         ],
         image: {
-          src: "/images/lashes7.jpg",
+          src: "/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp",
           alt: "A smiling client with under-eye pads during lash care",
         },
         gallery: [
           {
-            src: "/images/lashes4.jpg",
+            src: "/images/new-pics-for-the-ladies/mobile-lash-appointment-02.webp",
             alt: "A smiling client with under-eye pads during lash care",
           },
           {
-            src: "/images/lashes7.jpg",
+            src: "/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp",
             alt: "A before and after lash extension close-up",
           },
         ],

@@ -1,9 +1,4 @@
-export type GalleryCategory =
-  | "Lashes"
-  | "Nails"
-  | "Massage"
-  | "Pedicure"
-  | "Waxing";
+export type GalleryCategory = "Team" | "Lashes" | "Nails" | "Pedicure";
 
 export type GalleryItem = {
   id: string;

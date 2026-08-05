@@ -29,28 +29,31 @@ puts "  #{categories.size} service categories"
 
 # ── Services ──────────────────────────────────────────────────────────────────
 services_data = [
-  { category: "nails",   name: "Classic Manicure",         duration: 45,  price: 45.00 },
-  { category: "nails",   name: "Gel Manicure",             duration: 60,  price: 65.00 },
-  { category: "nails",   name: "Classic Pedicure",         duration: 60,  price: 55.00 },
-  { category: "nails",   name: "Gel Pedicure",             duration: 75,  price: 75.00 },
-  { category: "lashes",  name: "Classic Lash Extensions",  duration: 90,  price: 120.00 },
-  { category: "lashes",  name: "Volume Lash Extensions",   duration: 120, price: 160.00 },
-  { category: "lashes",  name: "Lash Fill",                duration: 60,  price: 75.00 },
-  { category: "massage", name: "Swedish Massage (60 min)", duration: 60,  price: 90.00 },
-  { category: "massage", name: "Deep Tissue Massage",      duration: 75,  price: 110.00 },
-  { category: "waxing",  name: "Eyebrow Wax",              duration: 20,  price: 20.00 },
-  { category: "waxing",  name: "Lip Wax",                  duration: 15,  price: 15.00 },
-  { category: "waxing",  name: "Full Leg Wax",             duration: 45,  price: 60.00 },
-  { category: "spa",     name: "Mini Facial",              duration: 45,  price: 70.00 },
-  { category: "spa",     name: "Signature Spa Package",    duration: 120, price: 180.00 }
+  { category: "nails",   name: "Classic Manicure",         duration: 45,  price: 45.00,  image: "/images/new-pics-for-the-ladies/mobile-manicure-service-01.webp" },
+  { category: "nails",   name: "Gel Manicure",             duration: 60,  price: 65.00,  image: "/images/new-pics-for-the-ladies/gel-manicure-service-01.webp" },
+  { category: "nails",   name: "Classic Pedicure",         duration: 60,  price: 55.00,  image: "/images/pedicure3.jpg" },
+  { category: "nails",   name: "Gel Pedicure",             duration: 75,  price: 75.00,  image: "/images/pedicure2.jpg" },
+  { category: "lashes",  name: "Classic Lash Extensions",  duration: 90,  price: 120.00, image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp" },
+  { category: "lashes",  name: "Volume Lash Extensions",   duration: 120, price: 160.00, image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-02.webp" },
+  { category: "lashes",  name: "Lash Fill",                duration: 60,  price: 75.00,  image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp" },
+  { category: "massage", name: "Swedish Massage (60 min)", duration: 60,  price: 90.00,  image: "/images/massage.jpg" },
+  { category: "massage", name: "Deep Tissue Massage",      duration: 75,  price: 110.00, image: "/images/massage1.jpg" },
+  { category: "waxing",  name: "Eyebrow Wax",              duration: 20,  price: 20.00,  image: "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-01.webp" },
+  { category: "waxing",  name: "Lip Wax",                  duration: 15,  price: 15.00,  image: "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-02.webp" },
+  { category: "waxing",  name: "Full Leg Wax",             duration: 45,  price: 60.00,  image: "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-03.webp" },
+  { category: "spa",     name: "Mini Facial",              duration: 45,  price: 70.00,  image: "/images/lashes2.jpg" },
+  { category: "spa",     name: "Signature Spa Package",    duration: 120, price: 180.00, image: "/images/lashes1.jpg" }
 ]
 
 services = services_data.map do |s|
-  Service.find_or_create_by!(name: s[:name]) do |svc|
-    svc.service_category = categories[s[:category]]
-    svc.duration_minutes = s[:duration]
-    svc.price            = s[:price]
-  end
+  svc = Service.find_or_initialize_by(name: s[:name])
+  svc.update!(
+    service_category: categories[s[:category]],
+    duration_minutes: s[:duration],
+    price: s[:price],
+    image_url: s[:image]
+  )
+  svc
 end
 puts "  #{services.size} services"
 
@@ -291,18 +294,38 @@ end
 
 # ── Gallery ───────────────────────────────────────────────────────────────────
 [
-  { title: "Volume Lash Set",     category: "Lashes",  image: "/images/lashes1.jpg", size: "tall" },
-  { title: "French Gel Manicure", category: "Nails",   image: "/images/nails1.jpg",  size: "standard" },
-  { title: "Relaxing Massage",    category: "Massage", image: "/images/massage.jpg", size: "wide" },
-  { title: "Natural Lash Look",   category: "Lashes",  image: "/images/lashes7.jpg", size: "standard" },
-  { title: "Luxury Pedicure",     category: "Pedicure", image: "/images/nails1.jpg", size: "standard" }
+  { title: "Ready to Come to You",       category: "Team",     image: "/images/new-pics-for-the-ladies/beauty-team-group-portrait-06.webp", size: "wide" },
+  { title: "Mobile Lash Appointment",    category: "Lashes",   image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp", size: "wide" },
+  { title: "Polish Application",         category: "Nails",    image: "/images/new-pics-for-the-ladies/nail-polish-application-close-up.webp", size: "tall" },
+  { title: "Mobile Nail Care",           category: "Pedicure", image: "/images/new-pics-for-the-ladies/mobile-nail-care-service-02.webp", size: "standard" },
+  { title: "Lead Experience",            category: "Team",     image: "/images/new-pics-for-the-ladies/susi-team-portrait-01.webp", size: "standard" },
+  { title: "Gel Manicure Service",       category: "Nails",    image: "/images/new-pics-for-the-ladies/gel-manicure-service-01.webp", size: "wide" },
+  { title: "Specialized Foot Care",      category: "Team",     image: "/images/new-pics-for-the-ladies/vanessa-team-portrait-01.webp", size: "standard" },
+  { title: "Finished Manicure Result",   category: "Nails",    image: "/images/new-pics-for-the-ladies/finished-manicure-result-03.webp", size: "standard" },
+  { title: "Technician at Work",         category: "Nails",    image: "/images/new-pics-for-the-ladies/nail-technician-at-work-02.webp", size: "wide" },
+  { title: "Service Preparation",        category: "Team",     image: "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-02.webp", size: "tall" },
+  { title: "Mobile Manicure Setup",      category: "Nails",    image: "/images/new-pics-for-the-ladies/mobile-manicure-service-03.webp", size: "standard" },
+  { title: "Detail and Creativity",      category: "Team",     image: "/images/new-pics-for-the-ladies/dana-team-portrait-01.webp", size: "standard" },
+  { title: "Lash Service Detail",        category: "Lashes",   image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-02.webp", size: "standard" },
+  { title: "Soft Gel Finish",            category: "Nails",    image: "/images/new-pics-for-the-ladies/finished-manicure-result-01.webp", size: "standard" },
+  { title: "Prepared Professionals",     category: "Team",     image: "/images/new-pics-for-the-ladies/beauty-team-group-portrait-04.webp", size: "wide" },
+  { title: "Client Care Moment",         category: "Nails",    image: "/images/new-pics-for-the-ladies/manicure-client-moment-01.webp", size: "tall" },
+  { title: "At-Home Appointment",        category: "Nails",    image: "/images/new-pics-for-the-ladies/mobile-manicure-appointment-01.webp", size: "tall" },
+  { title: "Detailed Nail Care",         category: "Pedicure", image: "/images/new-pics-for-the-ladies/nail-care-service-close-up-01.webp", size: "standard" },
+  { title: "Mobile Beauty Team",         category: "Team",     image: "/images/new-pics-for-the-ladies/beauty-team-group-portrait-01.webp", size: "wide" }
 ].each_with_index do |g, i|
-  GalleryItem.find_or_create_by!(title: g[:title]) do |gi|
-    gi.category = g[:category]; gi.image_url = g[:image]; gi.image_alt = g[:title]
-    gi.size = g[:size]; gi.position = i; gi.featured = i < 2; gi.active = true
-  end
+  gi = GalleryItem.find_or_initialize_by(title: g[:title])
+  gi.update!(
+    category: g[:category],
+    image_url: g[:image],
+    image_alt: g[:title],
+    size: g[:size],
+    position: i,
+    featured: i < 4,
+    active: true
+  )
 end
-puts "  5 gallery items"
+puts "  22 gallery items"
 
 # ── Job postings ──────────────────────────────────────────────────────────────
 [

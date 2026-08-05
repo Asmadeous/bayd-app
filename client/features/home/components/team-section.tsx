@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { ScrollReveal } from "@/components/scroll-reveal";
 
 const teamMembers = [
@@ -10,6 +12,9 @@ const teamMembers = [
     location: "Beauty at Your Door",
     bio: "Susi is CEO of Beauty At Your Door, a nail technician and massage spa business owner with more than 24 years of beauty industry experience. She is passionate about creating a relaxing, comfortable atmosphere where clients can unwind and leave their cares outside.",
     accent: "#f0c8d3",
+    backgroundImage:
+      "/images/new-pics-for-the-ladies/susi-team-portrait-01.webp",
+    profileImage: "/images/new-pics-for-the-ladies/susi-team-headshot.webp",
   },
   {
     name: "Claire",
@@ -18,6 +23,8 @@ const teamMembers = [
     location: "Canada & Europe trained",
     bio: "Claire has worked in eyelash extensions and coaching since 2009, with extensive international experience across Europe and Canada. She is skilled in all types of eyelash extensions and creates styles tailored to each client.",
     accent: "#e3d97b",
+    backgroundImage: null,
+    profileImage: null,
   },
   {
     name: "Vanessa",
@@ -26,6 +33,9 @@ const teamMembers = [
     location: "Serving Brampton only",
     bio: "Vanessa specializes in medical pedicures and advanced foot care. She helps clients feel confident and comfortable from the toes up, supporting common foot concerns like calluses, ingrown nails, thickened nails, dry skin, and cracked heels.",
     accent: "#c9b7d4",
+    backgroundImage:
+      "/images/new-pics-for-the-ladies/vanessa-team-portrait-01.webp",
+    profileImage: "/images/new-pics-for-the-ladies/vanessa-team-headshot.webp",
   },
   {
     name: "Dana",
@@ -34,6 +44,9 @@ const teamMembers = [
     location: "20+ years of experience",
     bio: "Dana is a skilled nail technician with over 20 years of experience from Europe. Known for precision, creativity, and passion, she creates personalized nail designs that reflect each client’s unique style.",
     accent: "#d9bba9",
+    backgroundImage:
+      "/images/new-pics-for-the-ladies/dana-team-portrait-01.webp",
+    profileImage: "/images/new-pics-for-the-ladies/dana-team-headshot.webp",
   },
 ];
 
@@ -74,12 +87,41 @@ export function TeamSection() {
                   background: `linear-gradient(135deg, ${member.accent}, #f8f3ef 68%)`,
                 }}
               >
-                <div className="absolute -right-10 -top-14 size-48 bg-white/35 blur-2xl" />
-                <div className="absolute bottom-0 right-0 text-[9rem] font-extrabold leading-none text-[#101217]/10 transition-transform group-hover:scale-105">
+                {member.backgroundImage && (
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                    fill
+                    quality={96}
+                    sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
+                    src={member.backgroundImage}
+                  />
+                )}
+                <div
+                  className="absolute inset-0 opacity-20"
+                  style={{
+                    background: `linear-gradient(135deg, ${member.accent}, #f8f3ef 88%)`,
+                  }}
+                />
+                <div className="absolute -right-10 -top-14 size-48 bg-white/15 blur-2xl" />
+                <div className="absolute bottom-0 right-0 text-[9rem] font-extrabold leading-none text-[#101217]/[0.05] transition-transform group-hover:scale-105">
                   {member.initials}
                 </div>
-                <div className="relative flex size-20 items-center justify-center border border-[#101217]/15 bg-white/65 text-2xl font-extrabold text-[#101217] backdrop-blur-sm">
-                  {member.initials}
+                <div className="relative flex size-28 items-center justify-center overflow-hidden border-2 border-white/90 bg-white/75 text-2xl font-extrabold text-[#101217] shadow-xl">
+                  {member.profileImage ? (
+                    <Image
+                      alt={`${member.name}, ${member.role}`}
+                      className="object-cover object-top"
+                      fill
+                      quality={100}
+                      sizes="224px"
+                      src={member.profileImage}
+                      unoptimized
+                    />
+                  ) : (
+                    member.initials
+                  )}
                 </div>
               </div>
 

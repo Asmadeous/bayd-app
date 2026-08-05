@@ -11,13 +11,14 @@ const serviceCategories = [
     title: "Nails",
     description: "Manicures, extensions, refills, polish, and detailed finishes.",
     href: "/services#nails",
-    image: "/images/nails1.jpg",
+    image:
+      "/images/new-pics-for-the-ladies/nail-polish-application-close-up.webp",
   },
   {
     title: "Lashes",
     description: "Classic, hybrid, volume, glam, and refill appointments.",
     href: "/services#lashes",
-    image: "/images/lashes7.jpg",
+    image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp",
   },
   {
     title: "Massage",
@@ -29,19 +30,20 @@ const serviceCategories = [
     title: "Feet",
     description: "Pedicures, medical foot care, polish, and comfort treatments.",
     href: "/services#feet",
-    image: "/images/Medicure1.jpg",
+    image: "/images/pedicure3.jpg",
   },
   {
     title: "Waxing",
     description: "Face and body waxing arranged around your appointment.",
     href: "/services#waxing",
-    image: "/images/nails7.jpg",
+    image:
+      "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-02.webp",
   },
   {
     title: "Facials",
     description: "Essential facials, targeted treatments, peels, and massage.",
     href: "/services#facials",
-    image: "/images/lashes3.jpg",
+    image: "/images/lashes2.jpg",
   },
 ];
 
@@ -75,6 +77,7 @@ export function ServicesSection() {
                     fill
                     sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                     src={category.image}
+                    unoptimized
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#101217]/72 via-transparent to-transparent" />
                   <h3 className="absolute inset-x-0 bottom-0 p-5 text-3xl font-extrabold text-white">

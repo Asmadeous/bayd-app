@@ -51,11 +51,10 @@ function mapApiItem(item: ApiGalleryItem): GalleryItem {
 
 const categories: Array<"All" | GalleryCategory> = [
   "All",
+  "Team",
   "Lashes",
   "Nails",
-  "Massage",
   "Pedicure",
-  "Waxing",
 ];
 
 export function GalleryPage() {
@@ -70,9 +69,18 @@ export function GalleryPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Use API items when available, fall back to static seed data
   const galleryItems: GalleryItem[] = useMemo(
-    () => (apiItems && apiItems.length > 0 ? apiItems.map(mapApiItem) : staticGalleryItems),
+    () => {
+      const mappedApiItems = apiItems?.map(mapApiItem) ?? [];
+      const existingIds = new Set(staticGalleryItems.map((item) => item.id));
+      const additionalApiItems = mappedApiItems.filter(
+        (item) =>
+          !existingIds.has(item.id) &&
+          item.image.src.startsWith("/images/new-pics-for-the-ladies/"),
+      );
+
+      return [...staticGalleryItems, ...additionalApiItems];
+    },
     [apiItems],
   );
 
@@ -162,9 +170,10 @@ function GalleryHero() {
               Results you can see before we arrive.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-[#4f535a] sm:text-lg">
-              Explore finished looks and service moments across lashes, nails,
-              massage, pedicures, and waxing. Every image helps you understand
-              the care, detail, and finish you can expect from your booking.
+              Explore real team moments, finished looks, and mobile service
+              details from Beauty at Your Door. Every image helps you
+              understand the people, care, setup, and finish you can expect
+              from your booking.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -204,40 +213,43 @@ function GalleryHero() {
         >
           <div className="relative row-span-2 overflow-hidden bg-[#101217]">
             <Image
-              alt="Yellow French-tip manicure displayed against green leaves"
+              alt="Beauty at Your Door team wearing branded shirts"
               className="object-cover"
               fill
               priority
               sizes="(min-width: 1024px) 28vw, 50vw"
-              src="/images/nails1.jpg"
+              src="/images/new-pics-for-the-ladies/beauty-team-group-portrait-06.webp"
+              unoptimized
             />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-5 pt-20 text-white sm:p-7">
               <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#f0c8d3]">
-                Nails
+                Team
               </p>
               <p className="mt-2 text-2xl font-extrabold tracking-tight">
-                Detail worth showing.
+                The people behind the service.
               </p>
             </div>
           </div>
           <div className="relative overflow-hidden bg-[#d9b8a5]">
             <Image
-              alt="Natural lash extension result"
+              alt="Mobile lash appointment in progress"
               className="object-cover"
               fill
               priority
               sizes="(min-width: 1024px) 28vw, 50vw"
-              src="/images/lashes7.jpg"
+              src="/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp"
+              unoptimized
             />
           </div>
           <div className="relative overflow-hidden bg-[#e7ded5]">
             <Image
-              alt="Client receiving a relaxing massage"
+              alt="Gel manicure service in progress"
               className="object-cover"
               fill
               priority
               sizes="(min-width: 1024px) 28vw, 50vw"
-              src="/images/massage.jpg"
+              src="/images/new-pics-for-the-ladies/gel-manicure-service-01.webp"
+              unoptimized
             />
           </div>
         </ScrollReveal>
@@ -322,6 +334,7 @@ function GalleryCollection({
                   sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
                   src={item.image.src}
                   style={{ objectPosition: item.image.position }}
+                  unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#101217]/85 via-[#101217]/5 to-transparent opacity-90 transition-opacity group-hover:opacity-100" />
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-5 p-5 text-white sm:p-6">
@@ -457,6 +470,7 @@ function GalleryViewer({
                 priority
                 sizes="(min-width: 1024px) 72vw, 100vw"
                 src={item.image.src}
+                unoptimized
               />
             </motion.div>
           </AnimatePresence>
