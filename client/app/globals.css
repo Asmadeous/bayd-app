@@ -178,6 +178,15 @@
   animation: collage-marquee 68s linear infinite;
 }
 
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes service-modal-overlay {
   from {
     opacity: 0;
