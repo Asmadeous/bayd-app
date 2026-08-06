@@ -26,7 +26,7 @@ export function GiftCardVisual({ code, balance, expiresAt, recipientName, active
       />
       <div className="flex items-start justify-between text-[11px] font-bold uppercase tracking-[0.18em] opacity-90">
         <Image
-          alt="Beauty at Your Door"
+          alt="Beauty @ Your Door"
           className="h-9 w-auto object-contain"
           height={936}
           src="/images/brand/bayd-logo-white.png"

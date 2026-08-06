@@ -1,6 +1,11 @@
 "use client"
 
+import { Gift } from "lucide-react"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { EmptyState } from "@/components/dashboard/empty-state"
 import { GiftCardVisual } from "@/components/gift-card-visual"
 import { useGiftCards } from "@/lib/hooks/use-gift-cards"
 
@@ -8,34 +13,38 @@ export default function CustomerGiftCardsPage() {
   const { data: cards = [], isLoading } = useGiftCards()
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="Gift Cards" subtitle="Cards you've purchased or received" />
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader title="Gift Cards" subtitle="Cards you have purchased or received." />
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading gift cards...</p>
+        </DashboardPanel>
       ) : cards.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">
-          No gift cards yet.
-        </div>
+        <EmptyState
+          icon={Gift}
+          title="No gift cards yet"
+          description="Purchased and received gift cards will appear here."
+        />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => (
-            <div key={card.id} className="space-y-2">
+            <DashboardPanel className="space-y-3 p-4" key={card.id}>
               <GiftCardVisual
-                code={card.code}
+                active={card.active}
                 balance={card.current_balance}
+                code={card.code}
                 expiresAt={card.expires_at}
                 recipientName={card.recipient_name}
-                active={card.active}
               />
-              <p className="px-1 text-xs text-[#5f6268]">
+              <p className="text-xs font-semibold leading-5 text-[#5f6268]">
                 {card.recipient_email ? `Sent to ${card.recipient_email}` : "Saved to your account"}
-                {card.delivered_at ? " · delivered" : ""}
+                {card.delivered_at ? " / delivered" : ""}
               </p>
-            </div>
+            </DashboardPanel>
           ))}
         </div>
       )}
-    </div>
+    </DashboardPage>
   )
 }

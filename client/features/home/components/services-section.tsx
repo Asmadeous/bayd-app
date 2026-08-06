@@ -43,7 +43,7 @@ const serviceCategories = [
     title: "Facials",
     description: "Essential facials, targeted treatments, peels, and massage.",
     href: "/services#facials",
-    image: "/images/lashes2.jpg",
+    image: "/images/new-pics-for-the-ladies/facial-mask-service-01.webp",
   },
 ];
 

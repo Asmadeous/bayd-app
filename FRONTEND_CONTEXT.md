@@ -1,4 +1,4 @@
-# Beauty at Your Door — Frontend API Context
+# Beauty @ Your Door — Frontend API Context
 
 **Base URL:** `http://localhost:3000/api/v1` (dev) — set via `VITE_API_URL` or equivalent env var  
 **Auth:** Bearer JWT in every authenticated request: `Authorization: Bearer <token>`  

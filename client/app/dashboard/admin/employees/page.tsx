@@ -2,9 +2,27 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Trash2 } from "lucide-react"
+import { Plus, Trash2, Users } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import {
+  DashboardToolbar,
+  SegmentedControl,
+  SegmentButton,
+  ToolbarSection,
+} from "@/components/dashboard/dashboard-toolbar"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadge } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
+import { PasswordInput } from "@/components/ui/password-input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   useAdminEmployees,
   useToggleEmployeeShift,
@@ -56,41 +74,68 @@ export default function AdminEmployeesPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <DashboardPage maxWidth="wide">
       <DashboardHeader
         title="Employees"
-        subtitle="Profiles, shifts, and performance KPIs"
-        actions={<Button size="sm" onClick={() => setModal("create")} style={{ background: "#c96c83", border: "none", color: "#fff" }}>+ Add Staff</Button>}
+        subtitle="Profiles, shifts, dispatch coverage, partners, and performance KPIs."
+        actions={
+          <Button
+            size="sm"
+            onClick={() => setModal("create")}
+            style={{ background: "#c96c83", border: "none", color: "#fff" }}
+          >
+            <Plus aria-hidden="true" />
+            Add Staff
+          </Button>
+        }
       />
 
       {modal && <StaffModal mode={modal} partners={partners} onClose={() => setModal(null)} />}
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-[#5f6268]">KPIs for:</span>
-        {PERIODS.map((p) => (
-          <button
-            key={p.key}
-            onClick={() => setPeriod(p.key)}
-            className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
-            style={
-              period === p.key
-                ? { background: "#c96c83", color: "#fff" }
-                : { background: "white", color: "#5f6268", border: "1px solid #e5e5e5" }
-            }
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      <DashboardToolbar>
+        <ToolbarSection>
+          <span className="text-xs font-bold uppercase tracking-[0.16em] text-[#6b6f76]">
+            KPIs for
+          </span>
+          <SegmentedControl>
+            {PERIODS.map((periodOption) => (
+              <SegmentButton
+                active={period === periodOption.key}
+                key={periodOption.key}
+                onClick={() => setPeriod(periodOption.key)}
+              >
+                {periodOption.label}
+              </SegmentButton>
+            ))}
+          </SegmentedControl>
+        </ToolbarSection>
+        <ToolbarSection className="text-sm font-semibold text-[#5f6268]">
+          {employees.length} visible employees
+        </ToolbarSection>
+      </DashboardToolbar>
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading employees...</p>
+        </DashboardPanel>
       ) : employees.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">
-          No employees found.
-        </div>
+        <EmptyState
+          icon={Users}
+          title="No employees found"
+          description="Employee profiles and performance details will appear here."
+          action={
+            <Button
+              size="sm"
+              onClick={() => setModal("create")}
+              style={{ background: "#c96c83", border: "none", color: "#fff" }}
+            >
+              <Plus aria-hidden="true" />
+              Add Staff
+            </Button>
+          }
+        />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid gap-4 xl:grid-cols-2">
           {employees.map((emp) => (
             <EmployeeCard key={emp.id} employee={emp} kpi={kpiById.get(emp.id)} partners={partners} onEdit={() => setModal(emp)} />
           ))}
@@ -98,13 +143,15 @@ export default function AdminEmployeesPage() {
       )}
 
       {pagination && pagination.total_pages > 1 && (
-        <div className="flex items-center gap-3 justify-end">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-          <span className="text-sm text-[#5f6268]">{page} / {pagination.total_pages}</span>
-          <Button variant="outline" size="sm" disabled={!pagination.next_page} onClick={() => setPage((p) => p + 1)}>Next</Button>
-        </div>
+        <DashboardToolbar className="justify-end">
+          <ToolbarSection className="ml-auto">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
+            <span className="px-2 text-sm font-semibold text-[#5f6268]">{page} / {pagination.total_pages}</span>
+            <Button variant="outline" size="sm" disabled={!pagination.next_page} onClick={() => setPage((p) => p + 1)}>Next</Button>
+          </ToolbarSection>
+        </DashboardToolbar>
       )}
-    </div>
+    </DashboardPage>
   )
 }
 
@@ -153,34 +200,36 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
   }
 
   return (
-    <div className="rounded-xl border border-black/8 bg-white p-5 flex items-start gap-4">
-      <div className="size-10 rounded-full overflow-hidden bg-black/8 shrink-0">
+    <DashboardPanel className="flex items-start gap-4">
+      <div className="grid size-12 shrink-0 place-items-center overflow-hidden border border-black/10 bg-[#f4f1eb]">
         {employee.photo_url ? (
-          <img src={employee.photo_url} alt={name} className="size-full object-cover" />
+          <span
+            aria-label={name}
+            className="size-full bg-cover bg-center"
+            role="img"
+            style={{ backgroundImage: `url(${employee.photo_url})` }}
+          />
         ) : (
-          <div className="size-full flex items-center justify-center font-bold text-[#5f6268]">
+          <div className="size-full flex items-center justify-center font-extrabold text-[#5f6268]">
             {name?.[0] ?? "?"}
           </div>
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm text-[#101217] truncate">{name}</p>
-        {employee.title && <p className="text-xs text-[#a36f4d]">{employee.title}</p>}
-        <p className="text-xs text-[#5f6268] mt-0.5 truncate">{employee.user?.email}</p>
-        <div className="flex items-center gap-2 mt-2 flex-wrap">
-          <span
-            className="text-xs px-2 py-0.5 rounded-full font-medium"
-            style={
-              employee.on_shift
-                ? { background: "#5a9e5a22", color: "#5a9e5a" }
-                : { background: "#8a8d9322", color: "#8a8d93" }
-            }
-          >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-base font-extrabold text-[#101217]">{name}</p>
+            {employee.title && <p className="text-xs font-bold text-[#a36f4d]">{employee.title}</p>}
+            <p className="mt-1 truncate text-xs text-[#5f6268]">{employee.user?.email}</p>
+          </div>
+          <StatusBadge tone={employee.on_shift ? "green" : "gray"}>
             {employee.on_shift ? "On Shift" : "Off Shift"}
-          </span>
+          </StatusBadge>
+        </div>
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
           <Button
             size="xs"
-            variant="ghost"
+            variant="outline"
             disabled={toggleShift.isPending}
             onClick={() => toggleShift.mutate()}
           >
@@ -195,15 +244,23 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
         {/* Partner assignment */}
         <div className="mt-3 border-t border-black/8 pt-3 flex items-center justify-between gap-2">
           <p className="text-[10px] uppercase tracking-wide text-[#5f6268]">Partner</p>
-          <select
-            value={employee.partner_id ?? ""}
+          <Select
             disabled={updateEmployee.isPending}
-            onChange={(e) => updateEmployee.mutate({ partner_id: e.target.value ? Number(e.target.value) : null })}
-            className="h-8 border border-black/15 rounded-lg px-2 text-xs bg-white focus:outline-none focus:border-[#c96c83] max-w-[60%]"
+            onValueChange={(value) => updateEmployee.mutate({ partner_id: value ? Number(value) : null })}
+            value={employee.partner_id != null ? String(employee.partner_id) : ""}
           >
-            <option value="">In-house (B.A.Y.D)</option>
-            {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+            <SelectTrigger className="h-8 max-w-[60%] text-xs">
+              <SelectValue placeholder="In-house (B.A.Y.D)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">In-house (B.A.Y.D)</SelectItem>
+              {partners.map((partner) => (
+                <SelectItem key={partner.id} value={String(partner.id)}>
+                  {partner.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Service areas (FSA coverage) */}
@@ -259,7 +316,7 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
           View detailed KPIs →
         </Link>
       </div>
-    </div>
+    </DashboardPanel>
   )
 }
 
@@ -273,7 +330,7 @@ function Kpi({ label, value }: { label: string; value: string | number }) {
 }
 
 const inputCls =
-  "w-full h-9 border border-black/15 rounded-lg px-3 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+  "h-10 w-full border border-black/15 bg-white px-3 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
 
 function StaffModal({ mode, partners, onClose }: { mode: "create" | Employee; partners: Partner[]; onClose: () => void }) {
   const isCreate = mode === "create"
@@ -323,54 +380,73 @@ function StaffModal({ mode, partners, onClose }: { mode: "create" | Employee; pa
   const busy = create.isPending || update.isPending
 
   return (
-    <div className="rounded-xl border border-black/8 bg-white p-6 space-y-4">
-      <h3 className="font-semibold text-sm text-[#101217]">{isCreate ? "Add Staff" : "Edit Staff"}</h3>
-      <div className="grid grid-cols-2 gap-4">
+    <DashboardPanel>
+      <div className="mb-5">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+          Staff editor
+        </p>
+        <h3 className="mt-1 text-lg font-extrabold text-[#101217]">
+          {isCreate ? "Add Staff" : "Edit Staff"}
+        </h3>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Field label="First name"><input value={form.first_name ?? ""} onChange={(e) => set({ first_name: e.target.value })} className={inputCls} /></Field>
         <Field label="Last name"><input value={form.last_name ?? ""} onChange={(e) => set({ last_name: e.target.value })} className={inputCls} /></Field>
         <Field label="Email"><input type="email" value={form.email ?? ""} onChange={(e) => set({ email: e.target.value })} className={inputCls} /></Field>
         <Field label="Phone"><input value={form.phone ?? ""} onChange={(e) => set({ phone: e.target.value })} className={inputCls} /></Field>
         {isCreate && (
           <Field label="Temp password (optional)">
-            <input value={form.password ?? ""} onChange={(e) => set({ password: e.target.value })} placeholder="auto-generated if blank" className={inputCls} />
+            <PasswordInput value={form.password ?? ""} onChange={(e) => set({ password: e.target.value })} placeholder="auto-generated if blank" className={inputCls} />
           </Field>
         )}
         <Field label="Title"><input value={form.title ?? ""} onChange={(e) => set({ title: e.target.value })} placeholder="Nail Technician" className={inputCls} /></Field>
         <Field label="Partner">
-          <select value={form.partner_id ?? ""} onChange={(e) => set({ partner_id: e.target.value ? Number(e.target.value) : null })} className={inputCls}>
-            <option value="">In-house (B.A.Y.D)</option>
-            {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <Select
+            onValueChange={(value) => set({ partner_id: value ? Number(value) : null })}
+            value={form.partner_id != null ? String(form.partner_id) : ""}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="In-house (B.A.Y.D)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">In-house (B.A.Y.D)</SelectItem>
+              {partners.map((partner) => (
+                <SelectItem key={partner.id} value={String(partner.id)}>
+                  {partner.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </Field>
         <Field label="Base latitude"><input value={form.base_latitude ?? ""} onChange={(e) => set({ base_latitude: e.target.value })} placeholder="43.65" className={inputCls} /></Field>
         <Field label="Base longitude"><input value={form.base_longitude ?? ""} onChange={(e) => set({ base_longitude: e.target.value })} placeholder="-79.38" className={inputCls} /></Field>
         <Field label="SimplyBook Provider (unit) ID"><input value={form.simplybook_unit_id ?? ""} onChange={(e) => set({ simplybook_unit_id: e.target.value })} placeholder="e.g. 3" className={inputCls} /></Field>
         <Field label="Traccar Device ID"><input value={form.traccar_device_id ?? ""} onChange={(e) => set({ traccar_device_id: e.target.value })} placeholder="matches the device ID in the Traccar phone app" className={inputCls} /></Field>
       </div>
-      <div className="flex items-center gap-5">
-        <label className="flex items-center gap-2 text-sm text-[#101217] cursor-pointer">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <label className="flex min-h-10 items-center gap-2 border border-black/10 bg-[#fbfaf7] px-4 text-sm font-semibold text-[#101217]">
           <input type="checkbox" checked={!!form.active} onChange={(e) => set({ active: e.target.checked })} className="accent-[#c96c83]" /> Active
         </label>
-        <label className="flex items-center gap-2 text-sm text-[#101217] cursor-pointer">
+        <label className="flex min-h-10 items-center gap-2 border border-black/10 bg-[#fbfaf7] px-4 text-sm font-semibold text-[#101217]">
           <input type="checkbox" checked={!!form.dispatchable} onChange={(e) => set({ dispatchable: e.target.checked })} className="accent-[#c96c83]" /> Dispatchable
         </label>
       </div>
-      {error && <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
-      <div className="flex gap-2">
+      {error && <p className="mt-4 border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
+      <div className="mt-5 flex gap-2">
         <Button size="sm" disabled={busy || !form.email || !form.first_name} onClick={save} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
           {isCreate ? "Create" : "Save"}
         </Button>
         <Button size="sm" variant="ghost" onClick={onClose}>Cancel</Button>
       </div>
       {isCreate && <p className="text-[11px] text-[#8a8d93]">Coverage FSAs are set on the staff card after creating.</p>}
-    </div>
+    </DashboardPanel>
   )
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[#5f6268] mb-1">{label}</label>
+      <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">{label}</label>
       {children}
     </div>
   )

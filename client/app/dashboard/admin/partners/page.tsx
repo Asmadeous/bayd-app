@@ -1,9 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { Trash2 } from "lucide-react"
+import { Handshake, Plus, Trash2 } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   useAdminPartners,
   usePartnerDetail,
@@ -45,63 +56,98 @@ export default function AdminPartnersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <DashboardPage maxWidth="wide">
       <DashboardHeader
         title="Partners"
-        subtitle="Partner businesses supplying providers to the B.A.Y.D pool"
-        actions={<Button size="sm" onClick={startCreate} style={{ background: "#c96c83", border: "none", color: "#fff" }}>+ Add Partner</Button>}
+        subtitle="Partner businesses supplying providers to the B.A.Y.D pool."
+        actions={
+          <Button size="sm" onClick={startCreate} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+            <Plus aria-hidden="true" />
+            Add Partner
+          </Button>
+        }
       />
 
-      <p className="rounded-xl border border-black/8 bg-white px-4 py-3 text-xs text-[#5f6268]">
-        Partners supply technicians and coverage; B.A.Y.D collects payment and holds funds. Each partner earns their share
-        (100% − platform fee) of the bookings their providers complete. Settle owed amounts into a payout, then mark it paid
-        once you&apos;ve sent the funds.
-      </p>
+      <DashboardPanel>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">Payout model</p>
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-[#5f6268]">
+          Partners supply technicians and coverage; B.A.Y.D collects payment and holds funds.
+          Each partner earns their share of completed bookings after the platform fee. Settle owed
+          amounts into a payout, then mark it paid once funds are sent.
+        </p>
+      </DashboardPanel>
 
       {form && (
-        <div className="rounded-xl border border-black/8 bg-white p-6 space-y-4">
-          <h3 className="font-semibold text-sm text-[#101217]">{editingId ? "Edit Partner" : "New Partner"}</h3>
-          <div className="grid grid-cols-2 gap-4">
+        <DashboardPanel>
+          <div className="mb-5">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+              Partner editor
+            </p>
+            <h3 className="mt-1 text-lg font-extrabold text-[#101217]">
+              {editingId ? "Edit Partner" : "New Partner"}
+            </h3>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Field label="Name"><input value={form.name ?? ""} onChange={(e) => setForm((f) => ({ ...f!, name: e.target.value }))} className={inputCls} /></Field>
             <Field label="Platform fee (%)"><input type="number" min="0" max="100" step="0.5" value={form.platform_fee_pct ?? ""} onChange={(e) => setForm((f) => ({ ...f!, platform_fee_pct: e.target.value }))} className={inputCls} /></Field>
             <Field label="Email"><input type="email" value={form.email ?? ""} onChange={(e) => setForm((f) => ({ ...f!, email: e.target.value }))} className={inputCls} /></Field>
             <Field label="Phone"><input value={form.phone ?? ""} onChange={(e) => setForm((f) => ({ ...f!, phone: e.target.value }))} className={inputCls} /></Field>
             <Field label="Status">
-              <select value={form.status ?? "active"} onChange={(e) => setForm((f) => ({ ...f!, status: e.target.value as Partner["status"] }))} className={inputCls}>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
+              <Select
+                onValueChange={(value) => setForm((f) => ({ ...f!, status: value as Partner["status"] }))}
+                value={form.status ?? "active"}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
             </Field>
           </div>
-          <Field label="Payout notes"><input value={form.payout_notes ?? ""} onChange={(e) => setForm((f) => ({ ...f!, payout_notes: e.target.value }))} placeholder="e-transfer email, bank ref…" className={inputCls} /></Field>
-          <div className="flex gap-2">
+          <div className="mt-4">
+            <Field label="Payout notes"><input value={form.payout_notes ?? ""} onChange={(e) => setForm((f) => ({ ...f!, payout_notes: e.target.value }))} placeholder="e-transfer email, bank ref..." className={inputCls} /></Field>
+          </div>
+          <div className="mt-5 flex gap-2">
             <Button size="sm" disabled={!form.name || create.isPending || update.isPending} onClick={save} style={{ background: "#c96c83", border: "none", color: "#fff" }}>Save</Button>
             <Button size="sm" variant="ghost" onClick={() => { setForm(null); setEditingId(null) }}>Cancel</Button>
           </div>
-        </div>
+        </DashboardPanel>
       )}
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading partners...</p>
+        </DashboardPanel>
       ) : partners.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">No partners yet.</div>
+        <EmptyState
+          action={
+            <Button size="sm" onClick={startCreate} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+              <Plus aria-hidden="true" />
+              Add Partner
+            </Button>
+          }
+          icon={Handshake}
+          title="No partners yet"
+          description="Add partner businesses that supply providers to the B.A.Y.D pool."
+        />
       ) : (
         <div className="space-y-3">
           {partners.map((p) => (
-            <div key={p.id} className="rounded-xl border border-black/8 bg-white px-5 py-4">
+            <DashboardPanel className="p-0" key={p.id}>
+              <div className="px-5 py-4">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-sm text-[#101217]">{p.name}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full font-medium capitalize"
-                      style={p.status === "active" ? { background: "#5a9e5a22", color: "#5a9e5a" } : { background: "#8a8d9322", color: "#8a8d93" }}>
-                      {p.status}
-                    </span>
+                    <span className="text-base font-extrabold text-[#101217]">{p.name}</span>
+                    <StatusBadgeFor status={p.status} />
                   </div>
-                  <p className="text-xs text-[#5f6268] mt-0.5">
+                  <p className="mt-2 text-sm leading-6 text-[#5f6268]">
                     {p.providers_count} provider{p.providers_count === 1 ? "" : "s"} · {p.covered_fsas.length} FSA · {Number(p.platform_fee_pct)}% platform fee
                   </p>
-                  <p className="text-xs mt-1">
+                  <p className="mt-1 text-sm">
                     <span className="text-[#5f6268]">Owed now: </span>
                     <span className="font-semibold text-[#c96c83]">{cad(p.pending.owed)}</span>
                     <span className="text-[#8a8d93]"> ({p.pending.booking_count} booking{p.pending.booking_count === 1 ? "" : "s"}, gross {cad(p.pending.gross)})</span>
@@ -117,11 +163,12 @@ export default function AdminPartnersPage() {
               </div>
 
               {openId === p.id && <PartnerDetail partnerId={p.id} owed={p.pending.owed} pendingCount={p.pending.booking_count} />}
-            </div>
+              </div>
+            </DashboardPanel>
           ))}
         </div>
       )}
-    </div>
+    </DashboardPage>
   )
 }
 
@@ -133,10 +180,10 @@ function PartnerDetail({ partnerId, owed, pendingCount }: { partnerId: number; o
   if (isLoading || !data) return <div className="mt-3 text-xs text-[#5f6268]">Loading…</div>
 
   return (
-    <div className="mt-3 border-t border-black/8 pt-3 space-y-4">
+    <div className="mt-4 space-y-5 border-t border-black/8 pt-4">
       {/* Providers */}
       <div>
-        <p className="text-[10px] uppercase tracking-wide text-[#8a8d93] mb-1.5">Providers</p>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#6b6f76]">Providers</p>
         {data.providers.length === 0 ? (
           <p className="text-xs text-[#8a8d93]">None assigned. Set a provider&apos;s partner on the Employees page.</p>
         ) : (
@@ -161,7 +208,7 @@ function PartnerDetail({ partnerId, owed, pendingCount }: { partnerId: number; o
 
       {/* Payout history */}
       <div>
-        <p className="text-[10px] uppercase tracking-wide text-[#8a8d93] mb-1.5">Payout history</p>
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[#6b6f76]">Payout history</p>
         {data.payouts.length === 0 ? (
           <p className="text-xs text-[#8a8d93]">No payouts yet.</p>
         ) : (
@@ -189,12 +236,12 @@ function PartnerDetail({ partnerId, owed, pendingCount }: { partnerId: number; o
 }
 
 const inputCls =
-  "w-full h-9 border border-black/15 rounded-lg px-3 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+  "h-10 w-full border border-black/15 bg-white px-3 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-[#5f6268] mb-1">{label}</label>
+      <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">{label}</label>
       {children}
     </div>
   )

@@ -1,121 +1,208 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
+import { CheckCircle2, ImagePlus, Mail, Sparkles, UserRound } from "lucide-react"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
 import { useEmployeeProfile, useUpdateProfile } from "@/lib/hooks/use-employee"
+import { cn } from "@/lib/utils"
+
+const fieldClass =
+  "h-11 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 export default function EmployeeProfilePage() {
   const { data: profile, isLoading } = useEmployeeProfile()
   const updateMutation = useUpdateProfile()
-  const [form, setForm] = useState({ title: "", bio: "", photo_url: "" })
+  const photoInputRef = useRef<HTMLInputElement>(null)
+  const photoPreviewObjectUrlRef = useRef<string | null>(null)
+  const [form, setForm] = useState<{ title?: string; bio?: string; photo_url?: string }>({})
+  const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null)
+  const [selectedPhotoPreviewUrl, setSelectedPhotoPreviewUrl] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
+  const title = form.title ?? profile?.title ?? ""
+  const bio = form.bio ?? profile?.bio ?? ""
+  const photoUrl = form.photo_url ?? profile?.photo_url ?? ""
+  const displayPhotoUrl = selectedPhotoPreviewUrl ?? photoUrl
+  const employeeName = [profile?.user?.first_name, profile?.user?.last_name].filter(Boolean).join(" ")
+
   useEffect(() => {
-    if (profile) setForm({ title: profile.title ?? "", bio: profile.bio ?? "", photo_url: profile.photo_url ?? "" })
-  }, [profile])
+    return () => {
+      if (photoPreviewObjectUrlRef.current) {
+        URL.revokeObjectURL(photoPreviewObjectUrlRef.current)
+      }
+    }
+  }, [])
+
+  function handlePhotoChange(file: File | undefined) {
+    if (!file) return
+
+    if (photoPreviewObjectUrlRef.current) {
+      URL.revokeObjectURL(photoPreviewObjectUrlRef.current)
+    }
+
+    const objectUrl = URL.createObjectURL(file)
+    photoPreviewObjectUrlRef.current = objectUrl
+    setSelectedPhotoFile(file)
+    setSelectedPhotoPreviewUrl(objectUrl)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await updateMutation.mutateAsync(form)
+    await updateMutation.mutateAsync({ title, bio, photo_url: photoUrl })
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
 
-  if (isLoading) return <div className="text-sm text-[#5f6268]">Loading…</div>
+  if (isLoading) {
+    return (
+      <DashboardPage>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading profile...</p>
+        </DashboardPanel>
+      </DashboardPage>
+    )
+  }
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="My Profile" subtitle="Update your professional profile" />
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader title="Profile" subtitle="Update the professional profile clients see." />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Profile card */}
-        <div className="rounded-xl border border-black/8 bg-white p-6 text-center">
-          <div className="mx-auto size-20 rounded-full overflow-hidden bg-black/8 mb-3">
-            {profile?.photo_url ? (
-              <img src={profile.photo_url} alt="Profile" className="size-full object-cover" />
+      <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
+        <DashboardPanel className="space-y-5">
+          <div className="mx-auto grid size-28 place-items-center overflow-hidden border border-black/10 bg-[#f4f1eb] text-[#5f6268]">
+            {displayPhotoUrl ? (
+              <Image
+                alt="Profile"
+                className="size-full object-cover"
+                height={112}
+                src={displayPhotoUrl}
+                unoptimized
+                width={112}
+              />
             ) : (
-              <div className="size-full flex items-center justify-center text-2xl font-bold text-[#5f6268]">
-                {profile?.user?.first_name?.[0] ?? "?"}
-              </div>
+              <UserRound aria-hidden="true" className="size-9" />
             )}
           </div>
-          <p className="font-semibold text-[#101217]">
-            {[profile?.user?.first_name, profile?.user?.last_name].filter(Boolean).join(" ")}
-          </p>
-          <p className="text-xs text-[#5f6268] mt-0.5">{profile?.user?.email}</p>
-          {profile?.years_experience && (
-            <p className="text-xs mt-2 text-[#a36f4d] font-medium">{profile.years_experience} years experience</p>
-          )}
-          <div className="mt-3">
-            <span
-              className="text-xs px-3 py-1 rounded-full font-medium"
-              style={
-                profile?.on_shift
-                  ? { background: "#5a9e5a22", color: "#5a9e5a" }
-                  : { background: "#8a8d9322", color: "#8a8d93" }
-              }
-            >
-              {profile?.on_shift ? "On Shift" : "Off Shift"}
-            </span>
+          <div className="text-center">
+            <p className="text-base font-extrabold text-[#101217]">{employeeName || "Profile"}</p>
+            <p className="mt-1 text-xs font-semibold text-[#5f6268]">{profile?.user?.email}</p>
           </div>
-        </div>
+          <div className="flex justify-center">
+            <StatusBadgeFor status={profile?.on_shift ? "on_shift" : "off_shift"} />
+          </div>
+          <div className="space-y-3 border-t border-black/8 pt-5">
+            <div className="flex items-center gap-2 text-sm text-[#5f6268]">
+              <Mail aria-hidden="true" className="size-4 text-[#c96c83]" />
+              <span className="min-w-0 truncate">{profile?.user?.email}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-[#5f6268]">
+              <Sparkles aria-hidden="true" className="size-4 text-[#c96c83]" />
+              <span className="min-w-0 truncate">{title || "Beauty professional"}</span>
+            </div>
+          </div>
+          {profile?.years_experience ? (
+            <p className="text-center text-xs font-bold uppercase tracking-[0.14em] text-[#a36f4d]">
+              {profile.years_experience} years experience
+            </p>
+          ) : null}
+        </DashboardPanel>
 
-        {/* Edit form */}
-        <div className="md:col-span-2 rounded-xl border border-black/8 bg-white p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Photo URL with live preview */}
-            <div>
-              <label className="block text-xs font-medium text-[#5f6268] mb-1">Profile photo URL</label>
-              <div className="flex gap-3 items-center">
-                <div className="size-12 rounded-full overflow-hidden bg-black/8 shrink-0 flex items-center justify-center">
-                  {form.photo_url ? (
-                    <img src={form.photo_url} alt="Preview" className="size-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
-                  ) : (
-                    <span className="text-lg font-bold text-[#5f6268]">{(profile?.user?.first_name?.[0] ?? "?").toUpperCase()}</span>
-                  )}
-                </div>
-                <input
-                  type="url"
-                  placeholder="https://…"
-                  value={form.photo_url}
-                  onChange={(e) => setForm((f) => ({ ...f, photo_url: e.target.value }))}
-                  className="w-full h-10 border border-black/15 rounded-lg px-3 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
-                />
+        <DashboardPanel>
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <button
+                aria-label="Choose profile photo"
+                className="group relative size-28 shrink-0 overflow-hidden border border-black/15 bg-white text-[#5f6268] outline-none transition-all hover:border-[#c96c83] hover:text-[#c96c83] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                onClick={() => photoInputRef.current?.click()}
+                type="button"
+              >
+                {displayPhotoUrl ? (
+                  <Image
+                    alt="Selected professional profile preview"
+                    className="object-cover"
+                    fill
+                    sizes="112px"
+                    src={displayPhotoUrl}
+                    unoptimized
+                  />
+                ) : (
+                  <span className="flex h-full flex-col items-center justify-center gap-2">
+                    <ImagePlus aria-hidden="true" className="size-8" />
+                    <span className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em]">
+                      Photo
+                    </span>
+                  </span>
+                )}
+              </button>
+
+              <div className="min-w-0 pt-1">
+                <p className="text-base font-extrabold text-[#101217]">Professional photo</p>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-[#5f6268]">
+                  Choose a polished beauty profile image that helps clients feel confident before
+                  they book with you.
+                </p>
+                {selectedPhotoFile ? (
+                  <p className="mt-3 truncate text-xs font-bold uppercase tracking-[0.14em] text-[#a36f4d]">
+                    {selectedPhotoFile.name}
+                  </p>
+                ) : null}
               </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[#5f6268] mb-1">Professional Title</label>
+
               <input
-                value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                ref={photoInputRef}
+                accept="image/*"
+                className="sr-only"
+                type="file"
+                onChange={(event) => handlePhotoChange(event.target.files?.[0])}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>Professional Title</label>
+              <input
+                className={fieldClass}
+                onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
                 placeholder="e.g. Senior Nail Technician"
-                className="w-full h-10 border border-black/15 rounded-lg px-3 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                value={title}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#5f6268] mb-1">Bio</label>
+              <label className={labelClass}>Bio</label>
               <textarea
-                value={form.bio}
-                onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-                rows={4}
-                placeholder="Tell clients about yourself…"
-                className="w-full border border-black/15 rounded-lg px-3 py-2.5 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20 resize-none"
+                className={cn(
+                  fieldClass,
+                  "min-h-28 resize-none py-3 leading-6",
+                )}
+                onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
+                placeholder="Tell clients about yourself..."
+                value={bio}
               />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Button
-                type="submit"
                 disabled={updateMutation.isPending}
+                type="submit"
                 style={{ background: "#c96c83", border: "none", color: "#fff" }}
               >
-                {updateMutation.isPending ? "Saving…" : "Save Profile"}
+                {updateMutation.isPending ? "Saving..." : "Save Profile"}
               </Button>
-              {saved && <span className="text-sm text-[#5a9e5a] font-medium">Saved!</span>}
+              {saved ? (
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#5a9e5a]">
+                  <CheckCircle2 aria-hidden="true" className="size-4" />
+                  Saved
+                </span>
+              ) : null}
             </div>
           </form>
-        </div>
+        </DashboardPanel>
       </div>
-    </div>
+    </DashboardPage>
   )
 }

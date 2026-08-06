@@ -1,6 +1,9 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { useState, useMemo } from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+
 import { cn } from "@/lib/utils"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
@@ -17,10 +20,11 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
 interface AppCalendarProps {
   bookings: Booking[]
+  footer?: ReactNode
   onSelectDay?: (date: Date, bookings: Booking[]) => void
 }
 
-export function AppCalendar({ bookings, onSelectDay }: AppCalendarProps) {
+export function AppCalendar({ bookings, footer, onSelectDay }: AppCalendarProps) {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -70,39 +74,41 @@ export function AppCalendar({ bookings, onSelectDay }: AppCalendarProps) {
   while (cells.length % 7 !== 0) cells.push(null)
 
   return (
-    <div className="rounded-xl border border-black/8 bg-white overflow-hidden">
+    <div className="overflow-hidden border border-black/10 bg-white shadow-sm shadow-black/[0.03]">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-black/6">
+      <div className="flex items-center justify-between border-b border-black/6 bg-[#fbfaf7] px-5 py-4">
         <button
           onClick={prevMonth}
-          className="size-8 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors text-[#5f6268]"
+          className="flex size-9 items-center justify-center border border-black/10 bg-white text-[#5f6268] transition-colors hover:border-[#c96c83]/35 hover:text-[#101217]"
           aria-label="Previous month"
+          type="button"
         >
-          <ChevronLeft />
+          <ChevronLeft aria-hidden="true" className="size-4" />
         </button>
-        <span className="font-semibold text-sm text-[#101217]">{monthLabel}</span>
+        <span className="font-heading text-xl font-extrabold text-[#101217]">{monthLabel}</span>
         <button
           onClick={nextMonth}
-          className="size-8 flex items-center justify-center rounded-lg hover:bg-black/5 transition-colors text-[#5f6268]"
+          className="flex size-9 items-center justify-center border border-black/10 bg-white text-[#5f6268] transition-colors hover:border-[#c96c83]/35 hover:text-[#101217]"
           aria-label="Next month"
+          type="button"
         >
-          <ChevronRight />
+          <ChevronRight aria-hidden="true" className="size-4" />
         </button>
       </div>
 
       {/* Day headers */}
-      <div className="grid grid-cols-7 px-3 pt-3">
+      <div className="grid grid-cols-7 px-3 pt-4">
         {DAYS.map((d) => (
-          <div key={d} className="text-center text-xs font-medium text-[#5f6268] pb-2">
+          <div key={d} className="pb-2 text-center text-xs font-bold uppercase tracking-[0.12em] text-[#6b6f76]">
             {d}
           </div>
         ))}
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-7 px-3 pb-3 gap-y-1">
+      <div className="grid grid-cols-7 gap-1 px-3 pb-4">
         {cells.map((day, i) => {
-          if (!day) return <div key={`blank-${i}`} />
+          if (!day) return <div aria-hidden="true" className="min-h-12" key={`blank-${i}`} />
           const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
           const dayBookings = bookingMap.get(key) ?? []
           const isToday =
@@ -114,9 +120,14 @@ export function AppCalendar({ bookings, onSelectDay }: AppCalendarProps) {
               key={day}
               onClick={() => handleDay(day)}
               className={cn(
-                "relative flex flex-col items-center gap-0.5 rounded-lg py-1.5 transition-colors",
-                isSelected ? "bg-[#101217]" : isToday ? "bg-[#f4f1eb]" : "hover:bg-black/4"
+                "relative flex min-h-12 flex-col items-center justify-center gap-1 border border-transparent py-2 transition-colors",
+                isSelected
+                  ? "border-[#101217] bg-[#101217]"
+                  : isToday
+                    ? "border-[#c96c83]/25 bg-[#f4f1eb]"
+                    : "hover:border-black/10 hover:bg-[#fbfaf7]"
               )}
+              type="button"
             >
               <span
                 className={cn(
@@ -144,29 +155,16 @@ export function AppCalendar({ bookings, onSelectDay }: AppCalendarProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 px-5 py-3 border-t border-black/6 text-xs text-[#5f6268]">
+      <div className="flex flex-wrap gap-2 border-t border-black/6 bg-[#fbfaf7] px-5 py-3 text-xs text-[#5f6268]">
         {Object.entries(STATUS_COLORS).map(([status, color]) => (
-          <span key={status} className="flex items-center gap-1.5 capitalize">
+          <span key={status} className="flex min-h-7 items-center gap-1.5 border border-black/6 bg-white px-2 capitalize">
             <span className="block size-2 rounded-full" style={{ background: color }} />
             {status.replace("_", " ")}
           </span>
         ))}
       </div>
-    </div>
-  )
-}
 
-function ChevronLeft() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m15 18-6-6 6-6" />
-    </svg>
-  )
-}
-function ChevronRight() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m9 18 6-6-6-6" />
-    </svg>
+      {footer ? <div className="border-t border-black/6 bg-white px-5 py-4">{footer}</div> : null}
+    </div>
   )
 }

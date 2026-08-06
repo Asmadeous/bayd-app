@@ -1,10 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Send, Trash2 } from "lucide-react"
+import { Gift, Plus, Send, Trash2 } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import {
+  DashboardToolbar,
+  SegmentedControl,
+  SegmentButton,
+  ToolbarSection,
+} from "@/components/dashboard/dashboard-toolbar"
+import { EmptyState } from "@/components/dashboard/empty-state"
 import { GiftCardVisual } from "@/components/gift-card-visual"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import {
   useAdminGiftCards,
   useSaveGiftCard,
@@ -28,10 +38,10 @@ export default function AdminGiftCardsPage() {
   const cards = data?.data ?? []
 
   return (
-    <div className="space-y-6">
+    <DashboardPage maxWidth="wide">
       <DashboardHeader
         title="Gift Cards"
-        subtitle="Issue, manage, and send gift cards"
+        subtitle="Issue, manage, and send gift cards."
         actions={
           <Button size="sm" onClick={() => setCreating((v) => !v)} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
             <Plus className="size-4" /> Issue card
@@ -39,15 +49,17 @@ export default function AdminGiftCardsPage() {
         }
       />
 
-      <div className="flex gap-2">
+      <DashboardToolbar>
+        <ToolbarSection>
+          <SegmentedControl>
         {[["", "All"], ["true", "Active"], ["false", "Disabled"]].map(([v, l]) => (
-          <button key={l} onClick={() => setActive(v)}
-            className="rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
-            style={active === v ? { background: "#101217", color: "#fff" } : { background: "white", color: "#5f6268", border: "1px solid #e5e5e5" }}>
+          <SegmentButton active={active === v} key={l} onClick={() => setActive(v)}>
             {l}
-          </button>
+          </SegmentButton>
         ))}
-      </div>
+          </SegmentedControl>
+        </ToolbarSection>
+      </DashboardToolbar>
 
       {creating && (
         <CreateForm
@@ -58,9 +70,15 @@ export default function AdminGiftCardsPage() {
       )}
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading gift cards...</p>
+        </DashboardPanel>
       ) : cards.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">No gift cards yet.</div>
+        <EmptyState
+          icon={Gift}
+          title="No gift cards yet"
+          description="Issued gift cards will appear here."
+        />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((c) => (
@@ -75,13 +93,15 @@ export default function AdminGiftCardsPage() {
       )}
 
       {data?.pagination && data.pagination.total_pages > 1 && (
-        <div className="flex items-center gap-3 justify-end">
+        <DashboardToolbar className="justify-end">
+          <ToolbarSection className="ml-auto">
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-          <span className="text-sm text-[#5f6268]">{page} / {data.pagination.total_pages}</span>
+          <span className="px-2 text-sm font-semibold text-[#5f6268]">{page} / {data.pagination.total_pages}</span>
           <Button variant="outline" size="sm" disabled={!data.pagination.next_page} onClick={() => setPage((p) => p + 1)}>Next</Button>
-        </div>
+          </ToolbarSection>
+        </DashboardToolbar>
       )}
-    </div>
+    </DashboardPage>
   )
 }
 
@@ -94,9 +114,9 @@ function AdminCard({ card, onToggle, onDelete, onSend, sending }: {
 }) {
   const to = card.recipient_email || card.purchaser?.email
   return (
-    <div className="space-y-2">
+    <DashboardPanel className="space-y-3 p-4">
       <GiftCardVisual code={card.code} balance={card.current_balance} expiresAt={card.expires_at} recipientName={card.recipient_name} active={card.active} />
-      <div className="flex items-center justify-between gap-2 px-1">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-[#5f6268] truncate">{to ? `→ ${to}` : "No recipient"}{card.delivered_at ? " · sent" : ""}</span>
         <div className="flex gap-1.5 shrink-0">
           <Button size="xs" variant="outline" disabled={!to || sending} onClick={onSend} title={to ? "Send to recipient" : "Add a recipient email first"}>
@@ -106,7 +126,7 @@ function AdminCard({ card, onToggle, onDelete, onSend, sending }: {
           <Button size="xs" variant="outline" onClick={onDelete}><Trash2 className="size-3.5 text-[#d4754a]" /></Button>
         </div>
       </div>
-    </div>
+    </DashboardPanel>
   )
 }
 
@@ -116,14 +136,21 @@ function CreateForm({ saving, onSave, onCancel }: {
   onCancel: () => void
 }) {
   const [f, setF] = useState(BLANK)
-  const field = "h-10 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
+  const today = new Date()
+  const minExpirationDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+  const field = "h-11 border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
   const set = (k: keyof typeof BLANK, v: string) => setF((s) => ({ ...s, [k]: v }))
 
   return (
-    <div className="rounded-xl border border-[#c96c83]/30 bg-white p-5 space-y-3">
+    <DashboardPanel className="space-y-3 border-[#c96c83]/30">
       <div className="grid sm:grid-cols-3 gap-3">
         <input className={field} placeholder="Amount ($) *" value={f.initial_balance} onChange={(e) => set("initial_balance", e.target.value)} />
-        <input className={field} type="date" value={f.expires_at} onChange={(e) => set("expires_at", e.target.value)} />
+        <DatePicker
+          min={minExpirationDate}
+          placeholder="Expiration date"
+          value={f.expires_at}
+          onChange={(value) => set("expires_at", value)}
+        />
         <input className={field} placeholder="Recipient email" value={f.recipient_email} onChange={(e) => set("recipient_email", e.target.value)} />
         <input className={field} placeholder="Recipient name" value={f.recipient_name} onChange={(e) => set("recipient_name", e.target.value)} />
         <input className={field} placeholder="From (sender name)" value={f.sender_name} onChange={(e) => set("sender_name", e.target.value)} />
@@ -136,6 +163,6 @@ function CreateForm({ saving, onSave, onCancel }: {
         </Button>
         <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
       </div>
-    </div>
+    </DashboardPanel>
   )
 }

@@ -2,9 +2,21 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import api from "@/lib/api"
+import { Inbox } from "lucide-react"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import {
+  DashboardToolbar,
+  SegmentedControl,
+  SegmentButton,
+  ToolbarSection,
+} from "@/components/dashboard/dashboard-toolbar"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadge, StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
+import api from "@/lib/api"
 
 interface BookingRequest {
   id: number
@@ -17,7 +29,12 @@ interface BookingRequest {
   service_area: { name: string }
 }
 
-interface PagedResponse<T> { data: T[]; pagination: { current_page: number; total_pages: number; next_page: number | null } }
+interface PagedResponse<T> {
+  data: T[]
+  pagination: { current_page: number; total_pages: number; next_page: number | null }
+}
+
+const STATUSES = ["pending", "assigned", "failed"]
 
 export default function AdminBookingRequestsPage() {
   const [page, setPage] = useState(1)
@@ -25,59 +42,117 @@ export default function AdminBookingRequestsPage() {
 
   const { data, isLoading } = useQuery<PagedResponse<BookingRequest>>({
     queryKey: ["admin-booking-requests", page, status],
-    queryFn: () => api.get<PagedResponse<BookingRequest>>("/admin/booking_requests", { params: { page, status: status || undefined } }).then((r) => r.data),
+    queryFn: () =>
+      api
+        .get<PagedResponse<BookingRequest>>("/admin/booking_requests", {
+          params: { page, status: status || undefined },
+        })
+        .then((response) => response.data),
   })
 
   const requests = data?.data ?? []
 
+  function selectStatus(nextStatus: string) {
+    setStatus(nextStatus)
+    setPage(1)
+  }
+
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="Booking Requests" subtitle="Incoming service requests pending assignment" />
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader
+        title="Booking Requests"
+        subtitle="Review incoming service requests and assignment outcomes."
+      />
 
-      <div className="flex gap-2 flex-wrap">
-        {["", "pending", "assigned", "failed"].map((s) => (
-          <button key={s} onClick={() => setStatus(s)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize"
-            style={status === s ? { background: "#c96c83", color: "#fff" } : { background: "white", color: "#5f6268", border: "1px solid #e5e5e5" }}>
-            {s || "All"}
-          </button>
-        ))}
-      </div>
+      <DashboardToolbar>
+        <ToolbarSection>
+          <SegmentedControl>
+            {["", ...STATUSES].map((requestStatus) => (
+              <SegmentButton
+                active={status === requestStatus}
+                key={requestStatus || "all"}
+                onClick={() => selectStatus(requestStatus)}
+              >
+                {requestStatus || "All"}
+              </SegmentButton>
+            ))}
+          </SegmentedControl>
+        </ToolbarSection>
+        <ToolbarSection className="text-sm font-semibold text-[#5f6268]">
+          {requests.length} visible requests
+        </ToolbarSection>
+      </DashboardToolbar>
 
-      {isLoading ? <div className="text-sm text-[#5f6268]">Loading…</div> : requests.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">No requests found.</div>
+      {isLoading ? (
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading booking requests...</p>
+        </DashboardPanel>
+      ) : requests.length === 0 ? (
+        <EmptyState
+          icon={Inbox}
+          title="No requests found"
+          description="Try another status filter or check back when new booking requests arrive."
+        />
       ) : (
         <div className="space-y-3">
-          {requests.map((r) => {
-            const name = [r.user?.first_name, r.user?.last_name].filter(Boolean).join(" ") || r.user?.email
+          {requests.map((request) => {
+            const name =
+              [request.user?.first_name, request.user?.last_name].filter(Boolean).join(" ") ||
+              request.user?.email
+
             return (
-              <div key={r.id} className="rounded-xl border border-black/8 bg-white px-5 py-4">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm text-[#101217]">{r.service?.name}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium capitalize" style={{ background: "#f4f1eb", color: "#5f6268" }}>{r.status}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full font-medium capitalize" style={{ background: "#f4f1eb", color: "#5f6268" }}>{r.request_type}</span>
+              <DashboardPanel className="p-0" key={request.id}>
+                <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-base font-extrabold text-[#101217]">
+                        {request.service?.name}
+                      </h2>
+                      <StatusBadgeFor status={request.status} />
+                      <StatusBadge>{request.request_type}</StatusBadge>
                     </div>
-                    <p className="text-xs text-[#5f6268] mt-1">
-                      {name} · {r.service_area?.name}
-                      {r.preferred_at && ` · ${new Date(r.preferred_at).toLocaleString("en-CA")}`}
+                    <p className="mt-2 text-sm leading-6 text-[#5f6268]">
+                      {name} / {request.service_area?.name}
+                      {request.preferred_at
+                        ? ` / ${new Date(request.preferred_at).toLocaleString("en-CA")}`
+                        : ""}
                     </p>
                   </div>
-                  <span className="text-xs text-[#5f6268]">{new Date(r.created_at).toLocaleDateString("en-CA")}</span>
+                  <span className="text-xs font-semibold text-[#5f6268]">
+                    {new Date(request.created_at).toLocaleDateString("en-CA")}
+                  </span>
                 </div>
-              </div>
+              </DashboardPanel>
             )
           })}
         </div>
       )}
 
-      {data?.pagination && data.pagination.total_pages > 1 && (
-        <div className="flex items-center gap-3 justify-end">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-          <span className="text-sm text-[#5f6268]">{page} / {data.pagination.total_pages}</span>
-          <Button variant="outline" size="sm" disabled={!data.pagination.next_page} onClick={() => setPage((p) => p + 1)}>Next</Button>
-        </div>
-      )}
-    </div>
+      {data?.pagination && data.pagination.total_pages > 1 ? (
+        <DashboardToolbar className="justify-end">
+          <ToolbarSection className="ml-auto">
+            <Button
+              disabled={page <= 1}
+              onClick={() => setPage((currentPage) => currentPage - 1)}
+              size="sm"
+              variant="outline"
+            >
+              Prev
+            </Button>
+            <span className="px-2 text-sm font-semibold text-[#5f6268]">
+              {page} / {data.pagination.total_pages}
+            </span>
+            <Button
+              disabled={!data.pagination.next_page}
+              onClick={() => setPage((currentPage) => currentPage + 1)}
+              size="sm"
+              variant="outline"
+            >
+              Next
+            </Button>
+          </ToolbarSection>
+        </DashboardToolbar>
+      ) : null}
+    </DashboardPage>
   )
 }

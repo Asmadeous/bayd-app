@@ -1,10 +1,32 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import api from "@/lib/api"
+import type { ReactNode } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Plus, Scissors } from "lucide-react"
+
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/dashboard/data-table"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import api from "@/lib/api"
 
 interface Service {
   id: number
@@ -21,7 +43,10 @@ interface Service {
   group_size?: number
 }
 
-interface Category { id: number; name: string }
+interface Category {
+  id: number
+  name: string
+}
 
 const TIER_FIELDS: { key: "kids" | "elderly" | "group"; label: string }[] = [
   { key: "kids", label: "Kids ($)" },
@@ -30,10 +55,20 @@ const TIER_FIELDS: { key: "kids" | "elderly" | "group"; label: string }[] = [
 ]
 
 const BLANK = {
-  name: "", description: "", duration_minutes: 60, price: "", active: true, image_url: "", service_category_id: "",
+  name: "",
+  description: "",
+  duration_minutes: 60,
+  price: "",
+  active: true,
+  image_url: "",
+  service_category_id: "",
   simplybook_event_id: "",
   prices: { kids: "", elderly: "", group: "" } as Record<"kids" | "elderly" | "group", string>,
 }
+
+const inputClass =
+  "h-10 w-full border border-black/15 bg-white px-3 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 export default function AdminServicesPage() {
   const qc = useQueryClient()
@@ -42,20 +77,27 @@ export default function AdminServicesPage() {
 
   const { data: servicesData, isLoading } = useQuery({
     queryKey: ["admin-services"],
-    queryFn: () => api.get<{ data: Service[] }>("/admin/services").then((r) => r.data),
+    queryFn: () => api.get<{ data: Service[] }>("/admin/services").then((response) => response.data),
   })
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["admin-service-categories"],
-    queryFn: () => api.get<Category[]>("/admin/service_categories").then((r) => r.data),
+    queryFn: () => api.get<Category[]>("/admin/service_categories").then((response) => response.data),
   })
 
   const createMutation = useMutation({
     mutationFn: () => api.post("/admin/services", form),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-services"] }); setModal(null); setForm(BLANK) },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-services"] })
+      setModal(null)
+      setForm(BLANK)
+    },
   })
   const updateMutation = useMutation({
     mutationFn: (id: number) => api.patch(`/admin/services/${id}`, form),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-services"] }); setModal(null) },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-services"] })
+      setModal(null)
+    },
   })
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/admin/services/${id}`),
@@ -63,136 +105,301 @@ export default function AdminServicesPage() {
   })
 
   const services = servicesData?.data ?? []
+  const activeCount = services.filter((service) => service.active).length
 
-  function openEdit(s: Service) {
-    const tp = s.tier_prices ?? {}
+  function openEdit(service: Service) {
+    const tierPrices = service.tier_prices ?? {}
     setForm({
-      name: s.name, description: s.description ?? "", duration_minutes: s.duration_minutes, price: s.price,
-      active: s.active, image_url: s.image_url ?? "", service_category_id: String(s.service_category?.id ?? ""),
-      simplybook_event_id: s.simplybook_event_id ?? "",
+      name: service.name,
+      description: service.description ?? "",
+      duration_minutes: service.duration_minutes,
+      price: service.price,
+      active: service.active,
+      image_url: service.image_url ?? "",
+      service_category_id: String(service.service_category?.id ?? ""),
+      simplybook_event_id: service.simplybook_event_id ?? "",
       prices: {
-        kids: tp.kids != null ? String(tp.kids) : "",
-        elderly: tp.elderly != null ? String(tp.elderly) : "",
-        group: tp.group != null ? String(tp.group) : "",
+        kids: tierPrices.kids != null ? String(tierPrices.kids) : "",
+        elderly: tierPrices.elderly != null ? String(tierPrices.elderly) : "",
+        group: tierPrices.group != null ? String(tierPrices.group) : "",
       },
     })
-    setModal(s.id)
+    setModal(service.id)
   }
 
-  function openCreate() { setForm(BLANK); setModal("create") }
+  function openCreate() {
+    setForm(BLANK)
+    setModal("create")
+  }
+
+  function saveService() {
+    if (modal === "create") {
+      createMutation.mutate()
+    } else if (typeof modal === "number") {
+      updateMutation.mutate(modal)
+    }
+  }
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="Services" subtitle="Manage your beauty service catalog"
-        actions={<Button size="sm" onClick={openCreate} style={{ background: "#c96c83", border: "none", color: "#fff" }}>+ Add Service</Button>}
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader
+        actions={
+          <Button
+            onClick={openCreate}
+            size="sm"
+            style={{ background: "#c96c83", border: "none", color: "#fff" }}
+          >
+            <Plus aria-hidden="true" />
+            Add Service
+          </Button>
+        }
+        title="Services"
+        subtitle="Manage the beauty service catalog customers can book."
       />
 
-      {modal !== null && (
-        <div className="rounded-xl border border-black/8 bg-white p-6 space-y-4">
-          <h3 className="font-semibold text-sm text-[#101217]">{modal === "create" ? "New Service" : "Edit Service"}</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {[["name", "Name", "text"], ["price", "Price ($)", "number"], ["duration_minutes", "Duration (min)", "number"], ["image_url", "Image URL", "url"], ["simplybook_event_id", "SimplyBook Service ID", "text"]].map(([field, label, type]) => (
-              <div key={field}>
-                <label className="block text-xs font-medium text-[#5f6268] mb-1">{label}</label>
-                <input type={type} value={(form as Record<string, unknown>)[field] as string} onChange={(e) => setForm((f) => ({ ...f, [field]: type === "number" ? Number(e.target.value) : e.target.value }))}
-                  className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20" />
-              </div>
-            ))}
+      {modal !== null ? (
+        <DashboardPanel>
+          <div className="mb-5 flex items-center justify-between gap-4">
             <div>
-              <label className="block text-xs font-medium text-[#5f6268] mb-1">Category</label>
-              <select value={form.service_category_id} onChange={(e) => setForm((f) => ({ ...f, service_category_id: e.target.value }))}
-                className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]">
-                <option value="">Select…</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+                Catalog editor
+              </p>
+              <h2 className="mt-1 text-lg font-extrabold text-[#101217]">
+                {modal === "create" ? "New Service" : "Edit Service"}
+              </h2>
             </div>
-            <div className="flex items-center gap-2 pt-5">
-              <input type="checkbox" checked={form.active} onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))} className="accent-[#c96c83]" id="svc-active" />
-              <label htmlFor="svc-active" className="text-sm text-[#101217]">Active</label>
-            </div>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-[#5f6268] mb-1">Description</label>
-            <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2}
-              className="w-full border border-black/15 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20 resize-none" />
+            <StatusBadgeFor status={form.active ? "active" : "inactive"} />
           </div>
 
-          {/* Client-type price tiers — base "Price" above is the Adult price. */}
-          <div>
-            <p className="text-xs font-semibold text-[#101217] mb-2">Price tiers <span className="font-normal text-[#8a8d93]">(leave blank to use the base price)</span></p>
-            <div className="grid grid-cols-3 gap-4">
-              {TIER_FIELDS.map((t) => (
-                <div key={t.key}>
-                  <label className="block text-xs font-medium text-[#5f6268] mb-1">{t.label}</label>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Field label="Name">
+              <input
+                className={inputClass}
+                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                type="text"
+                value={form.name}
+              />
+            </Field>
+            <Field label="Price ($)">
+              <input
+                className={inputClass}
+                onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
+                type="number"
+                value={form.price}
+              />
+            </Field>
+            <Field label="Duration">
+              <input
+                className={inputClass}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    duration_minutes: Number(event.target.value),
+                  }))
+                }
+                type="number"
+                value={form.duration_minutes}
+              />
+            </Field>
+            <Field label="Category">
+              <Select
+                onValueChange={(value) =>
+                  setForm((current) => ({ ...current, service_category_id: value ?? "" }))
+                }
+                value={form.service_category_id}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Image URL">
+              <input
+                className={inputClass}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, image_url: event.target.value }))
+                }
+                type="url"
+                value={form.image_url}
+              />
+            </Field>
+            <Field label="SimplyBook Service ID">
+              <input
+                className={inputClass}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, simplybook_event_id: event.target.value }))
+                }
+                type="text"
+                value={form.simplybook_event_id}
+              />
+            </Field>
+            <label className="flex min-h-10 items-center gap-2 border border-black/10 bg-[#fbfaf7] px-4 text-sm font-semibold text-[#101217] md:mt-6">
+              <input
+                checked={form.active}
+                className="accent-[#c96c83]"
+                id="svc-active"
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, active: event.target.checked }))
+                }
+                type="checkbox"
+              />
+              Active
+            </label>
+          </div>
+
+          <div className="mt-4">
+            <Field label="Description">
+              <textarea
+                className="min-h-24 w-full resize-none border border-black/15 bg-white px-3 py-2 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, description: event.target.value }))
+                }
+                value={form.description}
+              />
+            </Field>
+          </div>
+
+          <div className="mt-4">
+            <p className={labelClass}>Price tiers</p>
+            <div className="grid gap-4 md:grid-cols-3">
+              {TIER_FIELDS.map((tier) => (
+                <Field key={tier.key} label={tier.label}>
                   <input
-                    type="number" min="0" step="0.01"
-                    value={form.prices[t.key]}
-                    onChange={(e) => setForm((f) => ({ ...f, prices: { ...f.prices, [t.key]: e.target.value } }))}
-                    placeholder={form.price || "—"}
-                    className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                    className={inputClass}
+                    min="0"
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        prices: { ...current.prices, [tier.key]: event.target.value },
+                      }))
+                    }
+                    placeholder={form.price || "-"}
+                    step="0.01"
+                    type="number"
+                    value={form.prices[tier.key]}
                   />
-                </div>
+                </Field>
               ))}
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" disabled={createMutation.isPending || updateMutation.isPending}
-              onClick={() => modal === "create" ? createMutation.mutate() : updateMutation.mutate(modal as number)}
-              style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button
+              disabled={createMutation.isPending || updateMutation.isPending}
+              onClick={saveService}
+              size="sm"
+              style={{ background: "#c96c83", border: "none", color: "#fff" }}
+            >
               {modal === "create" ? "Create" : "Save"}
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+            <Button onClick={() => setModal(null)} size="sm" variant="ghost">
+              Cancel
+            </Button>
           </div>
-        </div>
-      )}
+        </DashboardPanel>
+      ) : null}
 
-      {isLoading ? <div className="text-sm text-[#5f6268]">Loading…</div> : (
-        <div className="rounded-xl border border-black/8 bg-white overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-black/6 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-[#5f6268] uppercase tracking-wide">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold text-[#5f6268] uppercase tracking-wide">Category</th>
-                <th className="px-4 py-3 text-xs font-semibold text-[#5f6268] uppercase tracking-wide">Price</th>
-                <th className="px-4 py-3 text-xs font-semibold text-[#5f6268] uppercase tracking-wide">Duration</th>
-                <th className="px-4 py-3 text-xs font-semibold text-[#5f6268] uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {services.map((s) => (
-                <tr key={s.id} className="border-b border-black/4 last:border-0">
-                  <td className="px-4 py-3 font-medium text-[#101217]">{s.name}</td>
-                  <td className="px-4 py-3 text-[#5f6268]">{s.service_category?.name}</td>
-                  <td className="px-4 py-3 text-[#101217]">
-                    ${s.price}
-                    {s.tier_prices && Object.keys(s.tier_prices).length > 0 && (
-                      <span className="block text-[10px] text-[#8a8d93]">
-                        {TIER_FIELDS.filter((t) => s.tier_prices?.[t.key] != null)
-                          .map((t) => `${t.key}: $${s.tier_prices?.[t.key]}`)
-                          .join(" · ")}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-[#5f6268]">{s.duration_minutes} min</td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-                      style={s.active ? { background: "#5a9e5a22", color: "#5a9e5a" } : { background: "#8a8d9322", color: "#8a8d93" }}>
-                      {s.active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2 justify-end">
-                      <Button size="xs" variant="outline" onClick={() => openEdit(s)}>Edit</Button>
-                      <Button size="xs" variant="destructive" disabled={deleteMutation.isPending} onClick={() => { if (confirm(`Delete "${s.name}"?`)) deleteMutation.mutate(s.id) }}>Delete</Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <DashboardPanel className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">Catalog</p>
+          <h2 className="mt-1 text-lg font-extrabold text-[#101217]">Service Library</h2>
         </div>
+        <div className="flex flex-wrap gap-2 text-sm font-semibold text-[#5f6268]">
+          <span>{services.length} total</span>
+          <span className="text-black/25">/</span>
+          <span>{activeCount} active</span>
+        </div>
+      </DashboardPanel>
+
+      {isLoading ? (
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading services...</p>
+        </DashboardPanel>
+      ) : services.length === 0 ? (
+        <EmptyState
+          action={
+            <Button
+              onClick={openCreate}
+              size="sm"
+              style={{ background: "#c96c83", border: "none", color: "#fff" }}
+            >
+              <Plus aria-hidden="true" />
+              Add Service
+            </Button>
+          }
+          icon={Scissors}
+          title="No services yet"
+          description="Create the first service customers can book."
+        />
+      ) : (
+        <DataTable>
+          <DataTableHead>
+            <DataTableRow>
+              <DataTableHeaderCell>Name</DataTableHeaderCell>
+              <DataTableHeaderCell>Category</DataTableHeaderCell>
+              <DataTableHeaderCell>Price</DataTableHeaderCell>
+              <DataTableHeaderCell>Duration</DataTableHeaderCell>
+              <DataTableHeaderCell>Status</DataTableHeaderCell>
+              <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
+            </DataTableRow>
+          </DataTableHead>
+          <DataTableBody>
+            {services.map((service) => (
+              <DataTableRow key={service.id}>
+                <DataTableCell className="font-bold text-[#101217]">{service.name}</DataTableCell>
+                <DataTableCell>{service.service_category?.name}</DataTableCell>
+                <DataTableCell className="font-semibold text-[#101217]">
+                  ${service.price}
+                  {service.tier_prices && Object.keys(service.tier_prices).length > 0 ? (
+                    <span className="mt-1 block text-[11px] font-semibold text-[#8a8d93]">
+                      {TIER_FIELDS.filter((tier) => service.tier_prices?.[tier.key] != null)
+                        .map((tier) => `${tier.key}: $${service.tier_prices?.[tier.key]}`)
+                        .join(" / ")}
+                    </span>
+                  ) : null}
+                </DataTableCell>
+                <DataTableCell>{service.duration_minutes} min</DataTableCell>
+                <DataTableCell>
+                  <StatusBadgeFor status={service.active ? "active" : "inactive"} />
+                </DataTableCell>
+                <DataTableCell>
+                  <div className="flex justify-end gap-2">
+                    <Button onClick={() => openEdit(service)} size="xs" variant="outline">
+                      Edit
+                    </Button>
+                    <Button
+                      disabled={deleteMutation.isPending}
+                      onClick={() => {
+                        if (confirm(`Delete "${service.name}"?`)) deleteMutation.mutate(service.id)
+                      }}
+                      size="xs"
+                      variant="destructive"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </DataTableCell>
+              </DataTableRow>
+            ))}
+          </DataTableBody>
+        </DataTable>
       )}
-    </div>
+    </DashboardPage>
+  )
+}
+
+function Field({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <label>
+      <span className={labelClass}>{label}</span>
+      {children}
+    </label>
   )
 }

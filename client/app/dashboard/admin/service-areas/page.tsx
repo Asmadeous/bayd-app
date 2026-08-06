@@ -1,38 +1,42 @@
 "use client"
 
 import { useState } from "react"
+import { MapPin } from "lucide-react"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
-import { useAdminServiceAreas, useUpdateServiceArea, type ServiceArea } from "@/lib/hooks/use-admin"
+import { useAdminServiceAreas, useUpdateServiceArea } from "@/lib/hooks/use-admin"
 
-// "M5V2T6" → "M5V 2T6" for display.
-const pretty = (c: string) => (c.length === 6 ? `${c.slice(0, 3)} ${c.slice(3)}` : c)
-
-// Split a textarea blob into candidate codes (backend does the real validation).
-function parseCodes(text: string): string[] {
-  return Array.from(
-    new Set(
-      text
-        .split(/[\n,]+/)
-        .map((s) => s.replace(/[^A-Za-z0-9]/g, "").toUpperCase())
-        .filter((s) => s.length > 0)
-    )
-  )
-}
+const fieldClass =
+  "h-9 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 export default function AdminServiceAreasPage() {
   const { data: areas = [], isLoading } = useAdminServiceAreas()
   const updateMutation = useUpdateServiceArea()
   const [editing, setEditing] = useState<number | null>(null)
-  const [editForm, setEditForm] = useState({ name: "", travel_fee: "", active: true, postal_codes: "" })
+  const [editForm, setEditForm] = useState({
+    name: "",
+    travel_fee: "",
+    active: true,
+    center_latitude: "",
+    center_longitude: "",
+    radius_km: "",
+  })
 
-  function startEdit(area: ServiceArea) {
+  function startEdit(area: (typeof areas)[0]) {
     setEditing(area.id)
     setEditForm({
       name: area.name,
       travel_fee: area.travel_fee,
       active: area.active,
-      postal_codes: area.postal_codes.map(pretty).join("\n"),
+      center_latitude: area.center_latitude ?? "",
+      center_longitude: area.center_longitude ?? "",
+      radius_km: area.radius_meters != null ? String(area.radius_meters / 1000) : "",
     })
   }
 
@@ -43,60 +47,84 @@ export default function AdminServiceAreasPage() {
       name: editForm.name,
       travel_fee: editForm.travel_fee,
       active: editForm.active,
-      postal_codes: parseCodes(editForm.postal_codes),
+      center_latitude: editForm.center_latitude.trim() || null,
+      center_longitude: editForm.center_longitude.trim() || null,
+      radius_meters: editForm.radius_km.trim() ? Math.round(Number(editForm.radius_km) * 1000) : null,
     })
     setEditing(null)
   }
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="Service Areas" subtitle="Define the postal codes each zone serves" />
-
-      <p className="rounded-xl border border-[#d4a843]/30 bg-[#d4a843]/10 px-4 py-3 text-xs text-[#5f6268]">
-        <span className="font-semibold text-[#101217]">Coverage now lives on each provider.</span> Service coverage is matched by
-        FSA (the first 3 characters of a postal code) against each technician&apos;s list on the{" "}
-        <span className="font-semibold text-[#101217]">Employees</span> page. These zones are kept for naming and travel fees only.
-      </p>
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader title="Service Areas" subtitle="Configure GTA service zones and travel fees." />
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading service areas...</p>
+        </DashboardPanel>
+      ) : areas.length === 0 ? (
+        <EmptyState
+          icon={MapPin}
+          title="No service areas found"
+          description="Configured service zones will appear here."
+        />
       ) : (
         <div className="space-y-3">
           {areas.map((area) => (
-            <div key={area.id} className="rounded-xl border border-black/8 bg-white px-5 py-4">
+            <DashboardPanel key={area.id}>
               {editing === area.id ? (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-[#5f6268] mb-1">Name</label>
+                      <label className={labelClass}>Name</label>
                       <input
+                        className={fieldClass}
                         value={editForm.name}
                         onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                        className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-[#5f6268] mb-1">Travel Fee ($)</label>
+                      <label className={labelClass}>Travel Fee ($)</label>
                       <input
+                        className={fieldClass}
                         value={editForm.travel_fee}
                         onChange={(e) => setEditForm((f) => ({ ...f, travel_fee: e.target.value }))}
-                        className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
                       />
                     </div>
                   </div>
-
                   <div>
-                    <label className="block text-xs font-semibold text-[#101217] mb-1.5">Postal codes served</label>
-                    <textarea
-                      value={editForm.postal_codes}
-                      onChange={(e) => setEditForm((f) => ({ ...f, postal_codes: e.target.value }))}
-                      rows={6}
-                      placeholder={"M5V 2T6\nM5J 2X2\nM4Y 1G5"}
-                      className="w-full border border-black/15 rounded-lg px-3 py-2 text-sm text-[#101217] font-mono focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
-                    />
+                    <p className="text-xs font-semibold text-[#101217] mb-1.5">Bookable area (circular zone)</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className={labelClass}>Center latitude</label>
+                        <input
+                          className={fieldClass}
+                          value={editForm.center_latitude}
+                          onChange={(e) => setEditForm((f) => ({ ...f, center_latitude: e.target.value }))}
+                          placeholder="43.6532"
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Center longitude</label>
+                        <input
+                          className={fieldClass}
+                          value={editForm.center_longitude}
+                          onChange={(e) => setEditForm((f) => ({ ...f, center_longitude: e.target.value }))}
+                          placeholder="-79.3832"
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Radius (km)</label>
+                        <input
+                          className={fieldClass}
+                          value={editForm.radius_km}
+                          onChange={(e) => setEditForm((f) => ({ ...f, radius_km: e.target.value }))}
+                          placeholder="25"
+                        />
+                      </div>
+                    </div>
                     <p className="text-xs text-[#8a8d93] mt-1.5">
-                      One full postal code per line (or comma-separated). {parseCodes(editForm.postal_codes).length} code(s).
-                      Invalid entries are dropped on save.
+                      Leave blank to serve everywhere. Addresses outside every active zone can&apos;t book.
                     </p>
                   </div>
 
@@ -119,48 +147,28 @@ export default function AdminServiceAreasPage() {
                   </div>
                 </div>
               ) : (
-                <div>
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm text-[#101217]">{area.name}</span>
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-full font-medium"
-                          style={area.active ? { background: "#5a9e5a22", color: "#5a9e5a" } : { background: "#8a8d9322", color: "#8a8d93" }}
-                        >
-                          {area.active ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#5f6268] mt-0.5">
-                        Travel fee: ${area.travel_fee}
-                        {area.postal_code_count > 0
-                          ? ` · serves ${area.postal_code_count} postal code${area.postal_code_count === 1 ? "" : "s"}`
-                          : " · no codes set (unrestricted)"}
-                      </p>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-extrabold text-[#101217]">{area.name}</span>
+                      <StatusBadgeFor status={area.active ? "active" : "inactive"} />
                     </div>
-                    <Button size="xs" variant="outline" onClick={() => startEdit(area)}>
-                      Edit
-                    </Button>
+                    <p className="text-xs text-[#5f6268] mt-0.5">
+                      Travel fee: ${area.travel_fee}
+                      {area.radius_meters != null && area.center_latitude
+                        ? ` · serves ${(area.radius_meters / 1000).toFixed(0)} km around ${Number(area.center_latitude).toFixed(3)}, ${Number(area.center_longitude).toFixed(3)}`
+                        : " · no boundary set (serves everywhere)"}
+                    </p>
                   </div>
-
-                  {area.postal_codes.length > 0 && (
-                    <div className="mt-2.5 flex flex-wrap gap-1.5">
-                      {area.postal_codes.slice(0, 24).map((c) => (
-                        <span key={c} className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-black/5 text-[#101217]">
-                          {pretty(c)}
-                        </span>
-                      ))}
-                      {area.postal_codes.length > 24 && (
-                        <span className="text-[11px] text-[#8a8d93] px-1.5 py-0.5">+{area.postal_codes.length - 24} more</span>
-                      )}
-                    </div>
-                  )}
+                  <Button size="xs" variant="outline" onClick={() => startEdit(area)}>
+                    Edit
+                  </Button>
                 </div>
               )}
-            </div>
+            </DashboardPanel>
           ))}
         </div>
       )}
-    </div>
+    </DashboardPage>
   )
 }

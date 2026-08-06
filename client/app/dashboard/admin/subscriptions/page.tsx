@@ -1,9 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { Trash2 } from "lucide-react"
+import { Repeat2, Trash2 } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import {
+  DashboardToolbar,
+  SegmentedControl,
+  SegmentButton,
+  ToolbarSection,
+} from "@/components/dashboard/dashboard-toolbar"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   useAdminSubscriptions,
   useUpdateSubscription,
@@ -14,7 +31,6 @@ import type { Subscription } from "@/lib/hooks/use-subscriptions"
 
 const STATUSES = ["active", "paused", "cancelled"]
 const UNITS = ["day", "week", "month", "year"]
-const STATUS_COLOR: Record<string, string> = { active: "#5a9e5a", paused: "#d4a843", cancelled: "#8a8d93" }
 const dt = (s: string) => new Date(s).toLocaleString("en-CA", { month: "short", day: "numeric", year: "numeric" })
 
 export default function AdminSubscriptionsPage() {
@@ -27,26 +43,35 @@ export default function AdminSubscriptionsPage() {
   const subs = data?.data ?? []
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="Subscriptions" subtitle="All recurring service plans" />
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader title="Subscriptions" subtitle="All recurring service plans." />
 
-      <div className="flex gap-2">
-        {["", ...STATUSES].map((s) => (
-          <button
-            key={s || "all"}
-            onClick={() => { setStatus(s); setPage(1) }}
-            className="rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors"
-            style={status === s ? { background: "#101217", color: "#fff" } : { background: "white", color: "#5f6268", border: "1px solid #e5e5e5" }}
-          >
-            {s || "all"}
-          </button>
-        ))}
-      </div>
+      <DashboardToolbar>
+        <ToolbarSection>
+          <SegmentedControl>
+            {["", ...STATUSES].map((item) => (
+              <SegmentButton
+                active={status === item}
+                key={item || "all"}
+                onClick={() => { setStatus(item); setPage(1) }}
+              >
+                {item || "all"}
+              </SegmentButton>
+            ))}
+          </SegmentedControl>
+        </ToolbarSection>
+      </DashboardToolbar>
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading subscriptions...</p>
+        </DashboardPanel>
       ) : subs.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">No subscriptions found.</div>
+        <EmptyState
+          icon={Repeat2}
+          title="No subscriptions found"
+          description="Recurring customer service plans will appear here."
+        />
       ) : (
         <div className="space-y-3">
           {subs.map((s) => (
@@ -61,13 +86,15 @@ export default function AdminSubscriptionsPage() {
       )}
 
       {data?.pagination && data.pagination.total_pages > 1 && (
-        <div className="flex items-center gap-3 justify-end">
+        <DashboardToolbar className="justify-end">
+          <ToolbarSection className="ml-auto">
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-          <span className="text-sm text-[#5f6268]">{page} / {data.pagination.total_pages}</span>
+          <span className="px-2 text-sm font-semibold text-[#5f6268]">{page} / {data.pagination.total_pages}</span>
           <Button variant="outline" size="sm" disabled={!data.pagination.next_page} onClick={() => setPage((p) => p + 1)}>Next</Button>
-        </div>
+          </ToolbarSection>
+        </DashboardToolbar>
       )}
-    </div>
+    </DashboardPage>
   )
 }
 
@@ -80,16 +107,15 @@ function Row({ subscription: s, onSaveFreq, onStatus, onCancel, onDelete }: {
 }) {
   const [unit, setUnit] = useState(s.interval_unit)
   const [count, setCount] = useState(String(s.interval_count))
-  const color = STATUS_COLOR[s.status] ?? "#8a8d93"
   const dirty = unit !== s.interval_unit || Number(count) !== s.interval_count
 
   return (
-    <div className="rounded-xl border border-black/8 bg-white px-5 py-4">
+    <DashboardPanel>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-sm text-[#101217]">{s.service_name}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full font-medium capitalize" style={{ background: `${color}22`, color }}>{s.status}</span>
+            <span className="text-sm font-extrabold text-[#101217]">{s.service_name}</span>
+            <StatusBadgeFor status={s.status} />
             <span className="text-xs text-[#5f6268]">{s.customer?.name}</span>
           </div>
           <p className="text-xs text-[#5f6268] mt-0.5">
@@ -98,10 +124,18 @@ function Row({ subscription: s, onSaveFreq, onStatus, onCancel, onDelete }: {
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <select value={s.status} onChange={(e) => onStatus(e.target.value)}
-            className="h-8 border rounded-lg px-2 text-xs capitalize focus:outline-none" style={{ borderColor: `${color}55`, color }}>
-            {STATUSES.map((st) => <option key={st} value={st}>{st}</option>)}
-          </select>
+          <Select onValueChange={(value) => onStatus(value ?? s.status)} value={s.status}>
+            <SelectTrigger className="h-8 w-28 text-xs capitalize">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((status) => (
+                <SelectItem className="capitalize" key={status} value={status}>
+                  {status}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {s.status !== "cancelled" && <Button size="xs" variant="outline" onClick={onCancel}>Cancel</Button>}
           <Button size="xs" variant="outline" onClick={onDelete}><Trash2 className="size-3.5 text-[#d4754a]" /></Button>
         </div>
@@ -111,15 +145,27 @@ function Row({ subscription: s, onSaveFreq, onStatus, onCancel, onDelete }: {
       <div className="mt-3 flex items-end gap-2">
         <span className="text-xs text-[#5f6268]">Every</span>
         <input value={count} onChange={(e) => setCount(e.target.value)} className="h-8 w-16 border border-black/15 rounded-lg px-2 text-sm focus:outline-none focus:border-[#c96c83]" />
-        <select value={unit} onChange={(e) => setUnit(e.target.value as Subscription["interval_unit"])}
-          className="h-8 border border-black/15 rounded-lg px-2 text-sm focus:outline-none focus:border-[#c96c83]">
-          {UNITS.map((u) => <option key={u} value={u}>{u}{Number(count) === 1 ? "" : "s"}</option>)}
-        </select>
+        <Select
+          onValueChange={(value) => setUnit((value ?? unit) as Subscription["interval_unit"])}
+          value={unit}
+        >
+          <SelectTrigger className="h-8 w-28 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {UNITS.map((unitOption) => (
+              <SelectItem key={unitOption} value={unitOption}>
+                {unitOption}
+                {Number(count) === 1 ? "" : "s"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button size="xs" disabled={!dirty || !Number(count)} onClick={() => onSaveFreq(unit, Number(count))}
           style={{ background: "#c96c83", border: "none", color: "#fff" }}>
           Save
         </Button>
       </div>
-    </div>
+    </DashboardPanel>
   )
 }

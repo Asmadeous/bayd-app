@@ -2,9 +2,16 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import api from "@/lib/api"
+import { ShoppingBag } from "lucide-react"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboard-toolbar"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
+import api from "@/lib/api"
 
 interface Order {
   id: number
@@ -18,59 +25,93 @@ interface Order {
 
 interface PagedResponse<T> {
   data: T[]
-  pagination: { current_page: number; per_page: number; total_count: number; total_pages: number; next_page: number | null }
+  pagination: {
+    current_page: number
+    per_page: number
+    total_count: number
+    total_pages: number
+    next_page: number | null
+  }
 }
 
 export default function CustomerOrdersPage() {
   const [page, setPage] = useState(1)
   const { data, isLoading } = useQuery<PagedResponse<Order>>({
     queryKey: ["orders", page],
-    queryFn: () => api.get<PagedResponse<Order>>("/orders", { params: { page } }).then((r) => r.data),
+    queryFn: () =>
+      api.get<PagedResponse<Order>>("/orders", { params: { page } }).then((response) => response.data),
   })
 
   const orders = data?.data ?? []
   const pagination = data?.pagination
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="My Orders" subtitle="Product orders from the BAYD shop" />
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader title="Orders" subtitle="Track product orders from the B.A.Y.D shop." />
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading orders...</p>
+        </DashboardPanel>
       ) : orders.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">
-          No orders yet.
-        </div>
+        <EmptyState
+          icon={ShoppingBag}
+          title="No orders yet"
+          description="Product orders from the shop will appear here."
+        />
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (
-            <div key={order.id} className="rounded-xl border border-black/8 bg-white px-5 py-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <span className="font-semibold text-sm text-[#101217]">Order #{order.id}</span>
-                  <span className="ml-2 text-xs px-2 py-0.5 rounded-full font-medium capitalize" style={{ background: "#f4f1eb", color: "#5f6268" }}>
-                    {order.status}
-                  </span>
+            <DashboardPanel className="p-0" key={order.id}>
+              <div className="flex flex-col gap-4 p-5 lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base font-extrabold text-[#101217]">Order #{order.id}</h2>
+                    <StatusBadgeFor status={order.status} />
+                  </div>
+                  <p className="mt-2 text-xs font-semibold text-[#5f6268]">
+                    {new Date(order.created_at).toLocaleDateString("en-CA")}
+                  </p>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5f6268]">
+                    {order.order_items
+                      ?.map((item) => `${item.quantity}x ${item.product?.name}`)
+                      .join(", ")}
+                  </p>
                 </div>
-                <span className="font-bold text-[#101217]">${order.total}</span>
+                <span className="font-heading text-2xl font-extrabold text-[#101217]">
+                  ${order.total}
+                </span>
               </div>
-              <p className="text-xs text-[#5f6268] mt-1">
-                {new Date(order.created_at).toLocaleDateString("en-CA")}
-                {" · "}
-                {order.order_items?.map((i) => `${i.quantity}× ${i.product?.name}`).join(", ")}
-              </p>
-            </div>
+            </DashboardPanel>
           ))}
         </div>
       )}
 
-      {pagination && pagination.total_pages > 1 && (
-        <div className="flex items-center gap-3 justify-end">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-          <span className="text-sm text-[#5f6268]">{page} / {pagination.total_pages}</span>
-          <Button variant="outline" size="sm" disabled={!pagination.next_page} onClick={() => setPage((p) => p + 1)}>Next</Button>
-        </div>
-      )}
-    </div>
+      {pagination && pagination.total_pages > 1 ? (
+        <DashboardToolbar className="justify-end">
+          <ToolbarSection className="ml-auto">
+            <Button
+              disabled={page <= 1}
+              onClick={() => setPage((currentPage) => currentPage - 1)}
+              size="sm"
+              variant="outline"
+            >
+              Prev
+            </Button>
+            <span className="px-2 text-sm font-semibold text-[#5f6268]">
+              {page} / {pagination.total_pages}
+            </span>
+            <Button
+              disabled={!pagination.next_page}
+              onClick={() => setPage((currentPage) => currentPage + 1)}
+              size="sm"
+              variant="outline"
+            >
+              Next
+            </Button>
+          </ToolbarSection>
+        </DashboardToolbar>
+      ) : null}
+    </DashboardPage>
   )
 }

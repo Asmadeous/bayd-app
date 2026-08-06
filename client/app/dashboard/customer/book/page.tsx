@@ -1,27 +1,27 @@
 "use client"
 
-import { Suspense, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { CalendarDays, CheckCircle2, ChevronDown, Clock, MapPin, Sparkles, X } from "lucide-react"
+import { CalendarDays, CheckCircle2, Clock, MapPin, Sparkles, X } from "lucide-react"
 
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { PwaInstallCard } from "@/components/pwa-install-card"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import api from "@/lib/api"
-import { useCoverage } from "@/lib/hooks/use-coverage"
-import { useAuthStore } from "@/lib/stores/auth-store"
+import { cn } from "@/lib/utils"
 
 /* ─── API shapes ─── */
-type ClientType = "adult" | "kids" | "elderly" | "group"
-
-const CLIENT_TYPES: { key: ClientType; label: string; hint: string }[] = [
-  { key: "adult", label: "Adult", hint: "" },
-  { key: "kids", label: "Kids", hint: "" },
-  { key: "elderly", label: "Elderly", hint: "" },
-  { key: "group", label: "Group", hint: "5 people" },
-]
-
 interface ApiService {
   id: number
   name: string
@@ -29,8 +29,6 @@ interface ApiService {
   duration_minutes: number
   price: string
   category_name: string | null
-  prices: Record<ClientType, string>
-  group_size: number
 }
 
 interface ApiAddress {
@@ -46,22 +44,10 @@ interface ApiAddress {
 interface BookingRequestResponse {
   booking_request: { id: number; status: string }
   booking?: { id: number }
-  payment?: { mode: string; url?: string; error?: string }
   error?: string
 }
 
 /* ─── Helpers ─── */
-const COMPANY_PHONE = process.env.NEXT_PUBLIC_COMPANY_PHONE ?? ""
-
-const TIME_SLOTS = Array.from({ length: 21 }, (_, i) => {
-  const totalMins = 9 * 60 + i * 30
-  const h = Math.floor(totalMins / 60)
-  const m = totalMins % 60
-  const label = `${h % 12 === 0 ? 12 : h % 12}:${m === 0 ? "00" : m} ${h < 12 ? "AM" : "PM"}`
-  const value = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`
-  return { label, value }
-})
-
 const TODAY = new Date().toISOString().split("T")[0]
 
 const PROVINCES = [
@@ -84,37 +70,26 @@ const FREQUENCIES = [
   { key: "yearly", label: "Yearly", unit: "year", count: 1 },
 ] as const
 
+const fieldClass =
+  "h-11 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
+
 /* ─── Component ─── */
-function CustomerBookPageContent() {
+export default function CustomerBookPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedService = searchParams.get("service")
+  const preselectedDate = searchParams.get("date")
 
-  const [serviceIdOverride, setServiceId] = useState<string | null>(null)
-  const [date, setDate] = useState("")
+  const [serviceId, setServiceId] = useState("")
+  const [date, setDate] = useState(() => getBookableDate(preselectedDate) ?? "")
   const [time, setTime] = useState("10:00")
-  // Address mode + saved selection are derived from the loaded addresses, with
-  // a user override — so we never sync async data into state via an effect.
-  const [addressModeOverride, setAddressMode] = useState<AddressMode | null>(null)
-  const [savedAddressOverride, setSavedAddressId] = useState("")
-  // Seed the new-address form from the signed-in user's profile address (drawn
-  // from the store synchronously so it's there on first render, still editable).
-  const [newAddress, setNewAddress] = useState(() => {
-    const u = useAuthStore.getState().user
-    return {
-      ...BLANK_ADDRESS,
-      line1: u?.street_address ?? "",
-      city: u?.city ?? "",
-      postal_code: u?.postal_code ?? "",
-    }
-  })
-  const [clientType, setClientType] = useState<ClientType>("adult")
+  const [addressMode, setAddressMode] = useState<AddressMode>("saved")
+  const [savedAddressId, setSavedAddressId] = useState("")
+  const [newAddress, setNewAddress] = useState(BLANK_ADDRESS)
   const [recurrence, setRecurrence] = useState<string>("none")
   const [autoCharge, setAutoCharge] = useState(false)
-  const [payUpfront, setPayUpfront] = useState(false)
-  const [tip, setTip] = useState<string>("")
-  const [bookedForName, setBookedForName] = useState("")
-  const [bookedForPhone, setBookedForPhone] = useState("")
   const [result, setResult] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   /* ─── Card on file (enables auto-charge for recurring bookings) ─── */
@@ -136,27 +111,6 @@ function CustomerBookPageContent() {
     queryFn: () => api.get<ApiAddress[]>("/addresses").then((r) => r.data),
   })
 
-  /* ─── Derived address selection (no effect syncing async → state) ─── */
-  const defaultAddressId = useMemo(() => {
-    const def = addresses.find((a) => (a as unknown as { default: boolean }).default)
-    return String(def?.id ?? addresses[0]?.id ?? "")
-  }, [addresses])
-  const addressMode: AddressMode = addressModeOverride ?? (addresses.length > 0 ? "saved" : "new")
-  const savedAddressId = savedAddressOverride || defaultAddressId
-
-  /* ─── Coverage: is the chosen address's postal code serviced? ─── */
-  const activePostal =
-    addressMode === "saved"
-      ? addresses.find((a) => String(a.id) === savedAddressId)?.postal_code ?? ""
-      : newAddress.postal_code
-  const coverage = useCoverage(activePostal)
-  const notServiced = coverage.data ? !coverage.data.covered : false
-
-  /* ─── Selected service (URL param as default, user override wins) ─── */
-  const preselectedValid =
-    preselectedService && services.some((s) => String(s.id) === preselectedService) ? preselectedService : ""
-  const serviceId = serviceIdOverride ?? preselectedValid
-
   /* ─── Grouped services ─── */
   const grouped = useMemo(() => {
     const map = new Map<string, ApiService[]>()
@@ -168,8 +122,19 @@ function CustomerBookPageContent() {
     return map
   }, [services])
 
+  const preselectedServiceId =
+    services.find((service) => String(service.id) === preselectedService)?.id ?? null
+  const effectiveServiceId = serviceId || (preselectedServiceId ? String(preselectedServiceId) : "")
+  const defaultSavedAddressId = String(
+    addresses.find((address) => (address as unknown as { default: boolean }).default)?.id ??
+      addresses[0]?.id ??
+      "",
+  )
+  const effectiveAddressMode: AddressMode = addresses.length > 0 ? addressMode : "new"
+  const effectiveSavedAddressId = savedAddressId || defaultSavedAddressId
+
   /* ─── Selected service details ─── */
-  const selectedService = services.find((s) => String(s.id) === serviceId)
+  const selectedService = services.find((service) => String(service.id) === effectiveServiceId)
 
   /* ─── Create address mutation ─── */
   const createAddress = useMutation({
@@ -183,36 +148,14 @@ function CustomerBookPageContent() {
       address_id: number
       requested_start: string
       kind: "scheduled"
-      client_type: ClientType
       recurrence_active?: boolean
       recurrence_interval_unit?: string | null
       recurrence_interval_count?: number
       auto_charge?: boolean
-      payment_timing?: "pay_upfront" | "pay_after"
-      tip?: number
-      booked_for_name?: string
-      booked_for_phone?: string
     }) =>
       api
         .post<BookingRequestResponse>("/booking_requests", { booking_request: payload })
         .then((r) => r.data),
-  })
-
-  /* ─── Out-of-area callback request ─── */
-  const requestCallback = useMutation({
-    mutationFn: () =>
-      api.post("/callback_requests", {
-        callback_request: {
-          service_id: serviceId ? Number(serviceId) : undefined,
-          postal_code: activePostal,
-          contact_phone: bookedForPhone.trim() || undefined,
-        },
-      }),
-    onSuccess: () =>
-      setResult({
-        type: "success",
-        message: "Thanks! We'll call you to check for a technician near you and arrange your booking.",
-      }),
   })
 
   /* ─── Submit ─── */
@@ -220,15 +163,15 @@ function CustomerBookPageContent() {
     e.preventDefault()
     setResult(null)
 
-    if (!serviceId || !date || !time) return
+    if (!effectiveServiceId || !date || !time) return
 
     const requestedStart = `${date}T${time}:00`
 
     try {
       let addrId: number
 
-      if (addressMode === "saved") {
-        addrId = Number(savedAddressId)
+      if (effectiveAddressMode === "saved") {
+        addrId = Number(effectiveSavedAddressId)
       } else {
         const created = await createAddress.mutateAsync()
         addrId = created.id
@@ -237,35 +180,18 @@ function CustomerBookPageContent() {
       const freq = FREQUENCIES.find((f) => f.key === recurrence) ?? FREQUENCIES[0]
       const isRecurring = freq.key !== "none"
       const data = await createBooking.mutateAsync({
-        service_id: Number(serviceId),
+        service_id: Number(effectiveServiceId),
         address_id: addrId,
         requested_start: requestedStart,
         kind: "scheduled",
-        client_type: clientType,
         recurrence_active: isRecurring,
         recurrence_interval_unit: isRecurring ? freq.unit : undefined,
         recurrence_interval_count: isRecurring ? freq.count : undefined,
         auto_charge: isRecurring && autoCharge && hasCard,
-        payment_timing: payUpfront ? "pay_upfront" : "pay_after",
-        tip: tip ? Number(tip) : undefined,
-        booked_for_name: bookedForName.trim() || undefined,
-        booked_for_phone: bookedForPhone.trim() || undefined,
       })
 
-      // If a payment link was created (new customer / no card), send them to it.
-      if (data.payment?.mode === "link" && data.payment.url) {
-        window.location.href = data.payment.url
-        return
-      }
-
-      const charged = data.payment?.mode === "charged"
       if (data.booking) {
-        setResult({
-          type: "success",
-          message: charged
-            ? "Your appointment is confirmed and payment was received. Thank you!"
-            : "Your appointment is confirmed! An employee has been assigned.",
-        })
+        setResult({ type: "success", message: "Your appointment is confirmed! An employee has been assigned." })
       } else {
         setResult({ type: "success", message: "Booking request submitted. We will confirm coverage and notify you shortly." })
       }
@@ -279,182 +205,180 @@ function CustomerBookPageContent() {
   }
 
   const isPending = createAddress.isPending || createBooking.isPending
+  const isTimeValid = TIME_PATTERN.test(time)
   const canSubmit =
-    !!serviceId &&
+    !!effectiveServiceId &&
     !!date &&
-    !!time &&
-    !notServiced &&
-    (addressMode === "saved" ? !!savedAddressId : !!newAddress.line1 && !!newAddress.city)
+    isTimeValid &&
+    (effectiveAddressMode === "saved"
+      ? !!effectiveSavedAddressId
+      : !!newAddress.line1 && !!newAddress.city)
+  const formHint = getBookingFormHint({
+    hasAddress: effectiveAddressMode === "saved"
+      ? !!effectiveSavedAddressId
+      : !!newAddress.line1 && !!newAddress.city,
+    hasDate: !!date,
+    hasService: !!effectiveServiceId,
+    isTimeValid,
+  })
 
   /* ─── Success screen ─── */
   if (result?.type === "success") {
     return (
-      <div className="space-y-6">
-        <DashboardHeader title="Booking Submitted" subtitle="We have received your request" />
-        <div className="rounded-2xl border border-black/8 bg-white p-10 text-center space-y-4">
-          <CheckCircle2 className="mx-auto size-14 text-[#c96c83]" />
+      <DashboardPage>
+        <DashboardHeader title="Booking Submitted" subtitle="We have received your request." />
+        <DashboardPanel className="space-y-4 text-center" padding="lg">
+          <CheckCircle2 aria-hidden="true" className="mx-auto size-14 text-[#c96c83]" />
           <h2 className="text-2xl font-extrabold text-[#101217]">You&apos;re booked!</h2>
-          <p className="text-sm text-[#5f6268] max-w-md mx-auto">{result.message}</p>
-          <div className="flex gap-3 justify-center pt-2">
+          <p className="mx-auto max-w-md text-sm leading-6 text-[#5f6268]">{result.message}</p>
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
             <Button
               onClick={() => router.push("/dashboard/customer/bookings")}
               style={{ background: "#c96c83", border: "none", color: "#fff" }}
             >
               View Bookings
             </Button>
-            <Button variant="outline" onClick={() => { setResult(null); setServiceId(""); setDate(""); setTime("10:00") }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setResult(null)
+                setServiceId("")
+                setDate("")
+                setTime("10:00")
+              }}
+            >
               Book Another
             </Button>
           </div>
-        </div>
+        </DashboardPanel>
 
         <PwaInstallCard className="mx-auto max-w-md" />
-      </div>
+      </DashboardPage>
     )
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <DashboardPage maxWidth="wide">
       <DashboardHeader
         title="Book a Service"
-        subtitle="Schedule a mobile beauty appointment at your location"
+        subtitle="Schedule a mobile beauty appointment at your location."
       />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]" onSubmit={handleSubmit}>
+        <div className="space-y-6">
 
         {/* ── Service ── */}
-        <div className="rounded-2xl border border-black/8 bg-white p-6 space-y-4">
+        <DashboardPanel className="space-y-4">
           <div className="flex items-center gap-2.5">
-            <Sparkles className="size-4 text-[#c96c83]" />
-            <h3 className="font-semibold text-sm text-[#101217]">Choose Service</h3>
+            <Sparkles aria-hidden="true" className="size-4 text-[#c96c83]" />
+            <h3 className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#101217]">
+              Choose Service
+            </h3>
           </div>
 
-          <div className="relative">
-            <select
-              value={serviceId}
-              onChange={(e) => setServiceId(e.target.value)}
+          <div>
+            <Select
+              value={effectiveServiceId}
+              onValueChange={(value) => setServiceId(value ?? "")}
               required
-              className="w-full h-11 appearance-none border border-black/15 rounded-xl px-4 pr-10 text-sm bg-white focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
             >
-              <option value="">Select a service…</option>
-              {Array.from(grouped.entries()).map(([cat, svcs]) => (
-                <optgroup key={cat} label={cat}>
-                  {svcs.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} — ${Number(s.price).toFixed(0)} · {s.duration_minutes}min
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-3 size-4 text-[#5f6268]" />
+              <SelectTrigger className="h-11 px-4">
+                <span className={selectedService ? "truncate" : "truncate text-[#5f6268]"}>
+                  {selectedService
+                    ? `${selectedService.name} - $${Number(selectedService.price).toFixed(0)} / ${selectedService.duration_minutes}min`
+                    : "Select a service..."}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from(grouped.entries()).map(([cat, svcs]) => (
+                  <div key={cat}>
+                    <div className="px-3 py-2 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-[#a36f4d]">
+                      {cat}
+                    </div>
+                    {svcs.map((service) => (
+                      <SelectItem key={service.id} value={String(service.id)}>
+                        {service.name} - ${Number(service.price).toFixed(0)} /{" "}
+                        {service.duration_minutes}min
+                      </SelectItem>
+                    ))}
+                  </div>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {selectedService && (
-            <div className="rounded-xl bg-[#f4f1eb] px-4 py-3 text-sm text-[#5f6268] leading-6">
-              {selectedService.description}
+            <div className="border border-black/8 bg-[#fbfaf7] px-4 py-4 text-sm leading-6 text-[#5f6268]">
+              {selectedService.description || "A tailored mobile beauty service at your location."}
               <div className="mt-2 flex gap-4 text-xs font-semibold text-[#101217]">
                 <span className="inline-flex items-center gap-1.5">
-                  <Clock className="size-3.5 text-[#c96c83]" />
+                  <Clock aria-hidden="true" className="size-3.5 text-[#c96c83]" />
                   {selectedService.duration_minutes} min
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <Sparkles className="size-3.5 text-[#c96c83]" />
-                  ${Number(selectedService.prices?.[clientType] ?? selectedService.price).toFixed(0)}
+                  <Sparkles aria-hidden="true" className="size-3.5 text-[#c96c83]" />
+                  ${Number(selectedService.price).toFixed(0)}+
                 </span>
               </div>
             </div>
           )}
-
-          {/* Who is this booking for? — sets the price tier */}
-          {selectedService && (
-            <div>
-              <p className="text-xs font-semibold text-[#101217] mb-2">Who is this for?</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {CLIENT_TYPES.map((ct) => {
-                  const active = clientType === ct.key
-                  const price = Number(selectedService.prices?.[ct.key] ?? selectedService.price)
-                  return (
-                    <button
-                      key={ct.key}
-                      type="button"
-                      onClick={() => setClientType(ct.key)}
-                      className="rounded-xl border px-3 py-2.5 text-left transition-colors"
-                      style={
-                        active
-                          ? { borderColor: "#c96c83", background: "#c96c8310" }
-                          : { borderColor: "rgba(0,0,0,0.12)", background: "white" }
-                      }
-                    >
-                      <span className="block text-sm font-semibold text-[#101217]">{ct.label}</span>
-                      {ct.hint && <span className="block text-[10px] text-[#8a8d93]">{ct.hint}</span>}
-                      <span className="block text-xs font-bold mt-0.5" style={{ color: active ? "#c96c83" : "#5f6268" }}>
-                        ${price.toFixed(0)}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+        </DashboardPanel>
 
         {/* ── Date & Time ── */}
-        <div className="rounded-2xl border border-black/8 bg-white p-6 space-y-4">
+        <DashboardPanel className="space-y-4">
           <div className="flex items-center gap-2.5">
-            <CalendarDays className="size-4 text-[#c96c83]" />
-            <h3 className="font-semibold text-sm text-[#101217]">Date & Time</h3>
+            <CalendarDays aria-hidden="true" className="size-4 text-[#c96c83]" />
+            <h3 className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#101217]">
+              Date & Time
+            </h3>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-[#5f6268] mb-1.5">Date</label>
+              <label className={labelClass}>Date</label>
+              <DatePicker min={TODAY} value={date} onChange={setDate} />
+            </div>
+            <div>
+              <label className={labelClass}>Time</label>
               <input
-                type="date"
-                value={date}
-                min={TODAY}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                className="w-full h-11 border border-black/15 rounded-xl px-4 text-sm focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                className={fieldClass}
+                max="23:59"
+                min="00:00"
+                onChange={(event) => setTime(event.target.value)}
+                step={60}
+                type="time"
+                value={time}
               />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[#5f6268] mb-1.5">Time</label>
-              <div className="relative">
-                <select
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="w-full h-11 appearance-none border border-black/15 rounded-xl px-4 pr-10 text-sm bg-white focus:outline-none focus:border-[#c96c83]"
-                >
-                  {TIME_SLOTS.map((slot) => (
-                    <option key={slot.value} value={slot.value}>{slot.label}</option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-3 size-4 text-[#5f6268]" />
-              </div>
+              {!isTimeValid ? (
+                <p className="mt-2 text-xs font-semibold text-red-700">
+                  Enter a valid time, for example 10:23.
+                </p>
+              ) : null}
             </div>
           </div>
-        </div>
+        </DashboardPanel>
 
         {/* ── Address ── */}
-        <div className="rounded-2xl border border-black/8 bg-white p-6 space-y-4">
+        <DashboardPanel className="space-y-4">
           <div className="flex items-center gap-2.5">
-            <MapPin className="size-4 text-[#c96c83]" />
-            <h3 className="font-semibold text-sm text-[#101217]">Service Address</h3>
+            <MapPin aria-hidden="true" className="size-4 text-[#c96c83]" />
+            <h3 className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#101217]">
+              Service Address
+            </h3>
           </div>
 
           {addresses.length > 0 && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {(["saved", "new"] as AddressMode[]).map((mode) => (
                 <button
                   key={mode}
                   type="button"
                   onClick={() => setAddressMode(mode)}
-                  className="px-4 py-1.5 rounded-full text-xs font-semibold transition-colors"
-                  style={
-                    addressMode === mode
-                      ? { background: "#c96c83", color: "#fff" }
-                      : { background: "#f4f1eb", color: "#5f6268" }
-                  }
+                  className={cn(
+                    "border px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] transition-colors",
+                    effectiveAddressMode === mode
+                      ? "border-[#c96c83] bg-[#c96c83] text-white"
+                      : "border-black/8 bg-[#fbfaf7] text-[#5f6268] hover:border-[#c96c83]/35"
+                  )}
                 >
                   {mode === "saved" ? "Saved address" : "New address"}
                 </button>
@@ -462,137 +386,129 @@ function CustomerBookPageContent() {
             </div>
           )}
 
-          {addressMode === "saved" && addresses.length > 0 ? (
-            <div className="relative">
-              <select
-                value={savedAddressId}
-                onChange={(e) => setSavedAddressId(e.target.value)}
+          {effectiveAddressMode === "saved" && addresses.length > 0 ? (
+            <div>
+              <Select
+                value={effectiveSavedAddressId}
+                onValueChange={(value) => setSavedAddressId(value ?? "")}
                 required
-                className="w-full h-11 appearance-none border border-black/15 rounded-xl px-4 pr-10 text-sm bg-white focus:outline-none focus:border-[#c96c83]"
               >
-                {addresses.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.label ? `${a.label} — ` : ""}{a.line1}, {a.city}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-3 size-4 text-[#5f6268]" />
+                <SelectTrigger className="h-11 px-4">
+                  <SelectValue placeholder="Select a saved address" />
+                </SelectTrigger>
+                <SelectContent>
+                  {addresses.map((address) => (
+                    <SelectItem key={address.id} value={String(address.id)}>
+                      {address.label ? `${address.label} - ` : ""}
+                      {address.line1}, {address.city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           ) : (
             <div className="grid gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-[#5f6268] mb-1.5">Address label (optional)</label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Address label (optional)</label>
                   <input
                     value={newAddress.label}
                     onChange={(e) => setNewAddress((p) => ({ ...p, label: e.target.value }))}
                     placeholder="e.g. Home, Office, Hotel"
-                    className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
+                    className={fieldClass}
                   />
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-[#5f6268] mb-1.5">Street address *</label>
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Street address *</label>
                   <input
                     value={newAddress.line1}
                     onChange={(e) => setNewAddress((p) => ({ ...p, line1: e.target.value }))}
                     placeholder="123 Main St"
-                    required={addressMode === "new"}
-                    className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
+                    required={effectiveAddressMode === "new"}
+                    className={fieldClass}
                   />
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium text-[#5f6268] mb-1.5">Apt / Suite (optional)</label>
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Apt / Suite (optional)</label>
                   <input
                     value={newAddress.line2}
                     onChange={(e) => setNewAddress((p) => ({ ...p, line2: e.target.value }))}
                     placeholder="Unit 4B"
-                    className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
+                    className={fieldClass}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#5f6268] mb-1.5">City *</label>
+                  <label className={labelClass}>City *</label>
                   <input
                     value={newAddress.city}
                     onChange={(e) => setNewAddress((p) => ({ ...p, city: e.target.value }))}
                     placeholder="Toronto"
-                    required={addressMode === "new"}
-                    className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
+                    required={effectiveAddressMode === "new"}
+                    className={fieldClass}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#5f6268] mb-1.5">Province</label>
-                  <div className="relative">
-                    <select
+                  <label className={labelClass}>Province</label>
+                  <div>
+                    <Select
                       value={newAddress.province}
-                      onChange={(e) => setNewAddress((p) => ({ ...p, province: e.target.value }))}
-                      className="w-full h-9 appearance-none border border-black/15 rounded-lg px-3 pr-8 text-sm bg-white focus:outline-none focus:border-[#c96c83]"
-                    >
-                      {PROVINCES.map((p) => <option key={p}>{p}</option>)}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-2 top-2.5 size-3.5 text-[#5f6268]" />
+                      onValueChange={(value) =>
+                        setNewAddress((current) => ({ ...current, province: value ?? "ON" }))
+                      }
+                      >
+                        <SelectTrigger className="h-11 px-3">
+                        <SelectValue placeholder="Select province" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROVINCES.map((province) => (
+                          <SelectItem key={province} value={province}>
+                            {province}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#5f6268] mb-1.5">Postal code</label>
+                  <label className={labelClass}>Postal code</label>
                   <input
                     value={newAddress.postal_code}
                     onChange={(e) => setNewAddress((p) => ({ ...p, postal_code: e.target.value.toUpperCase() }))}
                     placeholder="M5V 1A1"
                     maxLength={7}
-                    className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
+                    className={fieldClass}
                   />
                 </div>
               </div>
             </div>
           )}
-
-          {/* Coverage status — matches on the FSA (first 3 characters) */}
-          {activePostal.replace(/[^A-Za-z0-9]/g, "").length >= 3 && (
-            <div className="mt-4">
-              {coverage.isLoading ? (
-                <p className="text-xs text-[#5f6268]">Checking coverage…</p>
-              ) : coverage.isError ? (
-                <p className="text-xs text-[#d4754a]">Enter a valid postal code to check coverage.</p>
-              ) : coverage.data?.covered ? (
-                <div className="flex items-center gap-2 rounded-lg bg-[#5a9e5a]/10 px-3 py-2 text-xs font-medium text-[#3f7a3f]">
-                  <CheckCircle2 className="size-4 shrink-0" />
-                  {coverage.data.unrestricted
-                    ? "We serve this location."
-                    : `We serve ${coverage.data.fsa}${coverage.data.providers.length ? ` — ${coverage.data.providers.join(", ")}` : ""}.`}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 rounded-lg bg-[#d4754a]/10 px-3 py-2 text-xs font-medium text-[#b3542a]">
-                  <X className="size-4 shrink-0" />
-                  Sorry, we don&apos;t serve {coverage.data?.fsa ?? "this area"} yet. Try a different address.
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        </DashboardPanel>
 
         {/* ── Recurrence ── */}
-        <div className="rounded-2xl border border-black/8 bg-white p-6 space-y-4">
+        <DashboardPanel className="space-y-4">
           <div className="flex items-center gap-2.5">
-            <CalendarDays className="size-4 text-[#c96c83]" />
-            <h3 className="font-semibold text-sm text-[#101217]">Make it a subscription</h3>
+            <CalendarDays aria-hidden="true" className="size-4 text-[#c96c83]" />
+            <h3 className="text-sm font-extrabold uppercase tracking-[0.14em] text-[#101217]">
+              Make it a subscription
+            </h3>
           </div>
-          <p className="text-xs text-[#5f6268] -mt-2">
+          <p className="-mt-2 text-xs leading-5 text-[#5f6268]">
             We&apos;ll automatically rebook this service on your chosen schedule. Manage,
             pause, or cancel anytime from Subscriptions.
           </p>
 
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex flex-wrap gap-2">
             {FREQUENCIES.map((opt) => (
               <button
                 key={opt.key}
                 type="button"
                 onClick={() => setRecurrence(opt.key)}
-                className="px-4 py-1.5 rounded-full text-xs font-semibold transition-colors"
-                style={
+                className={cn(
+                  "border px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] transition-colors",
                   recurrence === opt.key
-                    ? { background: "#c96c83", color: "#fff" }
-                    : { background: "#f4f1eb", color: "#5f6268" }
-                }
+                    ? "border-[#c96c83] bg-[#c96c83] text-white"
+                    : "border-black/8 bg-[#fbfaf7] text-[#5f6268] hover:border-[#c96c83]/35"
+                )}
               >
                 {opt.label}
               </button>
@@ -601,142 +517,157 @@ function CustomerBookPageContent() {
 
           {recurrence !== "none" && (
             hasCard ? (
-              <label className="flex items-start gap-2.5 rounded-xl bg-[#f4f1eb] px-4 py-3 cursor-pointer">
+              <label className="flex cursor-pointer items-start gap-2.5 border border-black/8 bg-[#fbfaf7] px-4 py-3">
                 <input
                   type="checkbox"
                   checked={autoCharge}
                   onChange={(e) => setAutoCharge(e.target.checked)}
                   className="mt-0.5 size-4 accent-[#c96c83]"
                 />
-                <span className="text-xs text-[#5f6268] leading-5">
+                <span className="text-xs leading-5 text-[#5f6268]">
                   Automatically charge my card on file for each recurring appointment.
                 </span>
               </label>
             ) : (
-              <p className="rounded-xl bg-[#f4f1eb] px-4 py-3 text-xs text-[#5f6268] leading-5">
+              <p className="border border-black/8 bg-[#fbfaf7] px-4 py-3 text-xs leading-5 text-[#5f6268]">
                 Add a card in{" "}
-                <a href="/dashboard/customer/settings" className="font-semibold text-[#c96c83] underline">
+                <a href="/dashboard/customer/settings" className="font-bold text-[#c96c83] underline">
                   Settings
                 </a>{" "}
                 to enable automatic payment for recurring bookings.
               </p>
             )
           )}
+        </DashboardPanel>
+
         </div>
 
-        {/* ── Payment & tip ── */}
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-[#101217]">Payment</p>
-          <div className="flex gap-2 flex-wrap">
-            {[
-              { key: false, label: "Pay after service" },
-              { key: true, label: "Pay now" },
-            ].map((opt) => (
-              <button
-                key={String(opt.key)}
-                type="button"
-                onClick={() => setPayUpfront(opt.key)}
-                className="px-4 py-1.5 rounded-full text-xs font-semibold transition-colors"
-                style={
-                  payUpfront === opt.key
-                    ? { background: "#c96c83", color: "#fff" }
-                    : { background: "#f4f1eb", color: "#5f6268" }
-                }
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          {clientType === "group" && (
-            <p className="rounded-xl bg-[#f4f1eb] px-4 py-3 text-xs text-[#5f6268] leading-5">
-              Group bookings require a deposit, collected now. The balance is due after service.
-            </p>
-          )}
-          <div>
-            <label className="text-xs text-[#5f6268]">Add a tip for your technician (optional)</label>
-            <input
-              type="number" min="0" step="1" inputMode="decimal" placeholder="$0"
-              value={tip} onChange={(e) => setTip(e.target.value)}
-              className="mt-1 w-full h-10 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
-            />
-          </div>
-          <p className="text-[11px] text-[#8a8d93] leading-4">
-            {hasCard
-              ? "We'll charge your card on file."
-              : "We'll email you a secure payment link to complete payment."}
-          </p>
-        </div>
-
-        {/* ── Booking for someone else ── */}
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-[#101217]">Booking for someone else? (optional)</p>
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              placeholder="Their name" value={bookedForName} onChange={(e) => setBookedForName(e.target.value)}
-              className="h-10 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
-            />
-            <input
-              placeholder="Their phone" value={bookedForPhone} onChange={(e) => setBookedForPhone(e.target.value)}
-              className="h-10 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
-            />
-          </div>
-        </div>
-
-        {/* ── Error ── */}
-        {result?.type === "error" && (
-          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-            <X className="size-4 text-red-500 mt-0.5 shrink-0" />
-            <p className="text-sm text-red-700">{result.message}</p>
-          </div>
-        )}
-
-        {/* ── Out-of-area: no dead end — offer a callback ── */}
-        {notServiced ? (
-          <div className="space-y-3 rounded-xl border border-[#c96c83]/30 bg-[#f4f1eb] px-4 py-4">
-            <p className="text-sm text-[#101217]">
-              We don&apos;t have a technician in your area yet. Call us and we&apos;ll check for someone nearby.
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              {COMPANY_PHONE && (
-                <a
-                  href={`tel:${COMPANY_PHONE}`}
-                  className="px-4 h-10 inline-flex items-center rounded-xl text-sm font-semibold"
-                  style={{ background: "#c96c83", color: "#fff" }}
-                >
-                  Call {COMPANY_PHONE}
-                </a>
-              )}
-              <Button
-                type="button"
-                onClick={() => requestCallback.mutate()}
-                disabled={requestCallback.isPending || !activePostal}
-                className="h-10 rounded-xl text-sm font-semibold"
-                style={{ background: "#fff", border: "1px solid #c96c83", color: "#c96c83" }}
-              >
-                {requestCallback.isPending ? "Sending…" : "Request a callback"}
-              </Button>
+        <div className="space-y-6">
+          <DashboardPanel className="space-y-4" tone="warm">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+                Booking summary
+              </p>
+              <h3 className="mt-1 text-lg font-extrabold text-[#101217]">
+                {selectedService?.name ?? "Choose your service"}
+              </h3>
             </div>
-          </div>
-        ) : (
-          /* ── Submit ── */
-          <Button
-            type="submit"
-            disabled={!canSubmit || isPending}
-            className="w-full h-12 text-base font-bold rounded-xl"
-            style={{ background: "#c96c83", border: "none", color: "#fff" }}
-          >
-            {isPending ? "Submitting…" : payUpfront ? "Confirm & Pay" : "Confirm Booking"}
-          </Button>
-        )}
+            <div className="space-y-3 border-t border-black/8 pt-4 text-sm text-[#5f6268]">
+              <p className="flex items-center justify-between gap-3">
+                <span>Date</span>
+                <span className="font-bold text-[#101217]">{date || "Not selected"}</span>
+              </p>
+              <p className="flex items-center justify-between gap-3">
+                <span>Time</span>
+                <span className="font-bold text-[#101217]">{time || "Not selected"}</span>
+              </p>
+              <p className="flex items-center justify-between gap-3">
+                <span>Price</span>
+                <span className="font-bold text-[#101217]">
+                  {selectedService ? `$${Number(selectedService.price).toFixed(0)}+` : "-"}
+                </span>
+              </p>
+            </div>
+
+            {isPending ? (
+              <BookingFeedback
+                icon={Clock}
+                message="Submitting your booking request. Please keep this page open."
+                tone="info"
+              />
+            ) : result?.type === "error" ? (
+              <BookingFeedback icon={X} message={result.message} tone="error" />
+            ) : formHint ? (
+              <BookingFeedback icon={CalendarDays} message={formHint} tone="info" />
+            ) : null}
+
+            <Button
+              type="submit"
+              disabled={!canSubmit || isPending}
+              className="h-12 w-full text-base font-bold"
+              style={{ background: "#c96c83", border: "none", color: "#fff" }}
+            >
+              {isPending ? "Submitting..." : "Confirm Booking"}
+            </Button>
+          </DashboardPanel>
+
+          <PwaInstallCard />
+        </div>
       </form>
+    </DashboardPage>
+  )
+}
+
+function BookingFeedback({
+  icon: Icon,
+  message,
+  tone,
+}: {
+  icon: typeof CalendarDays
+  message: string
+  tone: "error" | "info"
+}) {
+  return (
+    <div
+      aria-live="polite"
+      className={
+        tone === "error"
+          ? "flex items-start gap-3 border border-red-200 bg-red-50 px-4 py-3"
+          : "flex items-start gap-3 border border-[#c96c83]/20 bg-white px-4 py-3"
+      }
+    >
+      <Icon
+        aria-hidden="true"
+        className={
+          tone === "error"
+            ? "mt-0.5 size-4 shrink-0 text-red-500"
+            : "mt-0.5 size-4 shrink-0 text-[#c96c83]"
+        }
+      />
+      <p className={tone === "error" ? "text-sm text-red-700" : "text-sm leading-6 text-[#5f6268]"}>
+        {message}
+      </p>
     </div>
   )
 }
 
-export default function CustomerBookPage() {
-  return (
-    <Suspense fallback={null}>
-      <CustomerBookPageContent />
-    </Suspense>
-  )
+function getBookingFormHint({
+  hasAddress,
+  hasDate,
+  hasService,
+  isTimeValid,
+}: {
+  hasAddress: boolean
+  hasDate: boolean
+  hasService: boolean
+  isTimeValid: boolean
+}) {
+  const missing: string[] = []
+  if (!hasService) missing.push("service")
+  if (!hasDate) missing.push("date")
+  if (!isTimeValid) missing.push("valid time")
+  if (!hasAddress) missing.push("service address")
+
+  if (missing.length === 0) return null
+  return `Complete ${formatList(missing)} to continue.`
+}
+
+function formatList(items: string[]) {
+  if (items.length === 1) return `the ${items[0]}`
+  if (items.length === 2) return `the ${items[0]} and ${items[1]}`
+  return `the ${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`
+}
+
+function getBookableDate(value: string | null) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  if (value < TODAY) return null
+
+  const [year, month, day] = value.split("-").map(Number)
+  const parsed = new Date(year, month - 1, day)
+  const isValidDate =
+    parsed.getFullYear() === year &&
+    parsed.getMonth() === month - 1 &&
+    parsed.getDate() === day
+
+  return isValidDate ? value : null
 }

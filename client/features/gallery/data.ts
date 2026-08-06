@@ -8,10 +8,10 @@ export const galleryItems: GalleryItem[] = [
     title: "Ready to come to you",
     category: "Team",
     description:
-      "The Beauty at Your Door team prepared for mobile appointments across the GTA.",
+      "The Beauty @ Your Door team prepared for mobile appointments across the GTA.",
     image: {
       src: `${newImages}/beauty-team-group-portrait-06.webp`,
-      alt: "Beauty at Your Door team wearing branded shirts",
+      alt: "Beauty @ Your Door team wearing branded shirts",
     },
     size: "wide",
   },
@@ -59,7 +59,7 @@ export const galleryItems: GalleryItem[] = [
       "Susi brings more than two decades of beauty industry experience to the brand.",
     image: {
       src: `${newImages}/susi-team-portrait-01.webp`,
-      alt: "Susi from Beauty at Your Door seated for a team portrait",
+      alt: "Susi from Beauty @ Your Door seated for a team portrait",
     },
   },
   {
@@ -82,7 +82,7 @@ export const galleryItems: GalleryItem[] = [
       "Vanessa supports clients with nail care, pedicure care, and comfort-focused service.",
     image: {
       src: `${newImages}/vanessa-team-portrait-01.webp`,
-      alt: "Vanessa from Beauty at Your Door seated for a team portrait",
+      alt: "Vanessa from Beauty @ Your Door seated for a team portrait",
     },
   },
   {
@@ -104,7 +104,7 @@ export const galleryItems: GalleryItem[] = [
       "The mobile professionals clients invite into homes, hotels, events, and workplaces.",
     image: {
       src: `${newImages}/beauty-team-group-portrait-02.webp`,
-      alt: "Beauty at Your Door team portrait",
+      alt: "Beauty @ Your Door team portrait",
     },
     size: "wide",
   },
@@ -152,7 +152,7 @@ export const galleryItems: GalleryItem[] = [
       "Dana brings experienced nail care and personalized design to client appointments.",
     image: {
       src: `${newImages}/dana-team-portrait-01.webp`,
-      alt: "Dana from Beauty at Your Door seated for a team portrait",
+      alt: "Dana from Beauty @ Your Door seated for a team portrait",
     },
   },
   {
@@ -185,7 +185,7 @@ export const galleryItems: GalleryItem[] = [
       "The team behind the mobile beauty experience and service standards.",
     image: {
       src: `${newImages}/beauty-team-group-portrait-04.webp`,
-      alt: "Beauty at Your Door team smiling in branded shirts",
+      alt: "Beauty @ Your Door team smiling in branded shirts",
     },
     size: "wide",
   },
@@ -234,7 +234,7 @@ export const galleryItems: GalleryItem[] = [
       "A team portrait showing the people and personality behind the service.",
     image: {
       src: `${newImages}/beauty-team-group-portrait-01.webp`,
-      alt: "Beauty at Your Door team group portrait",
+      alt: "Beauty @ Your Door team group portrait",
     },
     size: "wide",
   },

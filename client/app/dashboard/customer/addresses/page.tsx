@@ -1,10 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import api from "@/lib/api"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { MapPin, Plus } from "lucide-react"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
+import api from "@/lib/api"
 
 interface Address {
   id: number
@@ -17,19 +23,36 @@ interface Address {
   is_default: boolean
 }
 
+const blankAddress = {
+  label: "",
+  line1: "",
+  line2: "",
+  city: "",
+  province: "ON",
+  postal_code: "",
+}
+
+const fieldClass =
+  "h-10 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
+
 export default function CustomerAddressesPage() {
   const qc = useQueryClient()
   const [adding, setAdding] = useState(false)
-  const [form, setForm] = useState({ label: "", line1: "", line2: "", city: "", province: "ON", postal_code: "" })
+  const [form, setForm] = useState(blankAddress)
 
   const { data: addresses = [], isLoading } = useQuery<Address[]>({
     queryKey: ["addresses"],
-    queryFn: () => api.get<Address[]>("/addresses").then((r) => r.data),
+    queryFn: () => api.get<Address[]>("/addresses").then((response) => response.data),
   })
 
   const createMutation = useMutation({
-    mutationFn: () => api.post<Address>("/addresses", { address: form }).then((r) => r.data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["addresses"] }); setAdding(false); setForm({ label: "", line1: "", line2: "", city: "", province: "ON", postal_code: "" }) },
+    mutationFn: () => api.post<Address>("/addresses", { address: form }).then((response) => response.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["addresses"] })
+      setAdding(false)
+      setForm(blankAddress)
+    },
   })
 
   const deleteMutation = useMutation({
@@ -43,87 +66,108 @@ export default function CustomerAddressesPage() {
   })
 
   return (
-    <div className="space-y-6">
+    <DashboardPage maxWidth="wide">
       <DashboardHeader
-        title="My Addresses"
-        subtitle="Service locations for your bookings"
         actions={
           <Button
+            onClick={() => setAdding((value) => !value)}
             size="sm"
-            onClick={() => setAdding((v) => !v)}
-            style={{ background: "#c96c83", border: "none", color: "#fff" }}
+            style={adding ? undefined : { background: "#c96c83", border: "none", color: "#fff" }}
+            variant={adding ? "outline" : "default"}
           >
-            {adding ? "Cancel" : "+ Add Address"}
+            {!adding ? <Plus aria-hidden="true" className="size-4" /> : null}
+            {adding ? "Cancel" : "Add Address"}
           </Button>
         }
+        title="Addresses"
+        subtitle="Manage service locations for mobile beauty appointments."
       />
 
-      {adding && (
-        <div className="rounded-xl border border-black/8 bg-white p-6 space-y-4">
-          <h3 className="font-semibold text-sm text-[#101217]">New Address</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {adding ? (
+        <DashboardPanel>
+          <div className="mb-5">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+              Service location
+            </p>
+            <h2 className="mt-1 text-lg font-extrabold text-[#101217]">New Address</h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
             {(["label", "line1", "line2", "city", "province", "postal_code"] as const).map((field) => (
-              <div key={field} className={field === "line1" ? "sm:col-span-2" : ""}>
-                <label className="block text-xs font-medium text-[#5f6268] mb-1 capitalize">
-                  {field.replace("_", " ")}
-                </label>
+              <div className={field === "line1" ? "sm:col-span-2" : ""} key={field}>
+                <label className={labelClass}>{field.replace("_", " ")}</label>
                 <input
+                  className={fieldClass}
                   value={form[field]}
-                  onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))}
-                  className="w-full h-10 border border-black/15 rounded-lg px-3 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, [field]: event.target.value }))
+                  }
                 />
               </div>
             ))}
           </div>
-          <Button
-            onClick={() => createMutation.mutate()}
-            disabled={createMutation.isPending || !form.line1 || !form.city}
-            style={{ background: "#c96c83", border: "none", color: "#fff" }}
-          >
-            Save Address
-          </Button>
-        </div>
-      )}
+          <div className="mt-5">
+            <Button
+              disabled={createMutation.isPending || !form.line1 || !form.city}
+              onClick={() => createMutation.mutate()}
+              style={{ background: "#c96c83", border: "none", color: "#fff" }}
+            >
+              Save Address
+            </Button>
+          </div>
+        </DashboardPanel>
+      ) : null}
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading addresses...</p>
+        </DashboardPanel>
       ) : addresses.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">
-          No addresses yet.
-        </div>
+        <EmptyState
+          icon={MapPin}
+          title="No addresses yet"
+          description="Add a service address to make checkout and booking faster."
+        />
       ) : (
         <div className="space-y-3">
-          {addresses.map((addr) => (
-            <div key={addr.id} className="rounded-xl border border-black/8 bg-white px-5 py-4 flex items-start gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-sm text-[#101217]">
-                    {addr.label ?? addr.line1}
-                  </span>
-                  {addr.is_default && (
-                    <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "#c96c8322", color: "#c96c83" }}>
-                      Default
-                    </span>
-                  )}
+          {addresses.map((address) => (
+            <DashboardPanel className="p-0" key={address.id}>
+              <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-sm font-extrabold text-[#101217]">
+                      {address.label ?? address.line1}
+                    </h2>
+                    {address.is_default ? <StatusBadgeFor status="default" /> : null}
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-[#5f6268]">
+                    {address.line1}
+                    {address.line2 ? `, ${address.line2}` : ""}, {address.city},{" "}
+                    {address.province} {address.postal_code}
+                  </p>
                 </div>
-                <p className="text-xs text-[#5f6268] mt-0.5">
-                  {addr.line1}{addr.line2 ? `, ${addr.line2}` : ""}, {addr.city}, {addr.province} {addr.postal_code}
-                </p>
-              </div>
-              <div className="flex gap-2 shrink-0">
-                {!addr.is_default && (
-                  <Button variant="ghost" size="xs" onClick={() => defaultMutation.mutate(addr.id)}>
-                    Set Default
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  {!address.is_default ? (
+                    <Button
+                      onClick={() => defaultMutation.mutate(address.id)}
+                      size="xs"
+                      variant="outline"
+                    >
+                      Set Default
+                    </Button>
+                  ) : null}
+                  <Button
+                    onClick={() => deleteMutation.mutate(address.id)}
+                    size="xs"
+                    variant="destructive"
+                  >
+                    Remove
                   </Button>
-                )}
-                <Button variant="destructive" size="xs" onClick={() => deleteMutation.mutate(addr.id)}>
-                  Remove
-                </Button>
+                </div>
               </div>
-            </div>
+            </DashboardPanel>
           ))}
         </div>
       )}
-    </div>
+    </DashboardPage>
   )
 }

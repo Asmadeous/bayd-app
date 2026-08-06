@@ -171,7 +171,7 @@ function GalleryHero() {
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-[#4f535a] sm:text-lg">
               Explore real team moments, finished looks, and mobile service
-              details from Beauty at Your Door. Every image helps you
+              details from Beauty @ Your Door. Every image helps you
               understand the people, care, setup, and finish you can expect
               from your booking.
             </p>
@@ -213,7 +213,7 @@ function GalleryHero() {
         >
           <div className="relative row-span-2 overflow-hidden bg-[#101217]">
             <Image
-              alt="Beauty at Your Door team wearing branded shirts"
+              alt="Beauty @ Your Door team wearing branded shirts"
               className="object-cover"
               fill
               priority
@@ -523,7 +523,7 @@ function GalleryViewer({
                   {current} / {total}
                 </span>
                 <Image
-                  alt="Beauty at Your Door"
+                  alt="Beauty @ Your Door"
                   className="h-9 w-auto object-contain"
                   height={936}
                   src="/images/brand/bayd-logo-black.png"

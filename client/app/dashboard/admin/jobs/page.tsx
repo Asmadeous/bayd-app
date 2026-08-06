@@ -1,16 +1,32 @@
 "use client"
 
 import { useState } from "react"
-import { Download, Lock, Pencil, Plus, Trash2 } from "lucide-react"
+import { BriefcaseBusiness, Download, Lock, Pencil, Plus, Trash2 } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import {
+  DashboardToolbar,
+  SegmentedControl,
+  SegmentButton,
+  ToolbarSection,
+} from "@/components/dashboard/dashboard-toolbar"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   useAdminJobPostings,
   useSaveJobPosting,
   useDeleteJobPosting,
   useAdminJobApplications,
   useUpdateApplicationStatus,
-  useDeleteApplication,
   downloadApplicationDocument,
   type AdminJobPosting,
 } from "@/lib/hooks/use-admin"
@@ -27,22 +43,25 @@ export default function AdminJobsPage() {
   const [tab, setTab] = useState<"postings" | "applications">("postings")
 
   return (
-    <div className="space-y-6">
+    <DashboardPage maxWidth="wide">
       <DashboardHeader title="Jobs" subtitle="Manage job postings and applications" />
-      <div className="flex gap-2">
+      <DashboardToolbar>
+        <ToolbarSection>
+          <SegmentedControl>
         {(["postings", "applications"] as const).map((t) => (
-          <button
+          <SegmentButton
+            active={tab === t}
             key={t}
             onClick={() => setTab(t)}
-            className="rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition-colors"
-            style={tab === t ? { background: "#c96c83", color: "#fff" } : { background: "white", color: "#5f6268", border: "1px solid #e5e5e5" }}
           >
             {t}
-          </button>
+          </SegmentButton>
         ))}
-      </div>
+          </SegmentedControl>
+        </ToolbarSection>
+      </DashboardToolbar>
       {tab === "postings" ? <PostingsTab /> : <ApplicationsTab />}
-    </div>
+    </DashboardPage>
   )
 }
 
@@ -57,23 +76,26 @@ function PostingsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex gap-2">
+      <DashboardToolbar>
+        <ToolbarSection>
+          <SegmentedControl>
           {["", "draft", "published", "closed"].map((s) => (
-            <button
+            <SegmentButton
+              active={status === s}
               key={s || "all"}
               onClick={() => setStatus(s)}
-              className="rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors"
-              style={status === s ? { background: "#101217", color: "#fff" } : { background: "white", color: "#5f6268", border: "1px solid #e5e5e5" }}
             >
               {s || "all"}
-            </button>
+            </SegmentButton>
           ))}
-        </div>
+          </SegmentedControl>
+        </ToolbarSection>
+        <ToolbarSection>
         <Button size="sm" onClick={() => setEditing({ employment_type: "full_time", status: "draft" })} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
           <Plus className="size-4" /> New posting
         </Button>
-      </div>
+        </ToolbarSection>
+      </DashboardToolbar>
 
       {editing && (
         <PostingForm
@@ -87,15 +109,19 @@ function PostingsTab() {
       {isLoading ? (
         <p className="text-sm text-[#5f6268]">Loading…</p>
       ) : postings.length === 0 ? (
-        <p className="rounded-xl border border-black/8 bg-white px-5 py-10 text-center text-sm text-[#5f6268]">No postings yet.</p>
+        <EmptyState
+          icon={BriefcaseBusiness}
+          title="No postings yet"
+          description="Create a job posting to start collecting applications."
+        />
       ) : (
         <div className="space-y-3">
           {postings.map((p) => (
-            <div key={p.id} className="rounded-xl border border-black/8 bg-white px-5 py-4 flex items-start justify-between gap-3">
+            <DashboardPanel key={p.id} className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-sm text-[#101217]">{p.title}</span>
-                  <Badge label={p.status} kind={p.status} />
+                  <span className="text-sm font-extrabold text-[#101217]">{p.title}</span>
+                  <StatusBadgeFor status={p.status} />
                   <span className="text-xs text-[#5f6268]">{TYPE_LABEL[p.employment_type]}</span>
                 </div>
                 <p className="text-xs text-[#5f6268] mt-0.5">
@@ -107,7 +133,7 @@ function PostingsTab() {
                 <Button size="xs" variant="outline" onClick={() => setEditing(p)}><Pencil className="size-3.5" /></Button>
                 <Button size="xs" variant="outline" onClick={() => { if (confirm("Delete this posting?")) del.mutate(p.id) }}><Trash2 className="size-3.5 text-[#d4754a]" /></Button>
               </div>
-            </div>
+            </DashboardPanel>
           ))}
         </div>
       )}
@@ -126,12 +152,24 @@ function PostingForm({ posting, saving, onSave, onCancel }: {
   const field = "w-full h-10 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
 
   return (
-    <div className="rounded-xl border border-[#c96c83]/30 bg-white p-5 space-y-3">
+    <DashboardPanel className="space-y-3 border-[#c96c83]/30">
       <div className="grid sm:grid-cols-2 gap-3">
         <input className={field} placeholder="Title *" value={form.title ?? ""} onChange={(e) => set("title", e.target.value)} />
-        <select className={field} value={form.employment_type ?? "full_time"} onChange={(e) => set("employment_type", e.target.value)}>
-          {TYPES.map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
-        </select>
+        <Select
+          onValueChange={(value) => set("employment_type", value ?? "full_time")}
+          value={form.employment_type ?? "full_time"}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TYPES.map((type) => (
+              <SelectItem key={type} value={type}>
+                {TYPE_LABEL[type]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <input className={field} placeholder="Department" value={form.department ?? ""} onChange={(e) => set("department", e.target.value)} />
         <input className={field} placeholder="Location" value={form.location ?? ""} onChange={(e) => set("location", e.target.value)} />
         <input className={field} placeholder="Salary min" value={form.salary_min ?? ""} onChange={(e) => set("salary_min", e.target.value)} />
@@ -139,16 +177,28 @@ function PostingForm({ posting, saving, onSave, onCancel }: {
       </div>
       <textarea className={field.replace("h-10", "min-h-20 py-2")} placeholder="Description" value={form.description ?? ""} onChange={(e) => set("description", e.target.value)} />
       <textarea className={field.replace("h-10", "min-h-20 py-2")} placeholder="Requirements" value={form.requirements ?? ""} onChange={(e) => set("requirements", e.target.value)} />
-      <select className={field} value={form.status ?? "draft"} onChange={(e) => set("status", e.target.value)}>
-        {["draft", "published", "closed"].map((s) => <option key={s} value={s}>{s}</option>)}
-      </select>
+      <Select
+        onValueChange={(value) => set("status", value ?? "draft")}
+        value={form.status ?? "draft"}
+      >
+        <SelectTrigger className="capitalize">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {["draft", "published", "closed"].map((status) => (
+            <SelectItem className="capitalize" key={status} value={status}>
+              {status}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <div className="flex gap-2">
         <Button size="sm" disabled={saving || !form.title} onClick={() => onSave(form)} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
           {saving ? "Saving…" : "Save"}
         </Button>
         <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
       </div>
-    </div>
+    </DashboardPanel>
   )
 }
 
@@ -156,29 +206,34 @@ function ApplicationsTab() {
   const [status, setStatus] = useState("")
   const { data, isLoading } = useAdminJobApplications({ status: status || undefined })
   const updateStatus = useUpdateApplicationStatus()
-  const del = useDeleteApplication()
   const apps = data?.data ?? []
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <DashboardToolbar>
+        <ToolbarSection>
+          <SegmentedControl>
         {["", ...APP_STATUSES].map((s) => (
-          <button key={s || "all"} onClick={() => setStatus(s)}
-            className="rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors"
-            style={status === s ? { background: "#101217", color: "#fff" } : { background: "white", color: "#5f6268", border: "1px solid #e5e5e5" }}>
+          <SegmentButton active={status === s} key={s || "all"} onClick={() => setStatus(s)}>
             {s || "all"}
-          </button>
+          </SegmentButton>
         ))}
-      </div>
+          </SegmentedControl>
+        </ToolbarSection>
+      </DashboardToolbar>
 
       {isLoading ? (
         <p className="text-sm text-[#5f6268]">Loading…</p>
       ) : apps.length === 0 ? (
-        <p className="rounded-xl border border-black/8 bg-white px-5 py-10 text-center text-sm text-[#5f6268]">No applications yet.</p>
+        <EmptyState
+          icon={BriefcaseBusiness}
+          title="No applications yet"
+          description="Applications matching this filter will appear here."
+        />
       ) : (
         <div className="space-y-3">
           {apps.map((a) => (
-            <div key={a.id} className="rounded-xl border border-black/8 bg-white px-5 py-4">
+            <DashboardPanel key={a.id}>
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -189,23 +244,23 @@ function ApplicationsTab() {
                   <p className="text-xs text-[#5f6268] mt-0.5">{a.email}{a.phone ? ` · ${a.phone}` : ""} · {new Date(a.created_at).toLocaleDateString("en-CA")}</p>
                   {a.message && <p className="text-sm text-[#101217] mt-1.5">{a.message}</p>}
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <select
-                    value={a.status}
-                    onChange={(e) => updateStatus.mutate({ id: a.id, status: e.target.value })}
-                    className="h-8 border border-black/15 rounded-lg px-2 text-xs capitalize focus:outline-none focus:border-[#c96c83]"
-                  >
-                    {APP_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  <button
-                    title="Delete application"
-                    disabled={del.isPending}
-                    onClick={() => { if (confirm("Delete this application?")) del.mutate(a.id) }}
-                    className="text-[#d4754a] hover:opacity-70"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </div>
+                <Select
+                  onValueChange={(value) =>
+                    updateStatus.mutate({ id: a.id, status: value ?? a.status })
+                  }
+                  value={a.status}
+                >
+                  <SelectTrigger className="h-8 w-32 text-xs capitalize">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {APP_STATUSES.map((status) => (
+                      <SelectItem className="capitalize" key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               {a.documents.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -223,18 +278,12 @@ function ApplicationsTab() {
                   ))}
                 </div>
               )}
-            </div>
+            </DashboardPanel>
           ))}
         </div>
       )}
     </div>
   )
-}
-
-function Badge({ label, kind }: { label: string; kind: string }) {
-  const colors: Record<string, string> = { published: "#5a9e5a", draft: "#d4a843", closed: "#8a8d93" }
-  const c = colors[kind] ?? "#8a8d93"
-  return <span className="text-xs px-2 py-0.5 rounded-full font-medium capitalize" style={{ background: `${c}22`, color: c }}>{label}</span>
 }
 
 function ScanBadge({ status }: { status: string }) {

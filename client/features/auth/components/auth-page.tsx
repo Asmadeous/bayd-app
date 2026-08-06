@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 
 import { buttonVariants } from "@/components/ui/button"
+import { PasswordInput } from "@/components/ui/password-input"
 import { GoogleSignIn } from "@/features/auth/components/google-sign-in"
 import type { AuthPageContent } from "@/features/auth/types"
 import { cn } from "@/lib/utils"
@@ -22,11 +23,13 @@ export function AuthPage({ content }: AuthPageProps) {
   const { login, register } = useAuth()
   const [values, setValues] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
+    setSuccess(null)
     setLoading(true)
 
     try {
@@ -35,6 +38,7 @@ export function AuthPage({ content }: AuthPageProps) {
           email: values.email ?? "",
           password: values.password ?? "",
         })
+        setSuccess("Welcome back. Opening your dashboard now.")
       } else if (content.mode === "signup") {
         const [first_name, ...rest] = (values.name ?? "").trim().split(" ")
         await register.mutateAsync({
@@ -50,9 +54,10 @@ export function AuthPage({ content }: AuthPageProps) {
           special_needs: values.special_needs === "true",
           referral_code: referralCode,
         })
+        setSuccess("Your account has been created. Opening your dashboard now.")
       } else if (content.mode === "forgot") {
         // Placeholder — no forgot-password endpoint yet
-        setError("Password reset is not yet available. Contact support.")
+        setSuccess("Password reset by email is not available yet. Please contact support and we will help restore access to your account.")
         setLoading(false)
         return
       }
@@ -134,7 +139,7 @@ export function AuthPage({ content }: AuthPageProps) {
 
             <div>
               <Image
-                alt="Beauty at Your Door"
+                alt="Beauty @ Your Door"
                 className="mb-8 h-16 w-auto object-contain"
                 height={936}
                 priority
@@ -159,18 +164,32 @@ export function AuthPage({ content }: AuthPageProps) {
                   <span className="text-sm font-extrabold text-[#101217]">
                     {field.label}
                   </span>
-                  <input
-                    autoComplete={field.autoComplete}
-                    className="mt-2 h-13 w-full border border-black/15 bg-white px-4 text-base font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
-                    name={field.name}
-                    placeholder={field.placeholder}
-                    required
-                    type={field.type}
-                    value={values[field.name] ?? ""}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, [field.name]: e.target.value }))
-                    }
-                  />
+                  {field.type === "password" ? (
+                    <PasswordInput
+                      autoComplete={field.autoComplete}
+                      className="mt-2 h-13 w-full border border-black/15 bg-white px-4 text-base font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                      name={field.name}
+                      placeholder={field.placeholder}
+                      required
+                      value={values[field.name] ?? ""}
+                      onChange={(e) =>
+                        setValues((v) => ({ ...v, [field.name]: e.target.value }))
+                      }
+                    />
+                  ) : (
+                    <input
+                      autoComplete={field.autoComplete}
+                      className="mt-2 h-13 w-full border border-black/15 bg-white px-4 text-base font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                      name={field.name}
+                      placeholder={field.placeholder}
+                      required
+                      type={field.type}
+                      value={values[field.name] ?? ""}
+                      onChange={(e) =>
+                        setValues((v) => ({ ...v, [field.name]: e.target.value }))
+                      }
+                    />
+                  )}
                 </label>
               ))}
 
@@ -254,11 +273,11 @@ export function AuthPage({ content }: AuthPageProps) {
                   </label>
                   <div className="flex gap-3 items-center">
                     {values.avatar_url && (
-                      <img
-                        src={values.avatar_url}
-                        alt="Preview"
-                        className="size-12 rounded-full object-cover border border-black/10 shrink-0"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                      <span
+                        aria-label="Preview"
+                        className="size-12 shrink-0 rounded-full border border-black/10 bg-cover bg-center"
+                        role="img"
+                        style={{ backgroundImage: `url(${values.avatar_url})` }}
                       />
                     )}
                     <input
@@ -275,6 +294,12 @@ export function AuthPage({ content }: AuthPageProps) {
               {error && (
                 <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {error}
+                </p>
+              )}
+
+              {success && (
+                <p className="rounded-lg border border-[#5a9e5a]/25 bg-[#5a9e5a]/10 px-4 py-3 text-sm font-semibold text-[#3f7a3f]">
+                  {success}
                 </p>
               )}
 

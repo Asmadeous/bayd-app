@@ -7,9 +7,9 @@ type TeamMemberRouteProps = {
 };
 
 export const metadata: Metadata = {
-  title: "Team Member | Beauty at Your Door",
+  title: "Team Member | Beauty @ Your Door",
   description:
-    "View this Beauty at Your Door technician's profile, services, and verified client reviews.",
+    "View this Beauty @ Your Door technician's profile, services, and verified client reviews.",
 };
 
 export default async function TeamMember({ params }: TeamMemberRouteProps) {

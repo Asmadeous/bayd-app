@@ -1,4 +1,4 @@
-# Beauty at Your Door — full backend schema.
+# Beauty @ Your Door — full backend schema.
 
 class CreateBeautyAtYourDoorSchema < ActiveRecord::Migration[8.0]
   def change

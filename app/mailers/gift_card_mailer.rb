@@ -18,6 +18,6 @@ class GiftCardMailer < ApplicationMailer
     return if to.blank?
 
     gift_card.update_column(:delivered_at, Time.current)
-    mail(to: to, subject: "🎁 You've received a Beauty at Your Door gift card")
+    mail(to: to, subject: "🎁 You've received a Beauty @ Your Door gift card")
   end
 end

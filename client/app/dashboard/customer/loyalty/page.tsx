@@ -1,9 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Check, Copy, Gift } from "lucide-react"
+import { Check, Copy, Gift, Star } from "lucide-react"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
-import { StatCard } from "@/components/dashboard/stat-card"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { MetricCard } from "@/components/dashboard/metric-card"
+import { Button } from "@/components/ui/button"
 import { useLoyalty, useReferral } from "@/lib/hooks/use-account"
 
 export default function CustomerLoyaltyPage() {
@@ -11,9 +16,13 @@ export default function CustomerLoyaltyPage() {
   const { data: referral } = useReferral()
   const [copied, setCopied] = useState(false)
 
-  const txns = loyalty?.loyalty_transactions ?? []
-  const earned = txns.filter((t) => t.points > 0).reduce((s, t) => s + t.points, 0)
-  const redeemed = txns.filter((t) => t.points < 0).reduce((s, t) => s + Math.abs(t.points), 0)
+  const transactions = loyalty?.loyalty_transactions ?? []
+  const earned = transactions
+    .filter((transaction) => transaction.points > 0)
+    .reduce((sum, transaction) => sum + transaction.points, 0)
+  const redeemed = transactions
+    .filter((transaction) => transaction.points < 0)
+    .reduce((sum, transaction) => sum + Math.abs(transaction.points), 0)
 
   function copyReferral() {
     if (!referral?.url) return
@@ -23,76 +32,92 @@ export default function CustomerLoyaltyPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <DashboardPage maxWidth="wide">
       <DashboardHeader
         title="Loyalty Program"
-        subtitle="Earn points on every booking and redeem for discounts"
+        subtitle="Earn points on every booking and redeem them for future beauty services."
       />
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <StatCard label="Points Balance" value={isLoading ? "—" : loyalty?.points_balance ?? 0} accent />
-        <StatCard label="Points Earned" value={isLoading ? "—" : earned} sub="All time" />
-        <StatCard label="Points Redeemed" value={isLoading ? "—" : redeemed} sub="All time" />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <MetricCard
+          accent
+          icon={Star}
+          label="Points Balance"
+          value={isLoading ? "-" : loyalty?.points_balance ?? 0}
+        />
+        <MetricCard icon={Check} label="Points Earned" value={isLoading ? "-" : earned} />
+        <MetricCard icon={Gift} label="Points Redeemed" value={isLoading ? "-" : redeemed} />
       </div>
 
-      {/* Referral */}
-      {referral && (
-        <div className="rounded-xl border border-black/8 bg-white p-6">
-          <div className="flex items-center gap-2.5 mb-3">
-            <Gift className="size-4 text-[#c96c83]" />
-            <h3 className="font-semibold text-sm text-[#101217]">Refer a friend</h3>
+      {referral ? (
+        <DashboardPanel className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="grid size-10 place-items-center border border-black/10 bg-[#f4f1eb] text-[#c96c83]">
+              <Gift aria-hidden="true" className="size-5" />
+            </span>
+            <div>
+              <h2 className="text-sm font-extrabold text-[#101217]">Refer a friend</h2>
+              <p className="mt-1 text-xs font-semibold text-[#5f6268]">
+                {referral.referrals_count} referrals so far
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-[#5f6268] mb-4">
+          <p className="max-w-2xl text-sm leading-6 text-[#5f6268]">
             Share your link. When a friend completes their first booking, you earn{" "}
-            <span className="font-semibold text-[#101217]">{referral.points_per_referral} points</span>.
-            You&apos;ve referred {referral.referrals_count} so far.
+            <span className="font-bold text-[#101217]">{referral.points_per_referral} points</span>.
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <input
+              className="h-10 flex-1 border border-black/15 bg-[#f4f1eb] px-3 text-sm font-semibold text-[#5f6268] outline-none"
               readOnly
               value={referral.url}
-              className="flex-1 h-10 border border-black/15 rounded-lg px-3 text-sm text-[#5f6268] bg-black/2"
             />
-            <button
+            <Button
               onClick={copyReferral}
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg text-sm font-semibold text-white"
-              style={{ background: "#c96c83" }}
+              style={{ background: "#c96c83", border: "none", color: "#fff" }}
             >
-              {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+              {copied ? <Check aria-hidden="true" className="size-4" /> : <Copy aria-hidden="true" className="size-4" />}
               {copied ? "Copied" : "Copy"}
-            </button>
+            </Button>
           </div>
-        </div>
-      )}
+        </DashboardPanel>
+      ) : null}
 
-      {/* History */}
-      <div className="rounded-xl border border-black/8 bg-white p-6">
-        <h3 className="font-semibold text-sm text-[#101217] mb-4">Points history</h3>
+      <DashboardPanel>
+        <h2 className="text-sm font-extrabold text-[#101217]">Points history</h2>
         {isLoading ? (
-          <p className="text-sm text-[#5f6268]">Loading…</p>
-        ) : txns.length === 0 ? (
-          <p className="text-sm text-[#5f6268] py-6 text-center">
-            No points activity yet. Complete a booking to start earning.
-          </p>
+          <p className="mt-4 text-sm text-[#5f6268]">Loading points history...</p>
+        ) : transactions.length === 0 ? (
+          <EmptyState
+            className="mt-4"
+            icon={Star}
+            title="No points activity yet"
+            description="Complete a booking to start earning points."
+          />
         ) : (
-          <div className="divide-y divide-black/5">
-            {txns.map((t) => (
-              <div key={t.id} className="flex items-center justify-between py-2.5">
+          <div className="mt-4 divide-y divide-black/8">
+            {transactions.map((transaction) => (
+              <div className="flex items-center justify-between gap-4 py-3" key={transaction.id}>
                 <div>
-                  <p className="text-sm text-[#101217]">{t.description || t.kind}</p>
-                  <p className="text-xs text-[#5f6268]">{new Date(t.created_at).toLocaleDateString("en-CA")}</p>
+                  <p className="text-sm font-semibold text-[#101217]">
+                    {transaction.description || transaction.kind}
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-[#5f6268]">
+                    {new Date(transaction.created_at).toLocaleDateString("en-CA")}
+                  </p>
                 </div>
                 <span
-                  className="text-sm font-semibold"
-                  style={{ color: t.points >= 0 ? "#5a9e5a" : "#d4754a" }}
+                  className="text-sm font-extrabold"
+                  style={{ color: transaction.points >= 0 ? "#5a9e5a" : "#d4754a" }}
                 >
-                  {t.points >= 0 ? "+" : ""}{t.points}
+                  {transaction.points >= 0 ? "+" : ""}
+                  {transaction.points}
                 </span>
               </div>
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </DashboardPanel>
+    </DashboardPage>
   )
 }

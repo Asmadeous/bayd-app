@@ -1,10 +1,23 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { CalendarDays, List } from "lucide-react"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import {
+  DashboardToolbar,
+  SegmentedControl,
+  SegmentButton,
+  ToolbarSection,
+} from "@/components/dashboard/dashboard-toolbar"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { AppCalendar } from "@/components/dashboard/app-calendar"
 import { BookingCard } from "@/components/dashboard/booking-card"
 import { ReviewDialog } from "@/components/dashboard/review-dialog"
-import { MeetingButton } from "@/components/dashboard/meeting-button"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
 import { useBookings, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
 
@@ -12,9 +25,18 @@ const ALL_STATUSES: Booking["status"][] = [
   "pending", "confirmed", "in_progress", "completed", "cancelled", "no_show",
 ]
 
+type BookingsView = "list" | "calendar"
+
 export default function CustomerBookingsPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [page, setPage] = useState(1)
   const [filter, setFilter] = useState<Booking["status"] | "all">("all")
+  const [view, setView] = useState<BookingsView>(
+    searchParams.get("view") === "calendar" ? "calendar" : "list",
+  )
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [dayBookings, setDayBookings] = useState<Booking[]>([])
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
   const { data, isLoading } = useBookings(page)
   const cancelMutation = useCancelBooking()
@@ -25,98 +47,172 @@ export default function CustomerBookingsPage() {
   const filtered =
     filter === "all" ? bookings : bookings.filter((b) => b.status === filter)
 
-  return (
-    <div className="space-y-6">
-      <DashboardHeader title="My Bookings" subtitle="All your past and upcoming appointments" />
+  const dateLabel = selectedDate?.toLocaleDateString("en-CA", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  })
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {(["all", ...ALL_STATUSES] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setFilter(s)}
-            className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize"
-            style={
-              filter === s
-                ? { background: "#c96c83", color: "#fff" }
-                : { background: "white", color: "#5f6268", border: "1px solid #e5e5e5" }
-            }
-          >
-            {s.replace("_", " ")}
-          </button>
-        ))}
-      </div>
+  function handleViewChange(nextView: BookingsView) {
+    setView(nextView)
+    if (nextView === "calendar") {
+      setPage(1)
+    }
+    router.replace(
+      nextView === "calendar"
+        ? "/dashboard/customer/bookings?view=calendar"
+        : "/dashboard/customer/bookings",
+      { scroll: false },
+    )
+  }
+
+  function handleDaySelect(date: Date, selectedBookings: Booking[]) {
+    setSelectedDate(date)
+    setDayBookings(selectedBookings)
+  }
+
+  return (
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader title="Bookings" subtitle="Review appointments as a list or calendar" />
+
+      <DashboardToolbar>
+        <ToolbarSection>
+          <SegmentedControl>
+            {([
+              { icon: List, label: "List", value: "list" },
+              { icon: CalendarDays, label: "Calendar", value: "calendar" },
+            ] as const).map((item) => {
+              const Icon = item.icon
+
+              return (
+                <SegmentButton
+                  active={view === item.value}
+                  key={item.value}
+                  onClick={() => handleViewChange(item.value)}
+                >
+                  <Icon aria-hidden="true" className="size-4" />
+                  {item.label}
+                </SegmentButton>
+              )
+            })}
+          </SegmentedControl>
+        </ToolbarSection>
+        <ToolbarSection className="text-sm font-semibold text-[#5f6268]">
+          {filtered.length} bookings
+        </ToolbarSection>
+      </DashboardToolbar>
+
+      {view === "list" ? (
+        <DashboardToolbar>
+          <ToolbarSection>
+            <SegmentedControl>
+              {(["all", ...ALL_STATUSES] as const).map((status) => (
+                <SegmentButton
+                  active={filter === status}
+                  key={status}
+                  onClick={() => setFilter(status)}
+                >
+                  {status.replace("_", " ")}
+                </SegmentButton>
+              ))}
+            </SegmentedControl>
+          </ToolbarSection>
+        </DashboardToolbar>
+      ) : null}
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">
-          No bookings found.
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading bookings...</p>
+        </DashboardPanel>
+      ) : view === "calendar" ? (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <AppCalendar bookings={bookings} onSelectDay={handleDaySelect} />
+
+          <DashboardPanel className="space-y-3">
+            <h2 className="text-sm font-semibold text-[#101217]">
+              {selectedDate ? dateLabel : "Select a day to see appointments"}
+            </h2>
+            {selectedDate && dayBookings.length === 0 ? (
+              <EmptyState
+                icon={CalendarDays}
+                title="No bookings on this day"
+                description="Select another date to review scheduled appointments."
+              />
+            ) : null}
+            {dayBookings.map((b) => (
+              <BookingCard key={b.id} booking={b} />
+            ))}
+          </DashboardPanel>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((b) => (
-            <BookingCard
-              key={b.id}
-              booking={b}
-              actions={
-                b.status === "pending" || b.status === "confirmed" ? (
-                  <div className="flex items-center gap-2">
-                    {b.status === "confirmed" && <MeetingButton booking={b} />}
-                    <Button
-                      variant="destructive"
-                      size="xs"
-                      disabled={cancelMutation.isPending}
-                      onClick={() => cancelMutation.mutate({ id: b.id })}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : b.status === "in_progress" ? (
-                  <MeetingButton booking={b} />
-                ) : b.status === "completed" ? (
-                  b.has_review ? (
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "#5a9e5a22", color: "#5a9e5a" }}>
-                      Reviewed
-                    </span>
-                  ) : (
-                    <Button
-                      size="xs"
-                      onClick={() => setReviewBooking(b)}
-                      style={{ background: "#c96c83", border: "none", color: "#fff" }}
-                    >
-                      Leave a review
-                    </Button>
-                  )
-                ) : null
-              }
+        <>
+          {filtered.length === 0 ? (
+            <EmptyState
+              icon={CalendarDays}
+              title="No bookings found"
+              description="Try another filter or book a new appointment."
             />
-          ))}
-        </div>
-      )}
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((b) => (
+                <BookingCard
+                  key={b.id}
+                  booking={b}
+                  actions={
+                    b.status === "pending" || b.status === "confirmed" ? (
+                      <Button
+                        variant="destructive"
+                        size="xs"
+                        disabled={cancelMutation.isPending}
+                        onClick={() => cancelMutation.mutate({ id: b.id })}
+                      >
+                        Cancel
+                      </Button>
+                    ) : b.status === "completed" ? (
+                      b.has_review ? (
+                        <StatusBadgeFor status="reviewed" />
+                      ) : (
+                        <Button
+                          size="xs"
+                          onClick={() => setReviewBooking(b)}
+                          style={{ background: "#c96c83", border: "none", color: "#fff" }}
+                        >
+                          Leave a review
+                        </Button>
+                      )
+                    ) : null
+                  }
+                />
+              ))}
+            </div>
+          )}
 
-      {pagination && pagination.total_pages > 1 && (
-        <div className="flex items-center gap-3 justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Prev
-          </Button>
-          <span className="text-sm text-[#5f6268]">
-            {page} / {pagination.total_pages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!pagination.next_page}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </Button>
-        </div>
+          {pagination && pagination.total_pages > 1 && (
+            <DashboardToolbar className="justify-end">
+              <ToolbarSection className="ml-auto">
+              <Button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                size="sm"
+                variant="outline"
+              >
+                Prev
+              </Button>
+              <span className="px-2 text-sm font-semibold text-[#5f6268]">
+                {page} / {pagination.total_pages}
+              </span>
+              <Button
+                disabled={!pagination.next_page}
+                onClick={() => setPage((p) => p + 1)}
+                size="sm"
+                variant="outline"
+              >
+                Next
+              </Button>
+              </ToolbarSection>
+            </DashboardToolbar>
+          )}
+        </>
       )}
 
       {reviewBooking && (
@@ -125,6 +221,6 @@ export default function CustomerBookingsPage() {
           onClose={() => setReviewBooking(null)}
         />
       )}
-    </div>
+    </DashboardPage>
   )
 }

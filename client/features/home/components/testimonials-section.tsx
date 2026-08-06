@@ -105,7 +105,7 @@ export function TestimonialsSection() {
                 Why clients love
               </p>
               <h2 className="mt-2 max-w-4xl text-5xl font-black italic leading-[0.9] tracking-tight text-white drop-shadow-[0_3px_14px_rgba(0,0,0,0.45)] sm:text-7xl lg:text-8xl">
-                <span className="sr-only">Beauty at Your Door</span>
+                <span className="sr-only">Beauty @ Your Door</span>
                 <Image
                   alt=""
                   aria-hidden="true"

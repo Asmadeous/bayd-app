@@ -2,7 +2,15 @@
 
 import { useState } from "react"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
-import { StatCard } from "@/components/dashboard/stat-card"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import {
+  DashboardToolbar,
+  SegmentedControl,
+  SegmentButton,
+  ToolbarSection,
+} from "@/components/dashboard/dashboard-toolbar"
+import { MetricCard } from "@/components/dashboard/metric-card"
 import {
   useAdminAnalytics,
   type AnalyticsPeriod,
@@ -30,47 +38,44 @@ export default function AdminAnalyticsPage() {
   const s = data?.summary
 
   return (
-    <div className="space-y-6">
+    <DashboardPage maxWidth="wide">
       <DashboardHeader
         title="Analytics"
-        subtitle="Sales performance and worker KPIs"
+        subtitle="Sales performance and worker KPIs."
       />
 
-      {/* Period filter */}
-      <div className="flex gap-2 flex-wrap">
-        {PERIODS.map((p) => (
-          <button
-            key={p.key}
-            onClick={() => setPeriod(p.key)}
-            className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
-            style={
-              period === p.key
-                ? { background: "#c96c83", color: "#fff" }
-                : { background: "white", color: "#5f6268", border: "1px solid #e5e5e5" }
-            }
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      <DashboardToolbar>
+        <ToolbarSection>
+          <SegmentedControl>
+            {PERIODS.map((item) => (
+              <SegmentButton active={period === item.key} key={item.key} onClick={() => setPeriod(item.key)}>
+                {item.label}
+              </SegmentButton>
+            ))}
+          </SegmentedControl>
+        </ToolbarSection>
+      </DashboardToolbar>
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading analytics…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading analytics...</p>
+        </DashboardPanel>
       ) : !data ? (
-        <div className="text-sm text-[#5f6268]">No analytics available.</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">No analytics available.</p>
+        </DashboardPanel>
       ) : (
         <>
-          {/* Summary KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            <StatCard label="Total Revenue" value={cad.format(s!.total_revenue)} accent />
-            <StatCard label="Service Revenue" value={cad.format(s!.service_revenue)} />
-            <StatCard label="Product Revenue" value={cad.format(s!.product_revenue)} />
-            <StatCard label="Completed Bookings" value={s!.completed_bookings} />
-            <StatCard label="New Customers" value={s!.new_customers} />
-            <StatCard
+            <MetricCard label="Total Revenue" value={cad.format(s!.total_revenue)} accent />
+            <MetricCard label="Service Revenue" value={cad.format(s!.service_revenue)} />
+            <MetricCard label="Product Revenue" value={cad.format(s!.product_revenue)} />
+            <MetricCard label="Completed Bookings" value={s!.completed_bookings} />
+            <MetricCard label="New Customers" value={s!.new_customers} />
+            <MetricCard
               label="Avg Rating"
               value={s!.average_rating != null ? s!.average_rating.toFixed(1) : "—"}
-              sub={
+              detail={
                 s!.completion_rate != null
                   ? `${Math.round(s!.completion_rate * 100)}% completion rate`
                   : undefined
@@ -91,7 +96,7 @@ export default function AdminAnalyticsPage() {
           <TopServices services={data.top_services} />
         </>
       )}
-    </div>
+    </DashboardPage>
   )
 }
 
@@ -99,12 +104,12 @@ function InvoicesPanel({ invoices }: { invoices: import("@/lib/hooks/use-admin")
   const KIND_LABEL: Record<string, string> = { booking: "Bookings", order: "Products", gift_card: "Gift cards", manual: "Manual" }
   const kinds = Object.entries(invoices.by_kind)
   return (
-    <div className="rounded-xl border border-black/8 bg-white p-5">
+    <DashboardPanel>
       <h2 className="text-sm font-semibold text-[#101217] mb-4">Transactions / Invoices</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <StatCard label="Invoiced" value={cad.format(invoices.total_invoiced)} accent />
-        <StatCard label="Invoices" value={invoices.count} />
-        <StatCard label="HST Collected" value={cad.format(invoices.tax_collected)} />
+        <MetricCard label="Invoiced" value={cad.format(invoices.total_invoiced)} accent />
+        <MetricCard label="Invoices" value={invoices.count} />
+        <MetricCard label="HST Collected" value={cad.format(invoices.tax_collected)} />
       </div>
       {kinds.length > 0 && (
         <div className="mt-4 space-y-1.5">
@@ -116,7 +121,7 @@ function InvoicesPanel({ invoices }: { invoices: import("@/lib/hooks/use-admin")
           ))}
         </div>
       )}
-    </div>
+    </DashboardPanel>
   )
 }
 
@@ -124,7 +129,7 @@ function RevenueTrend({ trend }: { trend: { date: string; revenue: number }[] })
   const max = Math.max(1, ...trend.map((d) => d.revenue))
 
   return (
-    <div className="rounded-xl border border-black/8 bg-white p-5">
+    <DashboardPanel>
       <h2 className="text-sm font-semibold text-[#101217] mb-4">Revenue Trend</h2>
       {trend.length === 0 ? (
         <p className="text-sm text-[#5f6268] py-8 text-center">
@@ -135,14 +140,14 @@ function RevenueTrend({ trend }: { trend: { date: string; revenue: number }[] })
           {trend.map((d) => (
             <div key={d.date} className="group relative flex h-full flex-1 items-end justify-center min-w-0">
               <div
-                className="w-full max-w-8 rounded-t transition-all"
+                className="w-full max-w-8 transition-all"
                 style={{
                   height: `${Math.max((d.revenue / max) * 100, d.revenue > 0 ? 2 : 0)}%`,
                   background: "#c96c83",
                 }}
                 title={`${d.date}: ${cad.format(d.revenue)}`}
               />
-              <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-[#101217] px-1.5 py-0.5 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#101217] px-1.5 py-0.5 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
                 {cad.format(d.revenue)}
               </span>
             </div>
@@ -155,13 +160,13 @@ function RevenueTrend({ trend }: { trend: { date: string; revenue: number }[] })
           <span>{trend[trend.length - 1].date}</span>
         </div>
       )}
-    </div>
+    </DashboardPanel>
   )
 }
 
 function EmployeeLeaderboard({ employees }: { employees: AnalyticsEmployee[] }) {
   return (
-    <div className="rounded-xl border border-black/8 bg-white p-5">
+    <DashboardPanel>
       <h2 className="text-sm font-semibold text-[#101217] mb-4">Worker Performance</h2>
       {employees.length === 0 ? (
         <p className="text-sm text-[#5f6268] py-6 text-center">
@@ -210,7 +215,7 @@ function EmployeeLeaderboard({ employees }: { employees: AnalyticsEmployee[] }) 
           </table>
         </div>
       )}
-    </div>
+    </DashboardPanel>
   )
 }
 
@@ -218,7 +223,7 @@ function TopServices({ services }: { services: { name: string; bookings: number;
   const max = Math.max(1, ...services.map((s) => s.revenue))
 
   return (
-    <div className="rounded-xl border border-black/8 bg-white p-5">
+    <DashboardPanel>
       <h2 className="text-sm font-semibold text-[#101217] mb-4">Top Services</h2>
       {services.length === 0 ? (
         <p className="text-sm text-[#5f6268] py-6 text-center">No service sales in this period.</p>
@@ -232,9 +237,9 @@ function TopServices({ services }: { services: { name: string; bookings: number;
                   {s.bookings} booking{s.bookings === 1 ? "" : "s"} · {cad.format(s.revenue)}
                 </span>
               </div>
-              <div className="h-2 w-full rounded-full bg-black/5 overflow-hidden">
+              <div className="h-2 w-full overflow-hidden bg-black/5">
                 <div
-                  className="h-full rounded-full"
+                  className="h-full"
                   style={{ width: `${(s.revenue / max) * 100}%`, background: "#c96c83" }}
                 />
               </div>
@@ -242,6 +247,6 @@ function TopServices({ services }: { services: { name: string; bookings: number;
           ))}
         </div>
       )}
-    </div>
+    </DashboardPanel>
   )
 }

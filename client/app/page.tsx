@@ -1,4 +1,5 @@
 import { HomePage } from "@/features/home/components/home-page";
+import { API_BASE_URL } from "@/lib/config";
 import type { Benefit, Service } from "@/features/home/types/home-content";
 
 interface ApiService {
@@ -84,12 +85,9 @@ const BENEFITS: Benefit[] = [
 ];
 
 export default async function Home() {
-  const BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
-
   let apiServices: ApiService[] = [];
   try {
-    const res = await fetch(`${BASE_URL}/services`, {
+    const res = await fetch(`${API_BASE_URL}/services`, {
       next: { revalidate: 60 },
     });
     if (res.ok) {

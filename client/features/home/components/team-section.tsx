@@ -9,8 +9,8 @@ const teamMembers = [
     name: "Susi",
     initials: "SU",
     role: "CEO, Nail Technician & Massage Spa Specialist",
-    location: "Beauty at Your Door",
-    bio: "Susi is CEO of Beauty At Your Door, a nail technician and massage spa business owner with more than 24 years of beauty industry experience. She is passionate about creating a relaxing, comfortable atmosphere where clients can unwind and leave their cares outside.",
+    location: "Beauty @ Your Door",
+    bio: "Susi is CEO of Beauty @ Your Door, a nail technician and massage spa business owner with more than 24 years of beauty industry experience. She is passionate about creating a relaxing, comfortable atmosphere where clients can unwind and leave their cares outside.",
     accent: "#f0c8d3",
     backgroundImage:
       "/images/new-pics-for-the-ladies/susi-team-portrait-01.webp",

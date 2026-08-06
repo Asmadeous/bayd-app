@@ -85,7 +85,7 @@ function AboutHero() {
               Beauty care should fit into your life.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-[#4f535a] sm:text-lg">
-              Beauty at Your Door brings experienced beauty professionals to
+              Beauty @ Your Door brings experienced beauty professionals to
               homes, workplaces, hotels, bridal suites, and events across the
               Greater Toronto Area.
             </p>
@@ -142,7 +142,7 @@ function AboutHero() {
           variant="clip-up"
         >
           <Image
-            alt="Beauty at Your Door team wearing branded shirts"
+            alt="Beauty @ Your Door team wearing branded shirts"
             className="object-cover object-center"
             fill
             priority
@@ -174,7 +174,7 @@ function OurStory() {
           variant="fade-right"
         >
           <Image
-            alt="Beauty at Your Door mobile beauty professionals"
+            alt="Beauty @ Your Door mobile beauty professionals"
             className="object-cover object-center"
             fill
             sizes="(min-width: 1024px) 42vw, 100vw"
