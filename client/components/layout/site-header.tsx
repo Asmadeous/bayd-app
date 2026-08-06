@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import {
   Menu,
@@ -38,10 +39,19 @@ export function SiteHeader({ cartCount = 0, onOpenCart }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-[#f4f1eb]/90 backdrop-blur-xl">
       <div className="mx-auto flex h-16 w-full max-w-[1760px] items-center justify-between px-4 sm:px-6 lg:px-8 2xl:px-10">
-        <Link href="/" className="flex items-center gap-3" onClick={closeMenus}>
-          <span className="text-xl font-bold tracking-tight text-[#121417]">
-            Beauty at Your Door
-          </span>
+        <Link
+          href="/"
+          className="relative block h-11 w-[4.9rem] sm:w-[5.4rem]"
+          onClick={closeMenus}
+        >
+          <Image
+            alt="Beauty at Your Door"
+            className="object-contain"
+            fill
+            priority
+            src="/images/brand/bayd-logo-black.png"
+            unoptimized
+          />
         </Link>
 
         <div className="hidden self-stretch md:flex md:items-center">

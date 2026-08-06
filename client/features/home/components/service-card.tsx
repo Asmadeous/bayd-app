@@ -36,6 +36,7 @@ export function ServiceCard({
           fill
           sizes={isFeatured ? "100vw" : "(min-width: 768px) 33vw, 100vw"}
           className="object-cover transition-transform duration-500 group-hover:scale-105"
+          unoptimized
         />
         <span className="absolute right-5 top-5 grid size-11 place-items-center bg-white text-[#101217] transition-transform group-hover:rotate-45">
           <ArrowUpRight aria-hidden="true" className="size-5" />

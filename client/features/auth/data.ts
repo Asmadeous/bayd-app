@@ -3,8 +3,8 @@ import type { AuthPageContent } from "@/features/auth/types";
 const sharedHero = {
   badge: "Beauty Member Access",
   image: {
-    src: "/images/lashes3.jpg",
-    alt: "Close-up beauty service result used as an auth page background",
+    src: "/images/new-pics-for-the-ladies/nail-polish-application-close-up.webp",
+    alt: "Nail polish application used as a sign-in page background",
   },
   metrics: [
     {
@@ -88,8 +88,8 @@ export const authPages: Record<
     hero: {
       ...sharedHero,
       image: {
-        src: "/images/nails1.jpg",
-        alt: "Manicure service used as an auth page background",
+        src: "/images/new-pics-for-the-ladies/mobile-manicure-service-05.webp",
+        alt: "Mobile manicure service used as a sign-up page background",
       },
     },
     mode: "signup",
@@ -117,8 +117,8 @@ export const authPages: Record<
     hero: {
       ...sharedHero,
       image: {
-        src: "/images/massage.jpg",
-        alt: "Pedicure service used as an auth page background",
+        src: "/images/new-pics-for-the-ladies/mobile-manicure-appointment-01.webp",
+        alt: "Mobile manicure appointment used as a password reset page background",
       },
     },
     mode: "forgot",

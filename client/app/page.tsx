@@ -11,7 +11,31 @@ interface ApiService {
   category_name: string | null;
 }
 
+const SERVICE_FALLBACK_IMAGES: Record<string, string> = {
+  lashes: "/images/new-pics-for-the-ladies/mobile-lash-appointment-02.webp",
+  massage: "/images/massage.jpg",
+  nails: "/images/new-pics-for-the-ladies/gel-manicure-service-01.webp",
+  spa: "/images/lashes2.jpg",
+  waxing:
+    "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-02.webp",
+};
+
+function fallbackServiceImage(service: ApiService): string {
+  const categoryKey = service.category_name?.toLowerCase() ?? "";
+
+  if (service.name.toLowerCase().includes("pedicure")) {
+    return "/images/pedicure3.jpg";
+  }
+
+  return (
+    SERVICE_FALLBACK_IMAGES[categoryKey] ??
+    "/images/new-pics-for-the-ladies/mobile-manicure-service-01.webp"
+  );
+}
+
 function mapApiService(s: ApiService): Service {
+  const imageSrc = s.image_url ?? fallbackServiceImage(s);
+
   return {
     id: String(s.id),
     title: s.name,
@@ -19,10 +43,10 @@ function mapApiService(s: ApiService): Service {
     price: `$${Number(s.price).toFixed(0)}+`,
     duration: `${s.duration_minutes}min`,
     image: {
-      src: s.image_url ?? "/images/lashes1.jpg",
+      src: imageSrc,
       alt: s.name,
     },
-    gallery: s.image_url ? [{ src: s.image_url, alt: s.name }] : [],
+    gallery: [{ src: imageSrc, alt: s.name }],
   };
 }
 

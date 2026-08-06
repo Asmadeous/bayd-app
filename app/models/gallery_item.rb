@@ -1,7 +1,7 @@
 class GalleryItem < ApplicationRecord
   belongs_to :employee_profile, optional: true
 
-  CATEGORIES = %w[Lashes Nails Massage Pedicure Waxing].freeze
+  CATEGORIES = %w[Team Lashes Nails Pedicure].freeze
   SIZES      = %w[standard wide tall].freeze
 
   validates :title,     presence: true

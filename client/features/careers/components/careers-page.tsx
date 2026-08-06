@@ -53,7 +53,7 @@ export function CareersPage() {
 
         <section className="bg-background py-14 text-[#101217] sm:py-20">
           <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8 2xl:px-10">
-            <div className="flex max-w-full gap-2 overflow-x-auto border-b border-black/10 pb-4">
+            <div className="scrollbar-hidden flex max-w-full gap-2 overflow-x-auto border-b border-black/10 pb-4">
               {FILTERS.map((f) => (
                 <button
                   key={f.value}

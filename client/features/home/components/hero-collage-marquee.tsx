@@ -2,40 +2,40 @@ import Image from "next/image";
 
 const collageImages = [
   {
-    src: "/images/Medicure1.jpg",
-    alt: "A manicure service with a nail technician using an electric file",
+    src: "/images/new-pics-for-the-ladies/mobile-manicure-appointment-01.webp",
+    alt: "A mobile manicure appointment at home",
   },
   {
-    src: "/images/lashes2.jpg",
-    alt: "A smiling client with under-eye pads during lash care",
+    src: "/images/new-pics-for-the-ladies/nail-polish-application-close-up.webp",
+    alt: "A nail technician applying polish during a manicure",
   },
   {
-    src: "/images/pedicure1.jpg",
-    alt: "A client receiving a pedicure while seated in a spa robe",
+    src: "/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp",
+    alt: "A client receiving a mobile lash service",
   },
   {
-    src: "/images/lashes4.jpg",
-    alt: "Close-up lash service result",
+    src: "/images/new-pics-for-the-ladies/beauty-team-group-portrait-04.webp",
+    alt: "The Beauty at Your Door team",
   },
   {
-    src: "/images/pedicure2.jpg",
-    alt: "A pedicure service being performed in a spa chair",
+    src: "/images/new-pics-for-the-ladies/mobile-manicure-service-02.webp",
+    alt: "A nail technician providing a mobile manicure",
   },
   {
-    src: "/images/lashes3.jpg",
-    alt: "A before and after lash extension close-up",
+    src: "/images/new-pics-for-the-ladies/nail-technician-at-work-02.webp",
+    alt: "A Beauty at Your Door nail technician at work",
   },
   {
-    src: "/images/massage.jpg",
-    alt: "A woman getting a massage",
+    src: "/images/new-pics-for-the-ladies/mobile-nail-care-service-01.webp",
+    alt: "A client receiving professional mobile nail care",
   },
   {
-    src: "/images/lashes7.jpg",
-    alt: "A lady lashes",
+    src: "/images/new-pics-for-the-ladies/gel-manicure-service-01.webp",
+    alt: "A gel manicure service in progress",
   },
   {
-    src: "/images/nails2.jpg",
-    alt: "A lady getting her nails done",
+    src: "/images/new-pics-for-the-ladies/finished-manicure-result-03.webp",
+    alt: "A client's finished manicure",
   },
 ];
 

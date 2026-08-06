@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/stores/auth-store"
@@ -138,8 +139,15 @@ export function Sidebar() {
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col" style={{ background: "#101217" }}>
       {/* Logo */}
-      <div className="flex h-16 items-center px-6 border-b border-white/8">
-        <span className="text-white font-bold text-lg tracking-tight">B.A.Y.D</span>
+      <div className="flex h-16 items-center gap-3 px-6 border-b border-white/8">
+        <Image
+          alt="Beauty at Your Door"
+          className="h-10 w-auto object-contain"
+          height={936}
+          src="/images/brand/bayd-logo-white.png"
+          unoptimized
+          width={3264}
+        />
         <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full font-medium" style={{ background: "#c96c83", color: "#fff" }}>
           {roleLabel}
         </span>

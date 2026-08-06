@@ -13,7 +13,7 @@ export function BenefitsSection({ benefits }: BenefitsSectionProps) {
       <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8 2xl:px-10">
         <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr]">
           <ScrollReveal
-            className="relative overflow-hidden bg-[#17110d] p-8 text-white sm:p-10 lg:min-h-[620px]"
+            className="relative flex min-h-[520px] flex-col overflow-hidden bg-[#17110d] p-8 text-white sm:p-10 lg:min-h-[620px]"
             variant="fade-right"
           >
             <div className="absolute -bottom-20 -right-16 size-72 rounded-full bg-[#f0c8d3]/20 blur-3xl" />
@@ -28,7 +28,7 @@ export function BenefitsSection({ benefits }: BenefitsSectionProps) {
               polished, and personal, whether it is one client at home or a full
               group event.
             </p>
-            <div className="absolute bottom-8 left-8 right-8 grid gap-3 border-t border-white/15 pt-6 text-sm text-white/72 sm:grid-cols-2">
+            <div className="mt-auto grid gap-3 border-t border-white/15 pt-6 text-sm text-white/72 sm:grid-cols-2">
               <span>Private bookings</span>
               <span>Group-ready setup</span>
               <span>Mobile professionals</span>
