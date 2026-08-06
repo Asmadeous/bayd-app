@@ -48,7 +48,7 @@ class ApplicationController < ActionController::API
   end
 
   def jwt_secret
-    Rails.application.credentials.secret_key_base || ENV.fetch("SECRET_KEY_BASE")
+    ENV["SECRET_KEY_BASE"].presence || Rails.application.secret_key_base
   end
 
   def not_found(e)     = render json: { error: e.message }, status: :not_found

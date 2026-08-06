@@ -2,26 +2,35 @@
 
 import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
+import { Gift } from "lucide-react"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { EmptyState } from "@/components/dashboard/empty-state"
 import { GiftCardVisual } from "@/components/gift-card-visual"
 import { Button } from "@/components/ui/button"
-import { useGiftCards, type GiftCard } from "@/lib/hooks/use-gift-cards"
 import api from "@/lib/api"
 import { openHelcimPay } from "@/lib/helcim-pay"
+import { useGiftCards, type GiftCard } from "@/lib/hooks/use-gift-cards"
 
 export default function CustomerGiftCardsPage() {
   const { data: cards = [], isLoading } = useGiftCards()
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="Gift Cards" subtitle="Cards you've purchased or received" />
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader title="Gift Cards" subtitle="Cards you have purchased or received." />
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading gift cards...</p>
+        </DashboardPanel>
       ) : cards.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">
-          No gift cards yet.
-        </div>
+        <EmptyState
+          icon={Gift}
+          title="No gift cards yet"
+          description="Purchased and received gift cards will appear here."
+        />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => (
@@ -29,7 +38,7 @@ export default function CustomerGiftCardsPage() {
           ))}
         </div>
       )}
-    </div>
+    </DashboardPage>
   )
 }
 
@@ -48,10 +57,11 @@ function CustomerCard({ card }: { card: GiftCard }) {
         setStatus({ type: "error", text: "Could not start payment." })
         return
       }
+
       const result = await openHelcimPay(data.checkout_token)
       if (result === "success") {
         setAmount("")
-        setStatus({ type: "success", text: "Funds added — balance updates once payment clears." })
+        setStatus({ type: "success", text: "Funds added. Balance updates once payment clears." })
       } else if (result === "error") {
         setStatus({ type: "error", text: "Payment could not be completed." })
       }
@@ -66,35 +76,38 @@ function CustomerCard({ card }: { card: GiftCard }) {
   }
 
   return (
-    <div className="space-y-2">
+    <DashboardPanel className="space-y-3 p-4">
       <GiftCardVisual
-        code={card.code}
+        active={card.active}
         balance={card.current_balance}
+        code={card.code}
         expiresAt={card.expires_at}
         recipientName={card.recipient_name}
-        active={card.active}
       />
-      <p className="px-1 text-xs text-[#5f6268]">
+      <p className="text-xs font-semibold leading-5 text-[#5f6268]">
         {card.recipient_email ? `Sent to ${card.recipient_email}` : "Saved to your account"}
-        {card.delivered_at ? " · delivered" : ""}
+        {card.delivered_at ? " / delivered" : ""}
       </p>
-
-      {/* Add funds by card */}
-      <div className="flex items-center gap-1.5 px-1">
+      <div className="flex flex-wrap items-center gap-2 border-t border-black/8 pt-3">
         <input
-          type="number" min="0" step="1" inputMode="decimal" placeholder="Add funds $"
-          value={amount} onChange={(e) => setAmount(e.target.value)}
-          className="h-8 w-28 rounded-lg border border-black/15 px-2 text-sm focus:border-[#c96c83] focus:outline-none"
+          type="number"
+          min="0"
+          step="1"
+          inputMode="decimal"
+          placeholder="Add funds $"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="h-9 w-32 border border-black/15 px-2 text-sm focus:border-[#c96c83] focus:outline-none"
         />
         <Button size="xs" variant="outline" disabled={topup.isPending || !amount} onClick={addFunds}>
-          {topup.isPending ? "…" : "Add funds"}
+          {topup.isPending ? "..." : "Add funds"}
         </Button>
       </div>
       {status ? (
-        <p className={`px-1 text-xs font-medium ${status.type === "success" ? "text-green-700" : "text-red-700"}`}>
+        <p className={`text-xs font-semibold ${status.type === "success" ? "text-green-700" : "text-red-700"}`}>
           {status.text}
         </p>
       ) : null}
-    </div>
+    </DashboardPanel>
   )
 }

@@ -3,9 +3,12 @@ import type { Metadata } from "next";
 import { GalleryPage } from "@/features/gallery/components/gallery-page";
 
 export const metadata: Metadata = {
-  title: "Gallery | Beauty at Your Door",
+  title: "Gallery",
   description:
-    "Explore lash, nail, massage, pedicure, and waxing work from Beauty at Your Door mobile beauty appointments.",
+    "Explore lash, nail, massage, pedicure, waxing, facial, and mobile beauty appointment work from Beauty @ Your Door.",
+  alternates: {
+    canonical: "/gallery",
+  },
 };
 
 export default function Gallery() {

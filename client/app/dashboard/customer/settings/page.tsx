@@ -1,15 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
+import { CheckCircle2, ImagePlus, Mail, UserRound } from "lucide-react"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { CardOnFile } from "@/components/dashboard/card-on-file"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useAuthStore } from "@/lib/stores/auth-store"
+import { cn } from "@/lib/utils"
+
+const fieldClass =
+  "h-11 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 export default function CustomerSettingsPage() {
   const { user } = useAuthStore()
   const { updateMe } = useAuth()
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const avatarPreviewObjectUrlRef = useRef<string | null>(null)
   const [form, setForm] = useState({
     first_name: user?.first_name ?? "",
     last_name: user?.last_name ?? "",
@@ -17,7 +29,30 @@ export default function CustomerSettingsPage() {
     avatar_url: user?.avatar_url ?? "",
     marketing_opt_in: user?.marketing_opt_in ?? false,
   })
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null)
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(user?.avatar_url ?? null)
   const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewObjectUrlRef.current) {
+        URL.revokeObjectURL(avatarPreviewObjectUrlRef.current)
+      }
+    }
+  }, [])
+
+  function handleAvatarChange(file: File | undefined) {
+    if (!file) return
+
+    if (avatarPreviewObjectUrlRef.current) {
+      URL.revokeObjectURL(avatarPreviewObjectUrlRef.current)
+    }
+
+    const objectUrl = URL.createObjectURL(file)
+    avatarPreviewObjectUrlRef.current = objectUrl
+    setSelectedAvatarFile(file)
+    setAvatarPreviewUrl(objectUrl)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -27,94 +62,158 @@ export default function CustomerSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="Account Settings" subtitle="Update your profile information" />
+    <DashboardPage>
+      <DashboardHeader
+        title="Account Settings"
+        subtitle="Keep your profile, contact details, and booking preferences current."
+      />
 
-      <div className="rounded-xl border border-black/8 bg-white p-6 max-w-lg">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Avatar */}
-          <div>
-            <label className="block text-xs font-medium text-[#5f6268] mb-1">Profile photo URL</label>
-            <div className="flex gap-3 items-center">
-              <div className="size-12 rounded-full overflow-hidden bg-black/8 shrink-0 flex items-center justify-center">
-                {form.avatar_url ? (
-                  <img src={form.avatar_url} alt="Avatar" className="size-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <DashboardPanel>
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <button
+                aria-label="Choose profile photo"
+                className="group relative size-28 shrink-0 overflow-hidden border border-black/15 bg-white text-[#5f6268] outline-none transition-all hover:border-[#c96c83] hover:text-[#c96c83] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                onClick={() => avatarInputRef.current?.click()}
+                type="button"
+              >
+                {avatarPreviewUrl ? (
+                  <Image
+                    alt="Selected profile preview"
+                    className="object-cover"
+                    fill
+                    sizes="112px"
+                    src={avatarPreviewUrl}
+                    unoptimized
+                  />
                 ) : (
-                  <span className="text-lg font-bold text-[#5f6268]">{(user?.first_name?.[0] ?? "?").toUpperCase()}</span>
+                  <span className="flex h-full flex-col items-center justify-center gap-2">
+                    <ImagePlus aria-hidden="true" className="size-8" />
+                    <span className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em]">
+                      Photo
+                    </span>
+                  </span>
                 )}
+              </button>
+
+              <div className="min-w-0 pt-1">
+                <p className="text-base font-extrabold text-[#101217]">Profile photo</p>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-[#5f6268]">
+                  Choose a polished beauty photo that makes your B.A.Y.D profile feel personal
+                  before every appointment.
+                </p>
+                {selectedAvatarFile ? (
+                  <p className="mt-3 truncate text-xs font-bold uppercase tracking-[0.14em] text-[#a36f4d]">
+                    {selectedAvatarFile.name}
+                  </p>
+                ) : null}
               </div>
+
               <input
-                type="url"
-                placeholder="https://…"
-                value={form.avatar_url}
-                onChange={(e) => setForm((f) => ({ ...f, avatar_url: e.target.value }))}
-                className="w-full h-10 border border-black/15 rounded-lg px-3 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                ref={avatarInputRef}
+                accept="image/*"
+                className="sr-only"
+                type="file"
+                onChange={(event) => handleAvatarChange(event.target.files?.[0])}
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>First name</label>
+                <input
+                  className={fieldClass}
+                  value={form.first_name}
+                  onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Last name</label>
+                <input
+                  className={fieldClass}
+                  value={form.last_name}
+                  onChange={(e) => setForm((f) => ({ ...f, last_name: e.target.value }))}
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-xs font-medium text-[#5f6268] mb-1">First name</label>
+              <label className={labelClass}>Phone</label>
               <input
-                value={form.first_name}
-                onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))}
-                className="w-full h-10 border border-black/15 rounded-lg px-3 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                className={fieldClass}
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
               />
             </div>
+
             <div>
-              <label className="block text-xs font-medium text-[#5f6268] mb-1">Last name</label>
+              <label className={labelClass}>Email</label>
               <input
-                value={form.last_name}
-                onChange={(e) => setForm((f) => ({ ...f, last_name: e.target.value }))}
-                className="w-full h-10 border border-black/15 rounded-lg px-3 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                className={cn(fieldClass, "cursor-not-allowed bg-[#f4f1eb] text-[#5f6268]")}
+                readOnly
+                value={user?.email ?? ""}
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-medium text-[#5f6268] mb-1">Phone</label>
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-              className="w-full h-10 border border-black/15 rounded-lg px-3 text-sm text-[#101217] focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
-            />
-          </div>
+            <label className="flex cursor-pointer select-none items-start gap-3 border border-black/10 bg-[#fbfaf7] p-4">
+              <input
+                checked={form.marketing_opt_in}
+                className="mt-1 size-4 accent-[#c96c83]"
+                type="checkbox"
+                onChange={(e) => setForm((f) => ({ ...f, marketing_opt_in: e.target.checked }))}
+              />
+              <span>
+                <span className="block text-sm font-extrabold text-[#101217]">
+                  Beauty notes and offers
+                </span>
+                <span className="mt-1 block text-sm leading-6 text-[#5f6268]">
+                  Receive appointment inspiration, seasonal services, and client-only offers.
+                </span>
+              </span>
+            </label>
 
-          <div>
-            <label className="block text-xs font-medium text-[#5f6268] mb-1">Email (read-only)</label>
-            <input
-              value={user?.email ?? ""}
-              readOnly
-              className="w-full h-10 border border-black/15 rounded-lg px-3 text-sm text-[#5f6268] bg-black/2 cursor-not-allowed"
-            />
-          </div>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <Button
+                disabled={updateMe.isPending}
+                type="submit"
+                style={{ background: "#c96c83", border: "none", color: "#fff" }}
+              >
+                {updateMe.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+              {saved ? (
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#5a9e5a]">
+                  <CheckCircle2 aria-hidden="true" className="size-4" />
+                  Saved
+                </span>
+              ) : null}
+            </div>
+          </form>
+        </DashboardPanel>
 
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={form.marketing_opt_in}
-              onChange={(e) => setForm((f) => ({ ...f, marketing_opt_in: e.target.checked }))}
-              className="rounded border-black/20 accent-[#c96c83]"
-            />
-            <span className="text-sm text-[#101217]">Receive marketing emails & offers</span>
-          </label>
+        <div className="space-y-6">
+          <DashboardPanel className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="grid size-10 place-items-center border border-black/10 bg-[#f4f1eb] text-[#c96c83]">
+                <UserRound aria-hidden="true" className="size-5" />
+              </span>
+              <div>
+                <p className="text-sm font-extrabold text-[#101217]">
+                  {[form.first_name, form.last_name].filter(Boolean).join(" ") || "Your profile"}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-[#5f6268]">Customer account</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 border-t border-black/8 pt-4 text-sm text-[#5f6268]">
+              <Mail aria-hidden="true" className="size-4 text-[#c96c83]" />
+              <span className="min-w-0 truncate">{user?.email}</span>
+            </div>
+          </DashboardPanel>
 
-          <div className="flex items-center gap-3 pt-2">
-            <Button
-              type="submit"
-              disabled={updateMe.isPending}
-              style={{ background: "#c96c83", border: "none", color: "#fff" }}
-            >
-              {updateMe.isPending ? "Saving…" : "Save Changes"}
-            </Button>
-            {saved && <span className="text-sm text-[#5a9e5a] font-medium">Saved!</span>}
-          </div>
-        </form>
+          <CardOnFile />
+        </div>
       </div>
-
-      <CardOnFile />
-    </div>
+    </DashboardPage>
   )
 }

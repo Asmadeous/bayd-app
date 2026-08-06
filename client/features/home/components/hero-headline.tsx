@@ -16,7 +16,7 @@ export function HeroHeadline() {
             className="object-cover"
           />
         </span>
-        <span>Beauty Services</span>
+        <span>Mobile Beauty Services</span>
       </span>
     </h1>
   );

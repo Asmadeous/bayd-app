@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 
 import { BlogPage } from "@/features/blog/components/blog-page";
+import { API_BASE_URL } from "@/lib/config";
 import type {
   BlogGuide,
   BlogPost,
 } from "@/features/blog/types/blog-content";
 
 export const metadata: Metadata = {
-  title: "Beauty Journal | Beauty at Your Door",
+  title: "Beauty Journal",
   description:
-    "Beauty service prep guides, aftercare notes, product pairings, and spa party ideas from Beauty at Your Door.",
+    "Mobile beauty service prep guides, aftercare notes, product pairings, and spa party ideas from Beauty @ Your Door.",
+  alternates: {
+    canonical: "/blog",
+  },
 };
 
 interface ApiBlogPost {
@@ -49,19 +53,16 @@ function mapApiBlogPost(p: ApiBlogPost): BlogPost {
           year: "numeric",
         })
       : "Recent",
-    author: p.author_name ?? "Beauty at Your Door",
+    author: p.author_name ?? "Beauty @ Your Door",
     href: `/blog/${p.slug}`,
     body: p.body ?? undefined,
   };
 }
 
 export default async function Blog() {
-  const BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
-
   let apiPosts: ApiBlogPost[] = [];
   try {
-    const res = await fetch(`${BASE_URL}/blog_posts`, {
+    const res = await fetch(`${API_BASE_URL}/blog_posts`, {
       next: { revalidate: 60 },
     });
     if (res.ok) {

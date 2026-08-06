@@ -13,7 +13,7 @@ const posts = [
     },
     readTime: "5 min read",
     publishedAt: "Jun 4, 2026",
-    author: "Beauty at Your Door",
+    author: "Beauty @ Your Door",
     href: "/blog/lash-appointment-prep",
   },
   {
@@ -28,7 +28,7 @@ const posts = [
     },
     readTime: "4 min read",
     publishedAt: "May 28, 2026",
-    author: "Beauty at Your Door",
+    author: "Beauty @ Your Door",
     href: "/blog/pedicure-aftercare",
   },
   {
@@ -43,7 +43,7 @@ const posts = [
     },
     readTime: "6 min read",
     publishedAt: "May 21, 2026",
-    author: "Beauty at Your Door",
+    author: "Beauty @ Your Door",
     href: "/blog/spa-party-planning",
   },
   {
@@ -58,7 +58,7 @@ const posts = [
     },
     readTime: "3 min read",
     publishedAt: "May 14, 2026",
-    author: "Beauty at Your Door",
+    author: "Beauty @ Your Door",
     href: "/blog/manicure-home-setup",
   },
   {
@@ -73,7 +73,7 @@ const posts = [
     },
     readTime: "4 min read",
     publishedAt: "May 7, 2026",
-    author: "Beauty at Your Door",
+    author: "Beauty @ Your Door",
     href: "/blog/lash-aftercare-kit",
   },
 ];

@@ -1,9 +1,22 @@
 "use client"
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import api from "@/lib/api"
+import { HandCoins } from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/dashboard/data-table"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { EmptyState } from "@/components/dashboard/empty-state"
 import { Button } from "@/components/ui/button"
+import api from "@/lib/api"
 
 interface TipOwed {
   employee_profile_id: number
@@ -13,7 +26,7 @@ interface TipOwed {
 
 export default function AdminTipsPage() {
   const qc = useQueryClient()
-  const { data } = useQuery<{ data: TipOwed[] }>({
+  const { data, isLoading } = useQuery<{ data: TipOwed[] }>({
     queryKey: ["admin-tips"],
     queryFn: () => api.get<{ data: TipOwed[] }>("/admin/tips").then((r) => r.data),
   })
@@ -26,41 +39,57 @@ export default function AdminTipsPage() {
   })
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="Tips owed" subtitle="Card tips collected on the customer's behalf, owed to each technician" />
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader
+        title="Tips Owed"
+        subtitle="Card tips collected on the customer's behalf and owed to each technician."
+      />
 
-      <div className="rounded-xl border border-black/8 bg-white overflow-hidden">
-        {rows.length === 0 ? (
-          <p className="p-6 text-sm text-[#5f6268]">No tips are currently owed.</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-black/8 text-left text-xs text-[#5f6268]">
-                <th className="px-4 py-3 font-medium">Technician</th>
-                <th className="px-4 py-3 font-medium">Amount owed</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.employee_profile_id} className="border-b border-black/5 last:border-0">
-                  <td className="px-4 py-3 text-[#101217]">{r.technician ?? `#${r.employee_profile_id}`}</td>
-                  <td className="px-4 py-3 text-[#101217]">${Number(r.amount_owed).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right">
+      {isLoading ? (
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading tips...</p>
+        </DashboardPanel>
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={HandCoins}
+          title="No tips owed"
+          description="Outstanding technician tips will appear here."
+        />
+      ) : (
+        <DataTable>
+          <DataTableHead>
+            <DataTableRow>
+              <DataTableHeaderCell>Technician</DataTableHeaderCell>
+              <DataTableHeaderCell>Amount Owed</DataTableHeaderCell>
+              <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
+            </DataTableRow>
+          </DataTableHead>
+          <DataTableBody>
+            {rows.map((row) => (
+              <DataTableRow key={row.employee_profile_id}>
+                <DataTableCell className="font-bold text-[#101217]">
+                  {row.technician ?? `#${row.employee_profile_id}`}
+                </DataTableCell>
+                <DataTableCell className="font-heading text-xl font-extrabold text-[#101217]">
+                  ${Number(row.amount_owed).toFixed(2)}
+                </DataTableCell>
+                <DataTableCell>
+                  <div className="flex justify-end">
                     <Button
-                      size="xs" variant="outline"
                       disabled={payout.isPending}
-                      onClick={() => payout.mutate(r.employee_profile_id)}
+                      onClick={() => payout.mutate(row.employee_profile_id)}
+                      size="xs"
+                      variant="outline"
                     >
                       Mark paid out
                     </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
+                  </div>
+                </DataTableCell>
+              </DataTableRow>
+            ))}
+          </DataTableBody>
+        </DataTable>
+      )}
+    </DashboardPage>
   )
 }

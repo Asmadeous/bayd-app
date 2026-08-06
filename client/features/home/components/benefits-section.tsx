@@ -24,7 +24,7 @@ export function BenefitsSection({ benefits }: BenefitsSectionProps) {
               Salon-level coordination without the salon commute.
             </h2>
             <p className="mt-5 max-w-lg text-base leading-7 text-white/68">
-              Beauty at Your Door is built for appointments that feel calm,
+              Beauty @ Your Door is built for appointments that feel calm,
               polished, and personal, whether it is one client at home or a full
               group event.
             </p>

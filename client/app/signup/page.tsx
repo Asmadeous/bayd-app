@@ -5,9 +5,13 @@ import { AuthPage } from "@/features/auth/components/auth-page";
 import { authPages } from "@/features/auth/data";
 
 export const metadata: Metadata = {
-  title: "Create Account | Beauty at Your Door",
+  title: "Create Account",
   description:
-    "Create a Beauty at Your Door account for bookings, products, and loyalty notes.",
+    "Create a Beauty @ Your Door account for bookings, products, and loyalty notes.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function SignUpPage() {

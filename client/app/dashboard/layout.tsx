@@ -18,8 +18,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Show nothing until the persisted store has been read from localStorage
   if (!_hasHydrated) {
     return (
-      <div className="flex h-screen items-center justify-center" style={{ background: "#f4f1eb" }}>
-        <span className="text-sm text-[#5f6268]">Loading…</span>
+      <div className="flex h-screen items-center justify-center bg-[#f4f1eb] text-[#101217]">
+        <div className="grid gap-4 text-center">
+          <span className="mx-auto grid size-11 place-items-center bg-[#101217] text-sm font-black tracking-tight text-white">
+            B
+          </span>
+          <span className="text-sm font-semibold text-[#5f6268]">Preparing your dashboard...</span>
+        </div>
       </div>
     )
   }
@@ -27,10 +32,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!isAuthenticated) return null
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: "#f4f1eb" }}>
+    <div className="min-h-screen bg-[#f4f1eb] text-[#101217] lg:flex">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-6 py-8">
+      <main className="min-w-0 flex-1">
+        <div className="mx-auto w-full max-w-[1540px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 2xl:px-10">
           {children}
         </div>
       </main>

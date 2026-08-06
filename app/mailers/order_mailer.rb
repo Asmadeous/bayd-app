@@ -14,7 +14,7 @@ class OrderMailer < ApplicationMailer
   def dispatched(order)
     @order = order
     @user = order.user
-    mail(to: @user.email, subject: "Your Beauty at Your Door order is on its way 📦")
+    mail(to: @user.email, subject: "Your Beauty @ Your Door order is on its way 📦")
   end
 
   # Internal heads-up to the team on every new product order.

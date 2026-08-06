@@ -48,7 +48,7 @@ module Api
 
       def generate_token(user)
         payload = { sub: user.id, role: user.role, exp: 30.days.from_now.to_i }
-        JWT.encode(payload, Rails.application.credentials.secret_key_base || ENV.fetch("SECRET_KEY_BASE"), "HS256")
+        JWT.encode(payload, jwt_secret, "HS256")
       end
     end
   end

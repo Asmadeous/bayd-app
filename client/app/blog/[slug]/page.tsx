@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { BlogArticlePage } from "@/features/blog/components/blog-article-page";
+import { API_BASE_URL } from "@/lib/config";
 import type { BlogPost } from "@/features/blog/types/blog-content";
 
 type BlogArticleRouteProps = {
@@ -38,17 +39,15 @@ function mapApiBlogPost(p: ApiBlogPost): BlogPost {
           year: "numeric",
         })
       : "Recent",
-    author: p.author_name ?? "Beauty at Your Door",
+    author: p.author_name ?? "Beauty @ Your Door",
     href: `/blog/${p.slug}`,
     body: p.body ?? undefined,
   };
 }
 
 async function fetchPost(slug: string): Promise<BlogPost | null> {
-  const BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
   try {
-    const res = await fetch(`${BASE_URL}/blog_posts/${slug}`, {
+    const res = await fetch(`${API_BASE_URL}/blog_posts/${slug}`, {
       next: { revalidate: 60 },
     });
     if (!res.ok) return null;
@@ -64,11 +63,25 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = await fetchPost(slug);
 
-  if (!post) return { title: "Blog Article | Beauty at Your Door" };
+  if (!post) return { title: "Blog Article" };
 
   return {
-    title: `${post.title} | Beauty at Your Door`,
+    title: post.title,
     description: post.excerpt,
+    alternates: {
+      canonical: `/blog/${slug}`,
+    },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      url: `/blog/${slug}`,
+      images: [
+        {
+          url: post.image.src,
+          alt: post.image.alt,
+        },
+      ],
+    },
   };
 }
 

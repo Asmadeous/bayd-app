@@ -1,15 +1,62 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import api from "@/lib/api"
+import type { ReactNode } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Package, Plus } from "lucide-react"
+
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/dashboard/data-table"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import api from "@/lib/api"
 
-interface Product { id: number; name: string; description: string | null; price: string; stock_qty: number; active: boolean; image_url: string | null; product_category: { id: number; name: string } }
-interface Category { id: number; name: string }
+interface Product {
+  id: number
+  name: string
+  description: string | null
+  price: string
+  stock_qty: number
+  active: boolean
+  image_url: string | null
+  product_category: { id: number; name: string }
+}
 
-const BLANK = { name: "", description: "", price: "", stock_qty: 0, active: true, image_url: "", product_category_id: "" }
+interface Category {
+  id: number
+  name: string
+}
+
+const BLANK = {
+  name: "",
+  description: "",
+  price: "",
+  stock_qty: 0,
+  active: true,
+  image_url: "",
+  product_category_id: "",
+}
+
+const inputClass =
+  "h-10 w-full border border-black/15 bg-white px-3 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 export default function AdminProductsPage() {
   const qc = useQueryClient()
@@ -18,102 +65,279 @@ export default function AdminProductsPage() {
 
   const { data: productsData, isLoading } = useQuery({
     queryKey: ["admin-products"],
-    queryFn: () => api.get<{ data: Product[] }>("/admin/products").then((r) => r.data),
+    queryFn: () => api.get<{ data: Product[] }>("/admin/products").then((response) => response.data),
   })
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ["admin-product-categories"],
-    queryFn: () => api.get<Category[]>("/admin/product_categories").then((r) => r.data),
+    queryFn: () =>
+      api.get<Category[]>("/admin/product_categories").then((response) => response.data),
   })
 
-  const createMutation = useMutation({ mutationFn: () => api.post("/admin/products", form), onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-products"] }); setModal(null); setForm(BLANK) } })
-  const updateMutation = useMutation({ mutationFn: (id: number) => api.patch(`/admin/products/${id}`, form), onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-products"] }); setModal(null) } })
-  const deleteMutation = useMutation({ mutationFn: (id: number) => api.delete(`/admin/products/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-products"] }) })
+  const createMutation = useMutation({
+    mutationFn: () => api.post("/admin/products", form),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-products"] })
+      setModal(null)
+      setForm(BLANK)
+    },
+  })
+  const updateMutation = useMutation({
+    mutationFn: (id: number) => api.patch(`/admin/products/${id}`, form),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-products"] })
+      setModal(null)
+    },
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => api.delete(`/admin/products/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-products"] }),
+  })
 
   const products = productsData?.data ?? []
+  const activeCount = products.filter((product) => product.active).length
+  const lowStockCount = products.filter((product) => product.stock_qty <= 5).length
 
-  function openEdit(p: Product) {
-    setForm({ name: p.name, description: p.description ?? "", price: p.price, stock_qty: p.stock_qty, active: p.active, image_url: p.image_url ?? "", product_category_id: String(p.product_category?.id ?? "") })
-    setModal(p.id)
+  function openCreate() {
+    setForm(BLANK)
+    setModal("create")
+  }
+
+  function openEdit(product: Product) {
+    setForm({
+      name: product.name,
+      description: product.description ?? "",
+      price: product.price,
+      stock_qty: product.stock_qty,
+      active: product.active,
+      image_url: product.image_url ?? "",
+      product_category_id: String(product.product_category?.id ?? ""),
+    })
+    setModal(product.id)
+  }
+
+  function saveProduct() {
+    if (modal === "create") {
+      createMutation.mutate()
+    } else if (typeof modal === "number") {
+      updateMutation.mutate(modal)
+    }
   }
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="Products" subtitle="Manage shop products"
-        actions={<Button size="sm" onClick={() => { setForm(BLANK); setModal("create") }} style={{ background: "#c96c83", border: "none", color: "#fff" }}>+ Add Product</Button>}
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader
+        actions={
+          <Button
+            onClick={openCreate}
+            size="sm"
+            style={{ background: "#c96c83", border: "none", color: "#fff" }}
+          >
+            <Plus aria-hidden="true" />
+            Add Product
+          </Button>
+        }
+        title="Products"
+        subtitle="Manage shop products, stock levels, and catalog status."
       />
 
-      {modal !== null && (
-        <div className="rounded-xl border border-black/8 bg-white p-6 space-y-4">
-          <h3 className="font-semibold text-sm text-[#101217]">{modal === "create" ? "New Product" : "Edit Product"}</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {[["name", "Name", "text"], ["price", "Price ($)", "number"], ["stock_qty", "Stock Qty", "number"], ["image_url", "Image URL", "url"]].map(([field, label, type]) => (
-              <div key={field}>
-                <label className="block text-xs font-medium text-[#5f6268] mb-1">{label}</label>
-                <input type={type} value={(form as Record<string, unknown>)[field] as string} onChange={(e) => setForm((f) => ({ ...f, [field]: type === "number" ? Number(e.target.value) : e.target.value }))}
-                  className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20" />
-              </div>
-            ))}
+      {modal !== null ? (
+        <DashboardPanel>
+          <div className="mb-5 flex items-center justify-between gap-4">
             <div>
-              <label className="block text-xs font-medium text-[#5f6268] mb-1">Category</label>
-              <select value={form.product_category_id} onChange={(e) => setForm((f) => ({ ...f, product_category_id: e.target.value }))}
-                className="w-full h-9 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]">
-                <option value="">Select…</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+                Shop editor
+              </p>
+              <h2 className="mt-1 text-lg font-extrabold text-[#101217]">
+                {modal === "create" ? "New Product" : "Edit Product"}
+              </h2>
             </div>
-            <div className="flex items-center gap-2 pt-5">
-              <input type="checkbox" checked={form.active} onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))} className="accent-[#c96c83]" id="prod-active" />
-              <label htmlFor="prod-active" className="text-sm text-[#101217]">Active</label>
-            </div>
+            <StatusBadgeFor status={form.active ? "active" : "inactive"} />
           </div>
-          <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} placeholder="Description"
-            className="w-full border border-black/15 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#c96c83] resize-none" />
-          <div className="flex gap-2">
-            <Button size="sm" disabled={createMutation.isPending || updateMutation.isPending}
-              onClick={() => modal === "create" ? createMutation.mutate() : updateMutation.mutate(modal as number)}
-              style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Field label="Name">
+              <input
+                className={inputClass}
+                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                type="text"
+                value={form.name}
+              />
+            </Field>
+            <Field label="Price ($)">
+              <input
+                className={inputClass}
+                onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
+                type="number"
+                value={form.price}
+              />
+            </Field>
+            <Field label="Stock">
+              <input
+                className={inputClass}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, stock_qty: Number(event.target.value) }))
+                }
+                type="number"
+                value={form.stock_qty}
+              />
+            </Field>
+            <Field label="Category">
+              <Select
+                onValueChange={(value) =>
+                  setForm((current) => ({ ...current, product_category_id: value ?? "" }))
+                }
+                value={form.product_category_id}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Image URL">
+              <input
+                className={inputClass}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, image_url: event.target.value }))
+                }
+                type="url"
+                value={form.image_url}
+              />
+            </Field>
+            <label className="flex min-h-10 items-center gap-2 border border-black/10 bg-[#fbfaf7] px-4 text-sm font-semibold text-[#101217] md:mt-6">
+              <input
+                checked={form.active}
+                className="accent-[#c96c83]"
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, active: event.target.checked }))
+                }
+                type="checkbox"
+              />
+              Active
+            </label>
+          </div>
+
+          <div className="mt-4">
+            <Field label="Description">
+              <textarea
+                className="min-h-24 w-full resize-none border border-black/15 bg-white px-3 py-2 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, description: event.target.value }))
+                }
+                value={form.description}
+              />
+            </Field>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button
+              disabled={createMutation.isPending || updateMutation.isPending}
+              onClick={saveProduct}
+              size="sm"
+              style={{ background: "#c96c83", border: "none", color: "#fff" }}
+            >
               {modal === "create" ? "Create" : "Save"}
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+            <Button onClick={() => setModal(null)} size="sm" variant="ghost">
+              Cancel
+            </Button>
           </div>
-        </div>
-      )}
+        </DashboardPanel>
+      ) : null}
 
-      {isLoading ? <div className="text-sm text-[#5f6268]">Loading…</div> : (
-        <div className="rounded-xl border border-black/8 bg-white overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-black/6 text-left">
-                <th className="px-4 py-3 text-xs font-semibold text-[#5f6268] uppercase tracking-wide">Name</th>
-                <th className="px-4 py-3 text-xs font-semibold text-[#5f6268] uppercase tracking-wide">Category</th>
-                <th className="px-4 py-3 text-xs font-semibold text-[#5f6268] uppercase tracking-wide">Price</th>
-                <th className="px-4 py-3 text-xs font-semibold text-[#5f6268] uppercase tracking-wide">Stock</th>
-                <th className="px-4 py-3 text-xs font-semibold text-[#5f6268] uppercase tracking-wide">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((p) => (
-                <tr key={p.id} className="border-b border-black/4 last:border-0">
-                  <td className="px-4 py-3 font-medium text-[#101217]">{p.name}</td>
-                  <td className="px-4 py-3 text-[#5f6268]">{p.product_category?.name}</td>
-                  <td className="px-4 py-3 text-[#101217]">${p.price}</td>
-                  <td className="px-4 py-3 text-[#5f6268]">{p.stock_qty}</td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={p.active ? { background: "#5a9e5a22", color: "#5a9e5a" } : { background: "#8a8d9322", color: "#8a8d93" }}>{p.active ? "Active" : "Inactive"}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2 justify-end">
-                      <Button size="xs" variant="outline" onClick={() => openEdit(p)}>Edit</Button>
-                      <Button size="xs" variant="destructive" disabled={deleteMutation.isPending} onClick={() => { if (confirm(`Delete "${p.name}"?`)) deleteMutation.mutate(p.id) }}>Delete</Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <DashboardPanel className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">Catalog</p>
+          <h2 className="mt-1 text-lg font-extrabold text-[#101217]">Product Library</h2>
         </div>
+        <div className="flex flex-wrap gap-2 text-sm font-semibold text-[#5f6268]">
+          <span>{products.length} total</span>
+          <span className="text-black/25">/</span>
+          <span>{activeCount} active</span>
+          <span className="text-black/25">/</span>
+          <span>{lowStockCount} low stock</span>
+        </div>
+      </DashboardPanel>
+
+      {isLoading ? (
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading products...</p>
+        </DashboardPanel>
+      ) : products.length === 0 ? (
+        <EmptyState
+          action={
+            <Button
+              onClick={openCreate}
+              size="sm"
+              style={{ background: "#c96c83", border: "none", color: "#fff" }}
+            >
+              <Plus aria-hidden="true" />
+              Add Product
+            </Button>
+          }
+          icon={Package}
+          title="No products yet"
+          description="Create the first product for the shop catalog."
+        />
+      ) : (
+        <DataTable>
+          <DataTableHead>
+            <DataTableRow>
+              <DataTableHeaderCell>Name</DataTableHeaderCell>
+              <DataTableHeaderCell>Category</DataTableHeaderCell>
+              <DataTableHeaderCell>Price</DataTableHeaderCell>
+              <DataTableHeaderCell>Stock</DataTableHeaderCell>
+              <DataTableHeaderCell>Status</DataTableHeaderCell>
+              <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
+            </DataTableRow>
+          </DataTableHead>
+          <DataTableBody>
+            {products.map((product) => (
+              <DataTableRow key={product.id}>
+                <DataTableCell className="font-bold text-[#101217]">{product.name}</DataTableCell>
+                <DataTableCell>{product.product_category?.name}</DataTableCell>
+                <DataTableCell className="font-semibold text-[#101217]">${product.price}</DataTableCell>
+                <DataTableCell>{product.stock_qty}</DataTableCell>
+                <DataTableCell>
+                  <StatusBadgeFor status={product.active ? "active" : "inactive"} />
+                </DataTableCell>
+                <DataTableCell>
+                  <div className="flex justify-end gap-2">
+                    <Button onClick={() => openEdit(product)} size="xs" variant="outline">
+                      Edit
+                    </Button>
+                    <Button
+                      disabled={deleteMutation.isPending}
+                      onClick={() => {
+                        if (confirm(`Delete "${product.name}"?`)) deleteMutation.mutate(product.id)
+                      }}
+                      size="xs"
+                      variant="destructive"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </DataTableCell>
+              </DataTableRow>
+            ))}
+          </DataTableBody>
+        </DataTable>
       )}
-    </div>
+    </DashboardPage>
+  )
+}
+
+function Field({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <label>
+      <span className={labelClass}>{label}</span>
+      {children}
+    </label>
   )
 }

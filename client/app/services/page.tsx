@@ -5,9 +5,12 @@ import { pricingCategories } from "@/features/pricing/data";
 import type { PriceCategory } from "@/features/pricing/types";
 
 export const metadata: Metadata = {
-  title: "Services & Prices | Beauty at Your Door",
+  title: "Mobile Beauty Services & Prices",
   description:
-    "Explore mobile beauty services and prices for nails, massage, feet, waxing, and lashes across Ontario.",
+    "Explore women-only mobile beauty services and prices for nails, massage, feet, waxing, lashes, facials, manicure, and pedicure appointments across the west end GTA.",
+  alternates: {
+    canonical: "/services",
+  },
 };
 
 const FACIAL_SERVICES: PriceCategory = {

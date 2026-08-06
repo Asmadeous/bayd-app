@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
 import api from "@/lib/api"
+import { API_BASE_URL } from "@/lib/config"
 import { useAuthStore, type AuthUser } from "@/lib/stores/auth-store"
 
 export function useAuth() {
@@ -46,8 +47,7 @@ export function useAuth() {
   // to the API's /auth/google, which bounces through Google and 302s back to
   // /auth/callback?token=… (handled by app/auth/callback/page.tsx).
   function loginWithGoogle() {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? ""
-    window.location.href = `${base}/auth/google`
+    window.location.href = `${API_BASE_URL}/auth/google`
   }
 
   const updateMeMutation = useMutation({

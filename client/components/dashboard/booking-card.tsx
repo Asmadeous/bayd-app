@@ -1,3 +1,7 @@
+import type { ReactNode } from "react"
+import { CalendarDays, Repeat2, UserRound } from "lucide-react"
+
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { cn } from "@/lib/utils"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
@@ -10,18 +14,9 @@ const STATUS_COLORS: Record<Booking["status"], string> = {
   no_show: "#d4754a",
 }
 
-const STATUS_LABELS: Record<Booking["status"], string> = {
-  pending: "Pending",
-  confirmed: "Confirmed",
-  in_progress: "In Progress",
-  completed: "Completed",
-  cancelled: "Cancelled",
-  no_show: "No Show",
-}
-
 interface BookingCardProps {
   booking: Booking
-  actions?: React.ReactNode
+  actions?: ReactNode
   className?: string
 }
 
@@ -46,53 +41,57 @@ export function BookingCard({ booking, actions, className }: BookingCardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-black/8 bg-white px-5 py-4 flex items-start gap-4",
+        "relative overflow-hidden border border-black/10 bg-white px-4 py-4 shadow-sm shadow-black/[0.03] sm:px-5",
         className
       )}
     >
-      {/* Status dot */}
-      <div className="mt-1 shrink-0">
-        <span className="block size-2.5 rounded-full" style={{ background: color }} />
-      </div>
+      <span className="absolute inset-y-0 left-0 w-1" style={{ background: color }} />
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-[#101217] text-sm">{booking.service?.name}</span>
-          <span
-            className="text-xs px-2 py-0.5 rounded-full font-medium"
-            style={{ background: `${color}22`, color }}
-          >
-            {STATUS_LABELS[booking.status]}
-          </span>
-          {booking.client_type && booking.client_type !== "adult" && (
-            <span
-              className="text-xs px-2 py-0.5 rounded-full font-medium capitalize"
-              style={{ background: "#a36f4d22", color: "#a36f4d" }}
-            >
-              {booking.client_type === "group" ? "Group (5)" : booking.client_type}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1 pl-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-base font-extrabold leading-tight text-[#101217]">
+              {booking.service?.name}
             </span>
-          )}
+            <StatusBadgeFor status={booking.status} />
+            {booking.client_type && booking.client_type !== "adult" ? (
+              <span className="inline-flex min-h-6 items-center bg-[#a36f4d]/12 px-2.5 py-1 text-xs font-bold capitalize leading-none text-[#8a5738]">
+                {booking.client_type === "group" ? "Group (5)" : booking.client_type}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs leading-5 text-[#5f6268]">
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarDays aria-hidden="true" className="size-3.5 text-[#c96c83]" />
+              {dateStr} at {timeStr}
+            </span>
+            {employeeName ? (
+              <span className="inline-flex items-center gap-1.5">
+                <UserRound aria-hidden="true" className="size-3.5 text-[#c96c83]" />
+                {employeeName}
+              </span>
+            ) : null}
+            <span className="font-bold text-[#101217]">${booking.total}</span>
+          </div>
+
           {booking.recurrence_active && booking.recurrence_interval_weeks && (
             <span
-              className="text-xs px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1"
-              style={{ background: "#c96c8322", color: "#c96c83" }}
+              className="mt-3 inline-flex min-h-6 items-center gap-1.5 bg-[#c96c83]/12 px-2.5 py-1 text-xs font-bold text-[#b95f76]"
             >
-              ↻ Every {booking.recurrence_interval_weeks} wk
+              <Repeat2 aria-hidden="true" className="size-3.5" />
+              Every {booking.recurrence_interval_weeks} wk
               {booking.auto_charge ? " · auto-pay" : ""}
             </span>
           )}
-        </div>
-        <div className="flex items-center gap-3 mt-1 text-xs text-[#5f6268] flex-wrap">
-          <span>{dateStr} · {timeStr}</span>
-          {employeeName && <span>with {employeeName}</span>}
-          <span className="font-semibold text-[#101217]">${booking.total}</span>
-        </div>
-        {booking.notes && (
-          <p className="mt-1.5 text-xs text-[#5f6268] truncate">{booking.notes}</p>
-        )}
-      </div>
 
-      {actions && <div className="shrink-0">{actions}</div>}
+          {booking.notes && (
+            <p className="mt-3 truncate text-xs leading-5 text-[#5f6268]">{booking.notes}</p>
+          )}
+        </div>
+
+        {actions && <div className="flex shrink-0 flex-wrap items-center gap-2 pl-2 sm:justify-end">{actions}</div>}
+      </div>
     </div>
   )
 }

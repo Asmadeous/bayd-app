@@ -1,9 +1,22 @@
 "use client"
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import api from "@/lib/api"
+import { Phone } from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import api from "@/lib/api"
 
 interface CallbackRequest {
   id: number
@@ -21,7 +34,7 @@ const STATUSES = ["new", "contacted", "booked", "declined"]
 
 export default function AdminCallbacksPage() {
   const qc = useQueryClient()
-  const { data } = useQuery<{ data: CallbackRequest[] }>({
+  const { data, isLoading } = useQuery<{ data: CallbackRequest[] }>({
     queryKey: ["admin-callbacks"],
     queryFn: () => api.get<{ data: CallbackRequest[] }>("/admin/callback_requests").then((r) => r.data),
   })
@@ -34,47 +47,82 @@ export default function AdminCallbacksPage() {
   })
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="Out-of-area callbacks" subtitle="Customers with no covering technician — call back to check for someone nearby" />
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader
+        title="Callbacks"
+        subtitle="Customers outside dispatch coverage who need a follow-up call."
+      />
 
-      <div className="rounded-xl border border-black/8 bg-white overflow-hidden">
-        {rows.length === 0 ? (
-          <p className="p-6 text-sm text-[#5f6268]">No callback requests.</p>
-        ) : (
-          <div className="divide-y divide-black/5">
-            {rows.map((r) => {
-              const name = r.contact_name || (r.user && `${r.user.first_name ?? ""} ${r.user.last_name ?? ""}`.trim())
-              const phone = r.contact_phone || r.user?.phone
-              return (
-                <div key={r.id} className="p-4 flex flex-wrap items-center gap-3 justify-between">
-                  <div className="text-sm">
-                    <p className="text-[#101217] font-medium">
-                      {name || r.user?.email || "Customer"} · {r.postal_code ?? "—"}
-                    </p>
-                    <p className="text-[#5f6268]">
-                      {phone ?? "no phone"}{r.service ? ` · ${r.service.name}` : ""}
+      {isLoading ? (
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading callback requests...</p>
+        </DashboardPanel>
+      ) : rows.length === 0 ? (
+        <EmptyState
+          icon={Phone}
+          title="No callback requests"
+          description="Out-of-area customer requests will appear here for follow-up."
+        />
+      ) : (
+        <div className="space-y-3">
+          {rows.map((request) => {
+            const name =
+              request.contact_name ||
+              (request.user &&
+                [request.user.first_name, request.user.last_name].filter(Boolean).join(" ")) ||
+              request.user?.email ||
+              "Customer"
+            const phone = request.contact_phone || request.user?.phone
+
+            return (
+              <DashboardPanel className="p-0" key={request.id}>
+                <div className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-base font-extrabold text-[#101217]">{name}</h2>
+                      <StatusBadgeFor status={request.status} />
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-[#5f6268]">
+                      {request.postal_code ?? "-"}
+                      {phone ? ` / ${phone}` : " / no phone"}
+                      {request.service ? ` / ${request.service.name}` : ""}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={r.status}
-                      onChange={(e) => update.mutate({ id: r.id, status: e.target.value })}
-                      className="h-9 border border-black/15 rounded-lg px-2 text-sm focus:outline-none focus:border-[#c96c83]"
+
+                  <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
+                    <Select
+                      disabled={update.isPending}
+                      onValueChange={(value) =>
+                        update.mutate({ id: request.id, status: value ?? request.status })
+                      }
+                      value={request.status}
                     >
-                      {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                    {phone && (
+                      <SelectTrigger className="h-9 w-32 text-xs capitalize">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUSES.map((status) => (
+                          <SelectItem className="capitalize" key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {phone ? (
                       <a href={`tel:${phone}`}>
-                        <Button size="xs" variant="outline">Call</Button>
+                        <Button size="xs" variant="outline">
+                          <Phone aria-hidden="true" className="size-3.5" />
+                          Call
+                        </Button>
                       </a>
-                    )}
+                    ) : null}
                   </div>
                 </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-    </div>
+              </DashboardPanel>
+            )
+          })}
+        </div>
+      )}
+    </DashboardPage>
   )
 }

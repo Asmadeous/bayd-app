@@ -6,7 +6,7 @@ class InvoicePdf
   BRAND   = "#c96c83"
   INK     = "101217"
   MUTED   = "5f6268"
-  COMPANY = "Beauty at Your Door"
+  COMPANY = "Beauty @ Your Door"
 
   def initialize(invoice)
     @invoice = invoice

@@ -28,7 +28,7 @@ export const authPages: Record<
     alternateAction: {
       href: "/signup",
       label: "Create account",
-      text: "New to Beauty at Your Door?",
+      text: "New to Beauty @ Your Door?",
     },
     eyebrow: "Sign in",
     fields: [

@@ -77,7 +77,7 @@ export function BlogArticlePage({ post }: BlogArticlePageProps) {
               <div className="flex items-center justify-between gap-3 px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-[#5f6268]">
                 <span>{post.category}</span>
                 <Image
-                  alt="Beauty at Your Door"
+                  alt="Beauty @ Your Door"
                   className="h-9 w-auto object-contain"
                   height={936}
                   src="/images/brand/bayd-logo-black.png"

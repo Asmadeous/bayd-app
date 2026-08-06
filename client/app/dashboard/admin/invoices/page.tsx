@@ -1,9 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { Download, Mail, Plus, Trash2 } from "lucide-react"
+import { Download, FileText, Mail, Plus, Trash2 } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import {
+  DashboardToolbar,
+  SegmentedControl,
+  SegmentButton,
+  ToolbarSection,
+} from "@/components/dashboard/dashboard-toolbar"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { Button } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   useAdminInvoices,
   useSaveInvoice,
@@ -15,7 +32,6 @@ import { downloadInvoice, type Invoice } from "@/lib/hooks/use-invoices"
 const cad = (v: string | number) => `$${Number(v).toFixed(2)}`
 const STATUSES = ["issued", "paid", "void", "refunded"]
 const KINDS = ["booking", "order", "gift_card", "manual"]
-const STATUS_COLOR: Record<string, string> = { paid: "#5a9e5a", issued: "#d4a843", void: "#8a8d93", refunded: "#d4754a" }
 
 export default function AdminInvoicesPage() {
   const [status, setStatus] = useState("")
@@ -28,10 +44,10 @@ export default function AdminInvoicesPage() {
   const invoices = data?.data ?? []
 
   return (
-    <div className="space-y-6">
+    <DashboardPage maxWidth="wide">
       <DashboardHeader
         title="Invoices"
-        subtitle="All transactions across bookings, products, and gift cards"
+        subtitle="All transactions across bookings, products, and gift cards."
         actions={
           <Button size="sm" onClick={() => setCreating((c) => !c)} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
             <Plus className="size-4" /> Manual invoice
@@ -39,7 +55,7 @@ export default function AdminInvoicesPage() {
         }
       />
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Filter label="Status" value={status} set={setStatus} options={STATUSES} />
         <Filter label="Type" value={kind} set={setKind} options={KINDS} />
       </div>
@@ -53,9 +69,15 @@ export default function AdminInvoicesPage() {
       )}
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading invoices...</p>
+        </DashboardPanel>
       ) : invoices.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">No invoices found.</div>
+        <EmptyState
+          icon={FileText}
+          title="No invoices found"
+          description="Invoices matching the selected filters will appear here."
+        />
       ) : (
         <div className="space-y-3">
           {invoices.map((inv) => (
@@ -67,7 +89,7 @@ export default function AdminInvoicesPage() {
           ))}
         </div>
       )}
-    </div>
+    </DashboardPage>
   )
 }
 
@@ -77,12 +99,12 @@ function Row({ invoice, onStatus, onDelete, onResend }: {
   onDelete: () => void
   onResend: () => void
 }) {
-  const color = STATUS_COLOR[invoice.status] ?? "#8a8d93"
   return (
-    <div className="rounded-xl border border-black/8 bg-white px-5 py-4 flex items-start justify-between gap-3 flex-wrap">
+    <DashboardPanel className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-sm text-[#101217]">{invoice.invoice_number}</span>
+          <span className="text-sm font-extrabold text-[#101217]">{invoice.invoice_number}</span>
+          <StatusBadgeFor status={invoice.status} />
           <span className="text-xs text-[#5f6268]">{invoice.source_label}</span>
           <span className="text-xs text-[#5f6268]">{invoice.customer?.name}</span>
         </div>
@@ -91,10 +113,18 @@ function Row({ invoice, onStatus, onDelete, onResend }: {
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <select value={invoice.status} onChange={(e) => onStatus(e.target.value)}
-          className="h-8 border rounded-lg px-2 text-xs capitalize focus:outline-none" style={{ borderColor: `${color}55`, color }}>
-          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
+        <Select onValueChange={(value) => onStatus(value ?? invoice.status)} value={invoice.status}>
+          <SelectTrigger className="h-8 w-28 text-xs capitalize">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUSES.map((status) => (
+              <SelectItem className="capitalize" key={status} value={status}>
+                {status}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {invoice.has_pdf && (
           <Button size="xs" variant="outline" onClick={() => downloadInvoice(invoice.id, invoice.invoice_number, "admin")}>
             <Download className="size-3.5" />
@@ -103,7 +133,7 @@ function Row({ invoice, onStatus, onDelete, onResend }: {
         <Button size="xs" variant="outline" onClick={onResend} title="Re-email to customer"><Mail className="size-3.5" /></Button>
         <Button size="xs" variant="outline" onClick={onDelete}><Trash2 className="size-3.5 text-[#d4754a]" /></Button>
       </div>
-    </div>
+    </DashboardPanel>
   )
 }
 
@@ -131,7 +161,7 @@ function ManualInvoiceForm({ saving, onSave, onCancel }: {
   }
 
   return (
-    <div className="rounded-xl border border-[#c96c83]/30 bg-white p-5 space-y-3">
+    <DashboardPanel className="space-y-3 border-[#c96c83]/30">
       <div className="grid sm:grid-cols-2 gap-3">
         <input className={field} placeholder="Customer user ID *" value={f.user_id} onChange={(e) => set("user_id", e.target.value)} />
         <input className={field} placeholder="Payment method" value={f.payment_method} onChange={(e) => set("payment_method", e.target.value)} />
@@ -147,21 +177,23 @@ function ManualInvoiceForm({ saving, onSave, onCancel }: {
         </Button>
         <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
       </div>
-    </div>
+    </DashboardPanel>
   )
 }
 
 function Filter({ label, value, set, options }: { label: string; value: string; set: (v: string) => void; options: string[] }) {
   return (
-    <div className="flex gap-1.5 items-center">
-      <span className="text-xs text-[#5f6268]">{label}:</span>
+    <DashboardToolbar>
+      <ToolbarSection>
+        <span className="text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">{label}</span>
+        <SegmentedControl>
       {["", ...options].map((o) => (
-        <button key={o || "all"} onClick={() => set(o)}
-          className="rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors"
-          style={value === o ? { background: "#101217", color: "#fff" } : { background: "white", color: "#5f6268", border: "1px solid #e5e5e5" }}>
+        <SegmentButton active={value === o} key={o || "all"} onClick={() => set(o)}>
           {o ? o.replace("_", " ") : "all"}
-        </button>
+        </SegmentButton>
       ))}
-    </div>
+        </SegmentedControl>
+      </ToolbarSection>
+    </DashboardToolbar>
   )
 }

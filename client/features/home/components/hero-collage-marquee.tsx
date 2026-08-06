@@ -15,7 +15,7 @@ const collageImages = [
   },
   {
     src: "/images/new-pics-for-the-ladies/beauty-team-group-portrait-04.webp",
-    alt: "The Beauty at Your Door team",
+    alt: "The Beauty @ Your Door team",
   },
   {
     src: "/images/new-pics-for-the-ladies/mobile-manicure-service-02.webp",
@@ -23,7 +23,7 @@ const collageImages = [
   },
   {
     src: "/images/new-pics-for-the-ladies/nail-technician-at-work-02.webp",
-    alt: "A Beauty at Your Door nail technician at work",
+    alt: "A Beauty @ Your Door nail technician at work",
   },
   {
     src: "/images/new-pics-for-the-ladies/mobile-nail-care-service-01.webp",

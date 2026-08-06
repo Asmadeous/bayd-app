@@ -2,10 +2,16 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import api from "@/lib/api"
+import { Star } from "lucide-react"
+
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
-import { StatCard } from "@/components/dashboard/stat-card"
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboard-toolbar"
+import { EmptyState } from "@/components/dashboard/empty-state"
+import { MetricCard } from "@/components/dashboard/metric-card"
 import { Button } from "@/components/ui/button"
+import api from "@/lib/api"
 
 interface Review {
   id: number
@@ -23,10 +29,14 @@ interface PagedResponse<T> {
 function Stars({ rating }: { rating: number }) {
   return (
     <span className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill={i <= rating ? "#d4a843" : "none"} stroke="#d4a843" strokeWidth="2">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
+      {[1, 2, 3, 4, 5].map((index) => (
+        <Star
+          aria-hidden="true"
+          className="size-3.5"
+          fill={index <= rating ? "#d4a843" : "none"}
+          key={index}
+          stroke="#d4a843"
+        />
       ))}
     </span>
   )
@@ -36,56 +46,86 @@ export default function EmployeeReviewsPage() {
   const [page, setPage] = useState(1)
   const { data, isLoading } = useQuery<PagedResponse<Review>>({
     queryKey: ["employee-reviews", page],
-    queryFn: () => api.get<PagedResponse<Review>>("/employee/reviews", { params: { page } }).then((r) => r.data),
+    queryFn: () =>
+      api
+        .get<PagedResponse<Review>>("/employee/reviews", { params: { page } })
+        .then((response) => response.data),
   })
 
   const reviews = data?.data ?? []
-  const avg = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : "—"
+  const average = reviews.length
+    ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
+    : "-"
 
   return (
-    <div className="space-y-6">
-      <DashboardHeader title="My Reviews" subtitle="Feedback from clients" />
+    <DashboardPage maxWidth="wide">
+      <DashboardHeader title="Reviews" subtitle="Feedback from clients you have served." />
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <StatCard label="Avg Rating" value={avg} accent />
-        <StatCard label="Total Reviews" value={reviews.length} />
-        <StatCard label="5-Star Reviews" value={reviews.filter((r) => r.rating === 5).length} />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <MetricCard accent icon={Star} label="Avg Rating" value={average} />
+        <MetricCard icon={Star} label="Total Reviews" value={reviews.length} />
+        <MetricCard icon={Star} label="5-Star Reviews" value={reviews.filter((r) => r.rating === 5).length} />
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-[#5f6268]">Loading…</div>
+        <DashboardPanel>
+          <p className="text-sm text-[#5f6268]">Loading reviews...</p>
+        </DashboardPanel>
       ) : reviews.length === 0 ? (
-        <div className="rounded-xl border border-black/8 bg-white px-5 py-12 text-center text-sm text-[#5f6268]">
-          No reviews yet.
-        </div>
+        <EmptyState
+          icon={Star}
+          title="No reviews yet"
+          description="Client feedback will appear here after completed appointments."
+        />
       ) : (
         <div className="space-y-3">
-          {reviews.map((r) => (
-            <div key={r.id} className="rounded-xl border border-black/8 bg-white px-5 py-4">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
+          {reviews.map((review) => (
+            <DashboardPanel key={review.id}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Stars rating={r.rating} />
-                  <span className="text-xs text-[#5f6268]">
-                    {[r.user?.first_name, r.user?.last_name].filter(Boolean).join(" ") || "Anonymous"}
+                  <Stars rating={review.rating} />
+                  <span className="text-xs font-semibold text-[#5f6268]">
+                    {[review.user?.first_name, review.user?.last_name].filter(Boolean).join(" ") ||
+                      "Anonymous"}
                   </span>
                 </div>
-                <span className="text-xs text-[#5f6268]">
-                  {new Date(r.created_at).toLocaleDateString("en-CA")}
+                <span className="text-xs font-semibold text-[#5f6268]">
+                  {new Date(review.created_at).toLocaleDateString("en-CA")}
                 </span>
               </div>
-              {r.body && <p className="mt-2 text-sm text-[#101217]">{r.body}</p>}
-            </div>
+              {review.body ? (
+                <p className="mt-3 text-sm leading-6 text-[#101217]">{review.body}</p>
+              ) : null}
+            </DashboardPanel>
           ))}
         </div>
       )}
 
-      {data?.pagination && data.pagination.total_pages > 1 && (
-        <div className="flex items-center gap-3 justify-end">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-          <span className="text-sm text-[#5f6268]">{page} / {data.pagination.total_pages}</span>
-          <Button variant="outline" size="sm" disabled={!data.pagination.next_page} onClick={() => setPage((p) => p + 1)}>Next</Button>
-        </div>
-      )}
-    </div>
+      {data?.pagination && data.pagination.total_pages > 1 ? (
+        <DashboardToolbar className="justify-end">
+          <ToolbarSection className="ml-auto">
+            <Button
+              disabled={page <= 1}
+              onClick={() => setPage((currentPage) => currentPage - 1)}
+              size="sm"
+              variant="outline"
+            >
+              Prev
+            </Button>
+            <span className="px-2 text-sm font-semibold text-[#5f6268]">
+              {page} / {data.pagination.total_pages}
+            </span>
+            <Button
+              disabled={!data.pagination.next_page}
+              onClick={() => setPage((currentPage) => currentPage + 1)}
+              size="sm"
+              variant="outline"
+            >
+              Next
+            </Button>
+          </ToolbarSection>
+        </DashboardToolbar>
+      ) : null}
+    </DashboardPage>
   )
 }

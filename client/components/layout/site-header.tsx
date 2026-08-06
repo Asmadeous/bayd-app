@@ -45,7 +45,7 @@ export function SiteHeader({ cartCount = 0, onOpenCart }: SiteHeaderProps) {
           onClick={closeMenus}
         >
           <Image
-            alt="Beauty at Your Door"
+            alt="Beauty @ Your Door"
             className="object-contain"
             fill
             priority
@@ -98,10 +98,10 @@ export function SiteHeader({ cartCount = 0, onOpenCart }: SiteHeaderProps) {
               buttonVariants({ variant: "outline", size: "lg" }),
               "bg-white/75 px-5 font-bold",
             )}
-            href="/signup"
+            href="/signin"
             onClick={closeMenus}
           >
-            Sign Up
+            Sign In
           </a>
         </div>
 
@@ -174,10 +174,10 @@ export function SiteHeader({ cartCount = 0, onOpenCart }: SiteHeaderProps) {
               buttonVariants({ variant: "outline", size: "lg" }),
               "mt-3 h-11 w-full bg-white/75 px-5 font-bold",
             )}
-            href="/signup"
+            href="/signin"
             onClick={closeMobileMenu}
           >
-            Sign Up
+            Sign In
           </Link>
         </div>
       </div>

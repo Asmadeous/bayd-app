@@ -4,6 +4,6 @@ class InvoiceMailer < ApplicationMailer
     @user = invoice.user
     attachments["#{invoice.invoice_number}.pdf"] = invoice.pdf.download if invoice.pdf.attached?
 
-    mail(to: invoice.user.email, subject: "Your invoice #{invoice.invoice_number} from Beauty at Your Door")
+    mail(to: invoice.user.email, subject: "Your invoice #{invoice.invoice_number} from Beauty @ Your Door")
   end
 end
