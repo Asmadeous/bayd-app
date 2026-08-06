@@ -16,10 +16,18 @@ import { GiftCardVisual } from "@/components/gift-card-visual"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   useAdminGiftCards,
   useSaveGiftCard,
   useDeleteGiftCard,
   useDeliverGiftCard,
+  useTopupGiftCard,
 } from "@/lib/hooks/use-admin"
 import type { GiftCard } from "@/lib/hooks/use-gift-cards"
 
@@ -113,6 +121,16 @@ function AdminCard({ card, onToggle, onDelete, onSend, sending }: {
   sending: boolean
 }) {
   const to = card.recipient_email || card.purchaser?.email
+  const topup = useTopupGiftCard()
+  const [amount, setAmount] = useState("")
+  const [method, setMethod] = useState("pos")
+
+  function markPaid() {
+    const value = Number(amount)
+    if (!value || value <= 0) return
+    topup.mutate({ id: card.id, amount: value, method }, { onSuccess: () => setAmount("") })
+  }
+
   return (
     <DashboardPanel className="space-y-3 p-4">
       <GiftCardVisual code={card.code} balance={card.current_balance} expiresAt={card.expires_at} recipientName={card.recipient_name} active={card.active} />
@@ -125,6 +143,26 @@ function AdminCard({ card, onToggle, onDelete, onSend, sending }: {
           <Button size="xs" variant="outline" onClick={onToggle}>{card.active ? "Disable" : "Enable"}</Button>
           <Button size="xs" variant="outline" onClick={onDelete}><Trash2 className="size-3.5 text-[#d4754a]" /></Button>
         </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-black/8 px-1 pt-3">
+        <input
+          type="number" min="0" step="1" inputMode="decimal" placeholder="Top-up $"
+          value={amount} onChange={(e) => setAmount(e.target.value)}
+          className="h-9 w-28 border border-black/15 px-2 text-sm focus:border-[#c96c83] focus:outline-none"
+        />
+        <Select value={method} onValueChange={(value) => setMethod(value ?? "pos")}>
+          <SelectTrigger className="h-9 w-28 px-2 text-xs">
+            <SelectValue placeholder="Method" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="pos">POS</SelectItem>
+            <SelectItem value="card">Card</SelectItem>
+            <SelectItem value="cash">Cash</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button size="xs" variant="outline" disabled={topup.isPending || !amount} onClick={markPaid}>
+          {topup.isPending ? "…" : "Mark paid"}
+        </Button>
       </div>
     </DashboardPanel>
   )

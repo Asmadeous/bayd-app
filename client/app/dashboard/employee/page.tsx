@@ -17,6 +17,7 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MetricCard } from "@/components/dashboard/metric-card"
+import { StaffBookingActions } from "@/components/dashboard/staff-booking-actions"
 import { Button } from "@/components/ui/button"
 import { useEmployeeProfile, useEmployeeSchedule, useToggleShift } from "@/lib/hooks/use-employee"
 import type { Booking } from "@/lib/hooks/use-bookings"
@@ -161,7 +162,11 @@ export default function EmployeeDashboardPage() {
       ) : (
         <DashboardPanel className="space-y-3">
           {listBookings.map((booking) => (
-            <BookingCard booking={booking} key={booking.id} />
+            <BookingCard
+              actions={<StaffBookingActions booking={booking} />}
+              booking={booking}
+              key={booking.id}
+            />
           ))}
         </DashboardPanel>
       )}
@@ -203,7 +208,11 @@ function SchedulePanel({
       ) : (
         <div className="space-y-3">
           {visibleBookings.map((booking) => (
-            <BookingCard booking={booking} key={booking.id} />
+            <BookingCard
+              actions={<StaffBookingActions booking={booking} />}
+              booking={booking}
+              key={booking.id}
+            />
           ))}
         </div>
       )}

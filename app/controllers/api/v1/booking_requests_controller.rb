@@ -60,7 +60,8 @@ module Api
         return { mode: "none" } if amount.to_d <= 0
 
         tip = (params.dig(:booking_request, :tip) || params[:tip]).to_d
-        result = BookingPaymentService.new(booking).collect(amount: amount, tip: tip)
+        gift_card_code = params.dig(:booking_request, :gift_card_code) || params[:gift_card_code]
+        result = BookingPaymentService.new(booking).collect(amount: amount, tip: tip, gift_card_code: gift_card_code)
         return { mode: "error", error: result.error } unless result.success?
 
         { mode: result.mode.to_s, url: result.url }.compact
@@ -104,7 +105,7 @@ module Api
           :requested_start, :requested_window_end,
           :customer_latitude, :customer_longitude,
           :recurrence_interval_weeks, :recurrence_active, :auto_charge,
-          :payment_timing, :booked_for_name, :booked_for_phone, :tip
+          :payment_timing, :booked_for_name, :booked_for_phone, :tip, :gift_card_code
         )
       end
     end

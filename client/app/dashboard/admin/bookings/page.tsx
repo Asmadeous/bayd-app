@@ -18,6 +18,7 @@ import {
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { Button } from "@/components/ui/button"
 import { useAdminBookings, useUpdateBooking } from "@/lib/hooks/use-admin"
+import { ReassignControl } from "@/components/dashboard/reassign-control"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
 const STATUSES: Array<Booking["status"] | "all"> = [
@@ -72,6 +73,11 @@ export default function AdminBookingsPage() {
   function renderBookingActions(booking: Booking) {
     return (
       <>
+        {(booking.status === "pending" ||
+          booking.status === "confirmed" ||
+          booking.status === "in_progress") && (
+          <ReassignControl bookingId={booking.id} />
+        )}
         {booking.status === "confirmed" && (
           <Button
             disabled={updateMutation.isPending}

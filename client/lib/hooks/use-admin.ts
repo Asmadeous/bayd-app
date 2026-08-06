@@ -419,6 +419,16 @@ export function useDeliverGiftCard() {
   })
 }
 
+// Staff top-up: payment taken in person (POS/cash), credited immediately.
+export function useTopupGiftCard() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (vars: { id: number; amount: number; method: string }) =>
+      api.post(`/admin/gift_cards/${vars.id}/topup`, { amount: vars.amount, method: vars.method }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-gift-cards"] }),
+  })
+}
+
 // ── Subscriptions ─────────────────────────────────────────────────────────────
 
 export function useAdminSubscriptions(params?: { status?: string; page?: number }) {

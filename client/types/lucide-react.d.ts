@@ -1,0 +1,74 @@
+declare module "lucide-react" {
+  import type { ComponentType, SVGProps } from "react"
+
+  export type LucideIcon = ComponentType<SVGProps<SVGSVGElement>>
+
+  export const ArrowLeft: LucideIcon
+  export const ArrowRight: LucideIcon
+  export const ArrowUpRight: LucideIcon
+  export const BadgeCheck: LucideIcon
+  export const BarChart3: LucideIcon
+  export const Bell: LucideIcon
+  export const Briefcase: LucideIcon
+  export const BriefcaseBusiness: LucideIcon
+  export const CalendarClock: LucideIcon
+  export const CalendarDays: LucideIcon
+  export const Check: LucideIcon
+  export const CheckCircle2: LucideIcon
+  export const ChevronDown: LucideIcon
+  export const ChevronLeft: LucideIcon
+  export const ChevronRight: LucideIcon
+  export const Clock: LucideIcon
+  export const Clock3: LucideIcon
+  export const Copy: LucideIcon
+  export const CreditCard: LucideIcon
+  export const Download: LucideIcon
+  export const Eye: LucideIcon
+  export const EyeOff: LucideIcon
+  export const Expand: LucideIcon
+  export const FileText: LucideIcon
+  export const Fuel: LucideIcon
+  export const Gift: LucideIcon
+  export const HandCoins: LucideIcon
+  export const Handshake: LucideIcon
+  export const Home: LucideIcon
+  export const ImagePlus: LucideIcon
+  export const Images: LucideIcon
+  export const Inbox: LucideIcon
+  export const List: LucideIcon
+  export const Lock: LucideIcon
+  export const LogOut: LucideIcon
+  export const Mail: LucideIcon
+  export const MailOpen: LucideIcon
+  export const MapPin: LucideIcon
+  export const Menu: LucideIcon
+  export const Minus: LucideIcon
+  export const Navigation: LucideIcon
+  export const Package: LucideIcon
+  export const PackageCheck: LucideIcon
+  export const Pencil: LucideIcon
+  export const Phone: LucideIcon
+  export const Plus: LucideIcon
+  export const ReceiptText: LucideIcon
+  export const Repeat: LucideIcon
+  export const Repeat2: LucideIcon
+  export const Scissors: LucideIcon
+  export const Search: LucideIcon
+  export const Send: LucideIcon
+  export const Settings: LucideIcon
+  export const ShoppingBag: LucideIcon
+  export const ShoppingCart: LucideIcon
+  export const Smartphone: LucideIcon
+  export const Sparkles: LucideIcon
+  export const Star: LucideIcon
+  export const ToggleLeft: LucideIcon
+  export const ToggleRight: LucideIcon
+  export const Trash2: LucideIcon
+  export const Upload: LucideIcon
+  export const UploadCloud: LucideIcon
+  export const User: LucideIcon
+  export const UserRound: LucideIcon
+  export const Users: LucideIcon
+  export const Video: LucideIcon
+  export const X: LucideIcon
+}

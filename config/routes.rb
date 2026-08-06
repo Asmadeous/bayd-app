@@ -63,8 +63,11 @@ Rails.application.routes.draw do
       end
 
       # Gift cards
-      resources :gift_cards, only: %i[index show], param: :code do
-        member { post :redeem }
+      resources :gift_cards, only: %i[index show create], param: :code do
+        member do
+          post :redeem
+          post :topup
+        end
       end
 
       # Gallery (public read)
@@ -111,6 +114,11 @@ Rails.application.routes.draw do
         post   "clock_out",     to: "employees#clock_out"
         get    "current_shift", to: "employees#current_shift"
         get    "shifts",        to: "employees#shifts"
+        # Gift-card top-up at the customer (POS/cash → mark paid)
+        get    "gift_cards/:code",       to: "employees#show_gift_card"
+        post   "gift_cards/:code/topup", to: "employees#topup_gift_card"
+        # Overtime charge when a service runs over its allocated time
+        post   "bookings/:id/overtime",  to: "employees#booking_overtime"
       end
 
       # Work-scope video calls (customer ↔ staff)
@@ -160,13 +168,20 @@ Rails.application.routes.draw do
 
         # Bookings & scheduling
         resources :bookings,            only: %i[index show update destroy] do
-          member { post :payment_link }
+          member do
+            post  :payment_link
+            get   :candidates      # eligible staff ranked by proximity
+            patch :assign          # (re)assign to a technician
+          end
         end
         resources :booking_requests,    only: %i[index show]
         resources :assignment_attempts, only: %i[index show]
 
         # Out-of-area callback queue
         resources :callback_requests, only: %i[index update]
+
+        # Live staff locations + travel/fuel metrics (server-rendered map)
+        get "staff_locations", to: "staff_locations#index"
 
         # Tip payout tracking (owed per technician)
         resources :tips, only: :index do
@@ -207,7 +222,10 @@ Rails.application.routes.draw do
           end
         end
         resources :gift_cards, only: %i[index show create update destroy] do
-          member { post :deliver }
+          member do
+            post :deliver
+            post :topup
+          end
         end
         resources :loyalty,   only: %i[index show]
 

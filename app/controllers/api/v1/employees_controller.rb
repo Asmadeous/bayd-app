@@ -58,6 +58,45 @@ module Api
         render json: { data: ShiftSerializer.render_as_hash(records), totals: totals, pagination: meta }
       end
 
+      # ── Overtime charge ─────────────────────────────────────────────────────
+      # A service ran over its allocated time — staff add an extra amount. It's
+      # added to the booking total and collected now: charged to the card on file
+      # (incl. already-paid bookings), or a payment link for the difference.
+      def booking_overtime
+        booking = profile.bookings.find(params[:id])
+        amount  = params[:amount].to_d
+        return render json: { error: "Enter a valid amount." }, status: :unprocessable_entity unless amount.positive?
+
+        reason = params[:reason].to_s.strip
+        booking.update!(
+          overtime_amount: booking.overtime_amount + amount,
+          total:           booking.total + amount,
+          notes:           [ booking.notes.presence, "Overtime +$#{amount}#{reason.present? ? " (#{reason})" : ''}" ].compact.join("\n")
+        )
+
+        result = BookingPaymentService.new(booking).collect(amount: amount, note: "Overtime BKG-#{booking.id}")
+        if result.success?
+          render json: { mode: result.mode.to_s, url: result.url, booking: BookingSerializer.render_as_hash(booking.reload) }
+        else
+          render json: { error: result.error }, status: :unprocessable_entity
+        end
+      end
+
+      # ── Gift-card top-up at the customer (POS/cash) ─────────────────────────
+      # Staff look up a customer's card by code and add funds; payment is taken
+      # in person, so "mark paid" credits the balance immediately.
+      def show_gift_card
+        render json: GiftCardSerializer.render_as_hash(GiftCard.find_by!(code: params[:code]))
+      end
+
+      def topup_gift_card
+        card = GiftCard.find_by!(code: params[:code])
+        card.topup!(params[:amount], method: params[:method].presence || "pos")
+        render json: GiftCardSerializer.render_as_hash(card.reload)
+      rescue RuntimeError => e
+        render json: { error: e.message }, status: :unprocessable_entity
+      end
+
       private
 
       def location_params

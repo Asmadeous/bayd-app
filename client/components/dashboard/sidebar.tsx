@@ -59,6 +59,7 @@ const customerNav: NavItem[] = [
 const employeeNav: NavItem[] = [
   { label: "Schedule", href: "/dashboard/employee", icon: CalendarDays },
   { label: "Shifts", href: "/dashboard/employee/shifts", icon: Clock3 },
+  { label: "Gift Cards", href: "/dashboard/employee/gift-cards", icon: Gift },
   { label: "Profile", href: "/dashboard/employee/profile", icon: User },
   { label: "Reviews", href: "/dashboard/employee/reviews", icon: Star },
 ]
@@ -94,6 +95,7 @@ const adminNavGroups: NavGroup[] = [
     group: "Workforce",
     items: [
       { label: "Fuel & Shifts", href: "/dashboard/admin/shifts", icon: Fuel },
+      { label: "Staff Map", href: "/dashboard/admin/staff-locations", icon: MapPin },
     ],
   },
   {

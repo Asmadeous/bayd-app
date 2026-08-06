@@ -209,14 +209,14 @@ function PriceDirectory({ categories }: { categories: PriceCategory[] }) {
                           {groupName}
                         </h4>
                         <div className="mt-3 space-y-2">
-                          {items.map((item) => (
+                          {items.map((item, i) => (
                             <div
                               className={
                                 item.duration
                                   ? "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 border-b border-black/8 py-2 text-sm"
                                   : "grid grid-cols-[auto_1fr_auto] items-baseline gap-2 text-sm"
                               }
-                              key={`${category.id}-${item.name}-${item.price}`}
+                              key={`${category.id}-${groupName}-${i}`}
                             >
                               <span className="min-w-0 font-medium text-[#101217]">
                                 {item.name}

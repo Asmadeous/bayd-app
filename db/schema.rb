@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_31_100004) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -142,6 +142,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_100004) do
     t.bigint "employee_profile_id", null: false
     t.datetime "ends_at", null: false
     t.text "notes"
+    t.decimal "overtime_amount", precision: 10, scale: 2, default: "0.0", null: false
     t.bigint "parent_booking_id"
     t.bigint "partner_id"
     t.bigint "partner_payout_id"
@@ -336,6 +337,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_31_100004) do
     t.datetime "created_at", null: false
     t.bigint "gift_card_id", null: false
     t.string "kind", null: false
+    t.string "method"
     t.datetime "updated_at", null: false
     t.index ["booking_id"], name: "index_gift_card_transactions_on_booking_id"
     t.index ["gift_card_id"], name: "index_gift_card_transactions_on_gift_card_id"
