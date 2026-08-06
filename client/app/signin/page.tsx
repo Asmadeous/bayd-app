@@ -5,9 +5,13 @@ import { AuthPage } from "@/features/auth/components/auth-page";
 import { authPages } from "@/features/auth/data";
 
 export const metadata: Metadata = {
-  title: "Sign In | Beauty @ Your Door",
+  title: "Sign In",
   description:
     "Sign in to manage Beauty @ Your Door bookings, products, and account preferences.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function SignInPage() {

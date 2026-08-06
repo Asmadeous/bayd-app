@@ -1,5 +1,7 @@
 import { HomePage } from "@/features/home/components/home-page";
 import { API_BASE_URL } from "@/lib/config";
+import { JsonLd } from "@/components/seo/json-ld";
+import { siteConfig } from "@/lib/site";
 import type { Benefit, Service } from "@/features/home/types/home-content";
 
 interface ApiService {
@@ -97,6 +99,67 @@ export default async function Home() {
     apiServices = [];
   }
   const services = apiServices.map(mapApiService);
+  const sameAs = [
+    siteConfig.socialLinks.instagram,
+    siteConfig.socialLinks.pinterest,
+    siteConfig.socialLinks.tiktok,
+  ];
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "HealthAndBeautyBusiness",
+    "@id": `${siteConfig.url}/#business`,
+    name: siteConfig.name,
+    url: siteConfig.url,
+    logo: `${siteConfig.url}${siteConfig.assets.logo}`,
+    image: `${siteConfig.url}${siteConfig.assets.ogImage}`,
+    description: siteConfig.description,
+    slogan: siteConfig.tagline,
+    telephone: siteConfig.phone,
+    email: siteConfig.email,
+    priceRange: "$$",
+    areaServed: siteConfig.serviceAreas.map((area) => ({
+      "@type": area.includes("communities") ? "AdministrativeArea" : "City",
+      name: area,
+    })),
+    sameAs,
+    makesOffer: [
+      "Mobile nails",
+      "Mobile lashes",
+      "Mobile massage",
+      "Mobile facials",
+      "Mobile waxing",
+      "Mobile pedicure",
+      "Mobile manicure",
+      "Event beauty services",
+    ].map((name) => ({
+      "@type": "Offer",
+      itemOffered: {
+        "@type": "Service",
+        name,
+        areaServed: "Greater Toronto Area",
+        audience: {
+          "@type": "PeopleAudience",
+          requiredGender: "Female",
+        },
+      },
+    })),
+  };
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${siteConfig.url}/#website`,
+    name: siteConfig.name,
+    url: siteConfig.url,
+    publisher: {
+      "@id": `${siteConfig.url}/#business`,
+    },
+  };
 
-  return <HomePage content={{ services, benefits: BENEFITS }} />;
+  return (
+    <>
+      <JsonLd data={localBusinessSchema} />
+      <JsonLd data={websiteSchema} />
+      <HomePage content={{ services, benefits: BENEFITS }} />
+    </>
+  );
 }

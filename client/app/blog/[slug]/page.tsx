@@ -63,11 +63,25 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = await fetchPost(slug);
 
-  if (!post) return { title: "Blog Article | Beauty @ Your Door" };
+  if (!post) return { title: "Blog Article" };
 
   return {
-    title: `${post.title} | Beauty @ Your Door`,
+    title: post.title,
     description: post.excerpt,
+    alternates: {
+      canonical: `/blog/${slug}`,
+    },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      url: `/blog/${slug}`,
+      images: [
+        {
+          url: post.image.src,
+          alt: post.image.alt,
+        },
+      ],
+    },
   };
 }
 

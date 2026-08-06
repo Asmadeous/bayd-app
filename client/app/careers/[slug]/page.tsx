@@ -5,8 +5,12 @@ import { JobDetailPage } from "@/features/careers/components/job-detail-page";
 type RouteProps = { params: Promise<{ slug: string }> };
 
 export const metadata: Metadata = {
-  title: "Open Role | Beauty @ Your Door",
+  title: "Open Role",
   description: "View this open role at Beauty @ Your Door and apply online.",
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export default async function JobRoute({ params }: RouteProps) {

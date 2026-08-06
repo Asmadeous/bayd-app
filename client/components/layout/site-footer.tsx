@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 
+import { siteConfig } from "@/lib/site";
+
 export function SiteFooter() {
   return (
     <footer className="relative overflow-hidden border-t border-black/10 bg-[#101217] text-white">
@@ -63,20 +65,25 @@ export function SiteFooter() {
 
         <div className="text-sm text-white/62">
           <p className="font-extrabold text-white">Contact</p>
-          <a className="mt-4 block hover:text-white" href="tel:+16479708259">
-            +1 (647) 970-8259
+          <a
+            className="mt-4 block hover:text-white"
+            href={`tel:${siteConfig.phoneHref}`}
+          >
+            {siteConfig.phone}
           </a>
           <a
             className="mt-3 block hover:text-white"
-            href="mailto:Bookings@baydspa.ca"
+            href={`mailto:${siteConfig.email}`}
           >
-            Bookings@baydspa.ca
+            {siteConfig.email}
           </a>
           <div className="mt-5 flex flex-wrap gap-3">
             <a
               aria-label="Instagram"
               className="grid size-10 place-items-center border border-white/15 text-white/70 transition-colors hover:border-white/35 hover:text-white"
-              href="#"
+              href={siteConfig.socialLinks.instagram}
+              rel="noreferrer"
+              target="_blank"
             >
               <svg
                 aria-hidden="true"
@@ -96,7 +103,9 @@ export function SiteFooter() {
             <a
               aria-label="TikTok"
               className="grid size-10 place-items-center border border-white/15 text-white/70 transition-colors hover:border-white/35 hover:text-white"
-              href="#"
+              href={siteConfig.socialLinks.tiktok}
+              rel="noreferrer"
+              target="_blank"
             >
               <svg
                 aria-hidden="true"
@@ -110,7 +119,9 @@ export function SiteFooter() {
             <a
               aria-label="Pinterest"
               className="grid size-10 place-items-center border border-white/15 text-white/70 transition-colors hover:border-white/35 hover:text-white"
-              href="#"
+              href={siteConfig.socialLinks.pinterest}
+              rel="noreferrer"
+              target="_blank"
             >
               <svg
                 aria-hidden="true"

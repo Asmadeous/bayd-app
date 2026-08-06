@@ -5,9 +5,13 @@ import { AuthPage } from "@/features/auth/components/auth-page";
 import { authPages } from "@/features/auth/data";
 
 export const metadata: Metadata = {
-  title: "Reset Password | Beauty @ Your Door",
+  title: "Reset Password",
   description:
     "Request password reset instructions for your Beauty @ Your Door account.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function ForgotPasswordPage() {

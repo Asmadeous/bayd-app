@@ -8,9 +8,12 @@ import type {
 } from "@/features/blog/types/blog-content";
 
 export const metadata: Metadata = {
-  title: "Beauty Journal | Beauty @ Your Door",
+  title: "Beauty Journal",
   description:
-    "Beauty service prep guides, aftercare notes, product pairings, and spa party ideas from Beauty @ Your Door.",
+    "Mobile beauty service prep guides, aftercare notes, product pairings, and spa party ideas from Beauty @ Your Door.",
+  alternates: {
+    canonical: "/blog",
+  },
 };
 
 interface ApiBlogPost {
