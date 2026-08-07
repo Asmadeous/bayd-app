@@ -44,9 +44,10 @@ const teamMembers = [
     location: "20+ years of experience",
     bio: "Dana is a skilled nail technician with over 20 years of experience from Europe. Known for precision, creativity, and passion, she creates personalized nail designs that reflect each client’s unique style.",
     accent: "#d9bba9",
-    backgroundImage:
-      "/images/new-pics-for-the-ladies/dana-team-portrait-01.webp",
+    backgroundImage: "/images/new-pics-for-the-ladies/dana-team-headshot.webp",
     profileImage: "/images/new-pics-for-the-ladies/dana-team-headshot.webp",
+    backgroundPosition: "center 35%",
+    profilePosition: "center 42%",
   },
 ];
 
@@ -91,11 +92,12 @@ export function TeamSection() {
                   <Image
                     alt=""
                     aria-hidden="true"
-                    className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
                     fill
                     quality={96}
                     sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
                     src={member.backgroundImage}
+                    style={{ objectPosition: member.backgroundPosition ?? "center" }}
                   />
                 )}
                 <div
@@ -112,11 +114,12 @@ export function TeamSection() {
                   {member.profileImage ? (
                     <Image
                       alt={`${member.name}, ${member.role}`}
-                      className="object-cover object-top"
+                      className="object-cover"
                       fill
                       quality={100}
                       sizes="224px"
                       src={member.profileImage}
+                      style={{ objectPosition: member.profilePosition ?? "center" }}
                       unoptimized
                     />
                   ) : (

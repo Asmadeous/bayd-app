@@ -85,7 +85,7 @@ employee_data = [
   { first: "Susi",    last: "Tran",    email: "susi@bayd.local",    title: "Lead Lash Artist",     yrs: 7, lat: 43.5890, lng: -79.6441, areas: %w[mississauga toronto], photo: "/images/lashes3.jpg", on_shift: true },
   { first: "Claire",  last: "Bennett", email: "claire@bayd.local",  title: "Nail Technician",      yrs: 4, lat: 43.5453, lng: -79.5697, areas: %w[mississauga],         photo: "/images/nails1.jpg",  on_shift: true },
   { first: "Vanessa", last: "Okafor",  email: "vanessa@bayd.local", title: "Massage Therapist",    yrs: 9, lat: 43.7315, lng: -79.7624, areas: %w[brampton],            photo: "/images/massage.jpg", on_shift: false },
-  { first: "Dana",    last: "Price",   email: "dana@bayd.local",    title: "Esthetician & Waxing", yrs: 5, lat: 43.6532, lng: -79.3832, areas: %w[toronto mississauga], photo: "/images/lashes7.jpg", on_shift: true }
+  { first: "Dana",    last: "Price",   email: "dana@bayd.local",    title: "Esthetician & Waxing", yrs: 5, lat: 43.6532, lng: -79.3832, areas: %w[toronto mississauga], photo: "/images/new-pics-for-the-ladies/dana-team-headshot.webp", on_shift: true },
 ]
 
 employees = employee_data.map do |e|
@@ -294,25 +294,18 @@ end
 
 # ── Gallery ───────────────────────────────────────────────────────────────────
 [
-  { title: "Ready to Come to You",       category: "Team",     image: "/images/new-pics-for-the-ladies/beauty-team-group-portrait-06.webp", size: "wide" },
   { title: "Mobile Lash Appointment",    category: "Lashes",   image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp", size: "wide" },
   { title: "Polish Application",         category: "Nails",    image: "/images/new-pics-for-the-ladies/nail-polish-application-close-up.webp", size: "tall" },
   { title: "Mobile Nail Care",           category: "Pedicure", image: "/images/new-pics-for-the-ladies/mobile-nail-care-service-02.webp", size: "standard" },
-  { title: "Lead Experience",            category: "Team",     image: "/images/new-pics-for-the-ladies/susi-team-portrait-01.webp", size: "standard" },
   { title: "Gel Manicure Service",       category: "Nails",    image: "/images/new-pics-for-the-ladies/gel-manicure-service-01.webp", size: "wide" },
-  { title: "Specialized Foot Care",      category: "Team",     image: "/images/new-pics-for-the-ladies/vanessa-team-portrait-01.webp", size: "standard" },
   { title: "Finished Manicure Result",   category: "Nails",    image: "/images/new-pics-for-the-ladies/finished-manicure-result-03.webp", size: "standard" },
   { title: "Technician at Work",         category: "Nails",    image: "/images/new-pics-for-the-ladies/nail-technician-at-work-02.webp", size: "wide" },
-  { title: "Service Preparation",        category: "Team",     image: "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-02.webp", size: "tall" },
   { title: "Mobile Manicure Setup",      category: "Nails",    image: "/images/new-pics-for-the-ladies/mobile-manicure-service-03.webp", size: "standard" },
-  { title: "Detail and Creativity",      category: "Team",     image: "/images/new-pics-for-the-ladies/dana-team-portrait-01.webp", size: "standard" },
   { title: "Lash Service Detail",        category: "Lashes",   image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-02.webp", size: "standard" },
   { title: "Soft Gel Finish",            category: "Nails",    image: "/images/new-pics-for-the-ladies/finished-manicure-result-01.webp", size: "standard" },
-  { title: "Prepared Professionals",     category: "Team",     image: "/images/new-pics-for-the-ladies/beauty-team-group-portrait-04.webp", size: "wide" },
   { title: "Client Care Moment",         category: "Nails",    image: "/images/new-pics-for-the-ladies/manicure-client-moment-01.webp", size: "tall" },
   { title: "At-Home Appointment",        category: "Nails",    image: "/images/new-pics-for-the-ladies/mobile-manicure-appointment-01.webp", size: "tall" },
   { title: "Detailed Nail Care",         category: "Pedicure", image: "/images/new-pics-for-the-ladies/nail-care-service-close-up-01.webp", size: "standard" },
-  { title: "Mobile Beauty Team",         category: "Team",     image: "/images/new-pics-for-the-ladies/beauty-team-group-portrait-01.webp", size: "wide" }
 ].each_with_index do |g, i|
   gi = GalleryItem.find_or_initialize_by(title: g[:title])
   gi.update!(

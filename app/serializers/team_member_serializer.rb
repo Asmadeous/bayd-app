@@ -3,7 +3,7 @@ class TeamMemberSerializer < Blueprinter::Base
   fields :title, :bio, :photo_url, :years_experience
 
   field :name do |ep|
-    [ ep.user&.first_name, ep.user&.last_name ].compact.join(" ").strip.presence || "Team Member"
+    ep.user&.first_name.presence || "Team Member"
   end
 
   field :average_rating do |ep|

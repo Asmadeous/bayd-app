@@ -51,10 +51,10 @@ function mapApiItem(item: ApiGalleryItem): GalleryItem {
 
 const categories: Array<"All" | GalleryCategory> = [
   "All",
-  "Team",
   "Lashes",
   "Nails",
   "Pedicure",
+  "Massage",
 ];
 
 export function GalleryPage() {
@@ -71,7 +71,8 @@ export function GalleryPage() {
 
   const galleryItems: GalleryItem[] = useMemo(
     () => {
-      const mappedApiItems = apiItems?.map(mapApiItem) ?? [];
+      const mappedApiItems =
+        apiItems?.filter((item) => item.category !== "Team").map(mapApiItem) ?? [];
       const existingIds = new Set(staticGalleryItems.map((item) => item.id));
       const additionalApiItems = mappedApiItems.filter(
         (item) =>
@@ -169,11 +170,10 @@ function GalleryHero() {
             <h1 className="mt-5 max-w-4xl text-5xl font-extrabold leading-[0.95] tracking-tight sm:text-7xl lg:text-8xl">
               Results you can see before we arrive.
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-[#4f535a] sm:text-lg">
-              Explore real team moments, finished looks, and mobile service
-              details from Beauty @ Your Door. Every image helps you
-              understand the people, care, setup, and finish you can expect
-              from your booking.
+              <p className="mt-6 max-w-2xl text-base leading-7 text-[#4f535a] sm:text-lg">
+              Explore finished looks and real service moments from Beauty @
+              Your Door. Every image helps you understand the care, setup, and
+              finish you can expect from your booking.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -213,20 +213,20 @@ function GalleryHero() {
         >
           <div className="relative row-span-2 overflow-hidden bg-[#101217]">
             <Image
-              alt="Beauty @ Your Door team wearing branded shirts"
+              alt="Finished pedicure service"
               className="object-cover"
               fill
               priority
               sizes="(min-width: 1024px) 28vw, 50vw"
-              src="/images/new-pics-for-the-ladies/beauty-team-group-portrait-06.webp"
+              src="/images/new-pics-for-the-ladies/gallery-pedicure-03.webp"
               unoptimized
             />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent p-5 pt-20 text-white sm:p-7">
               <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#f0c8d3]">
-                Team
+                Pedicure
               </p>
               <p className="mt-2 text-2xl font-extrabold tracking-tight">
-                The people behind the service.
+                Care brought to your door.
               </p>
             </div>
           </div>

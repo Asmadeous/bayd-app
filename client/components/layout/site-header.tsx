@@ -13,8 +13,8 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { label: "About", href: "/about" },
   { label: "Services", href: "/services" },
+  { label: "About", href: "/about" },
   { label: "Gallery", href: "/gallery" },
   { label: "Blog", href: "/blog" },
   { label: "Careers", href: "/careers" },
