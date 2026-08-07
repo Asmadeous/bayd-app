@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SectionHeading } from "@/features/home/components/section-heading";
 import { cn } from "@/lib/utils";
+import { siteConfig } from "@/lib/site";
 
 export function ContactSection() {
   return (
@@ -24,7 +25,7 @@ export function ContactSection() {
             as="a"
             className="group border border-black/10 bg-white p-6 transition-colors hover:border-[#a36f4d]"
             delay={80}
-            href="tel:+14165550198"
+            href={`tel:${siteConfig.phoneHref}`}
             variant="fade-up"
           >
             <Phone aria-hidden="true" className="size-5 text-[#a36f4d]" />
@@ -32,14 +33,14 @@ export function ContactSection() {
               Call to book
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              +1 416 555 0198
+              {siteConfig.phone}
             </p>
           </ScrollReveal>
           <ScrollReveal
             as="a"
             className="group border border-black/10 bg-white p-6 transition-colors hover:border-[#a36f4d]"
             delay={160}
-            href="mailto:hello@beautyservicesatyourdoor.com"
+            href={`mailto:${siteConfig.email}`}
             variant="fade-up"
           >
             <Mail aria-hidden="true" className="size-5 text-[#a36f4d]" />
@@ -47,7 +48,7 @@ export function ContactSection() {
               Email details
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              hello@beautyservicesatyourdoor.com
+              {siteConfig.email}
             </p>
           </ScrollReveal>
 
@@ -67,7 +68,7 @@ export function ContactSection() {
                 buttonVariants({ variant: "secondary" }),
                 "mt-6",
               )}
-              href="mailto:hello@beautyservicesatyourdoor.com"
+              href={`mailto:${siteConfig.email}`}
             >
               Start an email
             </a>

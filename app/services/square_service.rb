@@ -27,7 +27,7 @@ class SquareService
         order: { location_id: location_id, reference_id: "ORD-#{order.id}", line_items: line_items },
         checkout_options: {
           redirect_url: redirect_url,
-          merchant_support_email: ENV.fetch("SUPPORT_EMAIL", "support@baydspa.ca")
+          merchant_support_email: ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca")
         }
       }
     end
@@ -86,7 +86,7 @@ class SquareService
         order: { location_id: location_id, line_items: line_items },
         checkout_options: {
           redirect_url: redirect_url,
-          merchant_support_email: ENV.fetch("SUPPORT_EMAIL", "support@baydspa.ca")
+          merchant_support_email: ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca")
         }
       }
     end
@@ -118,7 +118,7 @@ class SquareService
         order: { location_id: location_id, reference_id: "BKG-#{booking_id}", line_items: items },
         checkout_options: {
           redirect_url: redirect_url,
-          merchant_support_email: ENV.fetch("SUPPORT_EMAIL", "support@baydspa.ca")
+          merchant_support_email: ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca")
         }
       }
     end

@@ -66,7 +66,7 @@ env:
     CHECKOUT_GATEWAY: helcim
     SIMPLYBOOK_WEB_ONLY: false
     JITSI_HOST: meet.jit.si
-    SUPPORT_EMAIL: support@baydspa.ca
+    SUPPORT_EMAIL: Bookings@baydspa.ca
     FUEL_RATE_PER_KM: "0.68"
 
     # Payments (non-secret ids / URLs)

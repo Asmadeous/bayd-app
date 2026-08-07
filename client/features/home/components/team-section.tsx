@@ -23,8 +23,10 @@ const teamMembers = [
     location: "Canada & Europe trained",
     bio: "Claire has worked in eyelash extensions and coaching since 2009, with extensive international experience across Europe and Canada. She is skilled in all types of eyelash extensions and creates styles tailored to each client.",
     accent: "#e3d97b",
-    backgroundImage: null,
-    profileImage: null,
+    backgroundImage: "/images/new-pics-for-the-ladies/claire-team-headshot.webp",
+    profileImage: "/images/new-pics-for-the-ladies/claire-team-profile.webp",
+    backgroundPosition: "center 42%",
+    profilePosition: "center",
   },
   {
     name: "Vanessa",
@@ -119,7 +121,9 @@ export function TeamSection() {
                       quality={100}
                       sizes="224px"
                       src={member.profileImage}
-                      style={{ objectPosition: member.profilePosition ?? "center" }}
+                      style={{
+                        objectPosition: member.profilePosition ?? "center",
+                      }}
                       unoptimized
                     />
                   ) : (
