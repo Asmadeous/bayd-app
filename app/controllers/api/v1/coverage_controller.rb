@@ -28,7 +28,7 @@ module Api
       private
 
       def provider_name(profile)
-        [ profile.user&.first_name, profile.user&.last_name ].compact.join(" ").presence ||
+        profile.user&.first_name.presence ||
           profile.title.presence || "Our team"
       end
     end

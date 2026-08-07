@@ -5,18 +5,15 @@ module Api
       skip_before_action :authenticate_user!
 
       def index
-        members = EmployeeProfile.active
-                                 .includes(:user, :reviews)
-                                 .order(:created_at)
+        members = EmployeeProfile.active.includes(:user, :reviews).order(:created_at)
         render json: { data: TeamMemberSerializer.render_as_hash(members) }
       end
 
       def show
-        member = EmployeeProfile.active
-                                .includes(:user, :services, reviews: :user)
-                                .find(params[:id])
+        member = EmployeeProfile.active.includes(:user, :services, reviews: :user).find(params[:id])
         render json: TeamMemberSerializer.render_as_hash(member, view: :detail)
       end
+
     end
   end
 end

@@ -4,18 +4,6 @@ const newImages = "/images/new-pics-for-the-ladies";
 
 export const galleryItems: GalleryItem[] = [
   {
-    id: "team-ready-to-travel",
-    title: "Ready to come to you",
-    category: "Team",
-    description:
-      "The Beauty @ Your Door team prepared for mobile appointments across the GTA.",
-    image: {
-      src: `${newImages}/beauty-team-group-portrait-06.webp`,
-      alt: "Beauty @ Your Door team wearing branded shirts",
-    },
-    size: "wide",
-  },
-  {
     id: "mobile-lash-appointment",
     title: "Mobile lash appointment",
     category: "Lashes",
@@ -52,17 +40,6 @@ export const galleryItems: GalleryItem[] = [
     },
   },
   {
-    id: "susi-team-portrait",
-    title: "Lead experience",
-    category: "Team",
-    description:
-      "Susi brings more than two decades of beauty industry experience to the brand.",
-    image: {
-      src: `${newImages}/susi-team-portrait-01.webp`,
-      alt: "Susi from Beauty @ Your Door seated for a team portrait",
-    },
-  },
-  {
     id: "gel-manicure-service",
     title: "Gel manicure service",
     category: "Nails",
@@ -75,17 +52,6 @@ export const galleryItems: GalleryItem[] = [
     size: "wide",
   },
   {
-    id: "vanessa-team-portrait",
-    title: "Specialized care",
-    category: "Team",
-    description:
-      "Vanessa supports clients with nail care, pedicure care, and comfort-focused service.",
-    image: {
-      src: `${newImages}/vanessa-team-portrait-01.webp`,
-      alt: "Vanessa from Beauty @ Your Door seated for a team portrait",
-    },
-  },
-  {
     id: "finished-manicure-result",
     title: "Finished manicure result",
     category: "Nails",
@@ -95,18 +61,6 @@ export const galleryItems: GalleryItem[] = [
       src: `${newImages}/finished-manicure-result-03.webp`,
       alt: "Finished manicure result",
     },
-  },
-  {
-    id: "beauty-team-group",
-    title: "The team behind the work",
-    category: "Team",
-    description:
-      "The mobile professionals clients invite into homes, hotels, events, and workplaces.",
-    image: {
-      src: `${newImages}/beauty-team-group-portrait-02.webp`,
-      alt: "Beauty @ Your Door team portrait",
-    },
-    size: "wide",
   },
   {
     id: "nail-technician-at-work",
@@ -121,19 +75,6 @@ export const galleryItems: GalleryItem[] = [
     size: "wide",
   },
   {
-    id: "service-preparation",
-    title: "Service preparation",
-    category: "Team",
-    description:
-      "A real appointment moment showing the professional setup brought to the client.",
-    image: {
-      src: `${newImages}/nail-technician-portrait-at-work-02.webp`,
-      alt: "Beauty professional preparing during a mobile appointment",
-      position: "center 36%",
-    },
-    size: "tall",
-  },
-  {
     id: "mobile-manicure-setup",
     title: "Mobile manicure setup",
     category: "Nails",
@@ -142,17 +83,6 @@ export const galleryItems: GalleryItem[] = [
     image: {
       src: `${newImages}/mobile-manicure-service-03.webp`,
       alt: "Mobile manicure service setup",
-    },
-  },
-  {
-    id: "dana-team-portrait",
-    title: "Detail and creativity",
-    category: "Team",
-    description:
-      "Dana brings experienced nail care and personalized design to client appointments.",
-    image: {
-      src: `${newImages}/dana-team-portrait-01.webp`,
-      alt: "Dana from Beauty @ Your Door seated for a team portrait",
     },
   },
   {
@@ -176,18 +106,6 @@ export const galleryItems: GalleryItem[] = [
       src: `${newImages}/finished-manicure-result-01.webp`,
       alt: "Finished soft gel manicure",
     },
-  },
-  {
-    id: "team-service-moment",
-    title: "Prepared professionals",
-    category: "Team",
-    description:
-      "The team behind the mobile beauty experience and service standards.",
-    image: {
-      src: `${newImages}/beauty-team-group-portrait-04.webp`,
-      alt: "Beauty @ Your Door team smiling in branded shirts",
-    },
-    size: "wide",
   },
   {
     id: "manicure-client-moment",
@@ -227,15 +145,111 @@ export const galleryItems: GalleryItem[] = [
     },
   },
   {
-    id: "group-team-portrait",
-    title: "Mobile beauty team",
-    category: "Team",
-    description:
-      "A team portrait showing the people and personality behind the service.",
+    id: "gallery-lashes-result",
+    title: "Finished lash set",
+    category: "Lashes",
+    description: "A finished lash set with clean, full definition.",
     image: {
-      src: `${newImages}/beauty-team-group-portrait-01.webp`,
-      alt: "Beauty @ Your Door team group portrait",
+      src: `${newImages}/gallery-lashes-01.webp`,
+      alt: "Finished eyelash extensions",
+      position: "center 42%",
     },
-    size: "wide",
+    size: "tall",
+  },
+  {
+    id: "gallery-manicure-result-01",
+    title: "Pink and gold manicure",
+    category: "Nails",
+    description: "A playful manicure finished with pink, gold, and delicate details.",
+    image: {
+      src: `${newImages}/gallery-manicure-01.webp`,
+      alt: "Pink and gold decorated manicure",
+    },
+  },
+  {
+    id: "gallery-manicure-result-02",
+    title: "Statement red manicure",
+    category: "Nails",
+    description: "A bold red manicure with seasonal Canadian-inspired nail art.",
+    image: {
+      src: `${newImages}/gallery-manicure-02.webp`,
+      alt: "Red manicure with detailed nail art",
+    },
+    size: "tall",
+  },
+  {
+    id: "gallery-manicure-result-03",
+    title: "Red crystal manicure",
+    category: "Nails",
+    description: "A glossy red manicure finished with crystal accents.",
+    image: {
+      src: `${newImages}/gallery-manicure-03.webp`,
+      alt: "Red manicure with crystal accents",
+    },
+  },
+  {
+    id: "gallery-massage-care",
+    title: "Massage care",
+    category: "Massage",
+    description: "A caring massage moment delivered in a comfortable client setting.",
+    image: {
+      src: `${newImages}/gallery-massage-01.webp`,
+      alt: "Massage care appointment in a client setting",
+    },
+    size: "tall",
+  },
+  {
+    id: "gallery-pedicure-treatment-01",
+    title: "Relaxing foot soak",
+    category: "Pedicure",
+    description: "A soothing foot soak prepared as part of a pedicure appointment.",
+    image: {
+      src: `${newImages}/gallery-pedicure-01.webp`,
+      alt: "Foot soak during a pedicure appointment",
+    },
+  },
+  {
+    id: "gallery-pedicure-treatment-02",
+    title: "Pedicure polish detail",
+    category: "Pedicure",
+    description: "Careful polish application during a mobile pedicure service.",
+    image: {
+      src: `${newImages}/gallery-pedicure-02.webp`,
+      alt: "Polish being applied during a pedicure",
+    },
+    size: "tall",
+  },
+  {
+    id: "gallery-pedicure-treatment-03",
+    title: "At-home pedicure",
+    category: "Pedicure",
+    description: "A complete pedicure setup brought directly to the client.",
+    image: {
+      src: `${newImages}/gallery-pedicure-03.webp`,
+      alt: "At-home pedicure service in progress",
+    },
+    size: "tall",
+  },
+  {
+    id: "gallery-pedicure-treatment-04",
+    title: "Mobile pedicure appointment",
+    category: "Pedicure",
+    description: "A real mobile appointment setup with professional care brought to the client.",
+    image: {
+      src: `${newImages}/gallery-pedicure-04.webp`,
+      alt: "Mobile pedicure appointment in a client's home",
+    },
+    size: "tall",
+  },
+  {
+    id: "gallery-manicure-result-04",
+    title: "Lavender gel manicure",
+    category: "Nails",
+    description: "A soft lavender manicure finished with a reflective accent nail.",
+    image: {
+      src: `${newImages}/gallery-manicure-04.webp`,
+      alt: "Lavender gel manicure with a reflective accent nail",
+    },
+    size: "tall",
   },
 ];
