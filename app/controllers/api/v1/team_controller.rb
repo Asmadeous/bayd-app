@@ -13,7 +13,6 @@ module Api
         member = EmployeeProfile.active.includes(:user, :services, reviews: :user).find(params[:id])
         render json: TeamMemberSerializer.render_as_hash(member, view: :detail)
       end
-
     end
   end
 end
