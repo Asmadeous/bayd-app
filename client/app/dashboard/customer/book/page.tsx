@@ -704,7 +704,9 @@ export default function CustomerBookPage() {
             </div>
 
             <div className="space-y-3 border-t border-black/8 pt-4">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">Payment</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">
+                Payment preference
+              </p>
               <div className="flex flex-wrap gap-2">
                 {[
                   { key: false, label: "Pay after service" },
@@ -725,41 +727,49 @@ export default function CustomerBookPage() {
                   </button>
                 ))}
               </div>
-              {clientType === "group" ? (
+              {payUpfront || clientType === "group" ? (
+                <div className="space-y-3 border border-black/8 bg-white px-3 py-3">
+                  {clientType === "group" ? (
+                    <p className="text-xs leading-5 text-[#5f6268]">
+                      Group bookings require a deposit, collected now. The balance is due after service.
+                    </p>
+                  ) : null}
+                  <div>
+                    <label className={labelClass}>Tip for technician (optional)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="decimal"
+                      placeholder="$0"
+                      value={tip}
+                      onChange={(e) => setTip(e.target.value)}
+                      className={fieldClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Gift card code (optional)</label>
+                    <input
+                      placeholder="BAYD-..."
+                      value={giftCardCode}
+                      onChange={(e) => setGiftCardCode(e.target.value)}
+                      className={fieldClass}
+                    />
+                    <p className="mt-1 text-[11px] leading-4 text-[#8a8d93]">
+                      Its balance is applied first; anything remaining is charged as above.
+                    </p>
+                  </div>
+                  <p className="text-[11px] leading-4 text-[#8a8d93]">
+                    {hasCard
+                      ? "We'll charge your card on file."
+                      : "We'll email you a secure payment link to complete payment."}
+                  </p>
+                </div>
+              ) : (
                 <p className="border border-black/8 bg-white px-3 py-2 text-xs leading-5 text-[#5f6268]">
-                  Group bookings require a deposit, collected now. The balance is due after service.
+                  No payment is due today. You can pay after your service.
                 </p>
-              ) : null}
-              <div>
-                <label className={labelClass}>Tip for technician (optional)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  inputMode="decimal"
-                  placeholder="$0"
-                  value={tip}
-                  onChange={(e) => setTip(e.target.value)}
-                  className={fieldClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Gift card code (optional)</label>
-                <input
-                  placeholder="BAYD-..."
-                  value={giftCardCode}
-                  onChange={(e) => setGiftCardCode(e.target.value)}
-                  className={fieldClass}
-                />
-                <p className="mt-1 text-[11px] leading-4 text-[#8a8d93]">
-                  Its balance is applied first; anything remaining is charged as above.
-                </p>
-              </div>
-              <p className="text-[11px] leading-4 text-[#8a8d93]">
-                {hasCard
-                  ? "We'll charge your card on file."
-                  : "We'll email you a secure payment link to complete payment."}
-              </p>
+              )}
             </div>
 
             {isPending ? (
