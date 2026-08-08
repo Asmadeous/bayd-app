@@ -20,7 +20,7 @@ class OrderMailer < ApplicationMailer
   # Internal heads-up to the team on every new product order.
   def admin_new_order(order)
     @order = order
-    to = ENV.fetch("ADMIN_NOTIFY_EMAIL", ENV.fetch("SUPPORT_EMAIL", "support@baydspa.ca"))
+    to = ENV.fetch("ADMIN_NOTIFY_EMAIL", ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca"))
     mail(to: to, subject: format("New product order ##%d — $%.2f", order.id, order.total))
   end
 end

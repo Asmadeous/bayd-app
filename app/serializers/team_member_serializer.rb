@@ -1,6 +1,17 @@
 class TeamMemberSerializer < Blueprinter::Base
   identifier :id
-  fields :title, :bio, :photo_url, :years_experience
+  fields :title, :bio, :years_experience
+
+  field :photo_url do |ep|
+    case ep.user&.first_name.to_s.downcase
+    when "dana"
+      "/images/new-pics-for-the-ladies/dana-team-headshot.webp"
+    when "claire"
+      "/images/new-pics-for-the-ladies/claire-team-profile.webp"
+    else
+      ep.photo_url
+    end
+  end
 
   field :name do |ep|
     ep.user&.first_name.presence || "Team Member"

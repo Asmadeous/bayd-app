@@ -252,4 +252,15 @@ export const galleryItems: GalleryItem[] = [
     },
     size: "tall",
   },
+  {
+    id: "gallery-manicure-in-progress-05",
+    title: "Manicure in progress",
+    category: "Nails",
+    description: "A close-up of careful manicure work during a client appointment.",
+    image: {
+      src: `${newImages}/gallery-manicure-05.webp`,
+      alt: "Manicure service in progress",
+    },
+    size: "tall",
+  },
 ];

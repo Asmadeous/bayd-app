@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { BookButton } from "@/components/ui/book-button";
 import type { PriceCategory } from "@/features/pricing/types";
 import { cn } from "@/lib/utils";
+import { siteConfig } from "@/lib/site";
 
 const bookingNotes = [
   "Minimum $50 service purchase required to book an appointment.",
@@ -62,7 +63,7 @@ function PricingHero({ categories }: { categories: PriceCategory[] }) {
                   buttonVariants({ variant: "outline" }),
                   "h-12 border-black/20 bg-white/70 px-6 text-base hover:bg-white",
                 )}
-                href="tel:+14165550198"
+                href={`tel:${siteConfig.phoneHref}`}
               >
                 Call to book
                 <Phone aria-hidden="true" />

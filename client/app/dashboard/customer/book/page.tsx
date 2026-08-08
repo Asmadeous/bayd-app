@@ -21,6 +21,7 @@ import {
 import api from "@/lib/api"
 import { useCoverage } from "@/lib/hooks/use-coverage"
 import { useAuthStore } from "@/lib/stores/auth-store"
+import { siteConfig } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
 type ClientType = "adult" | "kids" | "elderly" | "group"
@@ -60,7 +61,8 @@ interface BookingRequestResponse {
   error?: string
 }
 
-const COMPANY_PHONE = process.env.NEXT_PUBLIC_COMPANY_PHONE ?? ""
+const COMPANY_PHONE = siteConfig.phone
+const COMPANY_PHONE_HREF = siteConfig.phoneHref
 const TODAY = new Date().toISOString().split("T")[0]
 const PROVINCES = [
   "AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT",
@@ -780,7 +782,7 @@ export default function CustomerBookPage() {
                 <div className="flex flex-wrap gap-2">
                   {COMPANY_PHONE ? (
                     <a
-                      href={`tel:${COMPANY_PHONE}`}
+                      href={`tel:${COMPANY_PHONE_HREF}`}
                       className="inline-flex h-10 items-center px-4 text-sm font-bold text-white"
                       style={{ background: "#c96c83" }}
                     >

@@ -94,7 +94,7 @@ class InvoicePdf
   def footer(pdf)
     pdf.fill_color MUTED
     pdf.text "Thank you for choosing #{COMPANY}.", size: 9
-    pdf.text "Questions? #{ENV.fetch('SUPPORT_EMAIL', 'support@baydspa.ca')}", size: 8
+    pdf.text "Questions? #{ENV.fetch('SUPPORT_EMAIL', 'Bookings@baydspa.ca')}", size: 8
     pdf.fill_color "000000"
   end
 

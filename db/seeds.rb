@@ -83,7 +83,7 @@ puts "  #{products.size} products"
 # ── Employees (rich profiles) ─────────────────────────────────────────────────
 employee_data = [
   { first: "Susi",    last: "Tran",    email: "susi@bayd.local",    title: "Lead Lash Artist",     yrs: 7, lat: 43.5890, lng: -79.6441, areas: %w[mississauga toronto], photo: "/images/lashes3.jpg", on_shift: true },
-  { first: "Claire",  last: "Bennett", email: "claire@bayd.local",  title: "Nail Technician",      yrs: 4, lat: 43.5453, lng: -79.5697, areas: %w[mississauga],         photo: "/images/nails1.jpg",  on_shift: true },
+  { first: "Claire",  last: "Bennett", email: "claire@bayd.local",  title: "Nail Technician",      yrs: 4, lat: 43.5453, lng: -79.5697, areas: %w[mississauga],         photo: "/images/new-pics-for-the-ladies/claire-team-profile.webp",  on_shift: true },
   { first: "Vanessa", last: "Okafor",  email: "vanessa@bayd.local", title: "Massage Therapist",    yrs: 9, lat: 43.7315, lng: -79.7624, areas: %w[brampton],            photo: "/images/massage.jpg", on_shift: false },
   { first: "Dana",    last: "Price",   email: "dana@bayd.local",    title: "Esthetician & Waxing", yrs: 5, lat: 43.6532, lng: -79.3832, areas: %w[toronto mississauga], photo: "/images/new-pics-for-the-ladies/dana-team-headshot.webp", on_shift: true }
 ]
