@@ -62,5 +62,5 @@ Rails.application.configure do
   # Mailer — log only in development; never raise on delivery failures.
   config.action_mailer.delivery_method = :test
   config.action_mailer.raise_delivery_errors = false
-  config.action_mailer.default_url_options = { host: "localhost", port: 3001 }
+  config.action_mailer.default_url_options = { host: "localhost", port: 3003 }
 end

@@ -204,7 +204,7 @@ export function ShopPage() {
                       key={c.id}
                       type="button"
                       onClick={() => setActiveCategory(value)}
-                      className="rounded-full px-4 py-1.5 text-xs font-bold transition-colors"
+                      className="rounded-none px-4 py-1.5 text-xs font-bold transition-colors"
                       style={
                         active
                           ? { background: "#c96c83", color: "#fff" }
@@ -794,7 +794,7 @@ function CartDialog({
 
 const GIFT_CARD_AMOUNTS = [25, 50, 75, 100];
 const giftInputCls =
-  "h-11 rounded-lg border border-black/15 px-3 text-sm text-[#101217] focus:border-[#c96c83] focus:outline-none";
+  "h-11 rounded-none border border-black/15 px-3 text-sm text-[#101217] focus:border-[#c96c83] focus:outline-none";
 
 function GiftCardTab() {
   const [amount, setAmount] = useState(50);
@@ -841,82 +841,116 @@ function GiftCardTab() {
   });
 
   return (
-    <section className="mx-auto w-full max-w-[1760px] px-4 py-10 sm:px-6 lg:px-8 2xl:px-10">
-      <h2 className="text-3xl font-extrabold tracking-tight text-[#101217] sm:text-4xl">
-        Gift Cards
-      </h2>
-      <p className="mt-3 max-w-xl text-sm leading-6 text-[#5f6268]">
-        A Beauty at Your Door gift card is an amount redeemable toward any service. The balance is
-        deducted as it&apos;s used, so it never has to be spent all at once.
-      </p>
+    <section className="mx-auto w-full max-w-[1100px] px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+      <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+        <div>
+          <span className="bg-[#f0c8d3]/40 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#a36f4d]">
+            Gift cards
+          </span>
+          <h2 className="mt-4 max-w-xl text-4xl font-extrabold leading-tight tracking-tight text-[#101217] sm:text-5xl">
+            Give the gift of beauty.
+          </h2>
+          <p className="mt-5 max-w-xl text-base leading-7 text-[#5f6268]">
+            A Beauty at Your Door gift card can be used toward any service. The
+            balance is deducted as it&apos;s used, so it never has to be spent
+            all at once.
+          </p>
+          <div className="mt-8 border-t border-black/10 pt-5 text-sm leading-6 text-[#5f6268]">
+            <p className="font-bold text-[#101217]">A thoughtful way to send care.</p>
+            <p className="mt-1">
+              Choose an amount, add a personal message, and we&apos;ll email the
+              gift card once payment clears.
+            </p>
+          </div>
+        </div>
 
-      <div className="mt-7 flex flex-wrap gap-3">
-        {GIFT_CARD_AMOUNTS.map((a) => (
+        <div className="border border-black/10 bg-white p-6 sm:p-7">
+          <h3 className="text-lg font-extrabold text-[#101217]">Choose a gift card</h3>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {GIFT_CARD_AMOUNTS.map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => setAmount(a)}
+                className="h-12 w-20 rounded-none text-base font-extrabold transition-colors"
+                style={
+                  amount === a
+                    ? { background: "#c96c83", color: "#fff" }
+                    : { background: "#f4f1eb", color: "#101217" }
+                }
+              >
+                ${a}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-6 space-y-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[#5f6268]">
+                Recipient name (optional)
+              </label>
+              <input
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+                className={giftInputCls + " w-full"}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[#5f6268]">
+                Recipient email
+              </label>
+              <input
+                type="email"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                className={giftInputCls + " w-full"}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[#5f6268]">
+                Your name (optional)
+              </label>
+              <input
+                value={senderName}
+                onChange={(e) => setSenderName(e.target.value)}
+                className={giftInputCls + " w-full"}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[#5f6268]">
+                Message (optional)
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={3}
+                className={cn(giftInputCls, "block h-auto w-full resize-none py-2")}
+              />
+            </div>
+          </div>
+
+          {status ? (
+            <p
+              className={cn(
+                "mt-4 text-sm font-semibold",
+                status.type === "success" ? "text-green-700" : "text-red-700",
+              )}
+            >
+              {status.text}
+            </p>
+          ) : null}
+
           <button
-            key={a}
             type="button"
-            onClick={() => setAmount(a)}
-            className="h-14 w-24 rounded-xl text-lg font-extrabold transition-colors"
-            style={
-              amount === a
-                ? { background: "#c96c83", color: "#fff" }
-                : { background: "#f4f1eb", color: "#101217" }
-            }
+            onClick={() => purchase.mutate()}
+            disabled={purchase.isPending}
+            className="mt-6 h-11 w-full rounded-none px-8 text-base font-bold text-white disabled:opacity-60"
+            style={{ background: "#c96c83" }}
           >
-            ${a}
+            {purchase.isPending ? "Processing…" : `Buy $${amount} gift card`}
           </button>
-        ))}
+        </div>
       </div>
-
-      <div className="mt-6 grid max-w-xl gap-3 sm:grid-cols-2">
-        <input
-          placeholder="Recipient name (optional)"
-          value={recipientName}
-          onChange={(e) => setRecipientName(e.target.value)}
-          className={giftInputCls}
-        />
-        <input
-          type="email"
-          placeholder="Recipient email"
-          value={recipientEmail}
-          onChange={(e) => setRecipientEmail(e.target.value)}
-          className={giftInputCls}
-        />
-        <input
-          placeholder="Your name (optional)"
-          value={senderName}
-          onChange={(e) => setSenderName(e.target.value)}
-          className={giftInputCls}
-        />
-      </div>
-      <textarea
-        placeholder="Message (optional)"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        rows={3}
-        className={cn(giftInputCls, "mt-3 block h-auto w-full max-w-xl py-2")}
-      />
-
-      {status ? (
-        <p
-          className={cn(
-            "mt-4 text-sm font-semibold",
-            status.type === "success" ? "text-green-700" : "text-red-700",
-          )}
-        >
-          {status.text}
-        </p>
-      ) : null}
-
-      <button
-        type="button"
-        onClick={() => purchase.mutate()}
-        disabled={purchase.isPending}
-        className="mt-6 h-12 rounded-xl px-8 text-base font-bold text-white disabled:opacity-60"
-        style={{ background: "#c96c83" }}
-      >
-        {purchase.isPending ? "Processing…" : `Buy $${amount} gift card`}
-      </button>
     </section>
   );
 }
