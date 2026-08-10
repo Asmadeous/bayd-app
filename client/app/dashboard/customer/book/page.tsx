@@ -794,17 +794,6 @@ export default function CustomerBookPage() {
                   We don&apos;t have a technician in your area yet. Call us and we&apos;ll check for someone nearby.
                 </p>
                 <div className="flex flex-wrap gap-2">
-<<<<<<< HEAD
-                  {COMPANY_PHONE ? (
-                    <a
-                      href={`tel:${COMPANY_PHONE_HREF}`}
-                      className="inline-flex h-10 items-center px-4 text-sm font-bold text-white"
-                      style={{ background: "#c96c83" }}
-                    >
-                      Call {COMPANY_PHONE}
-                    </a>
-                  ) : null}
-=======
                   <a
                     href={`tel:${siteConfig.phoneHref}`}
                     className="inline-flex h-10 items-center gap-1.5 px-4 text-sm font-bold text-white"
@@ -821,7 +810,6 @@ export default function CustomerBookPage() {
                   >
                     <Send className="size-4" /> WhatsApp
                   </a>
->>>>>>> 1d16897 (Fix issues: wire product variants end-to-end, expand service areas, wire contact to book flows)
                   <Button
                     type="button"
                     onClick={() => requestCallback.mutate()}

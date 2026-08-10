@@ -344,7 +344,6 @@ if blog_export.exist?
   puts "  #{seeded_titles.size} blog posts (#{BlogPost.published.count} published)"
 end
 
-<<<<<<< HEAD
 # ── Gallery ───────────────────────────────────────────────────────────────────
 [
   { title: "Mobile Lash Appointment",    category: "Lashes",   image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp", size: "wide" },
