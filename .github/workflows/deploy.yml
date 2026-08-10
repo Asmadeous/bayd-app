@@ -93,7 +93,7 @@ jobs:
             kamal deploy
           fi
 
-      - name: Seed production database
+      - name: Seed production database (one-time)
         run: kamal app exec "bin/rails db:seed"
 
   # ── Frontend: build image on the runner → push to GHCR → run it on the box ─
