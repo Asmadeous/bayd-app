@@ -3,9 +3,11 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User } from "lucide-react"
+import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Search, Send, User, X } from "lucide-react"
 
 import api from "@/lib/api"
+import { DatePicker } from "@/components/ui/date-picker"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCoverage } from "@/lib/hooks/use-coverage"
 import { siteConfig } from "@/lib/site"
 
@@ -74,6 +76,7 @@ export default function PublicBookPage() {
   const [clientType, setClientType] = useState<ClientType>("adult")
   const [partySize, setPartySize] = useState(2)
   const [serviceId, setServiceId] = useState("")
+  const [serviceSearch, setServiceSearch] = useState("")
   const [staff, setStaff] = useState<string>("any") // "any" | providerId
   const [date, setDate] = useState("")
   const [time, setTime] = useState("10:00")
@@ -99,15 +102,25 @@ export default function PublicBookPage() {
     () => services.filter((s) => (clientType === "kids" ? s.kids_only : !s.kids_only)),
     [services, clientType],
   )
+  const filteredMenu = useMemo(() => {
+    const query = serviceSearch.trim().toLowerCase()
+    if (!query) return menu
+
+    return menu.filter((service) =>
+      [service.name, service.description, service.category_name]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(query)),
+    )
+  }, [menu, serviceSearch])
   const grouped = useMemo(() => {
     const map = new Map<string, ApiService[]>()
-    for (const s of menu) {
+    for (const s of filteredMenu) {
       const key = s.category_name ?? "Other"
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push(s)
     }
     return map
-  }, [menu])
+  }, [filteredMenu])
 
   const selected = services.find((s) => String(s.id) === serviceId)
   const providers = selected?.providers ?? []
@@ -306,9 +319,9 @@ export default function PublicBookPage() {
     <Shell>
       <div className="mb-5">
         <span className="inline-flex items-center gap-1.5 bg-[#c96c83]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#c96c83]">
-          <Sparkles className="size-3.5" /> Book a service
+          Book a service
         </span>
-        <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Beauty, at your door</h1>
+        <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Beauty @ Your Door</h1>
         <p className="mt-1 text-sm font-medium text-[#5f6268]">No account needed. Payment after your service.</p>
       </div>
 
@@ -377,6 +390,28 @@ export default function PublicBookPage() {
           ) : null}
 
           <label className={lbl}>Choose a service</label>
+          <div className="relative mb-4">
+            <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8a8d93]" />
+            <input
+              aria-label="Search services"
+              autoComplete="off"
+              className={cn(field, "pl-9 pr-10")}
+              onChange={(e) => setServiceSearch(e.target.value)}
+              placeholder="Search by service, category, or keyword"
+              type="search"
+              value={serviceSearch}
+            />
+            {serviceSearch ? (
+              <button
+                aria-label="Clear service search"
+                className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center text-[#8a8d93] transition-colors hover:text-[#101217]"
+                onClick={() => setServiceSearch("")}
+                type="button"
+              >
+                <X aria-hidden="true" className="size-4" />
+              </button>
+            ) : null}
+          </div>
           <div className="grid max-h-[26rem] gap-4 overflow-y-auto pr-1">
             {Array.from(grouped.entries()).map(([category, list]) => (
               <div key={category}>
@@ -404,7 +439,11 @@ export default function PublicBookPage() {
                 </div>
               </div>
             ))}
-            {menu.length === 0 ? <p className="text-sm font-medium text-[#8a8d93]">No services available.</p> : null}
+            {menu.length === 0 ? (
+              <p className="text-sm font-medium text-[#8a8d93]">No services available for this client type.</p>
+            ) : filteredMenu.length === 0 ? (
+              <p className="text-sm font-medium text-[#8a8d93]">No services match &quot;{serviceSearch}&quot;.</p>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -445,7 +484,7 @@ export default function PublicBookPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className={lbl}><CalendarDays className="mr-1 inline size-3.5" /> Date</label>
-              <input type="date" min={TODAY} className={field} value={date} onChange={(e) => setDate(e.target.value)} />
+              <DatePicker min={TODAY} onChange={setDate} placeholder="Choose appointment date" value={date} />
             </div>
             <div>
               <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Time</label>
@@ -471,9 +510,14 @@ export default function PublicBookPage() {
             <input className={field} value={line1} onChange={(e) => setLine1(e.target.value)} placeholder="Street address *" />
             <div className="grid gap-4 sm:grid-cols-3">
               <input className={field} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City *" />
-              <select className={field} value={province} onChange={(e) => setProvince(e.target.value)}>
-                {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              <Select value={province} onValueChange={(value) => setProvince(value ?? "ON")}>
+                <SelectTrigger aria-label="Province" className={field}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROVINCES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
               <input className={field} value={postal} onChange={(e) => setPostal(e.target.value)} placeholder="Postal code *" />
             </div>
             <label className="flex items-center gap-2 text-sm font-semibold text-[#101217]">
@@ -637,6 +681,15 @@ export default function PublicBookPage() {
             </button>
           </div>
         )}
+      </div>
+
+      <div className="mt-3 flex justify-center">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-[#5f6268] transition-colors hover:text-[#c96c83]"
+        >
+          <ChevronLeft className="size-4" /> Back to home
+        </Link>
       </div>
 
       <p className="mt-4 text-center text-xs font-medium text-[#8a8d93]">
