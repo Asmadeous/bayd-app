@@ -25,6 +25,34 @@ class ApplicationController < ActionController::API
 
   attr_reader :current_user
 
+  # We only accept booking / consultation requests from within Canada.
+  def enforce_canada!
+    return if GeoGate.allowed?(request)
+
+    render json: {
+      error:   "outside_country",
+      message: "Beauty @ Your Door currently serves Canada only."
+    }, status: :forbidden
+  end
+
+  # The one way a not-logged-in customer is resolved from public input:
+  # find-or-create by email (passwordless). Used by public booking + checkout.
+  # `source` is a params hash (e.g. params.require(:customer)).
+  def find_or_create_customer(source)
+    email = source[:email].to_s.downcase.strip
+    raise ActionController::ParameterMissing, :email if email.blank?
+
+    user = User.find_or_initialize_by(email: email)
+    user.role ||= :customer
+    contact = source.permit(
+      :first_name, :last_name, :phone, :marketing_opt_in,
+      :avatar_url, :street_address, :city, :country, :postal_code, :special_needs
+    ).to_h.compact_blank
+    user.assign_attributes(contact) if contact.present?
+    user.save!
+    user
+  end
+
   def require_admin!
     forbidden unless current_user&.admin?
   end

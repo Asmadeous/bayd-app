@@ -55,7 +55,12 @@ class AssignmentService
   end
 
   def requested_end
-    @requested_end ||= requested_start + @booking_request.service.duration_minutes.minutes
+    @requested_end ||= requested_start + total_duration_minutes.minutes
+  end
+
+  # Group bookings run longer: service duration × party size (1× for everyone else).
+  def total_duration_minutes
+    @total_duration_minutes ||= @booking_request.service.duration_minutes * booking_party_size
   end
 
   # Scheduled times are stored as naive wall-clock (the ET time the customer
@@ -63,7 +68,7 @@ class AssignmentService
   # so the appointment both starts at/after open and *finishes* at/before close.
   def within_operating_hours?
     ls = @booking_request.requested_start || Time.current.in_time_zone(TZ)
-    le = ls + @booking_request.service.duration_minutes.minutes
+    le = ls + total_duration_minutes.minutes
     (ls.hour * 60 + ls.min) >= OPEN_HOUR * 60 &&
       (le.hour * 60 + le.min) <= CLOSE_HOUR * 60 &&
       le.to_date == ls.to_date
@@ -71,12 +76,15 @@ class AssignmentService
 
   # ── Candidate selection ───────────────────────────────────────────────────
   def base_pool
-    EmployeeProfile
-      .active
-      .on_shift
-      .dispatchable
-      .joins(:employee_services).where(employee_services: { service_id: @booking_request.service_id })
-      .distinct
+    pool = EmployeeProfile
+           .active
+           .on_shift
+           .dispatchable
+           .joins(:employee_services).where(employee_services: { service_id: @booking_request.service_id })
+           .distinct
+    # Honour a specific technician the customer picked in the booking UI.
+    pool = pool.where(id: @booking_request.requested_employee_id) if @booking_request.requested_employee_id.present?
+    pool
   end
 
   # Eligible techs as ranked {employee, distance_km, source}.
@@ -170,6 +178,13 @@ class AssignmentService
     nil
   end
 
+  # Group bookings bill per person: clamp to 2..GROUP_SIZE. Everyone else is 1.
+  def booking_party_size
+    return 1 unless @booking_request.client_type_group?
+
+    [ [ @booking_request.party_size.to_i, 2 ].max, Service::GROUP_SIZE ].min
+  end
+
   def create_booking_for(candidate, ranked)
     booking = nil
     ActiveRecord::Base.transaction do
@@ -183,7 +198,8 @@ class AssignmentService
         location_source:      candidate[:source]
       )
 
-      price = @booking_request.service.price_for(@booking_request.client_type)
+      qty   = booking_party_size
+      price = @booking_request.service.price_for(@booking_request.client_type) * qty
       booking = Booking.create!(
         user:             @booking_request.user,
         employee_profile: candidate[:employee],
@@ -192,6 +208,10 @@ class AssignmentService
         booking_request:  @booking_request,
         address:          @booking_request.address,
         client_type:      @booking_request.client_type,
+        party_size:       qty,
+        # Group bookings require payment — held as pending until the deposit/full
+        # lands (confirmed by the payment webhook). Others confirm immediately.
+        status:           (@booking_request.client_type_group? ? "pending" : "confirmed"),
         starts_at:        requested_start,
         ends_at:          requested_end,
         subtotal:         price,
@@ -210,11 +230,16 @@ class AssignmentService
   # ── SimplyBook outbound (best-effort) ─────────────────────────────────────
   def push_to_simplybook(booking)
     return unless booking
+    # Skip while SimplyBook mapping is dormant — without a mapped service event id
+    # and provider unit id the push can only 400. It resumes automatically once
+    # the service/provider are mapped.
+    return if booking.service.simplybook_event_id.blank? || booking.employee_profile.simplybook_unit_id.blank?
 
     simplybook_id = SimplyBook::Client.new.create_booking(
       service_id:  booking.service.simplybook_event_id,
       unit_id:     booking.employee_profile.simplybook_unit_id,
       starts_at:   booking.starts_at,
+      ends_at:     booking.ends_at,
       client:      simplybook_client_payload
     )
     booking.update_columns(simplybook_id: simplybook_id, synced_at: Time.current) if simplybook_id.present?

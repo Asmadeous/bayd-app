@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { CalendarDays, CheckCircle2, Clock, MapPin, Sparkles, X } from "lucide-react"
+import { CalendarDays, CheckCircle2, Clock, MapPin, Phone, Send, Sparkles, X } from "lucide-react"
 
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
@@ -61,8 +61,12 @@ interface BookingRequestResponse {
   error?: string
 }
 
+// Company contact comes from the shared site config (same number shown in the footer).
 const COMPANY_PHONE = siteConfig.phone
 const COMPANY_PHONE_HREF = siteConfig.phoneHref
+const WHATSAPP_HREF = `https://wa.me/${siteConfig.phoneHref.replace(/\D/g, "")}?text=${encodeURIComponent(
+  "Hi Beauty @ Your Door, I'd like to book a service — can you check if my area is covered?",
+)}`
 const TODAY = new Date().toISOString().split("T")[0]
 const PROVINCES = [
   "AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT",
@@ -790,15 +794,22 @@ export default function CustomerBookPage() {
                   We don&apos;t have a technician in your area yet. Call us and we&apos;ll check for someone nearby.
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {COMPANY_PHONE ? (
-                    <a
-                      href={`tel:${COMPANY_PHONE_HREF}`}
-                      className="inline-flex h-10 items-center px-4 text-sm font-bold text-white"
-                      style={{ background: "#c96c83" }}
-                    >
-                      Call {COMPANY_PHONE}
-                    </a>
-                  ) : null}
+                  <a
+                    href={`tel:${siteConfig.phoneHref}`}
+                    className="inline-flex h-10 items-center gap-1.5 px-4 text-sm font-bold text-white"
+                    style={{ background: "#c96c83" }}
+                  >
+                    <Phone className="size-4" /> Call {siteConfig.phone}
+                  </a>
+                  <a
+                    href={WHATSAPP_HREF}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-10 items-center gap-1.5 px-4 text-sm font-bold text-white"
+                    style={{ background: "#25D366" }}
+                  >
+                    <Send className="size-4" /> WhatsApp
+                  </a>
                   <Button
                     type="button"
                     onClick={() => requestCallback.mutate()}

@@ -4,7 +4,10 @@ import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
 
 export interface CartProduct {
-  id: string
+  id: string         // cart line key: productId, or `${productId}:${variantId}`
+  productId: string  // numeric product id sent to the API
+  variantId?: string // chosen colour/shade variant id, when the product has variants
+  variantLabel?: string
   name: string
   category: string
   price: string      // formatted string, e.g. "$28.00"

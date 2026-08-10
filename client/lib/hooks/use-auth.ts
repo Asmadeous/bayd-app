@@ -11,7 +11,8 @@ export function useAuth() {
   const { user, token, isAuthenticated, setAuth, clearAuth } = useAuthStore()
 
   const loginMutation = useMutation({
-    mutationFn: (creds: { email: string; password: string }) =>
+    // Passwordless for customers (email + optional phone). Staff also pass a password.
+    mutationFn: (creds: { email: string; phone?: string; password?: string }) =>
       api.post<{ token: string; user: AuthUser }>("/auth/login", creds).then((r) => r.data),
     onSuccess: ({ token, user }) => {
       setAuth(user, token)
@@ -22,7 +23,6 @@ export function useAuth() {
   const registerMutation = useMutation({
     mutationFn: ({ referral_code, ...data }: {
       email: string
-      password: string
       first_name?: string
       last_name?: string
       phone?: string
@@ -37,6 +37,16 @@ export function useAuth() {
       api
         .post<{ token: string; user: AuthUser }>("/auth/register", { user: data, referral_code })
         .then((r) => r.data),
+    onSuccess: ({ token, user }) => {
+      setAuth(user, token)
+      router.push(roleDashboard(user.role))
+    },
+  })
+
+  // Staff & admin: email + password on the dedicated staff endpoint.
+  const staffLoginMutation = useMutation({
+    mutationFn: (creds: { email: string; password: string }) =>
+      api.post<{ token: string; user: AuthUser }>("/auth/staff_login", creds).then((r) => r.data),
     onSuccess: ({ token, user }) => {
       setAuth(user, token)
       router.push(roleDashboard(user.role))
@@ -73,6 +83,7 @@ export function useAuth() {
     logout,
     login: loginMutation,
     register: registerMutation,
+    staffLogin: staffLoginMutation,
     loginWithGoogle,
     updateMe: updateMeMutation,
   }

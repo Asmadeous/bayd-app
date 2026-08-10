@@ -5,4 +5,13 @@ class ProductSerializer < Blueprinter::Base
   field :category do |product, _opts|
     product.product_category&.name
   end
+
+  field :has_variants do |product, _opts|
+    product.has_variants?
+  end
+
+  association :variants, blueprint: ProductVariantSerializer do |product, _opts|
+    scope = product.product_variants
+    (scope.loaded? ? scope.select(&:active) : scope.active).sort_by(&:position)
+  end
 end

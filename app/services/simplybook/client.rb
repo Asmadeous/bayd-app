@@ -29,11 +29,13 @@ module SimplyBook
     # SimplyBook client_id (find by email, else create) so the booking is linked
     # to that client and visible in their SimplyBook client PWA.
     # Returns the new booking's id as a String, or nil.
-    def create_booking(service_id:, unit_id:, starts_at:, client: nil)
+    def create_booking(service_id:, unit_id:, starts_at:, ends_at:, client: nil)
       body = {
         service_id:     service_id,
         provider_id:    unit_id,
-        start_datetime: starts_at.strftime("%Y-%m-%d %H:%M:%S")
+        # SimplyBook v2 requires both start and end as "YYYY-MM-DD HH:MM:SS" strings.
+        start_datetime: starts_at.strftime("%Y-%m-%d %H:%M:%S"),
+        end_datetime:   ends_at.strftime("%Y-%m-%d %H:%M:%S")
       }
       if (cid = resolve_client_id(client))
         body[:client_id] = cid

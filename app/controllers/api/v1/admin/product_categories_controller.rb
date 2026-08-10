@@ -24,7 +24,7 @@ module Api
         private
 
         def permitted_params
-          params.permit(:name, :description, :image_url)
+          params.permit(:name, :slug, :description, :image_url, :position, :parent_id)
         end
       end
     end

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowLeft, CreditCard } from "lucide-react";
@@ -33,23 +33,23 @@ export default function CheckoutPage() {
   const { isAuthenticated, _hasHydrated } = useAuthStore();
   const { items, clearCart } = useCartStore();
   const [payError, setPayError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (_hasHydrated && !isAuthenticated) {
-      router.replace("/signup");
-    }
-  }, [_hasHydrated, isAuthenticated, router]);
+  const [email, setEmail] = useState("");
 
   const subtotal = items.reduce(
     (total, item) => total + item.product.priceValue * item.quantity,
     0,
   );
 
+  // Always collect and send email. Guest checkout requires a valid email before submit.
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
   const { mutate: startCheckout, isPending } = useMutation({
     mutationFn: async () => {
       const res = await api.post<CheckoutResponse>("/checkout", {
+        ...(email.trim() ? { customer: { email: email.trim() } } : {}),
         items: items.map((item) => ({
-          product_id: item.product.id,
+          product_id: item.product.productId,
+          product_variant_id: item.product.variantId,
           quantity: item.quantity,
         })),
       });
@@ -86,7 +86,9 @@ export default function CheckoutPage() {
     onError: () => setPayError("Could not start checkout. Please try again."),
   });
 
-  if (!_hasHydrated || !isAuthenticated) return null;
+  const canCheckout = !isPending && items.length > 0 && (isAuthenticated || isEmailValid);
+
+  if (!_hasHydrated) return null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -148,6 +150,11 @@ export default function CheckoutPage() {
                         <h3 className="mt-1 text-base font-extrabold text-[#101217]">
                           {item.product.name}
                         </h3>
+                        {item.product.variantLabel ? (
+                          <p className="mt-0.5 text-xs font-semibold text-[#5f6268]">
+                            {item.product.variantLabel}
+                          </p>
+                        ) : null}
                         <p className="mt-1 text-sm text-[#5f6268]">
                           Qty: {item.quantity}
                         </p>
@@ -190,18 +197,37 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            <div className="mt-6">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">
+                Email for your receipt
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@email.com"
+                className="h-11 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+              />
+              {!isAuthenticated ? (
+                <p className="mt-1.5 text-xs text-[#5f6268]">
+                  Required for guest checkout.{" "}
+                  <Link href="/signin" className="font-bold text-[#c96c83]">Sign in</Link> if you have an account.
+                </p>
+              ) : null}
+            </div>
+
             {payError ? (
               <p className="mt-4 text-sm font-semibold text-red-600">{payError}</p>
             ) : null}
 
             <button
               type="button"
-              disabled={isPending || items.length === 0}
+              disabled={!canCheckout}
               onClick={() => startCheckout()}
               className={cn(
                 buttonVariants(),
                 "mt-6 h-12 w-full text-base font-bold",
-                isPending || items.length === 0
+                !canCheckout
                   ? "pointer-events-none opacity-60"
                   : "",
               )}

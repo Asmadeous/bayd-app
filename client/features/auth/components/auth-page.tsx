@@ -20,11 +20,14 @@ type AuthPageProps = {
 export function AuthPage({ content }: AuthPageProps) {
   const searchParams = useSearchParams()
   const referralCode = searchParams.get("ref") ?? undefined
-  const { login, register } = useAuth()
+  const { login, register, staffLogin } = useAuth()
   const [values, setValues] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  // Two-step for staff/admin: after entering an email that belongs to a staff
+  // account, the customer login 403s and we reveal a password step.
+  const [needsPassword, setNeedsPassword] = useState(false)
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -34,16 +37,30 @@ export function AuthPage({ content }: AuthPageProps) {
 
     try {
       if (content.mode === "signin") {
-        await login.mutateAsync({
-          email: values.email ?? "",
-          password: values.password ?? "",
-        })
-        setSuccess("Welcome back. Opening your dashboard now.")
+        if (needsPassword) {
+          // Step 2 — staff/admin password.
+          await staffLogin.mutateAsync({ email: values.email ?? "", password: values.password ?? "" })
+          setSuccess("Welcome back. Opening your dashboard now.")
+        } else {
+          // Step 1 — email. Customers sign in; staff emails 403 → ask for password.
+          try {
+            await login.mutateAsync({ email: values.email ?? "", phone: values.phone || undefined })
+            setSuccess("Welcome back. Opening your dashboard now.")
+          } catch (err: unknown) {
+            const status = (err as { response?: { status?: number } })?.response?.status
+            if (status === 403) {
+              setNeedsPassword(true)
+              setLoading(false)
+              return
+            }
+            throw err
+          }
+        }
       } else if (content.mode === "signup") {
         const [first_name, ...rest] = (values.name ?? "").trim().split(" ")
         await register.mutateAsync({
           email: values.email ?? "",
-          password: values.password ?? "",
+          phone: values.phone || undefined,
           first_name: first_name ?? undefined,
           last_name: rest.join(" ") || undefined,
           avatar_url: values.avatar_url || undefined,
@@ -193,6 +210,24 @@ export function AuthPage({ content }: AuthPageProps) {
                 </label>
               ))}
 
+              {content.mode === "signin" && needsPassword ? (
+                <label className="block">
+                  <span className="text-sm font-extrabold text-[#101217]">Password</span>
+                  <PasswordInput
+                    autoComplete="current-password"
+                    className="mt-2 h-13 w-full border border-black/15 bg-white px-4 text-base font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                    name="password"
+                    placeholder="Enter your password"
+                    required
+                    value={values.password ?? ""}
+                    onChange={(e) => setValues((v) => ({ ...v, password: e.target.value }))}
+                  />
+                  <span className="mt-1.5 block text-xs font-medium text-[#5f6268]">
+                    This is a staff account — please enter your password.
+                  </span>
+                </label>
+              ) : null}
+
               {/* Service address — signup only */}
               {content.mode === "signup" && (
                 <div className="space-y-4 rounded-lg border border-black/10 bg-white/50 p-4">
@@ -322,7 +357,11 @@ export function AuthPage({ content }: AuthPageProps) {
                 type="submit"
                 disabled={loading}
               >
-                {loading ? "Please wait…" : content.primaryAction}
+                {loading
+                  ? "Please wait…"
+                  : content.mode === "signin" && needsPassword
+                    ? "Sign in"
+                    : content.primaryAction}
               </button>
             </form>
 

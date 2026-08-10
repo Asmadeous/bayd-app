@@ -138,6 +138,15 @@ class Booking < ApplicationRecord
     elsif amount_paid.positive?
       payment_deposit_paid!
     end
+    return unless status == "pending" && payment_status.in?(%w[deposit_paid paid])
+
+    # A booking held for mandatory payment becomes confirmed once money lands.
+    # Defer the exclusion check so flipping pending→confirmed on the already-held
+    # slot doesn't self-conflict on no_double_booking.
+    self.class.transaction do
+      self.class.connection.execute("SET CONSTRAINTS no_double_booking DEFERRED")
+      update!(status: "confirmed")
+    end
   end
 
   # When the next appointment in this series should start.

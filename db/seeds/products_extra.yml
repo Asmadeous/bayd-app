@@ -1,0 +1,329 @@
+# Extended product catalogue (KAB Cosmetics, from brand store). Appended to
+# products_data in db/seeds.rb. Prices are Syncee sell prices.
+- category: "makeup"
+  name: "Red Velvet Lipstick"
+  sku: "KAB-RED-VELVET-LIPSTICK"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Cherry Pie Lipstick"
+  sku: "KAB-CHERRY-PIE-LIPSTICK"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Glazed Lipstick"
+  sku: "KAB-GLAZED-LIPSTICK"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Rose Prick"
+  sku: "KAB-ROSE-PRICK"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Role Play"
+  sku: "KAB-ROLE-PLAY"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Stay the Night"
+  sku: "KAB-STAY-THE-NIGHT"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Flawless"
+  sku: "KAB-FLAWLESS"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Lights Off"
+  sku: "KAB-LIGHTS-OFF"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Latex"
+  sku: "KAB-LATEX"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Yours Truly"
+  sku: "KAB-YOURS-TRULY"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Over the Moon"
+  sku: "KAB-OVER-THE-MOON"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Surprise Me"
+  sku: "KAB-SURPRISE-ME"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Corset"
+  sku: "KAB-CORSET"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Double D's"
+  sku: "KAB-DOUBLE-D-S"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Whip"
+  sku: "KAB-WHIP"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Candlelit"
+  sku: "KAB-CANDLELIT"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Garter Belt"
+  sku: "KAB-GARTER-BELT"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Cherry Pie Gloss"
+  sku: "KAB-CHERRY-PIE-GLOSS"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Lollipop Cream Lipgloss"
+  sku: "KAB-LOLLIPOP-CREAM-LIPGLOSS"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Mini Hydrating Tinted Lip Oil"
+  sku: "KAB-MINI-HYDRATING-TINTED-LIP-OIL"
+  price: 8.0
+  stock: 100
+- category: "makeup"
+  name: "Lime Lip Oil"
+  sku: "KAB-LIME-LIP-OIL"
+  price: 16.0
+  stock: 100
+- category: "makeup"
+  name: "Hydrating Lip Oils"
+  sku: "KAB-HYDRATING-LIP-OILS"
+  price: 16.0
+  stock: 100
+- category: "makeup"
+  name: "PopTart Lip Liner"
+  sku: "KAB-POPTART-LIP-LINER"
+  price: 9.6
+  stock: 100
+- category: "makeup"
+  name: "Sugar + Spice Lip Liner"
+  sku: "KAB-SUGAR-SPICE-LIP-LINER"
+  price: 9.6
+  stock: 100
+- category: "makeup"
+  name: "Lollipop Lip Liner"
+  sku: "KAB-LOLLIPOP-LIP-LINER"
+  price: 9.6
+  stock: 100
+- category: "makeup"
+  name: "Strawberry Daiquiri Lip Liner"
+  sku: "KAB-STRAWBERRY-DAIQUIRI-LIP-LINER"
+  price: 9.6
+  stock: 100
+- category: "makeup"
+  name: "Strawberry Lemonade Lip Liner"
+  sku: "KAB-STRAWBERRY-LEMONADE-LIP-LINER"
+  price: 9.6
+  stock: 100
+- category: "makeup"
+  name: "Pina Colada Lip Liner"
+  sku: "KAB-PINA-COLADA-LIP-LINER"
+  price: 9.6
+  stock: 100
+- category: "makeup"
+  name: "Cherry Pie Lip Liner"
+  sku: "KAB-CHERRY-PIE-LIP-LINER"
+  price: 9.6
+  stock: 100
+- category: "makeup"
+  name: "Mind Eraser Lip Liner"
+  sku: "KAB-MIND-ERASER-LIP-LINER"
+  price: 9.6
+  stock: 100
+- category: "makeup"
+  name: "Sweetheart Lip Liner"
+  sku: "KAB-SWEETHEART-LIP-LINER"
+  price: 9.6
+  stock: 100
+- category: "makeup"
+  name: "Peach Cobbler Lip Liner"
+  sku: "KAB-PEACH-COBBLER-LIP-LINER"
+  price: 9.6
+  stock: 100
+- category: "makeup"
+  name: "Cosmopolitan Lip Liner"
+  sku: "KAB-COSMOPOLITAN-LIP-LINER"
+  price: 9.6
+  stock: 100
+- category: "makeup"
+  name: "Lip Liner Bundle"
+  sku: "KAB-LIP-LINER-BUNDLE"
+  price: 96.0
+  stock: 100
+- category: "makeup"
+  name: "Undress Me Lip Kit"
+  sku: "KAB-UNDRESS-ME-LIP-KIT"
+  price: 36.0
+  stock: 100
+- category: "makeup"
+  name: "Cherry Pie Lip Kit"
+  sku: "KAB-CHERRY-PIE-LIP-KIT"
+  price: 36.0
+  stock: 100
+- category: "makeup"
+  name: "Tiramisu Lip Kit"
+  sku: "KAB-TIRAMISU-LIP-KIT"
+  price: 36.0
+  stock: 100
+- category: "makeup"
+  name: "Red Velvet Lip Kit"
+  sku: "KAB-RED-VELVET-LIP-KIT"
+  price: 36.0
+  stock: 100
+- category: "makeup"
+  name: "Sending Nudes Lip Kit"
+  sku: "KAB-SENDING-NUDES-LIP-KIT"
+  price: 36.0
+  stock: 100
+- category: "makeup"
+  name: "Lollipop Lip Kit"
+  sku: "KAB-LOLLIPOP-LIP-KIT"
+  price: 36.0
+  stock: 100
+- category: "makeup"
+  name: "Virtue Lip Duo"
+  sku: "KAB-VIRTUE-LIP-DUO"
+  price: 24.0
+  stock: 100
+- category: "makeup"
+  name: "Lush Lip Duo"
+  sku: "KAB-LUSH-LIP-DUO"
+  price: 24.0
+  stock: 100
+- category: "makeup"
+  name: "Risque Lip Duo"
+  sku: "KAB-RISQUE-LIP-DUO"
+  price: 24.0
+  stock: 100
+- category: "makeup"
+  name: "Kissable Lip Duo"
+  sku: "KAB-KISSABLE-LIP-DUO"
+  price: 24.0
+  stock: 100
+- category: "makeup"
+  name: "Setting Powder"
+  sku: "KAB-SETTING-POWDER"
+  price: 24.0
+  stock: 100
+- category: "makeup"
+  name: "Hydrating Setting Mist"
+  sku: "KAB-HYDRATING-SETTING-MIST"
+  price: 22.4
+  stock: 100
+- category: "makeup"
+  name: "Bombshell Beauty Oil"
+  sku: "KAB-BOMBSHELL-BEAUTY-OIL"
+  price: 27.2
+  stock: 100
+- category: "makeup"
+  name: "Eyeshadow Quads"
+  sku: "KAB-EYESHADOW-QUADS"
+  price: 14.4
+  stock: 100
+- category: "makeup"
+  name: "Limited Edition Naughty Or Ice Palette"
+  sku: "KAB-LIMITED-EDITION-NAUGHTY-OR-ICE-PALETTE"
+  price: 16.0
+  stock: 100
+- category: "makeup"
+  name: "Bubblegum Bliss Blush Duo"
+  sku: "KAB-BUBBLEGUM-BLISS-BLUSH-DUO"
+  price: 17.6
+  stock: 100
+- category: "makeup"
+  name: "Cotton Candy Blushmeup"
+  sku: "KAB-COTTON-CANDY-BLUSHMEUP"
+  price: 24.0
+  stock: 100
+- category: "makeup"
+  name: "Vanilla Bean Blushmeup"
+  sku: "KAB-VANILLA-BEAN-BLUSHMEUP"
+  price: 24.0
+  stock: 100
+- category: "beauty-tools"
+  name: "Lash Curler"
+  sku: "KAB-LASH-CURLER"
+  price: 12.8
+  stock: 100
+
+# ── DISURI / Nilon / SHANY (from brand stores) ──
+- category: "makeup"
+  name: "DISURI Glossy Blast Lip Gloss - Forbidden Red"
+  sku: "DISURI-GLOSSY-BLAST-LIP-GLOSS-FORBIDDEN-RED"
+  price: 10.38
+  stock: 100
+- category: "makeup"
+  name: "HD Beauty Canvas Foundation"
+  sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION"
+  price: 36.0
+  stock: 100
+- category: "makeup"
+  name: "Radiance Cover Concealer"
+  sku: "NILON-RADIANCE-COVER-CONCEALER"
+  price: 18.0
+  stock: 100
+- category: "makeup"
+  name: "Gold Dust Luminous Powder"
+  sku: "NILON-GOLD-DUST-LUMINOUS-POWDER"
+  price: 16.2
+  stock: 100
+- category: "makeup"
+  name: "Perle d'Or Illuminating Cream - Platinum"
+  sku: "NILON-PERLE-D-OR-ILLUMINATING-CREAM-PLATINUM"
+  price: 22.5
+  stock: 100
+- category: "beauty-tools"
+  name: "SHANY Vanity Vox 15-Piece Brush Set"
+  sku: "SHANY-VANITY-VOX-15-PIECE-BRUSH-SET"
+  price: 40.0
+  stock: 100
+- category: "beauty-tools"
+  name: "SHANY Artisan's Easel Brush Set"
+  sku: "SHANY-ARTISAN-S-EASEL-BRUSH-SET"
+  price: 32.0
+  stock: 100
+- category: "makeup"
+  name: "SHANY Dreamy Dozen Lip Liner Set"
+  sku: "SHANY-DREAMY-DOZEN-LIP-LINER-SET"
+  price: 12.0
+  stock: 100
+- category: "beauty-tools"
+  name: "SHANY Luxe Lashes Eyelash Curler"
+  sku: "SHANY-LUXE-LASHES-EYELASH-CURLER"
+  price: 8.0
+  stock: 100
+- category: "beauty-tools"
+  name: "SHANY Mannequin Head Wig Stand"
+  sku: "SHANY-MANNEQUIN-HEAD-WIG-STAND"
+  price: 13.6
+  stock: 100
+- category: "beauty-tools"
+  name: "SHANY Rolling Makeup Trolley Case"
+  sku: "SHANY-ROLLING-MAKEUP-TROLLEY-CASE"
+  price: 239.2
+  stock: 100
+- category: "makeup"
+  name: "SHANY Beauty Cliche Makeup Kit"
+  sku: "SHANY-BEAUTY-CLICHE-MAKEUP-KIT"
+  price: 39.2
+  stock: 100

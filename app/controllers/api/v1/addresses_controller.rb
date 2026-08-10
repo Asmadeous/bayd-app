@@ -25,7 +25,7 @@ module Api
       def scoped_address = current_user.addresses.find(params[:id])
 
       def address_params
-        params.require(:address).permit(:label, :line1, :line2, :city, :province, :postal_code, :default)
+        params.require(:address).permit(:label, :line1, :line2, :city, :province, :postal_code, :default, :is_apartment, :buzz_code)
       end
     end
   end

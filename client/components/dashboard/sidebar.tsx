@@ -45,7 +45,7 @@ type NavGroup = { group: string; items: NavItem[] }
 const customerNav: NavItem[] = [
   { label: "Overview", href: "/dashboard/customer", icon: Home },
   { label: "Calendar", href: "/dashboard/customer/calendar", icon: CalendarDays },
-  { label: "Bookings", href: "/dashboard/customer/bookings", icon: CalendarDays },
+  // { label: "Bookings", href: "/dashboard/customer/bookings", icon: CalendarDays },
   { label: "Subscriptions", href: "/dashboard/customer/subscriptions", icon: Repeat2 },
   { label: "Notifications", href: "/dashboard/customer/notifications", icon: Bell },
   { label: "Addresses", href: "/dashboard/customer/addresses", icon: MapPin },

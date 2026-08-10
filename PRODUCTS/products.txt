@@ -1,0 +1,165 @@
+# BAYD — New product catalogue (from Syncee screenshots, 2026-08-10)
+# Price = Syncee retail/sell price (what we list at). Deduped across screenshots.
+# [COLORS] = comes in shades/variants — needs colour/variant support before seeding.
+# Where a shade is shown, it's noted; full shade ranges still need to be pulled from the supplier page.
+
+## SERUMS & TREATMENTS
+- ARTDECO — Hyaluronic Intensive Anti-Age Serum 30 ml — $25.24
+- LUMIVEZA — Age Defying Serum (Firming Anti-Aging Serum) — $48.00
+- Christopher Hanlon — Manuka + Mandarin Anti-Âge Facial Skin Treatment — $23.28
+- Elizabeth Arden (Smith Distributors) — Ceramide 0.5 oz Advanced Lift and Firm — $56.67
+
+## MOISTURIZERS & CREAMS
+- aniise (Global Sales, Inc.) — Moisture Surge Face Cream — $42.60
+- JT Formula — Dark Spot Face Cream with Kojic Acid — $23.58
+- Clinique — Smart Clinical Repair Firmness + Lifting Cream — $59.08
+- Christopher Hanlon — Step 3 | UV Polyvitamin Face Moisturizer Anti Âge — $77.61
+- Connected Boutique — Moonlit Mushroom Facial Moisturizer (Snow Mushroom) — $14.74
+- Connected Boutique — Berry Bare Hydrating Facial Moisturizer with Squalane — $13.40
+- Kismet — Natural Tinted Moisturizer With Hyaluronic Acid — $17.00  [COLORS]
+- Nilon Beaute — Perle d'Or Illuminating Cream: Platinum — $22.50
+
+## EYE & MASKS
+- whitelabeauty — SADOER Aloe Vera Eye Cream (Anti Dark Circles / Eye Bags) — $10.40
+- Legend Age Skincare — Hydrating Anti-Aging Sheet Mask — $25.34
+- Kismet — Sweet Dreams Overnight Gel Masque — $17.00
+
+## CLEANSERS & MAKEUP REMOVER
+- Solo Giovane — AHA Face Cleanser — $15.60
+- Solo Giovane — SG Retinol Face Cleanser — $15.60
+- Fasderma India — Glutawash Face Cleanser, 100ml — $4.62
+- LUMIVEZA — Sensitive Skin Face & Body Cleanser — $17.60
+- Terre Verdi — GoodOils Cleansing Oil (Organic Face Cleanser) — $31.24
+- Maiden-Art MindfulChic — Sensitive Skin Cleanser (Gentle Harmony) — $22.54
+- Glimmer Goddess — Organic Acne Cleanser (Gentle Face & Body Wash) — $19.47
+- MOLIAE Beauty — ASPU RISE Face Cleanser (Coconut / Egyptian Geranium) — $9.98
+- Maitreya Cosmetics — Inner Silence Sensitive Skin Face & Body Cleanser — $46.23
+- LUMIVEZA — Makeup Remover Solution (Gentle Full-Face Cleanser) — $24.00
+
+## BODY & FRAGRANCE
+- Connected Boutique — Golden Ember Eau de Parfum (Amber Vanilla Brown Sugar) — $16.75
+- Connected Boutique — Dry Body Oil Perfume (Hydrating Glow Body Oil) — $10.72
+
+## FOUNDATION & FACE BASE
+- Nilon Beaute — HD Beauty Canvas Camera-Ready Foundation — $36.00  [COLORS]
+- Solo Giovane — SG Full Coverage Foundation #3 — $12.60  [COLORS]
+- Solo Giovane — SG Full Coverage Foundation #12 — $12.60  [COLORS]
+- Kismet — Sync Skin-Synced Customized Foundation Refill — $30.00  [COLORS]
+- Danyel (Danyel Cosmetics & Marli Skin) — Translucent Pressed Powder — $14.99
+- KAB Cosmetics — Setting Powder — $24.00
+- Solo Giovane — Perfect Finish Spray (setting spray) — $16.20
+- KAB Cosmetics — Hydrating Setting Mist — $22.40
+
+## CONCEALER & ILLUMINATOR / HIGHLIGHT
+- Nilon Beaute — Radiance Cover Multi-Use Luminous Concealer — $18.00  [COLORS]
+- Kismet — Lovely Liquid Illuminator — $9.00
+- Nilon Beaute — Gold Dust Luminous Powder Lumiere Shadows — $16.20
+- KAB Cosmetics — Bombshell Beauty Oil — $27.20
+
+## EYESHADOW
+- DR.HC Cosmetic Lab — Natural Pressed Eyeshadow (#8 Teal, 2.5g) — $21.70  [COLORS]
+- Connected Boutique — Astral Violet Duochrome Eyeshadow (Deep Violet) — $10.05  [COLORS]
+- Connected Boutique — Higher Love Duochrome Eyeshadow (Iridescent Lavender) — $10.05  [COLORS]
+- KAB Cosmetics — Eyeshadow Quads — $14.40  [COLORS]
+- KAB Cosmetics — Limited Edition Naughty Or Ice Palette — $16.00
+
+## EYELINER
+- Solo Giovane — So Edgy Deep Eyeliner (shade 20) — $7.20  [COLORS]
+- Solo Giovane — So Edgy Deep Eyeliner (shade 04) — $7.20  [COLORS]
+
+## BLUSH
+- Solo Giovane — SG Three Shades Blush Palette 12 — $16.20  [COLORS]
+- Solo Giovane — SG Four Shades Blush Palette 14 — $16.20  [COLORS]
+- KAB Cosmetics — Bubblegum Bliss Blush Duo — $17.60  [COLORS]
+- KAB Cosmetics — Cotton Candy Blushmeup — $24.00  [COLORS]
+- KAB Cosmetics — Vanilla Bean Blushmeup — $24.00  [COLORS]
+
+## LIPSTICK
+- DISURI Beauty — Liquid Lipstick "Brooklyn" (91) — $11.98  [COLORS]
+- DISURI Beauty — Liquid Lipstick "Hov" (86) — $11.98  [COLORS]
+- Solo Giovane — Matte Liquid Lipstick 33 — $8.99  [COLORS]
+- KAB Cosmetics — Red Velvet Lipstick — $14.40
+- KAB Cosmetics — Cherry Pie Lipstick — $14.40
+- KAB Cosmetics — Glazed Lipstick — $14.40
+- KAB Cosmetics — Rose Prick — $14.40
+- KAB Cosmetics — Role Play — $14.40
+- KAB Cosmetics — Stay the Night — $14.40
+- KAB Cosmetics — Flawless — $14.40
+- KAB Cosmetics — Lights Off — $14.40
+- KAB Cosmetics — Latex — $14.40
+- KAB Cosmetics — Yours Truly — $14.40
+- KAB Cosmetics — Over the Moon — $14.40
+- KAB Cosmetics — Surprise Me — $14.40
+- KAB Cosmetics — Corset — $14.40
+- KAB Cosmetics — Double D's — $14.40
+- KAB Cosmetics — Whip — $14.40
+- KAB Cosmetics — Candlelit — $14.40
+- KAB Cosmetics — Garter Belt — $14.40
+
+## LIP GLOSS / LIP OIL
+- DISURI Beauty — Glossy Blast Lip Gloss "Forbidden Red" (M61) — $10.38  [COLORS]
+- DISURI Beauty — Shimmer Blast Lip Gloss "Sunset Glow" — $5.58  [COLORS]
+- DISURI Beauty — Cold Crush Shimmer Blast 3-Pack — $25.78
+- Connected Boutique — Neptune Blue Glitter Lip Gloss — $9.38  [COLORS]
+- whitelabeauty — 9 Colors Moisturizing Diamond Shimmer Glitter Lip Gloss — $10.40  [COLORS]
+- KAB Cosmetics — Cherry Pie Gloss — $14.40
+- KAB Cosmetics — Lollipop Cream Lipgloss — $14.40
+- KAB Cosmetics — Mini Hydrating Tinted Lip Oil — $8.00
+- KAB Cosmetics — Lime Lip Oil — $16.00
+- KAB Cosmetics — Hydrating Lip Oils — $16.00
+
+## LIP LINER
+- Danyel (Danyel Cosmetics & Marli Skin) — Lip Liner "Flesh" — $9.99  [COLORS]
+- SHANY — Dreamy Dozen Matte Lip Liner Set (12 pc) — $12.00
+- KAB Cosmetics — PopTart Lip Liner — $9.60
+- KAB Cosmetics — Sugar + Spice Lip Liner — $9.60
+- KAB Cosmetics — Lollipop Lip Liner — $9.60
+- KAB Cosmetics — Strawberry Daiquiri Lip Liner — $9.60
+- KAB Cosmetics — Strawberry Lemonade Lip Liner — $9.60
+- KAB Cosmetics — Pina Colada Lip Liner — $9.60
+- KAB Cosmetics — Cherry Pie Lip Liner — $9.60
+- KAB Cosmetics — Mind Eraser Lip Liner — $9.60
+- KAB Cosmetics — Sweetheart Lip Liner — $9.60
+- KAB Cosmetics — Peach Cobbler Lip Liner — $9.60
+- KAB Cosmetics — Cosmopolitan Lip Liner — $9.60
+- KAB Cosmetics — Lip Liner Bundle — $96.00
+
+## LIP KITS / LIP DUOS
+- KAB Cosmetics — Undress Me Lip Kit — $36.00
+- KAB Cosmetics — Cherry Pie Lip Kit — $36.00
+- KAB Cosmetics — Tiramisu Lip Kit — $36.00
+- KAB Cosmetics — Red Velvet Lip Kit — $36.00
+- KAB Cosmetics — Sending Nudes Lip Kit — $36.00
+- KAB Cosmetics — Lollipop Lip Kit — $36.00
+- KAB Cosmetics — Virtue Lip Duo — $24.00
+- KAB Cosmetics — Lush Lip Duo — $24.00
+- KAB Cosmetics — Risque Lip Duo — $24.00
+- KAB Cosmetics — Kissable Lip Duo — $24.00
+
+## BRUSHES & TOOLS
+- SHANY — Vanity Vox 15-Piece Premium Brush Set (with storage) — $40.00
+- SHANY — Artisan's Easel Brush Set — $32.00
+- PURSONIC — 8-Piece Pro Makeup Application Set (7 brushes + blending sponge) — $18.74
+- Panoply Beauty — SAINT MINERALS Blending Crease Brush — $12.50
+- BeNat — Foundation Makeup Brush — $5.19
+- Keisha Elise Cosmetics — 4-Piece Makeup Sponge Set with Travel Case — $11.20
+- SHANY — Luxe Lashes Eyelash Curler — $8.00
+- KAB Cosmetics — Lash Curler — $12.80
+- SHANY — Styrofoam Mannequin Heads Wig Stand (1 piece) — $13.60
+- SHANY — Soft Makeup Artist Rolling Trolley Cosmetic Case — $239.20  [COLORS]
+
+## LASHES
+- PURSONIC — 5-Pack Faux Mink Style False Eyelashes Bundle (25 pairs, glue + applicator) — $22.49
+
+## HAIR & SCALP
+- PURSONIC — Hair Wellness Duo: Hot Air Blower Brush + 3-in-1 LED Therapy Scalp Brush — $82.49
+- Glimmer Goddess — Smart Scalp Massager — $25.99
+- BeNat — Hair Scalp Massager — $3.89  [COLORS]
+
+## TOWELS & LINENS
+- Beauty Logistics Limited — Face Fact Clean Skin Towels (50 Towels Pack) — $8.23
+- Rosy Lana LLC — Organic Bamboo Face Towels (Set of 5) — $20.30
+- NNE Living — NNEDSZ Luxury 6-Piece 100% Cotton Towel Set (2 bath) — $83.53  [COLORS: Pink, Purple, Grey, + others shown]
+
+## MAKEUP KITS
+- SHANY — The Beauty Cliche All-in-One Makeup Kit — $39.20

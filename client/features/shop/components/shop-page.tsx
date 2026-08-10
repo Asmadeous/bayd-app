@@ -19,13 +19,22 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { buttonVariants } from "@/components/ui/button";
-import type { ShopProduct } from "@/features/shop/types";
+import type { ShopProduct, ShopVariant } from "@/features/shop/types";
 import api from "@/lib/api";
 import { openHelcimPay } from "@/lib/helcim-pay";
-import { BookButton } from "@/components/ui/book-button";
 import type { CartItem, CartProduct } from "@/lib/stores/cart-store";
 import { useCartStore } from "@/lib/stores/cart-store";
 import { cn } from "@/lib/utils";
+
+interface ApiVariant {
+  id: number;
+  label: string;
+  color_name: string | null;
+  color_hex: string | null;
+  image_url: string | null;
+  price: string;
+  in_stock: boolean;
+}
 
 interface ApiProduct {
   id: number;
@@ -35,6 +44,8 @@ interface ApiProduct {
   stock_quantity: number;
   image_url: string | null;
   category: string | null;
+  has_variants: boolean;
+  variants: ApiVariant[];
 }
 
 interface ApiProductsResponse {
@@ -56,16 +67,30 @@ const BADGES = [
   "New",
 ];
 
-function parsePrice(price: string) {
-  return Number(price.replace(/[^0-9.]/g, "")) || 0;
-}
-
 function mapApiProduct(p: ApiProduct, index: number): ShopProduct {
+  const variants: ShopVariant[] = (p.variants ?? []).map((v) => ({
+    id: String(v.id),
+    label: v.label,
+    colorName: v.color_name,
+    colorHex: v.color_hex,
+    imageUrl: v.image_url,
+    price: Number(v.price),
+    inStock: v.in_stock,
+  }));
+  const base = Number(p.price);
+  // Variant products can differ in price (e.g. the bonnet), so show "from $min".
+  const priceValue = variants.length
+    ? Math.min(...variants.map((v) => v.price))
+    : base;
+  const price = variants.length
+    ? `from $${priceValue.toFixed(2)}`
+    : `$${base.toFixed(2)}`;
   return {
     id: String(p.id),
     name: p.name,
     category: p.category ?? "Beauty",
-    price: `$${Number(p.price).toFixed(2)}`,
+    price,
+    priceValue,
     image: {
       src: p.image_url ?? "/images/lashes1.jpg",
       alt: p.name,
@@ -73,20 +98,28 @@ function mapApiProduct(p: ApiProduct, index: number): ShopProduct {
     badge: BADGES[index % BADGES.length] ?? "New",
     description: p.description ?? "",
     details: [],
+    hasVariants: (p.has_variants ?? false) || variants.length > 0,
+    variants,
   };
 }
 
-function toCartProduct(product: ShopProduct): CartProduct {
+function toCartProduct(product: ShopProduct, variant?: ShopVariant): CartProduct {
+  const priceValue = variant ? variant.price : product.priceValue;
+  const imageUrl =
+    variant?.imageUrl ??
+    (typeof product.image.src === "string"
+      ? product.image.src
+      : "/images/lashes1.jpg");
   return {
-    id: product.id,
+    id: variant ? `${product.id}:${variant.id}` : product.id,
+    productId: product.id,
+    variantId: variant?.id,
+    variantLabel: variant?.label,
     name: product.name,
     category: product.category,
-    price: product.price,
-    priceValue: parsePrice(product.price),
-    imageUrl:
-      typeof product.image.src === "string"
-        ? product.image.src
-        : "/images/lashes1.jpg",
+    price: `$${priceValue.toFixed(2)}`,
+    priceValue,
+    imageUrl,
     description: product.description,
   };
 }
@@ -144,8 +177,12 @@ export function ShopPage() {
     setSelectedProduct(product);
   }
 
-  function addToCart(product: ShopProduct, quantity: number) {
-    addItem(toCartProduct(product), quantity);
+  function addToCart(
+    product: ShopProduct,
+    quantity: number,
+    variant?: ShopVariant,
+  ) {
+    addItem(toCartProduct(product, variant), quantity);
     setSelectedProduct(null);
     openCart();
   }
@@ -398,6 +435,12 @@ function ProductCard({
         <p className="mt-4 text-sm leading-6 text-[#5f6268]">
           {product.description}
         </p>
+        {product.hasVariants && product.variants.length > 0 ? (
+          <p className="mt-3 text-xs font-extrabold uppercase tracking-[0.16em] text-[#a36f4d]">
+            {product.variants.length}{" "}
+            {product.variants.some((v) => v.imageUrl) ? "colours" : "shades"}
+          </p>
+        ) : null}
         {product.details.length > 0 && (
           <div className="mt-5 space-y-2 border-t border-black/10 pt-4">
             {product.details.map((detail) => (
@@ -498,11 +541,24 @@ function ProductModal({
     x: number;
     y: number;
   };
-  onAddToCart: (product: ShopProduct, quantity: number) => void;
+  onAddToCart: (
+    product: ShopProduct,
+    quantity: number,
+    variant?: ShopVariant,
+  ) => void;
   onClose: () => void;
   product: ShopProduct;
 }) {
   const [quantity, setQuantity] = useState(1);
+  const [selectedVariant, setSelectedVariant] = useState<ShopVariant | null>(
+    null,
+  );
+
+  const needsVariant = product.hasVariants && product.variants.length > 0;
+  const displayImage = selectedVariant?.imageUrl ?? product.image.src;
+  const displayPrice = selectedVariant
+    ? `$${selectedVariant.price.toFixed(2)}`
+    : product.price;
 
   const panelStyle = {
     "--modal-x": `${modalOrigin.x}px`,
@@ -532,8 +588,8 @@ function ProductModal({
 
         <div className="relative min-h-[360px] overflow-hidden bg-[#ddd2c8] sm:min-h-[520px] lg:min-h-[620px]">
           <Image
-            src={product.image.src}
-            alt={product.image.alt}
+            src={displayImage}
+            alt={selectedVariant ? `${product.name} — ${selectedVariant.label}` : product.image.alt}
             fill
             sizes="(min-width: 1024px) 50vw, 100vw"
             className="animate-service-image-grow-down object-cover"
@@ -548,11 +604,75 @@ function ProductModal({
             {product.name}
           </h2>
           <p className="animate-service-content-3 mt-5 text-3xl font-extrabold text-[#101217]">
-            {product.price}
+            {displayPrice}
           </p>
           <p className="animate-service-content-4 mt-6 text-sm leading-6 text-[#3f4248]">
             {product.description}
           </p>
+
+          {needsVariant ? (
+            <div className="animate-service-content-5 mt-7">
+              <div className="flex items-baseline justify-between">
+                <h3 className="text-sm font-extrabold uppercase text-[#101217]">
+                  {product.variants.some((v) => v.imageUrl) ? "Choose a colour" : "Choose a shade"}
+                </h3>
+                <span className="text-sm font-semibold text-[#5f6268]">
+                  {selectedVariant ? selectedVariant.label : "Select an option"}
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {product.variants.map((variant) => {
+                  const active = selectedVariant?.id === variant.id;
+                  const ring = active
+                    ? "ring-2 ring-[#c96c83] ring-offset-2"
+                    : "ring-1 ring-black/15 hover:ring-black/40";
+                  if (variant.imageUrl) {
+                    return (
+                      <button
+                        aria-label={variant.label}
+                        aria-pressed={active}
+                        className={cn("relative size-12 overflow-hidden rounded-full", ring)}
+                        key={variant.id}
+                        onClick={() => setSelectedVariant(variant)}
+                        title={variant.label}
+                        type="button"
+                      >
+                        <Image src={variant.imageUrl} alt={variant.label} fill sizes="48px" className="object-cover" />
+                      </button>
+                    );
+                  }
+                  if (variant.colorHex) {
+                    return (
+                      <button
+                        aria-label={variant.label}
+                        aria-pressed={active}
+                        className={cn("size-12 rounded-full", ring)}
+                        key={variant.id}
+                        onClick={() => setSelectedVariant(variant)}
+                        style={{ background: variant.colorHex }}
+                        title={variant.label}
+                        type="button"
+                      />
+                    );
+                  }
+                  return (
+                    <button
+                      aria-pressed={active}
+                      className={cn(
+                        "h-10 rounded-full bg-white px-4 text-sm font-bold text-[#101217]",
+                        ring,
+                      )}
+                      key={variant.id}
+                      onClick={() => setSelectedVariant(variant)}
+                      type="button"
+                    >
+                      {variant.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
 
           {product.details.length > 0 && (
             <div className="animate-service-content-5 mt-7">
@@ -603,14 +723,16 @@ function ProductModal({
             className={cn(
               buttonVariants(),
               "animate-service-content-7 mt-8 h-12 rounded-none px-8 text-base font-bold",
+              needsVariant && !selectedVariant ? "pointer-events-none opacity-50" : "",
             )}
+            disabled={needsVariant && !selectedVariant}
             onClick={() => {
-              onAddToCart(product, quantity);
+              onAddToCart(product, quantity, selectedVariant ?? undefined);
               setQuantity(1);
             }}
             type="button"
           >
-            Add to cart
+            {needsVariant && !selectedVariant ? "Select an option" : "Add to cart"}
             <ShoppingBag aria-hidden="true" />
           </button>
         </div>
@@ -723,6 +845,11 @@ function CartDialog({
                         <h3 className="mt-1 text-base font-extrabold text-[#101217]">
                           {item.product.name}
                         </h3>
+                        {item.product.variantLabel ? (
+                          <p className="mt-0.5 text-xs font-semibold text-[#5f6268]">
+                            {item.product.variantLabel}
+                          </p>
+                        ) : null}
                         <p className="mt-1 text-sm font-bold text-[#101217]">
                           {item.product.price}
                         </p>
@@ -776,8 +903,9 @@ function CartDialog({
           <p className="mt-2 text-xs leading-5 text-[#5f6268]">
             Tax and any delivery fees will be calculated at checkout.
           </p>
-          <BookButton
-            authenticatedHref="/checkout"
+          <Link
+            href="/checkout"
+            aria-disabled={items.length === 0}
             className={cn(
               buttonVariants(),
               "mt-5 h-12 w-full rounded-none text-base font-bold",
@@ -785,7 +913,7 @@ function CartDialog({
             )}
           >
             Proceed to checkout
-          </BookButton>
+          </Link>
         </div>
       </aside>
     </div>

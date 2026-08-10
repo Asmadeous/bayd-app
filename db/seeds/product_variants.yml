@@ -1,0 +1,681 @@
+# Product colour/shade variants, keyed by product SKU. Read by db/seeds.rb.
+# Bonnet colours identified from swatch images; supplier codes are meaningless.
+CASHYMART-SATIN-SLEEP-BONNET:
+  - label: "Wine Red — Reversible"
+    color_name: "Wine Red"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V01"
+    price: 21.47
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v01.jpg"
+    position: 1
+  - label: "Black Bronze — Reversible"
+    color_name: "Black Bronze"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V02"
+    price: 21.47
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v02.jpg"
+    position: 2
+  - label: "Rose Gold — Reversible"
+    color_name: "Rose Gold"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V03"
+    price: 21.47
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v03.jpg"
+    position: 3
+  - label: "Green Stars — Wide-Band"
+    color_name: "Green Stars"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V04"
+    price: 18.81
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v04.jpg"
+    position: 4
+  - label: "Teal Blue — Reversible"
+    color_name: "Teal Blue"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V05"
+    price: 21.47
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v05.jpg"
+    position: 5
+  - label: "White & Blue Stars — Wide-Band"
+    color_name: "White & Blue Stars"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V06"
+    price: 18.91
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v06.jpg"
+    position: 6
+  - label: "Royal Blue — Reversible"
+    color_name: "Royal Blue"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V07"
+    price: 21.47
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v07.jpg"
+    position: 7
+  - label: "Purple — Reversible"
+    color_name: "Purple"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V08"
+    price: 21.47
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v08.jpg"
+    position: 8
+  - label: "Burgundy — Jumbo"
+    color_name: "Burgundy"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V09"
+    price: 18.79
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v09.jpg"
+    position: 9
+  - label: "Orange Stars — Wide-Band"
+    color_name: "Orange Stars"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V10"
+    price: 18.91
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v10.jpg"
+    position: 10
+  - label: "Sky Blue — Jumbo"
+    color_name: "Sky Blue"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V11"
+    price: 18.79
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v11.jpg"
+    position: 11
+  - label: "Teal Stars — Wide-Band"
+    color_name: "Teal Stars"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V12"
+    price: 18.81
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v12.jpg"
+    position: 12
+  - label: "Black — Jumbo"
+    color_name: "Black"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V13"
+    price: 18.79
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v13.jpg"
+    position: 13
+  - label: "Purple Stars — Wide-Band"
+    color_name: "Purple Stars"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V14"
+    price: 18.87
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v14.jpg"
+    position: 14
+  - label: "Yellow — Reversible"
+    color_name: "Yellow"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V15"
+    price: 20.74
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v15.jpg"
+    position: 15
+  - label: "Black & White Stars — Wide-Band"
+    color_name: "Black & White Stars"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V16"
+    price: 18.67
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v16.jpg"
+    position: 16
+  - label: "Champagne Floral — Wide-Band"
+    color_name: "Champagne Floral"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V17"
+    price: 19.93
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v17.jpg"
+    position: 17
+  - label: "Purple Floral — Wide-Band"
+    color_name: "Purple Floral"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V18"
+    price: 19.93
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v18.jpg"
+    position: 18
+  - label: "Silver Grey — Jumbo"
+    color_name: "Silver Grey"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V19"
+    price: 18.79
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v19.jpg"
+    position: 19
+  - label: "Black Rose Floral — Wide-Band"
+    color_name: "Black Rose Floral"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V20"
+    price: 19.93
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v20.jpg"
+    position: 20
+  - label: "Navy Blue — Jumbo"
+    color_name: "Navy Blue"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V21"
+    price: 18.79
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v21.jpg"
+    position: 21
+  - label: "Pink Floral — Wide-Band"
+    color_name: "Pink Floral"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V22"
+    price: 19.93
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v22.jpg"
+    position: 22
+  - label: "Coffee Brown — Jumbo"
+    color_name: "Coffee Brown"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V23"
+    price: 18.79
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v23.jpg"
+    position: 23
+  - label: "Blue Floral — Wide-Band"
+    color_name: "Blue Floral"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V24"
+    price: 19.93
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v24.jpg"
+    position: 24
+  - label: "Marigold Floral — Wide-Band"
+    color_name: "Marigold Floral"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V25"
+    price: 19.93
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v25.jpg"
+    position: 25
+  - label: "Sage Floral — Wide-Band"
+    color_name: "Sage Floral"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V26"
+    price: 19.93
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v26.jpg"
+    position: 26
+  - label: "Navy Floral — Wide-Band"
+    color_name: "Navy Floral"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V27"
+    price: 19.93
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v27.jpg"
+    position: 27
+  - label: "Ivory Floral — Wide-Band"
+    color_name: "Ivory Floral"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V28"
+    price: 19.93
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v28.jpg"
+    position: 28
+  - label: "Leopard — Wide-Band"
+    color_name: "Leopard"
+    sku: "CASHYMART-SATIN-SLEEP-BONNET-V29"
+    price: 19.93
+    stock: 100
+    image: "/images/products/cashymart-satin-sleep-bonnet-v29.jpg"
+    position: 29
+
+# ── KAB Cosmetics shade variants (from brand store) ──
+KAB-MINI-HYDRATING-TINTED-LIP-OIL:
+  - label: "Peach / BORDERLINE"
+    color_name: "Peach"
+    sku: "KAB-MINI-HYDRATING-TINTED-LIP-OIL-PEACH-BORDERLINE"
+    price: 8.0
+    stock: 100
+    image: "/images/products/kab-mini-hydrating-tinted-lip-oil-peach-borderline.jpg"
+    position: 1
+  - label: "Peach / GOOD VIBRATIONS"
+    color_name: "Peach"
+    sku: "KAB-MINI-HYDRATING-TINTED-LIP-OIL-PEACH-GOOD-VIBRATIONS"
+    price: 8.0
+    stock: 100
+    image: "/images/products/kab-mini-hydrating-tinted-lip-oil-peach-good-vibrations.png"
+    position: 2
+  - label: "Pink / BORDERLINE"
+    color_name: "Pink"
+    sku: "KAB-MINI-HYDRATING-TINTED-LIP-OIL-PINK-BORDERLINE"
+    price: 8.0
+    stock: 100
+    image: "/images/products/kab-mini-hydrating-tinted-lip-oil-pink-borderline.jpg"
+    position: 3
+  - label: "Pink / GOOD VIBRATIONS"
+    color_name: "Pink"
+    sku: "KAB-MINI-HYDRATING-TINTED-LIP-OIL-PINK-GOOD-VIBRATIONS"
+    price: 8.0
+    stock: 100
+    image: "/images/products/kab-mini-hydrating-tinted-lip-oil-pink-good-vibrations.png"
+    position: 4
+KAB-HYDRATING-LIP-OILS:
+  - label: "Sugar High"
+    color_name: "Sugar High"
+    sku: "KAB-HYDRATING-LIP-OILS-SUGAR-HIGH"
+    price: 16.0
+    stock: 100
+    image: "/images/products/kab-hydrating-lip-oils-sugar-high.jpg"
+    position: 1
+  - label: "Grapesicle"
+    color_name: "Grapesicle"
+    sku: "KAB-HYDRATING-LIP-OILS-GRAPESICLE"
+    price: 16.0
+    stock: 100
+    image: "/images/products/kab-hydrating-lip-oils-grapesicle.jpg"
+    position: 2
+  - label: "Juicy Melon"
+    color_name: "Juicy Melon"
+    sku: "KAB-HYDRATING-LIP-OILS-JUICY-MELON"
+    price: 16.0
+    stock: 100
+    image: "/images/products/kab-hydrating-lip-oils-juicy-melon.jpg"
+    position: 3
+  - label: "Rum Punch"
+    color_name: "Rum Punch"
+    sku: "KAB-HYDRATING-LIP-OILS-RUM-PUNCH"
+    price: 16.0
+    stock: 100
+    image: "/images/products/kab-hydrating-lip-oils-rum-punch.jpg"
+    position: 4
+  - label: "Honey Dew"
+    color_name: "Honey Dew"
+    sku: "KAB-HYDRATING-LIP-OILS-HONEY-DEW"
+    price: 16.0
+    stock: 100
+    image: "/images/products/kab-hydrating-lip-oils-honey-dew.jpg"
+    position: 5
+  - label: "Blue Raspberry"
+    color_name: "Blue Raspberry"
+    sku: "KAB-HYDRATING-LIP-OILS-BLUE-RASPBERRY"
+    price: 16.0
+    stock: 100
+    image: "/images/products/kab-hydrating-lip-oils-blue-raspberry.jpg"
+    position: 6
+KAB-SETTING-POWDER:
+  - label: "TRANSLUCENT"
+    color_name: "TRANSLUCENT"
+    sku: "KAB-SETTING-POWDER-TRANSLUCENT"
+    price: 24.0
+    stock: 100
+    image: "/images/products/kab-setting-powder-translucent.jpg"
+    position: 1
+  - label: "FRENCH TOAST"
+    color_name: "FRENCH TOAST"
+    sku: "KAB-SETTING-POWDER-FRENCH-TOAST"
+    price: 24.0
+    stock: 100
+    image: "/images/products/kab-setting-powder-french-toast.jpg"
+    position: 2
+KAB-EYESHADOW-QUADS:
+  - label: "NAKED"
+    color_name: "NAKED"
+    sku: "KAB-EYESHADOW-QUADS-NAKED"
+    price: 14.4
+    stock: 100
+    image: "/images/products/kab-eyeshadow-quads-naked.jpg"
+    position: 1
+  - label: "PLUM FAIRY"
+    color_name: "PLUM FAIRY"
+    sku: "KAB-EYESHADOW-QUADS-PLUM-FAIRY"
+    price: 14.4
+    stock: 100
+    image: "/images/products/kab-eyeshadow-quads-plum-fairy.jpg"
+    position: 2
+  - label: "SMOKESHOW"
+    color_name: "SMOKESHOW"
+    sku: "KAB-EYESHADOW-QUADS-SMOKESHOW"
+    price: 14.4
+    stock: 100
+    image: "/images/products/kab-eyeshadow-quads-smokeshow.jpg"
+    position: 3
+  - label: "DEEP SMOKE"
+    color_name: "DEEP SMOKE"
+    sku: "KAB-EYESHADOW-QUADS-DEEP-SMOKE"
+    price: 14.4
+    stock: 100
+    image: "/images/products/kab-eyeshadow-quads-deep-smoke.jpg"
+    position: 4
+
+# ── Nilon / SHANY shade & colour variants (from brand stores) ──
+NILON-HD-BEAUTY-CANVAS-FOUNDATION:
+  - label: "LTCDW"
+    color_name: "LTCDW"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-LTCDW"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-ltcdw.webp"
+    position: 1
+  - label: "LTBEW"
+    color_name: "LTBEW"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-LTBEW"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-ltbew.webp"
+    position: 2
+  - label: "MDC6W"
+    color_name: "MDC6W"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-MDC6W"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-mdc6w.webp"
+    position: 3
+  - label: "MDC3W"
+    color_name: "MDC3W"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-MDC3W"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-mdc3w.webp"
+    position: 4
+  - label: "MDCAC"
+    color_name: "MDCAC"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-MDCAC"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-mdcac.webp"
+    position: 5
+  - label: "MDBFW"
+    color_name: "MDBFW"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-MDBFW"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-mdbfw.webp"
+    position: 6
+  - label: "MDA7C"
+    color_name: "MDA7C"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-MDA7C"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-mda7c.webp"
+    position: 7
+  - label: "MDC8W"
+    color_name: "MDC8W"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-MDC8W"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-mdc8w.webp"
+    position: 8
+  - label: "DP9CW"
+    color_name: "DP9CW"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DP9CW"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dp9cw.webp"
+    position: 9
+  - label: "DPBBC"
+    color_name: "DPBBC"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DPBBC"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dpbbc.webp"
+    position: 10
+  - label: "DPC1C"
+    color_name: "DPC1C"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DPC1C"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dpc1c.webp"
+    position: 11
+  - label: "DPB4C"
+    color_name: "DPB4C"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DPB4C"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dpb4c.webp"
+    position: 12
+  - label: "DP7EW"
+    color_name: "DP7EW"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DP7EW"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dp7ew.webp"
+    position: 13
+  - label: "DP8AW"
+    color_name: "DP8AW"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DP8AW"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dp8aw.webp"
+    position: 14
+  - label: "DK9AC"
+    color_name: "DK9AC"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DK9AC"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dk9ac.webp"
+    position: 15
+  - label: "DKB7W"
+    color_name: "DKB7W"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DKB7W"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dkb7w.webp"
+    position: 16
+  - label: "DKAEW"
+    color_name: "DKAEW"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DKAEW"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dkaew.webp"
+    position: 17
+  - label: "DK61W"
+    color_name: "DK61W"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DK61W"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dk61w.webp"
+    position: 18
+  - label: "DK82C"
+    color_name: "DK82C"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DK82C"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dk82c.webp"
+    position: 19
+  - label: "DK5FC"
+    color_name: "DK5FC"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DK5FC"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dk5fc.webp"
+    position: 20
+  - label: "DK99C"
+    color_name: "DK99C"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DK99C"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dk99c.webp"
+    position: 21
+  - label: "DK8AW"
+    color_name: "DK8AW"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DK8AW"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dk8aw.webp"
+    position: 22
+  - label: "DK34W"
+    color_name: "DK34W"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DK34W"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dk34w.webp"
+    position: 23
+  - label: "DK27C"
+    color_name: "DK27C"
+    sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION-DK27C"
+    price: 36.0
+    stock: 100
+    image: "/images/products/nilon-hd-beauty-canvas-foundation-dk27c.webp"
+    position: 24
+NILON-RADIANCE-COVER-CONCEALER:
+  - label: "Light Ivory"
+    color_name: "Light Ivory"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-LIGHT-IVORY"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-light-ivory.webp"
+    position: 1
+  - label: "Ivory"
+    color_name: "Ivory"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-IVORY"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-ivory.webp"
+    position: 2
+  - label: "Medium Ivory"
+    color_name: "Medium Ivory"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-MEDIUM-IVORY"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-medium-ivory.webp"
+    position: 3
+  - label: "Extra Light Porcelain"
+    color_name: "Extra Light Porcelain"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-EXTRA-LIGHT-PORCELAIN"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-extra-light-porcelain.webp"
+    position: 4
+  - label: "Medium Light Porcelain"
+    color_name: "Medium Light Porcelain"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-MEDIUM-LIGHT-PORCELAIN"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-medium-light-porcelain.webp"
+    position: 5
+  - label: "Light Porcelain"
+    color_name: "Light Porcelain"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-LIGHT-PORCELAIN"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-light-porcelain.webp"
+    position: 6
+  - label: "Porcelain"
+    color_name: "Porcelain"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-PORCELAIN"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-porcelain.webp"
+    position: 7
+  - label: "Medium Beige"
+    color_name: "Medium Beige"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-MEDIUM-BEIGE"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-medium-beige.webp"
+    position: 8
+  - label: "Medium Tan"
+    color_name: "Medium Tan"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-MEDIUM-TAN"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-medium-tan.webp"
+    position: 9
+  - label: "Dark Tan"
+    color_name: "Dark Tan"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-DARK-TAN"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-dark-tan.webp"
+    position: 10
+  - label: "Almond"
+    color_name: "Almond"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-ALMOND"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-almond.webp"
+    position: 11
+  - label: "Mocha"
+    color_name: "Mocha"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-MOCHA"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-mocha.webp"
+    position: 12
+  - label: "Coffee Bean"
+    color_name: "Coffee Bean"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-COFFEE-BEAN"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-coffee-bean.webp"
+    position: 13
+  - label: "Amber"
+    color_name: "Amber"
+    sku: "NILON-RADIANCE-COVER-CONCEALER-AMBER"
+    price: 18.0
+    stock: 100
+    image: "/images/products/nilon-radiance-cover-concealer-amber.webp"
+    position: 14
+SHANY-ARTISAN-S-EASEL-BRUSH-SET:
+  - label: "BLACK PURPLE"
+    color_name: "BLACK PURPLE"
+    sku: "SHANY-ARTISAN-S-EASEL-BRUSH-SET-BLACK-PURPLE"
+    price: 32.0
+    stock: 100
+    image: "/images/products/shany-artisan-s-easel-brush-set-black-purple.jpg"
+    position: 1
+  - label: "BAMBOO"
+    color_name: "BAMBOO"
+    sku: "SHANY-ARTISAN-S-EASEL-BRUSH-SET-BAMBOO"
+    price: 32.0
+    stock: 100
+    image: "/images/products/shany-artisan-s-easel-brush-set.jpg"
+    position: 2
+  - label: "BLACK"
+    color_name: "BLACK"
+    sku: "SHANY-ARTISAN-S-EASEL-BRUSH-SET-BLACK"
+    price: 32.0
+    stock: 100
+    image: "/images/products/shany-artisan-s-easel-brush-set-black.jpg"
+    position: 3
+  - label: "BAMBOO EDITION"
+    color_name: "BAMBOO EDITION"
+    sku: "SHANY-ARTISAN-S-EASEL-BRUSH-SET-BAMBOO-EDITION"
+    price: 32.0
+    stock: 100
+    image: "/images/products/shany-artisan-s-easel-brush-set-bamboo-edition.jpg"
+    position: 4
+SHANY-LUXE-LASHES-EYELASH-CURLER:
+  - label: "JET BLACK"
+    color_name: "JET BLACK"
+    sku: "SHANY-LUXE-LASHES-EYELASH-CURLER-JET-BLACK"
+    price: 8.0
+    stock: 100
+    image: "/images/products/shany-luxe-lashes-eyelash-curler-jet-black.jpg"
+    position: 1
+  - label: "BLACK"
+    color_name: "BLACK"
+    sku: "SHANY-LUXE-LASHES-EYELASH-CURLER-BLACK"
+    price: 8.0
+    stock: 100
+    image: "/images/products/shany-luxe-lashes-eyelash-curler.jpg"
+    position: 2
+  - label: "GOLD"
+    color_name: "GOLD"
+    sku: "SHANY-LUXE-LASHES-EYELASH-CURLER-GOLD"
+    price: 8.0
+    stock: 100
+    image: "/images/products/shany-luxe-lashes-eyelash-curler.jpg"
+    position: 3
+  - label: "SILVER"
+    color_name: "SILVER"
+    sku: "SHANY-LUXE-LASHES-EYELASH-CURLER-SILVER"
+    price: 8.0
+    stock: 100
+    image: "/images/products/shany-luxe-lashes-eyelash-curler.jpg"
+    position: 4
+  - label: "ROSE GOLD"
+    color_name: "ROSE GOLD"
+    sku: "SHANY-LUXE-LASHES-EYELASH-CURLER-ROSE-GOLD"
+    price: 8.0
+    stock: 100
+    image: "/images/products/shany-luxe-lashes-eyelash-curler-rose-gold.jpg"
+    position: 5
+  - label: "PURPLE"
+    color_name: "PURPLE"
+    sku: "SHANY-LUXE-LASHES-EYELASH-CURLER-PURPLE"
+    price: 8.0
+    stock: 100
+    image: "/images/products/shany-luxe-lashes-eyelash-curler.jpg"
+    position: 6
+SHANY-ROLLING-MAKEUP-TROLLEY-CASE:
+  - label: "JET BLACK"
+    color_name: "JET BLACK"
+    sku: "SHANY-ROLLING-MAKEUP-TROLLEY-CASE-JET-BLACK"
+    price: 239.2
+    stock: 100
+    image: "/images/products/shany-rolling-makeup-trolley-case-jet-black.jpg"
+    position: 1
+  - label: "SUMMER ORCHID"
+    color_name: "SUMMER ORCHID"
+    sku: "SHANY-ROLLING-MAKEUP-TROLLEY-CASE-SUMMER-ORCHID"
+    price: 239.2
+    stock: 100
+    image: "/images/products/shany-rolling-makeup-trolley-case-summer-orchid.jpg"
+    position: 2

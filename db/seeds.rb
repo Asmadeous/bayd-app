@@ -1,21 +1,23 @@
 puts "Seeding..."
 
-# ── Service areas (with admin-set coverage geometry) ──────────────────────────
+# ── Service areas (real zones served) ─────────────────────────────────────────
+# Coordinates are the real city centres. travel_fee left at 0 — set real values
+# when confirmed (the old $5/$10 were demo placeholders).
 AREA_DATA = {
-  "mississauga" => { name: "Mississauga", fee: 0,     lat: 43.5890, lng: -79.6441, radius_km: 18 },
-  "brampton"    => { name: "Brampton",    fee: 5.00,  lat: 43.7315, lng: -79.7624, radius_km: 16 },
-  "toronto"     => { name: "Toronto",     fee: 10.00, lat: 43.6532, lng: -79.3832, radius_km: 22 }
+  "mississauga" => { name: "Mississauga", lat: 43.5890, lng: -79.6441, radius_km: 18 },
+  "brampton"    => { name: "Brampton",    lat: 43.7315, lng: -79.7624, radius_km: 16 },
+  "toronto"     => { name: "Toronto",     lat: 43.6532, lng: -79.3832, radius_km: 22 }
 }.freeze
 
 areas = AREA_DATA.to_h do |slug, a|
   area = ServiceArea.find_or_initialize_by(slug: slug)
   area.update!(
-    name: a[:name], travel_fee: a[:fee], active: true,
+    name: a[:name], travel_fee: 0, active: true,
     center_latitude: a[:lat], center_longitude: a[:lng], radius_meters: a[:radius_km] * 1000
   )
   [ slug, area ]
 end
-puts "  #{areas.size} service areas (with coverage zones)"
+puts "  #{areas.size} service areas"
 
 # ── Service categories ────────────────────────────────────────────────────────
 categories = {
@@ -27,83 +29,242 @@ categories = {
 }
 puts "  #{categories.size} service categories"
 
-# ── Services ──────────────────────────────────────────────────────────────────
+# ── Services (real menu — Beauty @ Your Door) ─────────────────────────────────
+# "consult: true" == "Price varies" on the live menu (quote on request).
 services_data = [
-  { category: "nails",   name: "Classic Manicure",         duration: 45,  price: 45.00,  image: "/images/new-pics-for-the-ladies/mobile-manicure-service-01.webp" },
-  { category: "nails",   name: "Gel Manicure",             duration: 60,  price: 65.00,  image: "/images/new-pics-for-the-ladies/gel-manicure-service-01.webp" },
-  { category: "nails",   name: "Classic Pedicure",         duration: 60,  price: 55.00,  image: "/images/pedicure3.jpg" },
-  { category: "nails",   name: "Gel Pedicure",             duration: 75,  price: 75.00,  image: "/images/pedicure2.jpg" },
-  { category: "lashes",  name: "Classic Lash Extensions",  duration: 90,  price: 120.00, image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp" },
-  { category: "lashes",  name: "Volume Lash Extensions",   duration: 120, price: 160.00, image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-02.webp" },
-  { category: "lashes",  name: "Lash Fill",                duration: 60,  price: 75.00,  image: "/images/new-pics-for-the-ladies/mobile-lash-appointment-01.webp" },
-  { category: "massage", name: "Swedish Massage (60 min)", duration: 60,  price: 90.00,  image: "/images/massage.jpg" },
-  { category: "massage", name: "Deep Tissue Massage",      duration: 75,  price: 110.00, image: "/images/massage1.jpg" },
-  { category: "waxing",  name: "Eyebrow Wax",              duration: 20,  price: 20.00,  image: "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-01.webp" },
-  { category: "waxing",  name: "Lip Wax",                  duration: 15,  price: 15.00,  image: "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-02.webp" },
-  { category: "waxing",  name: "Full Leg Wax",             duration: 45,  price: 60.00,  image: "/images/new-pics-for-the-ladies/nail-technician-portrait-at-work-03.webp" },
-  { category: "spa",     name: "Mini Facial",              duration: 45,  price: 70.00,  image: "/images/lashes2.jpg" },
-  { category: "spa",     name: "Signature Spa Package",    duration: 120, price: 180.00, image: "/images/lashes1.jpg" }
+  # Nails
+  { category: "nails",   name: "Manicure",                                     duration: 30,  price: 40.00 },
+  { category: "nails",   name: "Pedicure",                                     duration: 60,  price: 50.00 },
+  { category: "nails",   name: "Manicure and pedicure",                        duration: 75,  price: 75.00 },
+  { category: "nails",   name: "Shellac manicure",                             duration: 45,  price: 45.00 },
+  { category: "nails",   name: "Shellac Pedicure",                             duration: 45,  price: 55.00 },
+  { category: "nails",   name: "Shellac manicure and pedicure",                duration: 90,  price: 85.00 },
+  { category: "nails",   name: "Shellac manicure and regular pedicure",        duration: 90,  price: 80.00 },
+  { category: "nails",   name: "Regular Manicure and shellac pedicure",        duration: 90,  price: 80.00 },
+  { category: "nails",   name: "Shellac Polish Change",                        duration: 30,  price: 35.00 },
+  { category: "nails",   name: "Shellac removal",                              duration: 30,  price: 15.00 },
+  { category: "nails",   name: "Polish change",                                duration: 20,  price: 25.00 },
+  { category: "nails",   name: "Gel X",                                        duration: 75,  price: 80.00 },
+  { category: "nails",   name: "Gel overlay",                                  duration: 60,  price: 50.00 },
+  { category: "nails",   name: "Gel removal",                                  duration: 30,  price: 30.00 },
+  { category: "nails",   name: "Full Set nails",                               duration: 75,  price: 70.00 },
+  { category: "nails",   name: "Nail refil",                                   duration: 90,  price: 55.00 },
+  { category: "nails",   name: "Nail clip and file",                           duration: 15,  price: 20.00 },
+  { category: "nails",   name: "Nail repair",                                  duration: 15,  price: 0.00, consult: true },
+  { category: "nails",   name: "Paraffin add on",                             duration: 15,  price: 20.00 },
+  { category: "nails",   name: "French add on",                               duration: 30,  price: 10.00 },
+  { category: "nails",   name: "Princess manicure (children up to 13 years)",  duration: 15,  price: 25.00, kids: true },
+  { category: "nails",   name: "Princess Pedicure (children up to 13 years)",  duration: 30,  price: 40.00, kids: true },
+  { category: "nails",   name: "Princess manicure and pedicure (children)",    duration: 30,  price: 50.00, kids: true },
+  # Lashes
+  { category: "lashes",  name: "Lashes Mega Volume",                           duration: 180, price: 225.00 },
+  { category: "lashes",  name: "Lash refill mega",                             duration: 90,  price: 145.00 },
+  # Massage
+  { category: "massage", name: "Swedish Deep Tissue Massage",                  duration: 75,  price: 95.00 },
+  { category: "massage", name: "Thai foot massage",                            duration: 45,  price: 70.00 },
+  { category: "massage", name: "Back massage",                                 duration: 30,  price: 50.00 },
+  { category: "massage", name: "Shoulder massage",                             duration: 20,  price: 40.00 },
+  # Waxing
+  { category: "waxing",  name: "Wax Underarm",                                 duration: 20,  price: 30.00 },
+  { category: "waxing",  name: "Wax Half Arm",                                 duration: 30,  price: 25.00 },
+  { category: "waxing",  name: "Wax Full arm",                                 duration: 30,  price: 40.00 },
+  { category: "waxing",  name: "Wax Half leg",                                 duration: 30,  price: 35.00 },
+  { category: "waxing",  name: "Wax full leg",                                 duration: 45,  price: 55.00 },
+  { category: "waxing",  name: "Wax Bikini",                                   duration: 20,  price: 35.00 },
+  { category: "waxing",  name: "Brazilian (women only)",                       duration: 45,  price: 70.00 },
+  { category: "waxing",  name: "Wax Back",                                     duration: 20,  price: 40.00 },
+  { category: "waxing",  name: "Wax Full Face",                                duration: 30,  price: 35.00 },
+  { category: "waxing",  name: "Wax Chin and Upper Lip",                       duration: 15,  price: 20.00 },
+  { category: "waxing",  name: "Wax eyebrows and shaping",                     duration: 10,  price: 20.00 },
+  { category: "waxing",  name: "Wax Full body (women only)",                   duration: 90,  price: 175.00 },
+  { category: "waxing",  name: "Eyebrow tint",                                 duration: 15,  price: 10.00 },
+  # Spa / Body
+  { category: "spa",     name: "Body scrub",                                   duration: 30,  price: 50.00 },
+  { category: "spa",     name: "Group booking",                                duration: 270, price: 0.00, consult: true }
 ]
 
 services = services_data.map do |s|
   svc = Service.find_or_initialize_by(name: s[:name])
-  svc.update!(
-    service_category: categories[s[:category]],
-    duration_minutes: s[:duration],
-    price: s[:price],
-    image_url: s[:image]
+  svc.assign_attributes(
+    service_category:      categories[s[:category]],
+    duration_minutes:      s[:duration],
+    price:                 s[:price],
+    requires_consultation: s.fetch(:consult, false),
+    kids_only:             s.fetch(:kids, false),
+    active:                true
   )
+  # Kids use the dedicated "Princess" services. Elderly = adult price + 20%.
+  svc.tier_prices_from("elderly" => (s[:price] * 1.2).round(2)) if s[:price].positive?
+  svc.save!
   svc
 end
+# Deactivate any service no longer on the real menu (kept if past bookings ref it).
+Service.where.not(id: services.map(&:id)).update_all(active: false)
 puts "  #{services.size} services"
 
 # ── Product catalog ───────────────────────────────────────────────────────────
+# Fragrances is a parent category with Men's / Women's subcategories.
+fragrances = ProductCategory.find_or_create_by!(slug: "fragrances") { |c| c.name = "Fragrances"; c.position = 1 }
+
 prod_cats = {
-  "nail-care"    => ProductCategory.find_or_create_by!(slug: "nail-care")    { |c| c.name = "Nail Care";    c.position = 1 },
-  "skincare"     => ProductCategory.find_or_create_by!(slug: "skincare")     { |c| c.name = "Skincare";     c.position = 2 },
-  "massage-oils" => ProductCategory.find_or_create_by!(slug: "massage-oils") { |c| c.name = "Massage Oils"; c.position = 3 }
+  "mens-fragrances"   => ProductCategory.find_or_create_by!(slug: "mens-fragrances")   { |c| c.name = "Men's";            c.position = 1 },
+  "womens-fragrances" => ProductCategory.find_or_create_by!(slug: "womens-fragrances") { |c| c.name = "Women's";          c.position = 2 },
+  "hair-accessories"  => ProductCategory.find_or_create_by!(slug: "hair-accessories")  { |c| c.name = "Hair Accessories"; c.position = 3 },
+  "supplements"       => ProductCategory.find_or_create_by!(slug: "supplements")       { |c| c.name = "Supplements";      c.position = 4 },
+  "bath-body"         => ProductCategory.find_or_create_by!(slug: "bath-body")         { |c| c.name = "Bath & Body";      c.position = 5 },
+  "makeup"            => ProductCategory.find_or_create_by!(slug: "makeup")            { |c| c.name = "Makeup";           c.position = 6 },
+  "beauty-tools"      => ProductCategory.find_or_create_by!(slug: "beauty-tools")      { |c| c.name = "Beauty Tools";     c.position = 7 },
+  "skincare"          => ProductCategory.find_or_create_by!(slug: "skincare")          { |c| c.name = "Skincare";         c.position = 8 },
+  "health-wellness"   => ProductCategory.find_or_create_by!(slug: "health-wellness")   { |c| c.name = "Health & Wellness"; c.position = 9 }
 }
+prod_cats["mens-fragrances"].update!(parent: fragrances)
+prod_cats["womens-fragrances"].update!(parent: fragrances)
 
-products = [
-  { category: "nail-care",    name: "Cuticle Oil",          sku: "NC-001", price: 12.99, stock: 50 },
-  { category: "nail-care",    name: "Gel Top Coat",         sku: "NC-002", price: 18.99, stock: 30 },
-  { category: "skincare",     name: "Hydrating Face Mask",  sku: "SK-001", price: 24.99, stock: 25 },
-  { category: "massage-oils", name: "Lavender Massage Oil", sku: "MO-001", price: 19.99, stock: 40 },
-  { category: "massage-oils", name: "Eucalyptus Body Oil",  sku: "MO-002", price: 22.99, stock: 35 }
-].map do |p|
-  Product.find_or_create_by!(sku: p[:sku]) do |prod|
-    prod.product_category = prod_cats[p[:category]]
-    prod.name             = p[:name]
-    prod.price            = p[:price]
-    prod.stock_quantity   = p[:stock]
-  end
+# Real catalog. Add new rows here as they come in.
+products_data = [
+  # ── SYREN Fragrances · Men's ──
+  { category: "mens-fragrances",   name: "Syren - Black Caviar",          sku: "SYREN-BLACK-CAVIAR",          price: 66.50, stock: 100 },
+  { category: "mens-fragrances",   name: "Syren - Blue Caviar",           sku: "SYREN-BLUE-CAVIAR",           price: 66.50, stock: 100 },
+  { category: "mens-fragrances",   name: "Syren - Black Caviar Paradiso", sku: "SYREN-BLACK-CAVIAR-PARADISO", price: 66.50, stock: 100 },
+  { category: "mens-fragrances",   name: "Syren - Men's Discovery Set",   sku: "SYREN-MENS-DISCOVERY-SET",    price: 24.50, stock: 100 },
+  # ── SYREN Fragrances · Women's ──
+  { category: "womens-fragrances", name: "Syren - Pink Caviar",           sku: "SYREN-PINK-CAVIAR",           price: 66.50, stock: 100 },
+  { category: "womens-fragrances", name: "Syren - Women's Discovery Set", sku: "SYREN-WOMENS-DISCOVERY-SET",  price: 24.50, stock: 100 },
+  { category: "womens-fragrances", name: "Syren - Pink Caviar Lotus",     sku: "SYREN-PINK-CAVIAR-LOTUS",     price: 66.50, stock: 100 },
+  { category: "womens-fragrances", name: "Syren - Pink Caviar Luxe",      sku: "SYREN-PINK-CAVIAR-LUXE",      price: 66.50, stock: 100 },
+  # ── CashyMart ──
+  { category: "hair-accessories",  name: "Adjustable Satin Sleep Bonnet", sku: "CASHYMART-SATIN-SLEEP-BONNET", price: 19.32, stock: 100,
+    desc: "Double-layer satin sleep bonnet. Weight: 65g. Length: 38cm (14.9 in). Adjustable fit." },
+  # ── LIVS · Supplements ──
+  { category: "supplements",       name: "Tongkat Ali 900mg",             sku: "LIVS-TONGKAT-ALI-900MG",       price: 19.99, stock: 100 },
+  { category: "supplements",       name: "Berberine 1,500mg",             sku: "LIVS-BERBERINE-1500MG",        price: 19.99, stock: 100 },
+  { category: "supplements",       name: "Akkermansia + Inulin",          sku: "LIVS-AKKERMANSIA-INULIN",      price: 22.39, stock: 100 },
+  { category: "supplements",       name: "Trace Minerals Complex",        sku: "LIVS-TRACE-MINERALS-COMPLEX",  price: 17.99, stock: 100 },
+  { category: "supplements",       name: "Raw Shilajit Capsules",         sku: "LIVS-RAW-SHILAJIT",            price: 23.99, stock: 100 },
+  { category: "supplements",       name: "Organic Spirulina",             sku: "LIVS-ORGANIC-SPIRULINA",       price: 15.99, stock: 100 },
+  { category: "supplements",       name: "Women's Shilajit",              sku: "LIVS-WOMENS-SHILAJIT",         price: 23.99, stock: 100 },
+  { category: "supplements",       name: "Choline + Iron",                sku: "LIVS-CHOLINE-IRON",            price: 19.99, stock: 100 },
+  { category: "supplements",       name: "Berberine Capsules",            sku: "LIVS-BERBERINE-CAPSULES",      price: 17.59, stock: 100 },
+  { category: "supplements",       name: "Apigenin 300mg",                sku: "LIVS-APIGENIN-300MG",          price: 15.99, stock: 100 },
+  { category: "supplements",       name: "Turkesterone 1,500mg",          sku: "LIVS-TURKESTERONE-1500MG",     price: 22.39, stock: 100 },
+  { category: "supplements",       name: "Men's Shilajit",                sku: "LIVS-MENS-SHILAJIT",           price: 27.99, stock: 100 },
+  # ── LIVS · Bath & Body ──
+  { category: "bath-body",         name: "Bath Salts",                    sku: "LIVS-BATH-SALTS",              price: 8.00,  stock: 100 },
+  # ── BeNat ──
+  { category: "makeup",            name: "All-Natural Bronzer Loose Powder", sku: "BENAT-BRONZER-LOOSE-POWDER", price: 12.99, stock: 100,
+    desc: "Eco-friendly all-natural loose bronzer powder." },
+  { category: "beauty-tools",      name: "Reusable Facial Rounds Pads (5pcs)", sku: "BENAT-FACIAL-ROUNDS-PADS-5PC", price: 8.44, stock: 100 },
+  { category: "beauty-tools",      name: "Electric Oil Applicator and Vibration Scalp Massager 2 in 1", sku: "BENAT-OIL-APPLICATOR-SCALP-MASSAGER", price: 25.99, stock: 100 },
+  { category: "beauty-tools",      name: "Smart Scalp Massager",          sku: "BENAT-SMART-SCALP-MASSAGER",   price: 25.99, stock: 100 },
+  { category: "bath-body",         name: "2-Pack All-Natural, Plastic-Free Deodorants", sku: "BENAT-DEODORANT-2PACK", price: 13.64, stock: 100 },
+  # ── Koriderm ──
+  { category: "skincare",          name: "Koriderm Time Reverse Cream (All-In-One)", sku: "KORIDERM-TIME-REVERSE-CREAM", price: 18.74, stock: 100 },
+  # ── PURSONIC USA ──
+  { category: "skincare",          name: "Clear & Radiant Skin Bundle: Acne Foaming Wash", sku: "PURSONIC-CLEAR-RADIANT-ACNE-BUNDLE", price: 18.74, stock: 100 },
+  { category: "beauty-tools",      name: "Pursonic LED Glow Set – 7-in-1 LED Light Therapy Face Mask + 7-in-1 LED Face & Neck Sculpting Wand", sku: "PURSONIC-LED-GLOW-SET", price: 82.49, stock: 100 },
+  { category: "health-wellness",   name: "Wireless Muscle Stimulator Pulse Massager", sku: "PURSONIC-WIRELESS-MUSCLE-STIMULATOR", price: 22.49, stock: 100 },
+  { category: "health-wellness",   name: "Pursonic Rechargeable Abdominal Muscle Toner & Massager", sku: "PURSONIC-ABDOMINAL-MUSCLE-TONER", price: 29.99, stock: 100 },
+  { category: "health-wellness",   name: "Pursonic Blood Glucose Test Strips Refill Kit – 50 Test Strips + 50 Sterile Lancets", sku: "PURSONIC-GLUCOSE-TEST-STRIPS-REFILL", price: 9.73, stock: 100 }
+]
+
+# Extended catalogue lives in db/seeds/products_extra.yml (brand-store imports).
+extra_file = Rails.root.join("db/seeds/products_extra.yml")
+products_data += (YAML.load_file(extra_file) || []).map(&:symbolize_keys) if File.exist?(extra_file)
+
+products = products_data.map do |p|
+  prod = Product.find_or_initialize_by(sku: p[:sku])
+  # Main image is client/public/images/products/<sku-lowercased>.<ext> if present.
+  img = Dir.glob(Rails.root.join("client/public/images/products", "#{p[:sku].downcase}.*")).first
+  prod.update!(
+    product_category: prod_cats[p[:category]],
+    name:             p[:name],
+    price:            p[:price],
+    stock_quantity:   p[:stock],
+    description:      p[:desc],
+    image_url:        img ? "/images/products/#{File.basename(img)}" : prod.image_url,
+    active:           true
+  )
+  prod
 end
-puts "  #{products.size} products"
+puts "  #{products.size} products (#{products.count { |x| x.image_url.present? }} with images)"
 
-# ── Employees (rich profiles) ─────────────────────────────────────────────────
+# ── Product colour/shade variants ─────────────────────────────────────────────
+# Keyed by product SKU in db/seeds/product_variants.yml. Each variant carries its
+# own swatch image and (optional) price override. Variants no longer listed are
+# deactivated (kept if an order references them).
+variants_file = Rails.root.join("db/seeds/product_variants.yml")
+if File.exist?(variants_file)
+  variant_data = YAML.load_file(variants_file) || {}
+  total_variants = 0
+  variant_data.each do |product_sku, variants|
+    product = Product.find_by(sku: product_sku)
+    unless product
+      puts "  ! variants: no product for SKU #{product_sku}, skipping"
+      next
+    end
+    seen = []
+    Array(variants).each do |v|
+      variant = ProductVariant.find_or_initialize_by(sku: v["sku"])
+      variant.update!(
+        product:        product,
+        label:          v["label"],
+        color_name:     v["color_name"],
+        color_hex:      v["color_hex"],
+        image_url:      v["image"],
+        price:          v["price"],
+        stock_quantity: v["stock"] || 0,
+        position:       v["position"] || 0,
+        active:         true
+      )
+      seen << variant.id
+      total_variants += 1
+    end
+    product.product_variants.where.not(id: seen).update_all(active: false)
+  end
+  puts "  #{total_variants} product variants"
+end
+
+# ── Employees / technicians ───────────────────────────────────────────────────
+# First names only. service_fsas recovered from the live booking coverage data.
 employee_data = [
-  { first: "Susi",    last: "Tran",    email: "susi@bayd.local",    title: "Lead Lash Artist",     yrs: 7, lat: 43.5890, lng: -79.6441, areas: %w[mississauga toronto], photo: "/images/lashes3.jpg", on_shift: true },
-  { first: "Claire",  last: "Bennett", email: "claire@bayd.local",  title: "Nail Technician",      yrs: 4, lat: 43.5453, lng: -79.5697, areas: %w[mississauga],         photo: "/images/new-pics-for-the-ladies/claire-team-profile.webp",  on_shift: true },
-  { first: "Vanessa", last: "Okafor",  email: "vanessa@bayd.local", title: "Massage Therapist",    yrs: 9, lat: 43.7315, lng: -79.7624, areas: %w[brampton],            photo: "/images/massage.jpg", on_shift: false },
-  { first: "Dana",    last: "Price",   email: "dana@bayd.local",    title: "Esthetician & Waxing", yrs: 5, lat: 43.6532, lng: -79.3832, areas: %w[toronto mississauga], photo: "/images/new-pics-for-the-ladies/dana-team-headshot.webp", on_shift: true }
+  { first: "Susi", email: "susi@baydspa.ca", title: "Nail Tech, Waxing and Massages", yrs: 28,
+    bio: "Meet Susi, an exceptional entrepreneur and visionary in the world of beauty. With an impressive 28 years of unparalleled experience, Susi has earned a reputation as a trailblazer and an industry icon. Her unwavering dedication to excellence and her innovative approach to beauty services have established her as a formidable force in the market. Get ready to dive into the extraordinary journey of Susi, a true master of her craft.",
+    lat: 43.5890, lng: -79.6441, areas: %w[mississauga brampton toronto], specialties: %w[nails waxing massage spa], on_shift: true,
+    fsas: %w[L7A L6X L6Y L6W L6V L6Z L6R L6S L5N L5W L5T L5M L5L L5K L5J L5H L5V L5R L5B L5G L5A L5E L5Y L5X L5P L4V L4T L5S L6M L6L L6J L6H L6K M9C M9B M9A M8W M8V M8Z M8X M8Y L9T M6S] },
+  { first: "Claire", email: "claire@baydspa.ca", title: "Lash Artist for Mississauga", yrs: 17,
+    bio: "Claire is a certified eyelash extension technician and coach since 2009, with extensive international experience across Europe and 8 years of expertise in Canada. She is a true master of her craft, skilled in all types of eyelash extensions and capable of creating any style or design tailored perfectly to each client. A devoted mother of three children, Claire now brings her expertise beyond her own home studio, providing professional, personalized eyelash services in clients' homes. With a passion for enhancing natural beauty, she combines precision, creativity, and professionalism in every appointment. Her extensive collection of diplomas and certificates reflects her commitment to excellence and continuous mastery of the latest techniques in eyelash artistry.",
+    lat: 43.5453, lng: -79.5697, areas: %w[mississauga], specialties: %w[lashes], on_shift: true,
+    fsas: %w[L5N L5W L5T L5M L5L L5K L5J L5H L5V L5R L5B L5G L5A L5E L5Y L5X L5P L4V L4T L5S L6M L6L L6J L6H L6K] },
+  { first: "Vanessa", email: "vanessa@baydspa.ca", title: "Nail Tech and Medical Pedicurist for Brampton", yrs: nil,
+    bio: "Vanessa, a Certified Nail Technician & Medical Pedicurist proudly serving the Brampton area only. Vanessa is a certified nail technician and specialized medical pedicurist dedicated to helping clients feel confident and comfortable from the toes up. With advanced training in foot care and nail health, she offers more than just beauty, she provides relief for common foot concerns like calluses, ingrown nails, thickened nails, and dry, cracked heels. Trust your feet to a specialist who puts health, safety, and comfort first—Vanessa, Brampton's go-to for expert nail and foot care.",
+    lat: 43.7315, lng: -79.7624, areas: %w[brampton], specialties: %w[nails], on_shift: true,
+    fsas: %w[L7A L6X L6Y L6W L6V L6Z L6R L6S] },
+  { first: "Dana", email: "dana@baydspa.ca", title: "Nail Care Specialist for Mississauga and Etobicoke", yrs: 20,
+    bio: "Dana is an experienced nail technician with 20 years in the beauty industry. Originally from Europe, she has honed expert skills in nail art, manicure, pedicure, and nail care techniques. With a passion for creativity and a commitment to client satisfaction, Dana stays updated on the latest trends and products, offering personalized services that enhance the beauty and confidence of her clients.",
+    lat: 43.6532, lng: -79.3832, areas: %w[mississauga toronto], specialties: %w[nails], on_shift: true,
+    fsas: %w[L5N L5W L5T L5M L5L L5K L5J L5H L5V L5R L5B L5G L5A L5E L5Y L5X L5P L4V L4T L5S] }
 ]
 
 employees = employee_data.map do |e|
   user = User.find_or_initialize_by(email: e[:email])
-  user.update!(first_name: e[:first], last_name: e[:last], role: :employee, password: "password123")
+  user.update!(first_name: e[:first], last_name: "", role: :employee, password: "password123")
 
   profile = EmployeeProfile.find_or_initialize_by(user: user)
   profile.update!(
-    title: e[:title], years_experience: e[:yrs], photo_url: e[:photo],
-    bio: "#{e[:first]} is a #{e[:title].downcase} with #{e[:yrs]} years of experience delivering premium mobile beauty services.",
-    base_latitude: e[:lat], base_longitude: e[:lng],
+    title: e[:title], years_experience: e[:yrs], bio: e[:bio],
+    base_latitude: e[:lat], base_longitude: e[:lng], service_fsas: e[:fsas],
     active: true, dispatchable: true, on_shift: e[:on_shift]
   )
 
+  # Service-area zones.
+  EmployeeServiceArea.where(employee_profile: profile).delete_all
   e[:areas].each { |slug| EmployeeServiceArea.find_or_create_by!(employee_profile: profile, service_area: areas[slug]) }
-  services.each  { |svc|  EmployeeService.find_or_create_by!(employee_profile: profile, service: svc) }
 
-  # Fresh live location so the dispatch map has something to show.
+  # Assign services matching the technician's specialty categories.
+  profile.employee_services.destroy_all
+  services.select { |svc| e[:specialties].include?(svc.service_category.slug) }
+          .each   { |svc| EmployeeService.find_or_create_by!(employee_profile: profile, service: svc) }
+
   EmployeeCurrentLocation.find_or_initialize_by(employee_profile: profile).update!(
     latitude: e[:lat], longitude: e[:lng], recorded_at: Time.current
   )
@@ -112,184 +273,75 @@ end
 puts "  #{employees.size} employee profiles"
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
+# Change these credentials before going live.
 User.find_or_create_by!(email: "admin@bayd.local") do |u|
   u.first_name = "Admin"; u.last_name = "BAYD"; u.role = :admin; u.password = "adminpass123"
 end
-puts "  1 admin user (admin@bayd.local / adminpass123)"
+puts "  1 admin user (admin@bayd.local — change password before launch)"
 
-# ── Customers ─────────────────────────────────────────────────────────────────
-customer_data = [
-  { first: "Maya",     last: "Johnson",  email: "maya@example.com",     lat: 43.5900, lng: -79.6440 },
-  { first: "Priya",    last: "Sharma",   email: "priya@example.com",    lat: 43.6010, lng: -79.6500 },
-  { first: "Olivia",   last: "Martin",   email: "olivia@example.com",   lat: 43.6532, lng: -79.3832 },
-  { first: "Sophie",   last: "Nguyen",   email: "sophie@example.com",   lat: 43.7000, lng: -79.7400 },
-  { first: "Amara",    last: "Bello",    email: "amara@example.com",    lat: 43.5500, lng: -79.5700 },
-  { first: "Chloe",    last: "Davis",    email: "chloe@example.com",    lat: 43.6600, lng: -79.4000 },
-  { first: "Hannah",   last: "Kim",      email: "hannah@example.com",   lat: 43.6100, lng: -79.6200 },
-  { first: "Isabella", last: "Rossi",    email: "isabella@example.com", lat: 43.7200, lng: -79.7500 }
-]
+# ── Blog (imported from the transferred export — source URLs excluded) ────────
+blog_export = Rails.root.join("db/seeds/blog_export.md")
+if blog_export.exist?
+  blog_author = User.find_by(email: "susi@baydspa.ca") || User.find_by(role: :admin)
+  seeded_titles = []
 
-customers = customer_data.map do |c|
-  user = User.find_or_initialize_by(email: c[:email])
-  user.update!(first_name: c[:first], last_name: c[:last], role: :customer, password: "password123",
-               marketing_opt_in: true, phone: "+1416555#{format('%04d', rand(0..9999))}")
-  Address.find_or_create_by!(user: user, line1: "#{rand(10..990)} Lakeshore Rd") do |a|
-    a.label = "Home"; a.city = "Mississauga"; a.province = "ON"
-    a.postal_code = "L5B #{rand(1..9)}A#{rand(1..9)}"
-    a.latitude = c[:lat]; a.longitude = c[:lng]; a.default = true
-  end
-  user
-end
-puts "  #{customers.size} customers (password: password123)"
+  blog_export.read.split(/^\s*---\s*$/).each do |section|
+    section = section.strip
+    m = section.match(/\A##\s+\d+\.\s+(.+)/) # only numbered post sections
+    next unless m
 
-# Referrals — link a couple of customers to a referrer.
-customers[1].update!(referred_by: customers[0]) if customers[1].referred_by_id.nil?
-customers[4].update!(referred_by: customers[0]) if customers[4].referred_by_id.nil?
+    title    = m[1].strip
+    date_str = section[/^\*\*Date:\*\*\s*(.+)$/, 1].to_s
+    published_at =
+      begin
+        Date.parse(date_str[/[A-Z][a-z]{2,8}\.?\s+\d{1,2},?\s+\d{4}/].to_s)
+      rescue StandardError
+        nil
+      end
 
-# ── Transactional demo data (only when empty, so re-seeding won't duplicate) ───
-if Booking.count.zero?
-  puts "  generating bookings, reviews, orders, loyalty…"
+    # Body = content only; drop the title + metadata lines (URLs are never kept).
+    body = section.lines.reject do |l|
+      l.start_with?("## ") ||
+        l.match?(/^\*\*(URL|Date|Read time|Author|Source|Status|Exported|Total posts)\b/i)
+    end.join.strip
+    # The blog renderer shows plain-text paragraphs (no markdown), so strip bold
+    # markers and normalise dash bullets so nothing renders as literal syntax.
+    body = body.gsub("**", "").gsub(/^[ \t]*-[ \t]+/, "• ")
 
-  REVIEW_BODIES = [
-    "Absolutely loved it — so convenient and professional!",
-    "Great service, will definitely book again.",
-    "On time and did a beautiful job.",
-    "Relaxing and worth every penny.",
-    "Friendly and skilled. Highly recommend.",
-    "Perfect results, exactly what I wanted."
-  ].freeze
+    status  = body.blank? || body.match?(/Almost no body|Couldn.?t Find This Page/i) ? "draft" : "published"
+    excerpt = body.gsub(/[*_#>•]/, " ").gsub(/\s+/, " ").strip[0, 180]
 
-  completed_count = 0
-  review_count = 0
+    # Categorise by topic (first keyword match wins) so the blog is filterable.
+    category_rules = [
+      [ "more than a service", "Wellness" ], [ "well-groomed", "Wellness" ],
+      [ "manicures and pedicures for overall", "Wellness" ],
+      [ "nail care for the elderly", "Nail Care" ], [ "gel-x", "Nail Care" ],
+      [ "quality products", "Nail Care" ], [ "dipping powder", "Nail Care" ],
+      [ "nail art", "Nail Care" ], [ "acrylic", "Nail Care" ],
+      [ "hygiene", "Mobile Spa" ], [ "embrace relaxation", "Mobile Spa" ],
+      [ "mobile spas after", "Mobile Spa" ], [ "new moms", "Mobile Spa" ],
+      [ "spa services at home", "Mobile Spa" ],
+      [ "microdermabrasion", "Skincare" ],
+      [ "teeth whitening", "Services" ], [ "spray tan", "Services" ],
+      [ "thanksgiving", "News" ], [ "covic", "News" ], [ "covid", "News" ]
+    ]
+    category = (category_rules.find { |kw, _| title.downcase.include?(kw) } || [ nil, "Beauty Tips" ]).last
 
-  # ~70 completed bookings spread across the last 90 days.
-  70.times do
-    cust = customers.sample
-    emp  = employees.sample
-    svc  = services.sample
-    addr = cust.addresses.first
-    days_ago = rand(1..90)
-    starts = (Time.current - days_ago.days).change(hour: rand(9..17), min: [ 0, 30 ].sample)
-
-    booking = Booking.create!(
-      user: cust, employee_profile: emp, service: svc, address: addr,
-      starts_at: starts, ends_at: starts + svc.duration_minutes.minutes,
-      subtotal: svc.price, travel_fee: 0, total: svc.price, status: "completed",
-      service_latitude: addr.latitude, service_longitude: addr.longitude
+    post = BlogPost.find_or_initialize_by(title: title)
+    post.update!(
+      author:       blog_author,
+      body:         body,
+      excerpt:      excerpt,
+      category:     category,
+      status:       status,
+      published_at: published_at || post.published_at || Time.current
     )
-    completed_count += 1
-
-    booking.payments.create!(amount: booking.total, status: "paid",
-                             method: %w[card cash].sample, processor: "square", paid_at: starts)
-
-    account = cust.loyalty_account || cust.create_loyalty_account
-    account.earn!(booking.total.to_f.floor, booking: booking, description: "Service: #{svc.name}")
-
-    next unless rand < 0.55
-
-    Review.create!(
-      user: cust, booking: booking, employee_profile: emp,
-      rating: [ 5, 5, 5, 4, 4, 3 ].sample,
-      body: REVIEW_BODIES.sample,
-      approved: rand < 0.8,
-      featured: rand < 0.15,
-      created_at: starts + 1.day
-    )
-    review_count += 1
+    seeded_titles << title
   end
 
-  # ~18 upcoming confirmed bookings (next 30 days).
-  18.times do
-    cust = customers.sample
-    emp  = employees.sample
-    svc  = services.sample
-    addr = cust.addresses.first
-    starts = (Time.current + rand(1..30).days).change(hour: rand(9..17), min: [ 0, 30 ].sample)
-    Booking.create!(
-      user: cust, employee_profile: emp, service: svc, address: addr,
-      starts_at: starts, ends_at: starts + svc.duration_minutes.minutes,
-      subtotal: svc.price, travel_fee: 0, total: svc.price, status: "confirmed",
-      service_latitude: addr.latitude, service_longitude: addr.longitude
-    )
-  end
-
-  # A few cancellations / no-shows so completion-rate KPIs are realistic.
-  8.times do
-    cust = customers.sample
-    emp  = employees.sample
-    svc  = services.sample
-    starts = (Time.current - rand(1..60).days).change(hour: rand(9..17))
-    Booking.create!(
-      user: cust, employee_profile: emp, service: svc, address: cust.addresses.first,
-      starts_at: starts, ends_at: starts + svc.duration_minutes.minutes,
-      subtotal: svc.price, travel_fee: 0, total: svc.price,
-      status: %w[cancelled no_show].sample, cancellation_reason: "Customer rescheduled"
-    )
-  end
-  puts "    #{completed_count} completed, 18 upcoming, 8 cancelled/no-show · #{review_count} reviews"
-
-  # ── Subscription + auto-charge demo (Maya) ─────────────────────────────────
-  maya = customers[0]
-  maya.update!(moneris_data_key: "key_demo_maya", card_brand: "Visa", card_last4: "4242")
-  gel = services.find { |s| s.name == "Gel Manicure" } || services.first
-  emp = employees[1]
-  last_start = (Time.current - 14.days).change(hour: 11)
-  last_booking = Booking.create!(
-    user: maya, employee_profile: emp, service: gel, address: maya.addresses.first,
-    starts_at: last_start, ends_at: last_start + gel.duration_minutes.minutes,
-    subtotal: gel.price, travel_fee: 0, total: gel.price, status: "completed",
-    service_latitude: maya.addresses.first.latitude, service_longitude: maya.addresses.first.longitude
-  )
-  sub = Subscription.create!(
-    user: maya, service: gel, address: maya.addresses.first,
-    interval_unit: "week", interval_count: 2, auto_charge: true, status: "active", price: gel.price,
-    started_at: last_start, last_booking_at: last_start,
-    next_run_at: (last_start + 2.weeks)
-  )
-  last_booking.update!(subscription: sub)
-  puts "    subscription demo for #{maya.first_name} (Gel Manicure every 2 weeks, auto-charged)"
-
-  # ── Notifications for the demo customer ────────────────────────────────────
-  app_url = ENV.fetch("APP_URL", "http://localhost:3001")
-  [
-    { kind: "recurring_booked", title: "Your next Gel Manicure is booked",
-      body: "We automatically scheduled your next appointment.", url: "#{app_url}/dashboard/customer/bookings", read: false },
-    { kind: "review_request", title: "How was your Gel Manicure?",
-      body: "Rate your technician and earn bonus points.", url: "#{app_url}/dashboard/customer/bookings", read: false, cta: "Leave a review" },
-    { kind: "loyalty_earned", title: "You earned 65 loyalty points",
-      body: "Thanks for booking with us!", url: "#{app_url}/dashboard/customer/loyalty", read: true },
-    { kind: "rebook_nudge", title: "Loved your service? Book it again",
-      body: "Rebook or set it to repeat automatically.", url: "#{app_url}/dashboard/customer/book", read: true, cta: "Rebook now" }
-  ].each do |n|
-    Notification.create!(user: maya, kind: n[:kind], title: n[:title], body: n[:body],
-                         action_url: n[:url], read_at: n[:read] ? Time.current : nil,
-                         metadata: n[:cta] ? { "cta" => n[:cta] } : {})
-  end
-  puts "    4 notifications for #{maya.first_name}"
-
-  # ── Orders ─────────────────────────────────────────────────────────────────
-  12.times do
-    cust = customers.sample
-    order = Order.create!(user: cust, status: "pending", created_at: Time.current - rand(1..60).days)
-    rand(1..3).times do
-      prod = products.sample
-      order.order_items.create!(product: prod, quantity: rand(1..3), price: prod.price, name: prod.name)
-    end
-    order.recalculate_total!
-    order.update!(status: %w[paid paid shipped pending].sample)
-    order.payments.create!(amount: order.total, status: "paid", method: "card", processor: "square", paid_at: order.created_at) if order.paid? || order.shipped?
-  end
-  puts "    12 product orders"
-
-  # ── Gift cards ─────────────────────────────────────────────────────────────
-  [ [ 50, 50 ], [ 100, 75 ], [ 150, 150 ] ].each do |initial, current|
-    GiftCard.create!(purchaser: customers.sample,
-                     initial_balance: initial, current_balance: current,
-                     recipient_email: customers.sample.email, active: true)
-  end
-  puts "    3 gift cards"
-else
-  puts "  bookings already present — skipping transactional demo data"
+  # Remove any leftover demo/lorem posts that aren't part of the real export.
+  BlogPost.where.not(title: seeded_titles).destroy_all if seeded_titles.any?
+  puts "  #{seeded_titles.size} blog posts (#{BlogPost.published.count} published)"
 end
 
 # ── Gallery ───────────────────────────────────────────────────────────────────
