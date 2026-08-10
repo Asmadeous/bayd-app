@@ -22,13 +22,13 @@ export function BookButton({
   const router = useRouter();
 
   function handleClick() {
+    const query = serviceId ? `?service=${serviceId}` : "";
+    // Guests book on the public page — no login required.
     if (!_hasHydrated || !isAuthenticated) {
-      router.push("/signup");
+      router.push(`/book${query}`);
       return;
     }
-    const dest =
-      authenticatedHref ??
-      `/dashboard/customer/book${serviceId ? `?service=${serviceId}` : ""}`;
+    const dest = authenticatedHref ?? `/dashboard/customer/book${query}`;
     router.push(dest);
   }
 

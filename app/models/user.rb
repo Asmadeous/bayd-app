@@ -29,7 +29,9 @@ class User < ApplicationRecord
                     format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :role, presence: true
   # Password required on create for non-SSO users; optional on update
-  validates :password, presence: true, on: :create, if: -> { google_uid.blank? }
+  # Passwordless by design: customers are identified by email (+ phone), created
+  # from public booking/checkout and sign-in by email. No password required.
+  # A minimum length is only enforced if a password is ever set.
   validates :password, length: { minimum: 8 }, allow_nil: true
 
   before_validation { email&.downcase! }

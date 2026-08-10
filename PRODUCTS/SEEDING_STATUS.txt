@@ -1,0 +1,53 @@
+# Product catalogue expansion — seeding status (2026-08-10)
+# Rule applied: source images from each brand's OWN Shopify store (products.json),
+# cross-check against the screenshots, and SKIP anything not confidently matched.
+# Prices are the Syncee sell prices from products.txt. Data lives in:
+#   db/seeds/products_extra.yml      (new products)
+#   db/seeds/product_variants.yml    (colour/shade variants, keyed by product SKU)
+#   client/public/images/products/   (hosted images: <sku-lowercased>.<ext>, variants <sku>-<shade>.<ext>)
+
+## SEEDED (65 new products + variants)
+BONNET (existing product, colours added)
+  - Adjustable Satin Sleep Bonnet — 29 colour variants (image swatches, $18.67–21.47)
+
+KAB COSMETICS (kabcosmetics.com) — 53 products
+  - 49 single products (lipsticks, glosses, liners, kits, duos, powders, blushes, oil, curler)
+  - 4 shade-variant products: Eyeshadow Quads (4), Hydrating Lip Oils (6),
+    Mini Hydrating Tinted Lip Oil (4), Setting Powder (2)
+
+DISURI BEAUTY (disuribeauty.com) — 1 product
+  - Glossy Blast Lip Gloss - Forbidden Red
+
+NILON BEAUTE (nilonbeaute.com) — 4 products
+  - HD Beauty Canvas Foundation — 24 shade variants
+  - Radiance Cover Concealer — 14 shade variants
+  - Gold Dust Luminous Powder (single)
+  - Perle d'Or Illuminating Cream - Platinum (single)
+
+SHANY (shanycosmetics.com) — 7 products
+  - Artisan's Easel Brush Set — 4 colour variants
+  - Luxe Lashes Eyelash Curler — 6 colour variants
+  - Rolling Makeup Trolley Case — 2 colour variants
+  - Vanity Vox 15-Piece Brush Set, Dreamy Dozen Lip Liner Set,
+    Mannequin Head Wig Stand, Beauty Cliche Makeup Kit (singles)
+
+## SKIPPED (no accessible own-store match — per "skip if not confident")
+DISURI      — Liquid Lipstick Brooklyn (91), Liquid Lipstick Hov (86),
+              Shimmer Blast Lip Gloss Sunset Glow, Cold Crush Shimmer Blast 3-Pack
+              (store rotated shades; these no longer listed)
+SOLO GIOVANE— all (~10): store blocks products.json (400). Items: AHA/Retinol cleansers,
+              So Edgy eyeliner 20/04, Matte Liquid Lipstick 33, Full Coverage Foundation #3/#12,
+              Three/Four Shades Blush Palette, Perfect Finish Spray
+KISMET      — all (~4): no reachable store. Tinted Moisturizer, Liquid Illuminator,
+              Overnight Gel Masque, Foundation Refill
+PURSONIC    — 8-Piece Brush Set, 5-Pack Faux Mink Lashes, Hair Wellness Duo (no store JSON)
+GENERIC / STORELESS (dropship-only, not confidently sourceable):
+  Connected Boutique, whitelabeauty, Danyel, DR.HC, Panoply, Keisha Elise,
+  aniise/Global Sales, JT Formula, Elizabeth Arden/Smith, ARTDECO, Clinique,
+  Legend Age, Christopher Hanlon, Fasderma, Maiden-Art, Glimmer Goddess, MOLIAE,
+  Maitreya, Terre Verdi, LUMIVEZA, BeNat (brush/massager), towels (Beauty Logistics,
+  Rosy Lana, NNE Living NNEDSZ set w/ colours)
+
+## TO ADD ANY SKIPPED ITEM LATER
+Provide the product/supplier URL (or an image), then it can be downloaded + appended
+to products_extra.yml (+ product_variants.yml if it has colours) the same way.

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { CalendarDays, Clock3 } from "lucide-react";
 
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -20,7 +21,6 @@ type BlogPageProps = {
   content: BlogPageContent;
 };
 
-const categories = ["All", "Lashes", "Nails", "Feet", "Events", "Aftercare"];
 
 export function BlogPage({ content }: BlogPageProps) {
   return (
@@ -154,9 +154,16 @@ function BlogLibrary({
   guides: BlogGuide[];
   posts: BlogPost[];
 }) {
-  const lead = posts[0];
-  const rail = posts.slice(1, 3);
-  const rest = posts.slice(3);
+  const [active, setActive] = useState("All");
+  // Tabs are built from the categories that actually exist in the posts.
+  const categories = useMemo(
+    () => ["All", ...Array.from(new Set(posts.map((p) => p.category).filter(Boolean)))],
+    [posts],
+  );
+  const filtered = active === "All" ? posts : posts.filter((p) => p.category === active);
+  const lead = filtered[0];
+  const rail = filtered.slice(1, 3);
+  const rest = filtered.slice(3);
 
   return (
     <section className="bg-background py-16 text-[#101217] sm:py-20" id="latest">
@@ -172,19 +179,26 @@ function BlogLibrary({
           </div>
           <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
             {categories.map((category) => (
-              <span
-                className="shrink-0 border border-[#101217]/15 bg-[#f4f1eb] px-4 py-2 text-sm font-extrabold text-[#101217]"
+              <button
+                type="button"
+                onClick={() => setActive(category)}
+                className={cn(
+                  "shrink-0 border px-4 py-2 text-sm font-extrabold transition-colors",
+                  active === category
+                    ? "border-[#101217] bg-[#101217] text-white"
+                    : "border-[#101217]/15 bg-[#f4f1eb] text-[#101217] hover:border-[#101217]/40",
+                )}
                 key={category}
               >
                 {category}
-              </span>
+              </button>
             ))}
           </div>
         </ScrollReveal>
 
-        {posts.length === 0 ? (
+        {filtered.length === 0 ? (
           <p className="mt-10 text-sm text-[#5f6268]">
-            More articles coming soon.
+            No articles in this category yet.
           </p>
         ) : (
           <div className="mt-8 grid gap-6 lg:grid-cols-[1.55fr_1fr] lg:gap-8">

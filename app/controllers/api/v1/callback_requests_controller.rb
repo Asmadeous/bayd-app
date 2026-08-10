@@ -5,6 +5,8 @@ module Api
     # tech. Staff work these from the admin dashboard.
     class CallbackRequestsController < ApplicationController
       skip_before_action :authenticate_user!, only: :create
+      # Canada-only: same country gate as booking.
+      before_action :enforce_canada!, only: :create
 
       def create
         cr = CallbackRequest.new(callback_request_params)

@@ -3,6 +3,7 @@ class BookingRequest < ApplicationRecord
   belongs_to :service
   belongs_to :address, optional: true
   belongs_to :assigned_employee, class_name: "EmployeeProfile", optional: true
+  belongs_to :requested_employee, class_name: "EmployeeProfile", optional: true
 
   has_many :assignment_attempts, dependent: :destroy
   has_one  :booking, dependent: :nullify

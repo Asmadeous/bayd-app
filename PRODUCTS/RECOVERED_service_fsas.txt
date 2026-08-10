@@ -1,0 +1,15 @@
+Recovered from log/development.log (writes dated 2026-07-25 10:14:07), the last known
+employee service_fsas before the db:reset wiped them. Old profile IDs are from the
+PRE-RESET database and may not map to the current employees — confirm the mapping.
+
+profile_id=1 (43 FSAs, Brampton+Mississauga+Etobicoke+Milton):
+L7A,L6X,L6Y,L6W,L6V,L6Z,L6R,L6S,L5N,L5W,L5T,L5M,L5L,L5K,L5J,L5H,L5V,L5R,L5B,L5G,L5A,L5E,L5Y,L5X,L5P,L4V,L4T,L5S,L6M,L6L,L6J,L6H,L6K,M9C,M9B,M9A,M8W,M8V,M8Z,M8X,M8Y,L9T,M6S
+
+profile_id=2 (25 FSAs, Mississauga+Oakville):
+L5N,L5W,L5T,L5M,L5L,L5K,L5J,L5H,L5V,L5R,L5B,L5G,L5A,L5E,L5Y,L5X,L5P,L4V,L4T,L5S,L6M,L6L,L6J,L6H,L6K
+
+profile_id=3 (8 FSAs, Brampton):
+L7A,L6X,L6Y,L6W,L6V,L6Z,L6R,L6S
+
+profile_id=4 (20 FSAs, Mississauga):
+L5N,L5W,L5T,L5M,L5L,L5K,L5J,L5H,L5V,L5R,L5B,L5G,L5A,L5E,L5Y,L5X,L5P,L4V,L4T,L5S

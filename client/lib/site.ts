@@ -10,10 +10,12 @@ export const siteConfig = {
   phoneHref: "+16479708259",
   email: "Bookings@baydspa.ca",
   serviceAreas: [
-    "Toronto",
     "Mississauga",
     "Brampton",
-    "Neighbouring west end GTA communities",
+    "Etobicoke",
+    "West Toronto",
+    "Oakville",
+    "Milton",
   ],
   socialLinks: {
     instagram:

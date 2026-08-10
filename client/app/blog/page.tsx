@@ -26,6 +26,7 @@ interface ApiBlogPost {
   published_at: string | null;
   author_name: string | null;
   read_time: string;
+  category: string | null;
 }
 
 const GUIDES: BlogGuide[] = [
@@ -39,7 +40,7 @@ function mapApiBlogPost(p: ApiBlogPost): BlogPost {
   return {
     id: p.slug,
     title: p.title,
-    category: "Beauty Tips",
+    category: p.category ?? "Beauty Tips",
     excerpt: p.excerpt ?? p.title,
     image: {
       src: p.cover_image_url ?? "/images/lashes1.jpg",

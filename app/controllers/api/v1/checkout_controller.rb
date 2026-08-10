@@ -6,14 +6,22 @@ module Api
     #     (Webhooks::HelcimController) — authoritative, never by the client.
     #   • Square → hosted checkout: returns a redirect_url the browser goes to.
     class CheckoutController < ApplicationController
+      # Guest checkout — no login required; the customer is identified by email.
+      skip_before_action :authenticate_user!, only: :create
+
       def create
         items = Array(params[:items])
         return render json: { error: "Cart is empty" }, status: :unprocessable_entity if items.empty?
 
-        order = current_user.orders.create!(status: "pending")
-        items.each do |item|
-          product = Product.active.in_stock.find(item[:product_id])
-          order.order_items.create!(product: product, quantity: item[:quantity].to_i.clamp(1, 99))
+        buyer = current_user
+        unless buyer
+          customer_attrs = params.dig(:customer)
+          return render json: { error: "Email is required for guest checkout" }, status: :unprocessable_entity unless customer_attrs
+          buyer = find_or_create_customer(customer_attrs)
+        end
+        order = buyer.orders.create!(status: "pending")
+        if (error = build_items(order, items))
+          return fail_checkout(order, error)
         end
         order.recalculate_total!
 
@@ -22,6 +30,31 @@ module Api
       end
 
       private
+
+      # Build order lines, honouring a chosen colour/shade variant. Returns an
+      # error string (caller rolls back the order) or nil on success. A product
+      # with variants must have one selected; the variant's price override and
+      # label are snapshotted onto the order item.
+      def build_items(order, items)
+        items.each do |item|
+          product = Product.active.in_stock.find_by(id: item[:product_id])
+          return "One of your items is no longer available" unless product
+
+          variant = nil
+          if item[:product_variant_id].present?
+            variant = product.product_variants.active.find_by(id: item[:product_variant_id])
+            return "The option you chose for #{product.name} is unavailable" unless variant
+          elsif product.has_variants?
+            return "Please choose an option for #{product.name}"
+          end
+
+          order.order_items.create!(
+            product: product, product_variant: variant,
+            quantity: item[:quantity].to_i.clamp(1, 99)
+          )
+        end
+        nil
+      end
 
       # HelcimPay.js: hand the checkout token to the frontend to open the modal.
       def render_helcim(order)

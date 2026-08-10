@@ -4,12 +4,15 @@ module Api
       skip_before_action :authenticate_user!
 
       def index
-        render json: ProductCategorySerializer.render_as_hash(ProductCategory.active.includes(:products))
+        roots = ProductCategory.active.roots.includes(:products, subcategories: :products)
+        render json: ProductCategorySerializer.render_as_hash(roots)
       end
 
       def show
         category = ProductCategory.active.find(params[:id])
-        records, meta = paginate(category.products.active.in_stock)
+        # A parent category rolls up the products of its subcategories.
+        category_ids = [ category.id ] + category.subcategories.pluck(:id)
+        records, meta = paginate(Product.active.in_stock.where(product_category_id: category_ids))
         render json: {
           category: ProductCategorySerializer.render_as_hash(category),
           products: ProductSerializer.render_as_hash(records),

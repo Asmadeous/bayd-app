@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_10_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -46,9 +46,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
   end
 
   create_table "addresses", force: :cascade do |t|
+    t.string "buzz_code"
     t.string "city"
     t.datetime "created_at", null: false
     t.boolean "default", default: false, null: false
+    t.boolean "is_apartment", default: false, null: false
     t.string "label"
     t.decimal "latitude", precision: 10, scale: 6
     t.string "line1", null: false
@@ -88,6 +90,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
   create_table "blog_posts", force: :cascade do |t|
     t.bigint "author_id"
     t.text "body"
+    t.string "category"
     t.string "cover_image_url"
     t.datetime "created_at", null: false
     t.text "excerpt"
@@ -97,6 +100,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["author_id"], name: "index_blog_posts_on_author_id"
+    t.index ["category"], name: "index_blog_posts_on_category"
     t.index ["slug"], name: "index_blog_posts_on_slug", unique: true
     t.index ["status"], name: "index_blog_posts_on_status"
   end
@@ -113,8 +117,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
     t.decimal "customer_longitude", precision: 10, scale: 6
     t.string "kind", null: false
     t.string "location_source"
+    t.integer "party_size", default: 1, null: false
     t.boolean "recurrence_active", default: false, null: false
     t.integer "recurrence_interval_weeks"
+    t.bigint "requested_employee_id"
     t.datetime "requested_start"
     t.datetime "requested_window_end"
     t.bigint "service_id", null: false
@@ -124,6 +130,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
     t.index ["address_id"], name: "index_booking_requests_on_address_id"
     t.index ["assigned_employee_id"], name: "index_booking_requests_on_assigned_employee_id"
     t.index ["kind"], name: "index_booking_requests_on_kind"
+    t.index ["requested_employee_id"], name: "index_booking_requests_on_requested_employee_id"
     t.index ["service_id"], name: "index_booking_requests_on_service_id"
     t.index ["status"], name: "index_booking_requests_on_status"
     t.index ["user_id"], name: "index_booking_requests_on_user_id"
@@ -146,6 +153,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
     t.bigint "parent_booking_id"
     t.bigint "partner_id"
     t.bigint "partner_payout_id"
+    t.integer "party_size", default: 1, null: false
     t.string "payment_status", default: "unpaid", null: false
     t.string "payment_timing", default: "pay_after", null: false
     t.jsonb "raw", default: {}, null: false
@@ -177,7 +185,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
     t.index ["status"], name: "index_bookings_on_status"
     t.index ["subscription_id"], name: "index_bookings_on_subscription_id"
     t.index ["user_id"], name: "index_bookings_on_user_id"
-    t.exclusion_constraint "employee_profile_id WITH =, tsrange(starts_at, ends_at) WITH &&", where: "(status)::text = ANY ((ARRAY['pending'::character varying, 'confirmed'::character varying, 'in_progress'::character varying])::text[])", using: :gist, name: "no_double_booking"
+    t.exclusion_constraint "employee_profile_id WITH =, tsrange(starts_at, ends_at) WITH &&", where: "(status)::text = ANY ((ARRAY['pending'::character varying, 'confirmed'::character varying, 'in_progress'::character varying])::text[])", using: :gist, deferrable: :immediate, name: "no_double_booking"
   end
 
   create_table "callback_requests", force: :cascade do |t|
@@ -507,10 +515,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
     t.bigint "order_id", null: false
     t.decimal "price", precision: 10, scale: 2, null: false
     t.bigint "product_id", null: false
+    t.bigint "product_variant_id"
     t.integer "quantity", default: 1, null: false
     t.datetime "updated_at", null: false
     t.index ["order_id"], name: "index_order_items_on_order_id"
     t.index ["product_id"], name: "index_order_items_on_product_id"
+    t.index ["product_variant_id"], name: "index_order_items_on_product_variant_id"
   end
 
   create_table "orders", force: :cascade do |t|
@@ -575,10 +585,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
     t.text "description"
     t.string "image_url"
     t.string "name", null: false
+    t.bigint "parent_id"
     t.integer "position", default: 0, null: false
     t.string "slug", null: false
     t.datetime "updated_at", null: false
+    t.index ["parent_id"], name: "index_product_categories_on_parent_id"
     t.index ["slug"], name: "index_product_categories_on_slug", unique: true
+  end
+
+  create_table "product_variants", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "color_hex"
+    t.string "color_name"
+    t.datetime "created_at", null: false
+    t.string "image_url"
+    t.string "label", null: false
+    t.integer "position", default: 0, null: false
+    t.decimal "price", precision: 10, scale: 2
+    t.bigint "product_id", null: false
+    t.string "sku"
+    t.integer "stock_quantity", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_id", "position"], name: "index_product_variants_on_product_id_and_position"
+    t.index ["product_id"], name: "index_product_variants_on_product_id"
+    t.index ["sku"], name: "index_product_variants_on_sku", unique: true, where: "(sku IS NOT NULL)"
   end
 
   create_table "products", force: :cascade do |t|
@@ -642,6 +672,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
     t.text "description"
     t.integer "duration_minutes", null: false
     t.string "image_url"
+    t.boolean "kids_only", default: false, null: false
     t.string "name", null: false
     t.decimal "price", precision: 10, scale: 2, default: "0.0", null: false
     t.boolean "requires_consultation", default: false, null: false
@@ -776,6 +807,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
   add_foreign_key "blog_posts", "users", column: "author_id"
   add_foreign_key "booking_requests", "addresses"
   add_foreign_key "booking_requests", "employee_profiles", column: "assigned_employee_id"
+  add_foreign_key "booking_requests", "employee_profiles", column: "requested_employee_id"
   add_foreign_key "booking_requests", "services"
   add_foreign_key "booking_requests", "users"
   add_foreign_key "bookings", "addresses"
@@ -815,10 +847,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_000002) do
   add_foreign_key "notifications", "bookings"
   add_foreign_key "notifications", "users"
   add_foreign_key "order_items", "orders"
+  add_foreign_key "order_items", "product_variants"
   add_foreign_key "order_items", "products"
   add_foreign_key "orders", "addresses", column: "shipping_address_id"
   add_foreign_key "orders", "users"
   add_foreign_key "partner_payouts", "partners"
+  add_foreign_key "product_categories", "product_categories", column: "parent_id"
+  add_foreign_key "product_variants", "products"
   add_foreign_key "products", "product_categories"
   add_foreign_key "reviews", "bookings"
   add_foreign_key "reviews", "employee_profiles"

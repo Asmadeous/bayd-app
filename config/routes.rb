@@ -4,8 +4,9 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       # Auth
-      post  "auth/register", to: "auth#register"
-      post  "auth/login",    to: "auth#login"
+      post  "auth/register",   to: "auth#register"
+      post  "auth/login",      to: "auth#login"
+      post  "auth/staff_login", to: "auth#staff_login"
       get   "auth/me",       to: "auth#me"
       patch "auth/me",       to: "auth#update_me"
       get   "auth/google",          to: "google_auth#start"
@@ -83,6 +84,9 @@ Rails.application.routes.draw do
 
       # Service-area coverage check (public — "do we serve this address?")
       get "coverage", to: "coverage#show"
+
+      # Country gate (public — "do we accept requests from your country?")
+      get "geo", to: "geo#show"
 
       # Shop & checkout
       resources :orders, only: %i[index show create]

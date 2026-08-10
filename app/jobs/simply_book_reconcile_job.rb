@@ -37,6 +37,7 @@ class SimplyBookReconcileJob < ApplicationJob
         service_id: booking.service.simplybook_event_id,
         unit_id:    booking.employee_profile.simplybook_unit_id,
         starts_at:  booking.starts_at,
+        ends_at:    booking.ends_at,
         client: {
           name:  [ booking.user.first_name, booking.user.last_name ].compact.join(" ").strip.presence || booking.user.email,
           email: booking.user.email,

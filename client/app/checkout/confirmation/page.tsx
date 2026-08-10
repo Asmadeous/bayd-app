@@ -29,8 +29,8 @@ export default function CheckoutConfirmationPage() {
             Order confirmed
           </h1>
           <p className="mt-4 text-base leading-7 text-[#5f6268]">
-            Thank you for your purchase. Your payment was processed successfully
-            through Square. You will receive a confirmation email shortly.
+            Thank you for your purchase. Your payment was processed securely.
+            You will receive a confirmation email shortly.
           </p>
 
           <div className="mt-10 grid gap-3 border border-black/10 bg-[#f4f1eb] p-6 text-left">
@@ -46,7 +46,7 @@ export default function CheckoutConfirmationPage() {
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
-              href="/dashboard/customer/book"
+              href="/book"
               className={cn(buttonVariants(), "h-12 px-6 text-base font-bold")}
             >
               Book a service

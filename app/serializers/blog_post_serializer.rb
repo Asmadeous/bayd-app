@@ -1,6 +1,6 @@
 class BlogPostSerializer < Blueprinter::Base
   identifier :id
-  fields :title, :slug, :excerpt, :body, :cover_image_url, :published_at
+  fields :title, :slug, :excerpt, :body, :cover_image_url, :published_at, :category
 
   field :author_name do |post, _opts|
     post.author&.then { |u| "#{u.first_name} #{u.last_name}".strip }
