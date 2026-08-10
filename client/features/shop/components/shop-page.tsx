@@ -212,7 +212,7 @@ export function ShopPage() {
     <div className="min-h-screen bg-background text-foreground">
       <SiteHeader cartCount={cartCount} onOpenCart={openCart} />
       <main>
-        <ShopHero products={products} />
+        <ShopHero onSelectProduct={openProduct} products={products} />
 
         {/* Tabs: Products / Gift Cards */}
         <div className="mx-auto w-full max-w-[1760px] px-4 pt-4 sm:px-6 lg:px-8 2xl:px-10">
@@ -290,7 +290,16 @@ export function ShopPage() {
   );
 }
 
-function ShopHero({ products }: { products: ShopProduct[] }) {
+function ShopHero({
+  onSelectProduct,
+  products,
+}: {
+  onSelectProduct: (
+    product: ShopProduct,
+    event: MouseEvent<HTMLButtonElement>,
+  ) => void;
+  products: ShopProduct[];
+}) {
   const featuredProduct = products[0];
 
   if (!featuredProduct) return null;
@@ -331,7 +340,12 @@ function ShopHero({ products }: { products: ShopProduct[] }) {
           delay={90}
           variant="clip-up"
         >
-          <article className="relative isolate flex min-h-80 flex-col justify-between overflow-hidden bg-[#101217] p-6 text-white md:min-h-[520px]">
+          <button
+            aria-label={`View ${featuredProduct.name}`}
+            className="group relative isolate flex min-h-80 cursor-pointer flex-col justify-between overflow-hidden bg-[#101217] p-6 text-left text-white transition-shadow hover:shadow-[8px_8px_0_rgba(16,18,23,0.2)] md:min-h-[520px]"
+            onClick={(event) => onSelectProduct(featuredProduct, event)}
+            type="button"
+          >
             <Image
               src={featuredProduct.image.src}
               alt={featuredProduct.image.alt}
@@ -340,7 +354,7 @@ function ShopHero({ products }: { products: ShopProduct[] }) {
               className="-z-20 object-cover opacity-75"
               priority
             />
-            <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(16,18,23,0.18),rgba(16,18,23,0.92))]" />
+            <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(16,18,23,0.18),rgba(16,18,23,0.92))] transition-colors group-hover:bg-[linear-gradient(180deg,rgba(16,18,23,0.1),rgba(16,18,23,0.82))]" />
             <span className="w-fit bg-white px-3 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-[#101217]">
               Featured
             </span>
@@ -355,12 +369,13 @@ function ShopHero({ products }: { products: ShopProduct[] }) {
                 {featuredProduct.description}
               </p>
             </div>
-          </article>
+          </button>
 
           <div className="grid gap-4">
             {products.slice(1, 4).map((product, index) => (
               <MiniProductCard
                 key={product.id}
+                onSelect={onSelectProduct}
                 product={product}
                 translate={index === 1}
               />
@@ -474,18 +489,26 @@ function ProductCard({
 }
 
 function MiniProductCard({
+  onSelect,
   product,
   translate,
 }: {
+  onSelect: (
+    product: ShopProduct,
+    event: MouseEvent<HTMLButtonElement>,
+  ) => void;
   product: ShopProduct;
   translate: boolean;
 }) {
   return (
-    <article
+    <button
+      aria-label={`View ${product.name}`}
       className={cn(
-        "grid min-h-40 grid-cols-[7.5rem_1fr] overflow-hidden border border-black/10 bg-white shadow-sm",
+        "group grid min-h-40 w-full cursor-pointer grid-cols-[7.5rem_1fr] overflow-hidden border border-black/10 bg-white text-left shadow-sm transition-shadow hover:shadow-[5px_5px_0_rgba(16,18,23,0.14)]",
         translate ? "md:translate-x-8" : "",
       )}
+      onClick={(event) => onSelect(product, event)}
+      type="button"
     >
       <div className="relative">
         <Image
@@ -505,7 +528,7 @@ function MiniProductCard({
         </h3>
         <p className="mt-3 text-sm font-extrabold">{product.price}</p>
       </div>
-    </article>
+    </button>
   );
 }
 

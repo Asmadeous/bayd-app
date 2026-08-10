@@ -11,7 +11,6 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 import { buttonVariants } from "@/components/ui/button";
 import { BookButton } from "@/components/ui/book-button";
 import type {
-  BlogGuide,
   BlogPageContent,
   BlogPost,
 } from "@/features/blog/types/blog-content";
@@ -32,7 +31,7 @@ export function BlogPage({ content }: BlogPageProps) {
         ) : (
           <BlogEmptyHero />
         )}
-        <BlogLibrary guides={content.guides} posts={content.posts} />
+        <BlogLibrary posts={content.posts} />
         <BlogBookingBand />
       </main>
       <SiteFooter />
@@ -148,10 +147,8 @@ function BlogHero({ featuredPost }: { featuredPost: BlogPost }) {
  * Collapses to a single column on mobile.
  */
 function BlogLibrary({
-  guides,
   posts,
 }: {
-  guides: BlogGuide[];
   posts: BlogPost[];
 }) {
   const [active, setActive] = useState("All");
@@ -164,6 +161,11 @@ function BlogLibrary({
   const lead = filtered[0];
   const rail = filtered.slice(1, 3);
   const rest = filtered.slice(3);
+  const articleCards = [...rail, ...rest];
+  const articleColumns: BlogPost[][] = [[], [], []];
+  articleCards.forEach((post, index) => {
+    articleColumns[index % articleColumns.length].push(post);
+  });
 
   return (
     <section className="bg-background py-16 text-[#101217] sm:py-20" id="latest">
@@ -177,7 +179,7 @@ function BlogLibrary({
               Browse notes by service, routine, or occasion.
             </h2>
           </div>
-          <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
+          <div className="scrollbar-hidden flex max-w-full gap-2 overflow-x-auto pb-1">
             {categories.map((category) => (
               <button
                 type="button"
@@ -201,52 +203,25 @@ function BlogLibrary({
             No articles in this category yet.
           </p>
         ) : (
-          <div className="mt-8 grid gap-6 lg:grid-cols-[1.55fr_1fr] lg:gap-8">
-            {/* Main editorial column */}
-            <div className="space-y-6">
-              {lead && <LeadArticle post={lead} />}
-              {rest.length > 0 && (
-                <div className="gap-6 sm:columns-2 [&>*]:mb-6 [&>*]:break-inside-avoid">
-                  {rest.map((post) => (
-                    <ClippingCard key={post.id} post={post} />
-                  ))}
-                </div>
-              )}
-            </div>
+          <div className="mt-8">
+            {lead && <LeadArticle post={lead} />}
 
-            {/* Right rail — framed image stack + sections */}
-            <aside className="h-fit space-y-5">
+            <div className="mt-8">
               {rail.length > 0 && (
-                <div>
-                  <p className="mb-3 border-b-2 border-[#101217] pb-1 text-lg font-extrabold tracking-tight">
-                    Also in the journal
-                  </p>
-                  <div className="space-y-4">
-                    {rail.map((post) => (
+                <p className="mb-4 border-b-2 border-[#101217] pb-1 text-lg font-extrabold tracking-tight">
+                  Also in the journal
+                </p>
+              )}
+              <div className="grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {articleColumns.map((column, columnIndex) => (
+                  <div className="space-y-6" key={columnIndex}>
+                    {column.map((post) => (
                       <ClippingCard key={post.id} post={post} />
                     ))}
                   </div>
-                </div>
-              )}
-
-              {guides.length > 0 && (
-                <div className="border-2 border-[#101217] bg-[#f4f1eb] p-5">
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#a36f4d]">
-                    Sections
-                  </p>
-                  <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
-                    {guides.map((guide) => (
-                      <li
-                        key={guide.title}
-                        className="text-sm font-bold tracking-tight text-[#101217]"
-                      >
-                        {guide.title}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </aside>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -262,9 +237,9 @@ function LeadArticle({ post }: { post: BlogPost }) {
   return (
     <Link
       href={post.href}
-      className="group block border-2 border-[#101217] bg-white transition-shadow hover:shadow-[8px_8px_0_rgba(16,18,23,0.14)]"
+      className="group block border-2 border-[#101217] bg-white transition-shadow hover:shadow-[8px_8px_0_rgba(16,18,23,0.14)] lg:grid lg:grid-cols-[1.12fr_0.88fr]"
     >
-      <div className="relative aspect-[16/10] overflow-hidden border-b-2 border-[#101217] bg-[#101217]">
+      <div className="relative aspect-[16/10] overflow-hidden border-b-2 border-[#101217] bg-[#101217] lg:aspect-auto lg:min-h-[30rem] lg:border-b-0 lg:border-r-2">
         <Image
           src={post.image.src}
           alt={post.image.alt}
@@ -276,12 +251,12 @@ function LeadArticle({ post }: { post: BlogPost }) {
           {post.category}
         </span>
       </div>
-      <div className="p-5 sm:p-7">
+      <div className="flex flex-col justify-center p-5 sm:p-7 lg:p-9">
         <PostMeta post={post} />
         <h3 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight text-[#101217] sm:text-4xl">
           {post.title}
         </h3>
-        <div className="mt-4 gap-6 text-sm leading-6 text-[#4f535a] sm:columns-2 [&>p]:mb-3 [&>p]:break-inside-avoid">
+        <div className="mt-4 gap-6 text-sm leading-6 text-[#4f535a] sm:columns-2 lg:columns-1 [&>p]:mb-3 [&>p]:break-inside-avoid">
           {paragraphs.map((paragraph, i) => (
             <p key={i}>{paragraph}</p>
           ))}
