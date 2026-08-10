@@ -93,6 +93,9 @@ jobs:
             kamal deploy
           fi
 
+      - name: Seed production database
+        run: kamal app exec "bin/rails db:seed"
+
   # ── Frontend: build image on the runner → push to GHCR → run it on the box ─
   # No git/npm/build on the server — same image pipeline as the API.
   deploy-frontend:
