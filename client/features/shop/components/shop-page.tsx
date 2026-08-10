@@ -148,19 +148,27 @@ export function ShopPage() {
   const [tab, setTab] = useState<"products" | "gift-cards">("products");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const { data: categories = [] } = useQuery<{ id: number; name: string }[]>({
+  const { data: categories = [] } = useQuery<
+    { id: number; name: string; subcategories?: { id: number; name: string }[] }[]
+  >({
     queryKey: ["product-categories"],
     queryFn: () =>
-      api.get<{ id: number; name: string }[]>("/product_categories").then((r) => r.data),
+      api
+        .get<
+          { id: number; name: string; subcategories?: { id: number; name: string }[] }[]
+        >("/product_categories")
+        .then((r) => r.data),
   });
 
-  const visibleProducts = useMemo(
-    () =>
-      activeCategory
-        ? products.filter((p) => p.category === activeCategory)
-        : products,
-    [products, activeCategory],
-  );
+  const visibleProducts = useMemo(() => {
+    if (!activeCategory) return products;
+    const matchedCategory = categories.find((c) => c.name === activeCategory);
+    const categoryNames = new Set([
+      activeCategory,
+      ...(matchedCategory?.subcategories?.map((s) => s.name) ?? []),
+    ]);
+    return products.filter((p) => categoryNames.has(p.category));
+  }, [products, activeCategory, categories]);
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 

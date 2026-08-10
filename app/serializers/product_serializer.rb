@@ -3,7 +3,8 @@ class ProductSerializer < Blueprinter::Base
   fields :name, :description, :sku, :price, :stock_quantity, :image_url
 
   field :category do |product, _opts|
-    product.product_category&.name
+    cat = product.product_category
+    (cat&.parent || cat)&.name
   end
 
   field :has_variants do |product, _opts|
