@@ -21,7 +21,7 @@ export default function CustomerDashboardPage() {
   const bookings = useMemo(() => data?.data ?? [], [data?.data])
   const [selectedDate, setSelectedDate] = useState(() => new Date())
   const selectedDateKey = formatDateKey(selectedDate)
-  const bookServiceHref = `/dashboard/customer/book?date=${selectedDateKey}`
+  const bookServiceHref = `/book?date=${selectedDateKey}`
   const selectedDayBookings = useMemo(
     () => bookings.filter((booking) => booking.starts_at.slice(0, 10) === selectedDateKey),
     [bookings, selectedDateKey]
