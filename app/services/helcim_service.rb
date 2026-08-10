@@ -10,21 +10,34 @@ require "openssl"
 require "base64"
 
 class HelcimService
-  BASE_URL = "https://api.helcim.com/v2".freeze
+  BASE_URL = "https://api.helcim.com/v2/".freeze
 
   def self.configured?
     api_token.present?
   end
 
   # Create a hosted payment session. invoice_number links the eventual webhook
-  # transaction back to our order.
-  def self.initialize_session(amount: nil, payment_type: "purchase", currency: "CAD", invoice_number: nil)
+  # transaction back to our order. line_items is an array of hashes with
+  # :description, :quantity, :price (each required by Helcim's invoiceRequest).
+  def self.initialize_session(amount: nil, payment_type: "purchase", currency: "CAD", invoice_number: nil, line_items: [])
     return { success: false, error: "not_configured" } unless configured?
 
-    body = { paymentType: payment_type, currency: currency, invoiceNumber: invoice_number }.compact
+    body = { paymentType: payment_type, currency: currency }.compact
     body[:amount] = amount if amount
 
-    resp = connection.post("/helcim-pay/initialize") { |req| req.body = body }
+    if invoice_number.present?
+      invoice_req = { invoiceNumber: invoice_number }
+      if line_items.present?
+        invoice_req[:lineItems] = line_items.map do |li|
+          price = li[:price].to_f.round(2)
+          qty   = li[:quantity].to_i
+          { description: li[:description], quantity: qty, price: price, total: (price * qty).round(2) }
+        end
+      end
+      body[:invoiceRequest] = invoice_req
+    end
+
+    resp = connection.post("helcim-pay/initialize") { |req| req.body = body }
     if success?(resp)
       { success: true, checkout_token: resp.body["checkoutToken"], secret_token: resp.body["secretToken"] }
     else
@@ -48,7 +61,7 @@ class HelcimService
   def self.get_transaction(transaction_id)
     return nil unless configured?
 
-    resp = connection.get("/card-transactions/#{transaction_id}")
+    resp = connection.get("card-transactions/#{transaction_id}")
     success?(resp) ? resp.body : nil
   rescue Faraday::Error
     nil
@@ -78,7 +91,7 @@ class HelcimService
   def self.charge_card(card_token:, amount:, currency: "CAD", invoice_number: nil)
     return { success: false, error: "not_configured" } unless configured?
 
-    resp = connection.post("/payment/purchase") do |req|
+    resp = connection.post("payment/purchase") do |req|
       req.headers["idempotency-key"] = SecureRandom.uuid
       req.body = {
         amount: amount.to_f.round(2),

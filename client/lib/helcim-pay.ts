@@ -55,11 +55,18 @@ export async function openHelcimPay(checkoutToken: string): Promise<HelcimResult
       } else if (data.eventStatus === "ABORTED" || data.eventStatus === "HIDE") {
         cleanup()
         resolve("abort")
+      } else if (data.eventStatus === "ERROR") {
+        cleanup()
+        resolve("error")
       }
     }
 
     function cleanup() {
       window.removeEventListener("message", onMessage)
+      // Remove the HelcimPay iframe overlay (the SDK auto-removes on HIDE but
+      // not on SUCCESS/ERROR)
+      const frame = document.getElementById("helcimPayIframe")
+      if (frame) frame.remove()
     }
 
     window.addEventListener("message", onMessage)

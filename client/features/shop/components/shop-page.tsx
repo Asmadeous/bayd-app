@@ -141,7 +141,7 @@ export function ShopPage() {
   });
 
   const products = useMemo(
-    () => (apiData?.data ?? []).map(mapApiProduct),
+    () => (apiData?.data ?? []).map((p, i) => mapApiProduct(p, i)),
     [apiData],
   );
 
