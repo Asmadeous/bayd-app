@@ -58,8 +58,15 @@ module Api
 
       # HelcimPay.js: hand the checkout token to the frontend to open the modal.
       def render_helcim(order)
+        items = order.order_items.map do |oi|
+          { description: oi.name, quantity: oi.quantity, price: oi.price.to_f }
+        end
+
         session = HelcimService.initialize_session(
-          payment_type: "purchase", amount: order.total.to_f.round(2), invoice_number: "ORD-#{order.id}"
+          payment_type: "purchase",
+          amount: order.total.to_f.round(2),
+          invoice_number: "ORD-#{order.id}",
+          line_items: items
         )
         return fail_checkout(order, session[:error]) unless session[:success]
         return fail_checkout(order, "Helcim did not return a checkout token") if session[:checkout_token].blank?

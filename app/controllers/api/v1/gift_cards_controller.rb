@@ -24,7 +24,8 @@ module Api
         )
 
         session = HelcimService.initialize_session(
-          payment_type: "purchase", amount: amount.to_f, invoice_number: "GC-#{card.id}"
+          payment_type: "purchase", amount: amount.to_f, invoice_number: "GC-#{card.id}",
+          line_items: [ { description: "Gift Card (#{ActiveSupport::NumberHelper.number_to_currency(amount)})", quantity: 1, price: amount.to_f } ]
         )
         if session[:success] && session[:checkout_token].present?
           render json: { gateway: "helcim", gift_card_id: card.id, checkout_token: session[:checkout_token] }, status: :created
@@ -46,7 +47,8 @@ module Api
         return render json: { error: "Enter a valid amount." }, status: :unprocessable_entity unless amount.positive?
 
         session = HelcimService.initialize_session(
-          payment_type: "purchase", amount: amount.to_f, invoice_number: "GCT-#{card.id}"
+          payment_type: "purchase", amount: amount.to_f, invoice_number: "GCT-#{card.id}",
+          line_items: [ { description: "Gift Card Top-Up", quantity: 1, price: amount.to_f } ]
         )
         if session[:success] && session[:checkout_token].present?
           render json: { gateway: "helcim", gift_card_id: card.id, checkout_token: session[:checkout_token] }
