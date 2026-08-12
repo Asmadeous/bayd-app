@@ -679,3 +679,1967 @@ SHANY-ROLLING-MAKEUP-TROLLEY-CASE:
     stock: 100
     image: "/images/products/shany-rolling-makeup-trolley-case-summer-orchid.jpg"
     position: 2
+
+# ===== Variants extracted from Shopify CSV export (colors/sizes/styles) =====
+100-COTTON-FACIAL-ROUNDS-SET:
+  - label: "16 Cotton + 2 Hooks"
+    sku: "PT-SSC-16COFRSET-01"
+    price: 27.49
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/reusable-cotton-rounds-white-16-thumbnail-plantish-future.png?v=1786430743"
+    position: 1
+  - label: "8 Cotton + 2 Hooks"
+    sku: "PT-SSC-8COFRSET-01"
+    price: 22.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/reusable-cotton-rounds-white-8-2hook-thumbnail-plantish-future.jpg?v=1786430748"
+    position: 2
+  - label: "4 Cotton + 1 Hook"
+    sku: "PT-SSC-4COFRSET-01"
+    price: 12.94
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/reusable-cotton-rounds-white-4-hook-thumbnail-plantish-future_7371f8f9-437e-45ef-8a8c-3bba11d8d176.jpg?v=1786430749"
+    position: 3
+BAMBOO-CHARCOAL-FACIAL-ROUNDS-SET:
+  - label: "16 Bamboo + 2 Hooks"
+    sku: "PT-SSC-16BAFRSET-01"
+    price: 27.49
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/reusable-cotton-rounds-with-hook-16-thumbnail-plantish-future_4e5d7b73-c6bb-43a5-b900-7618aff8e0a0.jpg?v=1786430815"
+    position: 1
+  - label: "8 Bamboo + 2 Hooks"
+    sku: "PT-SSC-8BAFRSET-01"
+    price: 22.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/reusable-cotton-rounds-with-hook-8-thumbnail-plantish-future_af0b670d-006a-4d94-a8f4-1f04e625d3ce.jpg?v=1786430816"
+    position: 2
+  - label: "4 Bamboo + 1 Hook"
+    sku: "PT-SSC-4BAFRSET-01"
+    price: 12.94
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/reusable-cotton-rounds-with-hook-4-thumbnail-plantish-future.jpg?v=1786430822"
+    position: 3
+BROWNIE-BALANCING-FACE-MASK:
+  - label: "2oz"
+    sku: "3.51E+13"
+    price: 25.95
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/BrownieBalancingFaceMask2.png?v=1786431680"
+    position: 1
+CLEANSING-MILK-FOR-FACE-AND-EYES:
+  - label: "4 fl oz"
+    sku: "'2504"
+    price: 39.75
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/cleansing-milk-for-face-and-eyes-643396.jpg?v=1786431788"
+    position: 1
+  - label: "1 fl oz"
+    sku: "'2525"
+    price: 12.0
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/cleansing-milk-for-face-and-eyes-579677.jpg?v=1786431788"
+    position: 2
+DAY-MOISTURIZER:
+  - label: "20ml"
+    sku: "'31603553075296"
+    price: 15.79
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/DayMoisturizer20ml.jpg?v=1786431104"
+    position: 1
+  - label: "50ml"
+    sku: "'31603553108064"
+    price: 30.14
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/DayMoisturizer50ml.jpg?v=1786431104"
+    position: 2
+  - label: "100ml"
+    sku: "'31603553140832"
+    price: 52.38
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/DayMoisturizer100ml.jpg?v=1786431105"
+    position: 3
+EXQUISITE-SHADES-OF-FINE-NAIL-POLISH:
+  - label: "12 series"
+    color_name: "12 series"
+    sku: "CJBJZJZJ00194-12 series"
+    price: 14.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573524562198.jpg?v=1786431387"
+    position: 1
+  - label: "4 series"
+    color_name: "4 series"
+    sku: "CJBJZJZJ00194-4 series"
+    price: 14.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573524463894.jpg?v=1786431388"
+    position: 2
+  - label: "5 series"
+    color_name: "5 series"
+    sku: "CJBJZJZJ00194-5 series"
+    price: 14.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573524562198.jpg?v=1786431387"
+    position: 3
+  - label: "13 series"
+    color_name: "13 series"
+    sku: "CJBJZJZJ00194-13 series"
+    price: 14.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573523349782.jpg?v=1786431389"
+    position: 4
+  - label: "14 series"
+    color_name: "14 series"
+    sku: "CJBJZJZJ00194-14 series"
+    price: 14.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573523611926.jpg?v=1786431389"
+    position: 5
+  - label: "15 series"
+    color_name: "15 series"
+    sku: "CJBJZJZJ00194-15 series"
+    price: 14.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573524005142.jpg?v=1786431394"
+    position: 6
+  - label: "16 series"
+    color_name: "16 series"
+    sku: "CJBJZJZJ00194-16 series"
+    price: 14.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573524168982.jpg?v=1786431394"
+    position: 7
+  - label: "17 series"
+    color_name: "17 series"
+    sku: "CJBJZJZJ00194-17 series"
+    price: 14.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573525152022.jpg?v=1786431387"
+    position: 8
+  - label: "18 series"
+    color_name: "18 series"
+    sku: "CJBJZJZJ00194-18 series"
+    price: 14.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573525610774.jpg?v=1786431390"
+    position: 9
+  - label: "19 series"
+    color_name: "19 series"
+    sku: "CJBJZJZJ00194-19 series"
+    price: 14.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573525709078.jpg?v=1786431392"
+    position: 10
+  - label: "9 series"
+    color_name: "9 series"
+    sku: "CJBJZJZJ00194-9 series"
+    price: 14.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573526397206.jpg?v=1786431394"
+    position: 11
+  - label: "7 series"
+    color_name: "7 series"
+    sku: "CJBJZJZJ00194-7 series"
+    price: 15.03
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573526528278.jpg?v=1786431390"
+    position: 12
+  - label: "1 series"
+    color_name: "1 series"
+    sku: "CJBJZJZJ00194-1 series"
+    price: 14.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573526757654.jpg?v=1786431392"
+    position: 13
+  - label: "8 series"
+    color_name: "8 series"
+    sku: "CJBJZJZJ00194-8 series"
+    price: 14.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573521678614.jpg?v=1786431391"
+    position: 14
+  - label: "3 series"
+    color_name: "3 series"
+    sku: "CJBJZJZJ00194-3 series"
+    price: 15.03
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573526823190.jpg?v=1786431387"
+    position: 15
+  - label: "6 series"
+    color_name: "6 series"
+    sku: "CJBJZJZJ00194-6 series"
+    price: 14.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573526954262.jpg?v=1786431391"
+    position: 16
+  - label: "10 series"
+    color_name: "10 series"
+    sku: "CJBJZJZJ00194-10 series"
+    price: 14.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573527085334.jpg?v=1786431395"
+    position: 17
+  - label: "11 series"
+    color_name: "11 series"
+    sku: "CJBJZJZJ00194-11 series"
+    price: 15.03
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573527576854.jpg?v=1786431391"
+    position: 18
+  - label: "2 series"
+    color_name: "2 series"
+    sku: "CJBJZJZJ00194-2 series"
+    price: 14.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Exquisite-Shades-of-Fine-Nail-Polish-cashymart-35573527675158.jpg?v=1786431392"
+    position: 19
+EYE-LIFT-ANTI-AGING-BEAUTY-TOOL:
+  - label: "Hot Pink"
+    color_name: "Hot Pink"
+    sku: "AF-MSTK-PI"
+    price: 15.0
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/kgrs0m4lfenvasczbxphed22-large.png?v=1786432222"
+    position: 1
+  - label: "Purple"
+    color_name: "Purple"
+    sku: "AF-MSTK-PR"
+    price: 15.0
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/niak0snymgc4u2dt1okobyk3-large.png?v=1786432222"
+    position: 2
+FACIAL-CLEANSER:
+  - label: "50ml"
+    sku: "'31603527680096"
+    price: 12.92
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/FacialCleanser50ml.jpg?v=1786431616"
+    position: 1
+  - label: "100ml"
+    sku: "'31603527712864"
+    price: 17.22
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/FacialCleanser100ml.jpg?v=1786431617"
+    position: 2
+  - label: "200ml"
+    sku: "'31603527745632"
+    price: 27.98
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/FacialCleanser200ml.jpg?v=1786431617"
+    position: 3
+  - label: "240ml"
+    sku: "'31603527778400"
+    price: 32.29
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/FacialCleanser240ml.jpg?v=1786431617"
+    position: 4
+GEMINI-COLLECTION-NAIL-POLISH-SET:
+  - label: "D01"
+    color_name: "D01"
+    sku: "CJZJ113007601AZ"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573287551254.jpg?v=1786431488"
+    position: 1
+  - label: "D02"
+    color_name: "D02"
+    sku: "CJZJ113007602BY"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573287813398.jpg?v=1786431482"
+    position: 2
+  - label: "D03"
+    color_name: "D03"
+    sku: "CJZJ113007603CX"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573288042774.jpg?v=1786431478"
+    position: 3
+  - label: "D04"
+    color_name: "D04"
+    sku: "CJZJ113007604DW"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573288337686.jpg?v=1786431478"
+    position: 4
+  - label: "D05"
+    color_name: "D05"
+    sku: "CJZJ113007605EV"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573288501526.jpg?v=1786431488"
+    position: 5
+  - label: "D06"
+    color_name: "D06"
+    sku: "CJZJ113007606FU"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573288599830.jpg?v=1786431479"
+    position: 6
+  - label: "D07"
+    color_name: "D07"
+    sku: "CJZJ113007607GT"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573288698134.jpg?v=1786431475"
+    position: 7
+  - label: "D08"
+    color_name: "D08"
+    sku: "CJZJ113007608HS"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573288763670.jpg?v=1786431476"
+    position: 8
+  - label: "D09"
+    color_name: "D09"
+    sku: "CJZJ113007609IR"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573288927510.jpg?v=1786431482"
+    position: 9
+  - label: "D10"
+    color_name: "D10"
+    sku: "CJZJ113007610JQ"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573289255190.jpg?v=1786431486"
+    position: 10
+  - label: "D11"
+    color_name: "D11"
+    sku: "CJZJ113007611KP"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573289287958.jpg?v=1786431484"
+    position: 11
+  - label: "D12"
+    color_name: "D12"
+    sku: "CJZJ113007612LO"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573289353494.jpg?v=1786431480"
+    position: 12
+  - label: "D13"
+    color_name: "D13"
+    sku: "CJZJ113007613MN"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573289615638.jpg?v=1786431476"
+    position: 13
+  - label: "D14"
+    color_name: "D14"
+    sku: "CJZJ113007614NM"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573289681174.jpg?v=1786431483"
+    position: 14
+  - label: "D15"
+    color_name: "D15"
+    sku: "CJZJ113007615OL"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573289877782.jpg?v=1786431486"
+    position: 15
+  - label: "D16"
+    color_name: "D16"
+    sku: "CJZJ113007616PK"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573289943318.jpg?v=1786431476"
+    position: 16
+  - label: "D17"
+    color_name: "D17"
+    sku: "CJZJ113007617QJ"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573290303766.jpg?v=1786431473"
+    position: 17
+  - label: "D18"
+    color_name: "D18"
+    sku: "CJZJ113007618RI"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573290369302.jpg?v=1786431473"
+    position: 18
+  - label: "D19"
+    color_name: "D19"
+    sku: "CJZJ113007619SH"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573290434838.jpg?v=1786431487"
+    position: 19
+  - label: "D20"
+    color_name: "D20"
+    sku: "CJZJ113007620TG"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573290500374.jpg?v=1786431484"
+    position: 20
+  - label: "D21"
+    color_name: "D21"
+    sku: "CJZJ113007621UF"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573290860822.jpg?v=1786431480"
+    position: 21
+  - label: "D22"
+    color_name: "D22"
+    sku: "CJZJ113007622VE"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573291286806.jpg?v=1786431477"
+    position: 22
+  - label: "D23"
+    color_name: "D23"
+    sku: "CJZJ113007623WD"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573291352342.jpg?v=1786431477"
+    position: 23
+  - label: "D24"
+    color_name: "D24"
+    sku: "CJZJ113007624XC"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573291516182.jpg?v=1786431474"
+    position: 24
+  - label: "D25"
+    color_name: "D25"
+    sku: "CJZJ113007625YB"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573291680022.jpg?v=1786431488"
+    position: 25
+  - label: "D26"
+    color_name: "D26"
+    sku: "CJZJ113007626ZA"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573292073238.jpg?v=1786431474"
+    position: 26
+  - label: "D27"
+    color_name: "D27"
+    sku: "CJZJ113007627AZ"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573292106006.jpg?v=1786431481"
+    position: 27
+  - label: "D28"
+    color_name: "D28"
+    sku: "CJZJ113007628BY"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573292138774.jpg?v=1786431482"
+    position: 28
+  - label: "D29"
+    color_name: "D29"
+    sku: "CJZJ113007629CX"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573292204310.jpg?v=1786431481"
+    position: 29
+  - label: "D30"
+    color_name: "D30"
+    sku: "CJZJ113007630DW"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemini-Collection-Nail-Polish-Set-cashymart-35573292663062.jpg?v=1786431487"
+    position: 30
+  - label: "D31"
+    color_name: "D31"
+    sku: "CJZJ113007631EV"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1621064977023.jpg?v=1786431483"
+    position: 31
+  - label: "D32"
+    color_name: "D32"
+    sku: "CJZJ113007632FU"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1621064977500.jpg?v=1786431477"
+    position: 32
+  - label: "D33"
+    color_name: "D33"
+    sku: "CJZJ113007633GT"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1621064977017.jpg?v=1786431478"
+    position: 33
+  - label: "D34"
+    color_name: "D34"
+    sku: "CJZJ113007634HS"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1621064977738.jpg?v=1786431475"
+    position: 34
+  - label: "D35"
+    color_name: "D35"
+    sku: "CJZJ113007635IR"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1621064977022.jpg?v=1786431485"
+    position: 35
+  - label: "D36"
+    color_name: "D36"
+    sku: "CJZJ113007636JQ"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1621064977390.jpg?v=1786431485"
+    position: 36
+  - label: "D37"
+    color_name: "D37"
+    sku: "CJZJ113007637KP"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1621064977392.jpg?v=1786431486"
+    position: 37
+  - label: "D38"
+    color_name: "D38"
+    sku: "CJZJ113007638LO"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1621064977135.jpg?v=1786431475"
+    position: 38
+  - label: "D39"
+    color_name: "D39"
+    sku: "CJZJ113007639MN"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1621064977499.jpg?v=1786431489"
+    position: 39
+  - label: "D40"
+    color_name: "D40"
+    sku: "CJZJ113007640NM"
+    price: 11.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1621064977136.jpg?v=1786431489"
+    position: 40
+GEMSTONE-NAIL-LACQUER:
+  - label: "Light coffee extension glue"
+    color_name: "Light coffee extension glue"
+    sku: "CJBJZJZJ00579-Light coffee extension glue"
+    price: 21.8
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573573124374.png?v=1786431436"
+    position: 1
+  - label: "Nude color extension glue"
+    color_name: "Nude color extension glue"
+    sku: "CJBJZJZJ00579-Nude color extension glue"
+    price: 21.8
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573573648662.png?v=1786431433"
+    position: 2
+  - label: "Doubleended light therapy pen"
+    color_name: "Doubleended light therapy pen"
+    sku: "CJBJZJZJ00579-Doubleended light therapy pen"
+    price: 21.13
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573573812502.png?v=1786431434"
+    position: 3
+  - label: "Fillet"
+    color_name: "Fillet"
+    sku: "CJBJZJZJ00579-Fillet"
+    price: 20.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573574074646.png?v=1786431434"
+    position: 4
+  - label: "Box armour film"
+    color_name: "Box armour film"
+    sku: "CJBJZJZJ00579-Box armour film"
+    price: 21.13
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573574369558.png?v=1786431439"
+    position: 5
+  - label: "Porcelain white"
+    color_name: "Porcelain white"
+    sku: "CJBJZJZJ00579-Porcelain white"
+    price: 22.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573574926614.jpg?v=1786431440"
+    position: 6
+  - label: "Pink"
+    color_name: "Pink"
+    sku: "CJBJZJZJ00579-Pink"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573575614742.jpg?v=1786431436"
+    position: 7
+  - label: "White"
+    color_name: "White"
+    sku: "CJBJZJZJ00579-White"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573575844118.jpg?v=1786431437"
+    position: 8
+  - label: "CLEAR NUDE"
+    color_name: "CLEAR NUDE"
+    sku: "CJBJZJZJ00579-CLEAR NUDE"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573571813654.jpg?v=1786431437"
+    position: 9
+  - label: "GIRL PINK"
+    color_name: "GIRL PINK"
+    sku: "CJBJZJZJ00579-GIRL PINK"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573575909654.jpg?v=1786431438"
+    position: 10
+  - label: "Girlish Pink"
+    color_name: "Girlish Pink"
+    sku: "CJBJZJZJ00579-Girlish Pink"
+    price: 22.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573576204566.jpg?v=1786431440"
+    position: 11
+  - label: "Health red"
+    color_name: "Health red"
+    sku: "CJBJZJZJ00579-Health red"
+    price: 22.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573576204566.jpg?v=1786431440"
+    position: 12
+  - label: "NUDE SKIN"
+    color_name: "NUDE SKIN"
+    sku: "CJBJZJZJ00579-NUDE SKIN"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573576368406.jpg?v=1786431434"
+    position: 13
+  - label: "Coffee"
+    color_name: "Coffee"
+    sku: "CJBJZJZJ00579-Coffee"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573572632854.jpg?v=1786431441"
+    position: 14
+  - label: "CLEAR"
+    color_name: "CLEAR"
+    sku: "CJBJZJZJ00579-CLEAR"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573571453206.jpg?v=1786431439"
+    position: 15
+  - label: "Milky"
+    color_name: "Milky"
+    sku: "CJBJZJZJ00579-Milky"
+    price: 22.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573570142486.jpg?v=1786431435"
+    position: 16
+  - label: "Bean paste"
+    color_name: "Bean paste"
+    sku: "CJBJZJZJ00579-Bean paste"
+    price: 22.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573570896150.jpg?v=1786431436"
+    position: 17
+  - label: "CAMEO BROWN"
+    color_name: "CAMEO BROWN"
+    sku: "CJBJZJZJ00579-CAMEO BROWN"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573571059990.jpg?v=1786431438"
+    position: 18
+  - label: "Cherry blossoms"
+    color_name: "Cherry blossoms"
+    sku: "CJBJZJZJ00579-Cherry blossoms"
+    price: 22.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573572469014.jpg?v=1786431441"
+    position: 19
+  - label: "Transparent"
+    color_name: "Transparent"
+    sku: "CJBJZJZJ00579-Transparent"
+    price: 22.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573576794390.jpg?v=1786431442"
+    position: 20
+  - label: "CLEAR RED"
+    color_name: "CLEAR RED"
+    sku: "CJBJZJZJ00579-CLEAR RED"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573572206870.jpg?v=1786431441"
+    position: 21
+  - label: "MILK WHITE"
+    color_name: "MILK WHITE"
+    sku: "CJBJZJZJ00579-MILK WHITE"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573576925462.jpg?v=1786431435"
+    position: 22
+  - label: "CLEAR PINK"
+    color_name: "CLEAR PINK"
+    sku: "CJBJZJZJ00579-CLEAR PINK"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573571944726.jpg?v=1786431435"
+    position: 23
+  - label: "ROSE PINK"
+    color_name: "ROSE PINK"
+    sku: "CJBJZJZJ00579-ROSE PINK"
+    price: 24.04
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Gemstone-Nail-Lacquer-cashymart-35573577384214.jpg?v=1786431442"
+    position: 24
+GLITTER-PHOTOTHERAPY-NAIL-POLISH:
+  - label: "1ZS"
+    color_name: "1ZS"
+    sku: "CJZJ127630701AZ"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573180006678.jpg?v=1786431496"
+    position: 1
+  - label: "2ZS"
+    color_name: "2ZS"
+    sku: "CJZJ127630702BY"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573180137750.jpg?v=1786431498"
+    position: 2
+  - label: "3ZS"
+    color_name: "3ZS"
+    sku: "CJZJ127630703CX"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573180367126.jpg?v=1786431496"
+    position: 3
+  - label: "4ZS"
+    color_name: "4ZS"
+    sku: "CJZJ127630704DW"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573180465430.jpg?v=1786431500"
+    position: 4
+  - label: "5ZS"
+    color_name: "5ZS"
+    sku: "CJZJ127630705EV"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573180891414.jpg?v=1786431497"
+    position: 5
+  - label: "6ZS"
+    color_name: "6ZS"
+    sku: "CJZJ127630706FU"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573181088022.jpg?v=1786431499"
+    position: 6
+  - label: "7ZS"
+    color_name: "7ZS"
+    sku: "CJZJ127630707GT"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573181350166.jpg?v=1786431500"
+    position: 7
+  - label: "8ZS"
+    color_name: "8ZS"
+    sku: "CJZJ127630708HS"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573181448470.jpg?v=1786431500"
+    position: 8
+  - label: "9ZS"
+    color_name: "9ZS"
+    sku: "CJZJ127630709IR"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573181481238.jpg?v=1786431497"
+    position: 9
+  - label: "10ZS"
+    color_name: "10ZS"
+    sku: "CJZJ127630710JQ"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573181579542.jpg?v=1786431501"
+    position: 10
+  - label: "11ZS"
+    color_name: "11ZS"
+    sku: "CJZJ127630711KP"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573181677846.jpg?v=1786431498"
+    position: 11
+  - label: "12ZS"
+    color_name: "12ZS"
+    sku: "CJZJ127630712LO"
+    price: 16.5
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Glitter-Phototherapy-Nail-Polish-cashymart-35573181874454.jpg?v=1786431498"
+    position: 12
+GOODOILS-CLEANSING-OIL-ORGANIC-FACE-CLEANSER:
+  - label: "100ml"
+    sku: "'0634041080495"
+    price: 39.12
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/certified-organic-good-oils-cleansing-oil-100ml-by-terre-verdi.jpg?v=1786431644"
+    position: 1
+  - label: "100ml refill - see below recycling section for more info"
+    sku: "'39556874633305"
+    price: 37.77
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/goodoils-cleansing-oil-refill-by-terre-verdi.jpg?v=1786431644"
+    position: 2
+HERBS-TREES-BALANCING-FACIAL-SERUM-ORGANIC-FACE-OIL:
+  - label: "30ml"
+    sku: "'0634041080419"
+    price: 41.82
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/certified-organic-herbs-and-trees-balancing-facial-serum-30ml-by-terre-verdi.jpg?v=1786431987"
+    position: 1
+  - label: "30ml refill - see below recycling section for more info"
+    sku: "'39556829479001"
+    price: 40.47
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/herbs-and-trees-balancing-serum-refill-by-terre-verdi.jpg?v=1786431988"
+    position: 2
+HOME-FASHION-SIMPLE-LAZY-UV-NAIL-POLISH:
+  - label: "01style"
+    color_name: "01style"
+    sku: "CJZJ164987601AZ"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573297053974.jpg?v=1786431515"
+    position: 1
+  - label: "02style"
+    color_name: "02style"
+    sku: "CJZJ164987602BY"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573297119510.jpg?v=1786431512"
+    position: 2
+  - label: "03style"
+    color_name: "03style"
+    sku: "CJZJ164987603CX"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573297578262.jpg?v=1786431513"
+    position: 3
+  - label: "04style"
+    color_name: "04style"
+    sku: "CJZJ164987604DW"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573297742102.jpg?v=1786431517"
+    position: 4
+  - label: "05style"
+    color_name: "05style"
+    sku: "CJZJ164987605EV"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573297807638.jpg?v=1786431518"
+    position: 5
+  - label: "06style"
+    color_name: "06style"
+    sku: "CJZJ164987606FU"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573298037014.jpg?v=1786431508"
+    position: 6
+  - label: "07style"
+    color_name: "07style"
+    sku: "CJZJ164987607GT"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573298102550.jpg?v=1786431508"
+    position: 7
+  - label: "08style"
+    color_name: "08style"
+    sku: "CJZJ164987608HS"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573298168086.jpg?v=1786431508"
+    position: 8
+  - label: "09style"
+    color_name: "09style"
+    sku: "CJZJ164987609IR"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573298397462.jpg?v=1786431518"
+    position: 9
+  - label: "10style"
+    color_name: "10style"
+    sku: "CJZJ164987610JQ"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573298462998.jpg?v=1786431509"
+    position: 10
+  - label: "11style"
+    color_name: "11style"
+    sku: "CJZJ164987611KP"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573298757910.jpg?v=1786431507"
+    position: 11
+  - label: "12style"
+    color_name: "12style"
+    sku: "CJZJ164987612LO"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573298954518.jpg?v=1786431506"
+    position: 12
+  - label: "13style"
+    color_name: "13style"
+    sku: "CJZJ164987613MN"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573299282198.jpg?v=1786431515"
+    position: 13
+  - label: "14style"
+    color_name: "14style"
+    sku: "CJZJ164987614NM"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573299347734.jpg?v=1786431512"
+    position: 14
+  - label: "15style"
+    color_name: "15style"
+    sku: "CJZJ164987615OL"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573299577110.jpg?v=1786431518"
+    position: 15
+  - label: "16style"
+    color_name: "16style"
+    sku: "CJZJ164987616PK"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573299642646.jpg?v=1786431510"
+    position: 16
+  - label: "17style"
+    color_name: "17style"
+    sku: "CJZJ164987617QJ"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573300003094.jpg?v=1786431516"
+    position: 17
+  - label: "18style"
+    color_name: "18style"
+    sku: "CJZJ164987618RI"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573300134166.jpg?v=1786431510"
+    position: 18
+  - label: "19style"
+    color_name: "19style"
+    sku: "CJZJ164987619SH"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573300232470.jpg?v=1786431513"
+    position: 19
+  - label: "20style"
+    color_name: "20style"
+    sku: "CJZJ164987620TG"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573300298006.jpg?v=1786431516"
+    position: 20
+  - label: "21style"
+    color_name: "21style"
+    sku: "CJZJ164987621UF"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573300494614.jpg?v=1786431506"
+    position: 21
+  - label: "22style"
+    color_name: "22style"
+    sku: "CJZJ164987622VE"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573300986134.jpg?v=1786431519"
+    position: 22
+  - label: "23style"
+    color_name: "23style"
+    sku: "CJZJ164987623WD"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573301084438.jpg?v=1786431511"
+    position: 23
+  - label: "24style"
+    color_name: "24style"
+    sku: "CJZJ164987624XC"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573301149974.jpg?v=1786431509"
+    position: 24
+  - label: "25style"
+    color_name: "25style"
+    sku: "CJZJ164987625YB"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573301215510.jpg?v=1786431511"
+    position: 25
+  - label: "26style"
+    color_name: "26style"
+    sku: "CJZJ164987626ZA"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573301477654.jpg?v=1786431517"
+    position: 26
+  - label: "27Style"
+    color_name: "27Style"
+    sku: "CJZJ164987627AZ"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573301608726.jpg?v=1786431515"
+    position: 27
+  - label: "28Style"
+    color_name: "28Style"
+    sku: "CJZJ164987628BY"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573301707030.jpg?v=1786431514"
+    position: 28
+  - label: "29Style"
+    color_name: "29Style"
+    sku: "CJZJ164987629CX"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Home-Fashion-Simple-Lazy-UV-Nail-Polish-cashymart-35573301739798.jpg?v=1786431511"
+    position: 29
+  - label: "30Style"
+    color_name: "30Style"
+    sku: "CJZJ164987630DW"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/04f99cc7-4e33-4b51-bcf4-2f8f2f16cc63.jpg?v=1786431514"
+    position: 30
+  - label: "31Style"
+    color_name: "31Style"
+    sku: "CJZJ164987631EV"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/d3661355-e8f5-4ef8-83f2-13f128585532.jpg?v=1786431516"
+    position: 31
+  - label: "32Style"
+    color_name: "32Style"
+    sku: "CJZJ164987632FU"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/a6a01d5a-fb9c-4791-9cab-b760e8d5175a.jpg?v=1786431512"
+    position: 32
+  - label: "33Style"
+    color_name: "33Style"
+    sku: "CJZJ164987633GT"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/10a507bb-0fc0-4337-884d-bf42890e2bda.jpg?v=1786431507"
+    position: 33
+  - label: "34Style"
+    color_name: "34Style"
+    sku: "CJZJ164987634HS"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/bab826e8-a29b-437a-b313-131de9a0256c.jpg?v=1786431506"
+    position: 34
+  - label: "35Style"
+    color_name: "35Style"
+    sku: "CJZJ164987635IR"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/545f08c4-1961-410e-8efd-6d97b399c648.jpg?v=1786431507"
+    position: 35
+  - label: "36Style"
+    color_name: "36Style"
+    sku: "CJZJ164987636JQ"
+    price: 14.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/befc3036-258d-4226-9adc-7fd4f8fcab66.jpg?v=1786431513"
+    position: 36
+KONJAC-FACIAL-SPONGE-CHARCOAL:
+  - label: "Single"
+    sku: "PT-KFS-SOLO-01"
+    price: 4.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/il_794xN.3361801426_qnah.jpg?v=1786430819"
+    position: 1
+  - label: "Set of 2"
+    sku: "PT-KFS-2SET-01"
+    price: 9.7
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/il_794xN.3361803640_35u5.jpg?v=1786430816"
+    position: 2
+LOOFAH-SHOWER-PAD:
+  - label: "Single"
+    sku: "PT-LSP-SOLO-01"
+    price: 4.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/loofah-shower-pad-plantish-future-28305314414681.jpg?v=1786430743"
+    position: 1
+  - label: "Set of 2"
+    sku: "PT-LSP-2SET-01"
+    price: 8.09
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/loofah-shower-pad-plantish-future-28305314512985.jpg?v=1786430743"
+    position: 2
+NAIL-ART-TOOLS-SET-KITS-WITH-BAG:
+  - label: "Brown / Q16pcs"
+    color_name: "Brown"
+    sku: "CJBJZJMJ00613-Brown-Q16pcs"
+    price: 39.83
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Art-Tools-Set-Kits-with-Bag-cashymart-38265027166486.jpg?v=1786431405"
+    position: 1
+  - label: "Brown / Q4pcs"
+    color_name: "Brown"
+    sku: "CJBJZJMJ00613-Brown-Q4pcs"
+    price: 18.21
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Art-Tools-Set-Kits-with-Bag-cashymart-38265027592470.jpg?v=1786431406"
+    position: 2
+  - label: "Dark blue / Q16pcs"
+    color_name: "Dark blue"
+    sku: "CJBJZJMJ00613-Dark blue-Q16pcs"
+    price: 39.83
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Art-Tools-Set-Kits-with-Bag-cashymart-38265028215062.jpg?v=1786431407"
+    position: 3
+  - label: "Dark blue / Q4pcs"
+    color_name: "Dark blue"
+    sku: "CJBJZJMJ00613-Dark blue-Q4pcs"
+    price: 18.21
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Art-Tools-Set-Kits-with-Bag-cashymart-38265028509974.jpg?v=1786431405"
+    position: 4
+  - label: "Grey / Q16pcs"
+    color_name: "Grey"
+    sku: "CJBJZJMJ00613-Grey-Q16pcs"
+    price: 39.83
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Art-Tools-Set-Kits-with-Bag-cashymart-38265028641046.jpg?v=1786431405"
+    position: 5
+  - label: "Grey / Q4pcs"
+    color_name: "Grey"
+    sku: "CJBJZJMJ00613-Grey-Q4pcs"
+    price: 18.21
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Art-Tools-Set-Kits-with-Bag-cashymart-38265027985686.jpg?v=1786431406"
+    position: 6
+NAIL-REMOVER-CLIPS:
+  - label: "A"
+    sku: "CJMJ119162701AZ"
+    price: 17.09
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 1
+  - label: "B"
+    sku: "CJMJ119162702BY"
+    price: 17.09
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 2
+  - label: "C"
+    sku: "CJMJ119162703CX"
+    price: 17.09
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 3
+  - label: "D"
+    sku: "CJMJ119162704DW"
+    price: 17.09
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 4
+  - label: "E"
+    sku: "CJMJ119162705EV"
+    price: 17.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 5
+  - label: "F"
+    sku: "CJMJ119162706FU"
+    price: 17.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 6
+  - label: "G"
+    sku: "CJMJ119162707GT"
+    price: 17.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 7
+  - label: "H"
+    sku: "CJMJ119162708HS"
+    price: 17.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 8
+  - label: "I"
+    sku: "CJMJ119162709IR"
+    price: 17.44
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 9
+  - label: "J"
+    sku: "CJMJ119162710JQ"
+    price: 17.44
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 10
+  - label: "K"
+    sku: "CJMJ119162711KP"
+    price: 17.44
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 11
+  - label: "L"
+    sku: "CJMJ119162712LO"
+    price: 17.44
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 12
+  - label: "M"
+    sku: "CJMJ119162713MN"
+    price: 17.81
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 13
+  - label: "N"
+    sku: "CJMJ119162714NM"
+    price: 17.81
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 14
+  - label: "O"
+    sku: "CJMJ119162715OL"
+    price: 17.81
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 15
+  - label: "P"
+    sku: "CJMJ119162716PK"
+    price: 17.81
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nail-Remover-Clips-cashymart-35573536325910.jpg?v=1786431437"
+    position: 16
+NAILS-POLY-GEL:
+  - label: "30 / pink"
+    sku: "CJBJZJZJ00006-30-pink"
+    price: 29.78
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nails-Poly-Gel-cashymart-38195039535382.jpg?v=1786431472"
+    position: 1
+  - label: "30 / rose pink"
+    sku: "CJBJZJZJ00006-30-rose pink"
+    price: 29.78
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nails-Poly-Gel-cashymart-38195039764758.jpg?v=1786431471"
+    position: 2
+  - label: "30 / transparent"
+    sku: "CJBJZJZJ00006-30-transparent"
+    price: 29.78
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nails-Poly-Gel-cashymart-38195039895830.jpg?v=1786431473"
+    position: 3
+  - label: "30 / white"
+    sku: "CJBJZJZJ00006-30-white"
+    price: 29.78
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nails-Poly-Gel-cashymart-38195040256278.jpg?v=1786431473"
+    position: 4
+  - label: "60 / pink"
+    sku: "CJBJZJZJ00006-60-pink"
+    price: 39.65
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nails-Poly-Gel-cashymart-38195039535382.jpg?v=1786431472"
+    position: 5
+  - label: "60 / rose pink"
+    sku: "CJBJZJZJ00006-60-rose pink"
+    price: 39.65
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nails-Poly-Gel-cashymart-38195039764758.jpg?v=1786431471"
+    position: 6
+  - label: "60 / transparent"
+    sku: "CJBJZJZJ00006-60-transparent"
+    price: 39.65
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nails-Poly-Gel-cashymart-38195039895830.jpg?v=1786431473"
+    position: 7
+  - label: "60 / white"
+    sku: "CJBJZJZJ00006-60-white"
+    price: 39.65
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Nails-Poly-Gel-cashymart-38195040256278.jpg?v=1786431473"
+    position: 8
+NATURAL-DEODORANT-STICK-EUCALYPTUS-PEPPERMINT:
+  - label: "Full (3oz)"
+    sku: "PT-NDS-FUEPSOLO-01"
+    price: 8.09
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/983.png?v=1786430824"
+    position: 1
+  - label: "Mini (0.7oz)"
+    sku: "PT-NDS-MIEPSOLO-01"
+    price: 4.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/981.png?v=1786430816"
+    position: 2
+NATURAL-DEODORANT-STICK-ROSE-CITRUS:
+  - label: "Full (3oz)"
+    sku: "PT-NDS-FURCSOLO-01"
+    price: 8.09
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/a8655329955f3f7491059e9320fbbc9a477c7e63081577557488bed417f0263f.webp?v=1786430816"
+    position: 1
+  - label: "Mini (0.7oz)"
+    sku: "PT-NDS-MIRCSOLO-01"
+    price: 4.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/7053078c7bd4b2cf904d949354c9244d6825ddda222c81cea9885c3cb941aafc.webp?v=1786430817"
+    position: 2
+NATURAL-DEODORANT-STICK-UNSCENTED:
+  - label: "Full (3oz)"
+    sku: "PT-NDS-FUUNSOLO-01"
+    price: 8.09
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/ChatGPT_Image_2026_2_25_13_04_30.png?v=1786430815"
+    position: 1
+  - label: "Mini (0.7oz)"
+    sku: "PT-NDS-MIUNSOLO-01"
+    price: 4.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/IMG_5264.jpg?v=1786430816"
+    position: 2
+NATURAL-FACE-OIL:
+  - label: "Balance - For Oily/Combination Skin"
+    sku: "FO-BAL-NEW"
+    price: 26.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Balance-FO-4.png?v=1786431885"
+    position: 1
+  - label: "Calm - For Acne-prone/Sensitive Skin"
+    sku: "FO-CAL-NEW"
+    price: 26.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Calm-FO-4.png?v=1786431888"
+    position: 2
+  - label: "Hydrate - For Dry/Flaky Skin"
+    sku: "FO-HYD-NEW"
+    price: 26.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Hydrate-FO-4.png?v=1786431888"
+    position: 3
+  - label: "Shine - For Normal to Dull Skin"
+    sku: "FO-SHI-NEW"
+    price: 26.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Shine-FO-4.png?v=1786431889"
+    position: 4
+  - label: "Timeless - For Mature/Aging Skin"
+    sku: "FO-TIM-NEW"
+    price: 26.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Timeless-FO-4.png?v=1786431890"
+    position: 5
+  - label: "Variety"
+    sku: "FO-VAR-5-NEW"
+    price: 107.62
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Hydrate-FO-4.png?v=1786431888"
+    position: 6
+NEW-CLEAR-AF-BLEMISH-EXTRACTOR:
+  - label: "Blue"
+    color_name: "Blue"
+    sku: "AFB-EX2-PRTQ"
+    price: 21.25
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/AFB-025-CALIFORNIA-2-PACK-BLEMISH-EXTRACTOR-PROD-COMPOSITE-CG-PR-NOV-25-22_1_e7e6b084-3d46-43f0-8f77-829be46217f0.png?v=1786432215"
+    position: 1
+  - label: "Pink"
+    color_name: "Pink"
+    sku: "AFB-EX2-RDPI"
+    price: 21.25
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/AFB-025-CALIFORNIA-2-PACK-BLEMISH-EXTRACTOR-PROD-COMPOSITE-CG-PI-NOV-25-22_1_1a2f38e8-00a2-4c23-b248-18f3892b0a37.png?v=1786432215"
+    position: 2
+NIACINAMIDE-FACE-LIGHTENING-CREAM:
+  - label: "A"
+    color_name: "A"
+    sku: "14:193#A"
+    price: 13.44
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Niacinamide-Face-Lightening-Cream-cashymart-39575809851670.webp?v=1786431688"
+    position: 1
+  - label: "B"
+    color_name: "B"
+    sku: "14:29#B"
+    price: 13.33
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Niacinamide-Face-Lightening-Cream-cashymart-39575809884438.webp?v=1786431686"
+    position: 2
+ONE-STEP-NAIL-POLISH-GEL-PEN:
+  - label: "Set"
+    sku: "CJBJZJZJ00574-Set"
+    price: 19.06
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/One-Step-Nail-Polish-Gel-Pen-cashymart-35573257044246.png?v=1786431444"
+    position: 1
+  - label: "Style13"
+    sku: "CJBJZJZJ00574-Style13"
+    price: 16.09
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/One-Step-Nail-Polish-Gel-Pen-cashymart-35573257142550.jpg?v=1786431445"
+    position: 2
+  - label: "Style7"
+    sku: "CJBJZJZJ00574-Style7"
+    price: 16.09
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/One-Step-Nail-Polish-Gel-Pen-cashymart-35573257306390.jpg?v=1786431442"
+    position: 3
+  - label: "02"
+    sku: "CJBJZJZJ00574-02"
+    price: 15.86
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/One-Step-Nail-Polish-Gel-Pen-cashymart-35573256323350.jpg?v=1786431444"
+    position: 4
+  - label: "01"
+    sku: "CJBJZJZJ00574-01"
+    price: 15.86
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/One-Step-Nail-Polish-Gel-Pen-cashymart-35573255897366.jpg?v=1786431443"
+    position: 5
+  - label: "03"
+    sku: "CJBJZJZJ00574-03"
+    price: 15.86
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/One-Step-Nail-Polish-Gel-Pen-cashymart-35573256388886.jpg?v=1786431444"
+    position: 6
+  - label: "05"
+    sku: "CJBJZJZJ00574-05"
+    price: 15.86
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/One-Step-Nail-Polish-Gel-Pen-cashymart-35573256847638.jpg?v=1786431444"
+    position: 7
+  - label: "04"
+    sku: "CJBJZJZJ00574-04"
+    price: 15.86
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/One-Step-Nail-Polish-Gel-Pen-cashymart-35573257142550.jpg?v=1786431445"
+    position: 8
+REBALANCING-SHAMPOO-AND-CONDITIONER-BAR-SET:
+  - label: "Rebalance (oily/fine) / Duo Bars"
+    sku: "PT-SBCB-2RESET-01"
+    price: 17.79
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/shampoo_cf199c86-5442-4e55-920e-1104baeadd28.jpg?v=1786430815"
+    position: 1
+  - label: "Rebalance (oily/fine) / Duo + Soap Bags"
+    sku: "PT-SBCB-2RESBSET-01"
+    price: 22.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/rebalancingset1_39668e69-4286-4a1f-af70-a9cb4c8df774.jpg?v=1786430816"
+    position: 2
+REBALANCING-SHAMPOO-BAR:
+  - label: "Rebalance (oily/fine) / Shampoo Only"
+    sku: "PT-SBCB-RESB-01"
+    price: 9.7
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/rebalancing-shampoo-bar-rebalance-oily-fine-shampoo-only-plantish-future-28305340039257.jpg?v=1786430815"
+    position: 1
+  - label: "Rebalance (oily/fine) / Shampoo with Soap Bag"
+    sku: "PT-SBCB-RESBSB-01"
+    price: 12.94
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/rebalancing-shampoo-bar-rebalance-oily-fine-shampoo-only-plantish-future-28305340039257.jpg?v=1786430815"
+    position: 2
+REFILLABLE-BAMBOO-TOOTHBRUSH-CANADA-ONLY:
+  - label: "1 Brush"
+    sku: "PT-BT-SOLO-01"
+    price: 3.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/refillable-bamboo-toothbrush-1-brush-plantish-future.jpg?v=1786430816"
+    position: 1
+  - label: "1 Brush + 2 Refills"
+    sku: "PT-BT-1B2RSET-01"
+    price: 4.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/refillable-bamboo-toothbrush-1-brush-2-refills-plantish-future.jpg?v=1786430815"
+    position: 2
+  - label: "1 Brush + 4 Refills"
+    sku: "PT-BT-1B4RSET-01"
+    price: 6.47
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/refillable-bamboo-toothbrush-plantish-future-28304867426393.png?v=1786430816"
+    position: 3
+  - label: "2 Refills"
+    sku: "PT-BTR-2RSOLO-01"
+    price: 3.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/refillable-bamboo-toothbrush-2-refills-plantish-future.jpg?v=1786430821"
+    position: 4
+REUSABLE-COTTON-ROUNDS-100-COTTON:
+  - label: "4 Cotton+ 1 Hook"
+    sku: "PT-SSC-4COSET-01"
+    price: 12.94
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/reusable-cotton-rounds-100-cotton-16-cotton-plantish-future-28315409186905_1b34c9f8-1c7a-4f01-8e32-465266974427_1.jpg?v=1786430815"
+    position: 1
+  - label: "8 Cotton + 2 Hook"
+    sku: "PT-SSC-8COSET-01"
+    price: 22.64
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/makeup-remover-pads-plantish-future_df590cf3-15f4-435b-aaeb-dbfc45c669c8.jpg?v=1786430815"
+    position: 2
+  - label: "16 Cotton + 2 Hook"
+    sku: "PT-SSC-16COSET-01"
+    price: 27.49
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/cotton-face-rounds-plantish-future_32e692d0-2716-46c8-a7af-2ec84ddecdc2.jpg?v=1786430816"
+    position: 3
+REUSABLE-COTTON-ROUNDS-BAMBOO-CHARCOAL:
+  - label: "4 Bamboo"
+    sku: "PT-SSC-4BASET-01"
+    price: 4.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/reusable-cotton-rounds-bamboo-charcoal-4-bamboo-plantish-future-28315414790233.jpg?v=1786430815"
+    position: 1
+  - label: "8 Bamboo"
+    sku: "PT-SSC-8BASET-01"
+    price: 9.7
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/reusable-cotton-rounds-bamboo-charcoal-4-bamboo-plantish-future-28315414790233.jpg?v=1786430815"
+    position: 2
+  - label: "16 bamboo"
+    sku: "PT-SSC-16BASET-01"
+    price: 14.55
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/reusable-cotton-rounds-bamboo-charcoal-16-bamboo-plantish-future-28315414757465.jpg?v=1786430815"
+    position: 3
+REUSABLE-COTTON-ROUNDS-COTTON-BAMBOO-SET:
+  - label: "4 Cotton + 4 Bamboo"
+    sku: "PT-SSC-4CO4BASET-01"
+    price: 9.7
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/reusable-cotton-rounds-plantish-future_8af776be-f97d-46f3-a70b-d7e1ce25cdc7.jpg?v=1786430815"
+    position: 1
+  - label: "8 Cotton + 8 Bamboo"
+    sku: "PT-SSC-8CO8BASET-01"
+    price: 14.55
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/eye-makeup-remover-pads-plantish-future_842b4914-4528-483e-a75c-b1d7cc342782.jpg?v=1786430815"
+    position: 2
+SOAP-BAG:
+  - label: "1 Regular"
+    sku: "PT-SS-SOLO-01"
+    price: 3.23
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/soap-bag-plantish-future-28334200258649.jpg?v=1786430815"
+    position: 1
+  - label: "2 Regular"
+    sku: "PT-SS-2SET-01"
+    price: 6.47
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/soap-bag-2-soap-bags-plantish-future_966fb7da-e0b2-47e6-900b-fc54f9e14915.jpg?v=1786430817"
+    position: 2
+ULTIMATE-TWO-COLOR-NAIL-POLISH-SET:
+  - label: "A801"
+    color_name: "A801"
+    sku: "CJZJ111664201AZ"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573423636758.jpg?v=1786431427"
+    position: 1
+  - label: "A802"
+    color_name: "A802"
+    sku: "CJZJ111664202BY"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573424029974.jpg?v=1786431429"
+    position: 2
+  - label: "A803"
+    color_name: "A803"
+    sku: "CJZJ111664203CX"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573424226582.jpg?v=1786431433"
+    position: 3
+  - label: "A804"
+    color_name: "A804"
+    sku: "CJZJ111664204DW"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573424324886.jpg?v=1786431429"
+    position: 4
+  - label: "A805"
+    color_name: "A805"
+    sku: "CJZJ111664205EV"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573424423190.jpg?v=1786431431"
+    position: 5
+  - label: "A806"
+    color_name: "A806"
+    sku: "CJZJ111664206FU"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573424521494.jpg?v=1786431421"
+    position: 6
+  - label: "A807"
+    color_name: "A807"
+    sku: "CJZJ111664207GT"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573425013014.jpg?v=1786431424"
+    position: 7
+  - label: "A808"
+    color_name: "A808"
+    sku: "CJZJ111664208HS"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573425078550.jpg?v=1786431425"
+    position: 8
+  - label: "A809"
+    color_name: "A809"
+    sku: "CJZJ111664209IR"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573425176854.jpg?v=1786431426"
+    position: 9
+  - label: "A810"
+    color_name: "A810"
+    sku: "CJZJ111664210JQ"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573425373462.jpg?v=1786431422"
+    position: 10
+  - label: "A811"
+    color_name: "A811"
+    sku: "CJZJ111664211KP"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573425471766.jpg?v=1786431425"
+    position: 11
+  - label: "A812"
+    color_name: "A812"
+    sku: "CJZJ111664212LO"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573425766678.jpg?v=1786431431"
+    position: 12
+  - label: "A813"
+    color_name: "A813"
+    sku: "CJZJ111664213MN"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573425832214.jpg?v=1786431432"
+    position: 13
+  - label: "A814"
+    color_name: "A814"
+    sku: "CJZJ111664214NM"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573425897750.jpg?v=1786431426"
+    position: 14
+  - label: "A815"
+    color_name: "A815"
+    sku: "CJZJ111664215OL"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573425963286.jpg?v=1786431432"
+    position: 15
+  - label: "A816"
+    color_name: "A816"
+    sku: "CJZJ111664216PK"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573426028822.jpg?v=1786431422"
+    position: 16
+  - label: "A817"
+    color_name: "A817"
+    sku: "CJZJ111664217QJ"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573426094358.jpg?v=1786431433"
+    position: 17
+  - label: "A818"
+    color_name: "A818"
+    sku: "CJZJ111664218RI"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573426356502.jpg?v=1786431423"
+    position: 18
+  - label: "A819"
+    color_name: "A819"
+    sku: "CJZJ111664219SH"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573426782486.jpg?v=1786431423"
+    position: 19
+  - label: "A820"
+    color_name: "A820"
+    sku: "CJZJ111664220TG"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573426946326.jpg?v=1786431433"
+    position: 20
+  - label: "A821"
+    color_name: "A821"
+    sku: "CJZJ111664221UF"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573427077398.jpg?v=1786431433"
+    position: 21
+  - label: "A822"
+    color_name: "A822"
+    sku: "CJZJ111664222VE"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573427142934.jpg?v=1786431430"
+    position: 22
+  - label: "A823"
+    color_name: "A823"
+    sku: "CJZJ111664223WD"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573427470614.jpg?v=1786431429"
+    position: 23
+  - label: "A824"
+    color_name: "A824"
+    sku: "CJZJ111664224XC"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573427601686.jpg?v=1786431430"
+    position: 24
+  - label: "A825"
+    color_name: "A825"
+    sku: "CJZJ111664225YB"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573427699990.jpg?v=1786431434"
+    position: 25
+  - label: "A826"
+    color_name: "A826"
+    sku: "CJZJ111664226ZA"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573427798294.jpg?v=1786431431"
+    position: 26
+  - label: "A827"
+    color_name: "A827"
+    sku: "CJZJ111664227AZ"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573427929366.jpg?v=1786431424"
+    position: 27
+  - label: "A828"
+    color_name: "A828"
+    sku: "CJZJ111664228BY"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573428027670.jpg?v=1786431434"
+    position: 28
+  - label: "A829"
+    color_name: "A829"
+    sku: "CJZJ111664229CX"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573428322582.jpg?v=1786431426"
+    position: 29
+  - label: "A830"
+    color_name: "A830"
+    sku: "CJZJ111664230DW"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Ultimate-Two-Color-Nail-Polish-Set-cashymart-35573428486422.jpg?v=1786431430"
+    position: 30
+  - label: "A831"
+    color_name: "A831"
+    sku: "CJZJ111664231EV"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1620371567501.jpg?v=1786431434"
+    position: 31
+  - label: "A832"
+    color_name: "A832"
+    sku: "CJZJ111664232FU"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1620373034683.jpg?v=1786431427"
+    position: 32
+  - label: "A833"
+    color_name: "A833"
+    sku: "CJZJ111664233GT"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1620371490942.jpg?v=1786431428"
+    position: 33
+  - label: "A834"
+    color_name: "A834"
+    sku: "CJZJ111664234HS"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1620371505474.jpg?v=1786431421"
+    position: 34
+  - label: "A835"
+    color_name: "A835"
+    sku: "CJZJ111664235IR"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1620371505466.jpg?v=1786431421"
+    position: 35
+  - label: "A836"
+    color_name: "A836"
+    sku: "CJZJ111664236JQ"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1620373178846.jpg?v=1786431427"
+    position: 36
+  - label: "A837"
+    color_name: "A837"
+    sku: "CJZJ111664237KP"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1620371529088.jpg?v=1786431428"
+    position: 37
+  - label: "A838"
+    color_name: "A838"
+    sku: "CJZJ111664238LO"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1620371490955.jpg?v=1786431422"
+    position: 38
+  - label: "A839"
+    color_name: "A839"
+    sku: "CJZJ111664239MN"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1620371505458.jpg?v=1786431423"
+    position: 39
+  - label: "A840"
+    color_name: "A840"
+    sku: "CJZJ111664240NM"
+    price: 18.24
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/1620371529089.jpg?v=1786431428"
+    position: 40
+VIBRANT-QUICK-DRYING-TWO-TONE-NAIL-POLISH:
+  - label: "C101 The Beauty of Flame"
+    color_name: "C101 The Beauty of Flame"
+    sku: "CJZJ111151101AZ"
+    price: 13.79
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Vibrant-Quick-Drying-Two-Tone-Nail-Polish-cashymart-35573311766806.jpg?v=1786431417"
+    position: 1
+  - label: "C102 Peach Beauty"
+    color_name: "C102 Peach Beauty"
+    sku: "CJZJ111151102BY"
+    price: 13.79
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Vibrant-Quick-Drying-Two-Tone-Nail-Polish-cashymart-35573311963414.jpg?v=1786431418"
+    position: 2
+  - label: "C103 pink and blue double hear"
+    color_name: "C103 pink and blue double hear"
+    sku: "CJZJ111151103CX"
+    price: 13.79
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Vibrant-Quick-Drying-Two-Tone-Nail-Polish-cashymart-35573312127254.jpg?v=1786431415"
+    position: 3
+  - label: "C104 heartbeat"
+    color_name: "C104 heartbeat"
+    sku: "CJZJ111151104DW"
+    price: 13.79
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Vibrant-Quick-Drying-Two-Tone-Nail-Polish-cashymart-35573312192790.jpg?v=1786431416"
+    position: 4
+  - label: "C105 Deep Sea Starry Night"
+    color_name: "C105 Deep Sea Starry Night"
+    sku: "CJZJ111151105EV"
+    price: 13.79
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Vibrant-Quick-Drying-Two-Tone-Nail-Polish-cashymart-35573312487702.jpg?v=1786431416"
+    position: 5
+  - label: "C106 Cool Mint"
+    color_name: "C106 Cool Mint"
+    sku: "CJZJ111151106FU"
+    price: 13.79
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Vibrant-Quick-Drying-Two-Tone-Nail-Polish-cashymart-35573312815382.jpg?v=1786431417"
+    position: 6
+  - label: "C107 golden years"
+    color_name: "C107 golden years"
+    sku: "CJZJ111151107GT"
+    price: 13.79
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Vibrant-Quick-Drying-Two-Tone-Nail-Polish-cashymart-35573312880918.jpg?v=1786431417"
+    position: 7
+  - label: "C108 elegant milk coffee"
+    color_name: "C108 elegant milk coffee"
+    sku: "CJZJ111151108HS"
+    price: 13.79
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Vibrant-Quick-Drying-Two-Tone-Nail-Polish-cashymart-35573312946454.jpg?v=1786431417"
+    position: 8
+WATER-BASED-ODORLESS-NAIL-POLISH-SET:
+  - label: "6style"
+    sku: "CJBJZJZJ00361-6style"
+    price: 23.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Water-Based-Odorless-Nail-Polish-Set-cashymart-35573505851670.jpg?v=1786431387"
+    position: 1
+  - label: "7style"
+    sku: "CJBJZJZJ00361-7style"
+    price: 23.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Water-Based-Odorless-Nail-Polish-Set-cashymart-35573506048278.jpg?v=1786431384"
+    position: 2
+  - label: "5style"
+    sku: "CJBJZJZJ00361-5style"
+    price: 23.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Water-Based-Odorless-Nail-Polish-Set-cashymart-35573506441494.jpg?v=1786431385"
+    position: 3
+  - label: "3style"
+    sku: "CJBJZJZJ00361-3style"
+    price: 23.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Water-Based-Odorless-Nail-Polish-Set-cashymart-35573506736406.jpg?v=1786431386"
+    position: 4
+  - label: "10style"
+    sku: "CJBJZJZJ00361-10style"
+    price: 23.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Water-Based-Odorless-Nail-Polish-Set-cashymart-35573506572566.jpg?v=1786431387"
+    position: 5
+  - label: "2style"
+    sku: "CJBJZJZJ00361-2style"
+    price: 23.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Water-Based-Odorless-Nail-Polish-Set-cashymart-35573505982742.jpg?v=1786431384"
+    position: 6
+  - label: "9style"
+    sku: "CJBJZJZJ00361-9style"
+    price: 23.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Water-Based-Odorless-Nail-Polish-Set-cashymart-35573507227926.jpg?v=1786431386"
+    position: 7
+  - label: "8style"
+    sku: "CJBJZJZJ00361-8style"
+    price: 23.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Water-Based-Odorless-Nail-Polish-Set-cashymart-35573507031318.jpg?v=1786431386"
+    position: 8
+  - label: "4style"
+    sku: "CJBJZJZJ00361-4style"
+    price: 23.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Water-Based-Odorless-Nail-Polish-Set-cashymart-35573506310422.jpg?v=1786431385"
+    position: 9
+  - label: "1style"
+    sku: "CJBJZJZJ00361-1style"
+    price: 23.68
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/Water-Based-Odorless-Nail-Polish-Set-cashymart-35573505655062.jpg?v=1786431384"
+    position: 10
+ZERO-WASTE-DEODORANT-BAR-UNSCENTED:
+  - label: "Mini (1oz)"
+    sku: "PT-ZWD-SMUN-01"
+    price: 4.85
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/zero-waste-deodorant-bar-unscented-mini-plantish-future.jpg?v=1786430816"
+    position: 1
+  - label: "Large (3.5oz)"
+    sku: "PT-ZWD-LARU-01"
+    price: 8.09
+    stock: 100
+    image: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/zero-waste-deodorant-bar-unscented-plantish-future.jpg?v=1786430815"
+    position: 2

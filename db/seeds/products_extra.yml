@@ -1,329 +1,455 @@
-# Extended product catalogue (KAB Cosmetics, from brand store). Appended to
-# products_data in db/seeds.rb. Prices are Syncee sell prices.
+# Extended product catalogue (brand-store imports). Appended to products_data in db/seeds.rb.
 - category: "makeup"
   name: "Red Velvet Lipstick"
   sku: "KAB-RED-VELVET-LIPSTICK"
   price: 14.4
   stock: 100
+  desc: "A richly pigmented cream lipstick in a deep red-velvet shade. Smooth, full-coverage colour with a comfortable satin finish for everyday and evening wear."
+
 - category: "makeup"
   name: "Cherry Pie Lipstick"
   sku: "KAB-CHERRY-PIE-LIPSTICK"
   price: 14.4
   stock: 100
+  desc: "Creamy, high-pigment lipstick in a warm cherry red. Glides on smooth for bold, long-lasting colour."
+
 - category: "makeup"
   name: "Glazed Lipstick"
   sku: "KAB-GLAZED-LIPSTICK"
   price: 14.4
   stock: 100
+  desc: "Cream lipstick with a soft glazed finish that leaves lips looking full and hydrated with buildable colour."
+
 - category: "makeup"
   name: "Rose Prick"
   sku: "KAB-ROSE-PRICK"
   price: 14.4
   stock: 100
+  desc: "A rosy-toned cream lipstick that flatters most skin tones. Smooth application with lasting, saturated colour."
+
 - category: "makeup"
   name: "Role Play"
   sku: "KAB-ROLE-PLAY"
   price: 14.4
   stock: 100
+  desc: "Bold statement lipstick with a creamy, full-coverage formula and a comfortable satin finish."
+
 - category: "makeup"
   name: "Stay the Night"
   sku: "KAB-STAY-THE-NIGHT"
   price: 14.4
   stock: 100
+  desc: "A deep, sultry lipstick shade built for evening looks. Long-wearing, richly pigmented colour."
+
 - category: "makeup"
   name: "Flawless"
   sku: "KAB-FLAWLESS"
   price: 14.4
   stock: 100
+  desc: "A versatile everyday nude-leaning lipstick with a smooth cream finish and even, buildable coverage."
+
 - category: "makeup"
   name: "Lights Off"
   sku: "KAB-LIGHTS-OFF"
   price: 14.4
   stock: 100
+  desc: "A dramatic dark lipstick shade with intense pigment and a smooth, long-lasting cream finish."
+
 - category: "makeup"
   name: "Latex"
   sku: "KAB-LATEX"
   price: 14.4
   stock: 100
+  desc: "High-shine, high-impact lip colour with a bold, glossy finish that makes a statement."
+
 - category: "makeup"
   name: "Yours Truly"
   sku: "KAB-YOURS-TRULY"
   price: 14.4
   stock: 100
+  desc: "A soft, wearable lipstick shade with a creamy texture and natural-looking coverage for daily use."
+
 - category: "makeup"
   name: "Over the Moon"
   sku: "KAB-OVER-THE-MOON"
   price: 14.4
   stock: 100
+  desc: "A playful lipstick shade with a smooth cream formula and comfortable, buildable colour."
+
 - category: "makeup"
   name: "Surprise Me"
   sku: "KAB-SURPRISE-ME"
   price: 14.4
   stock: 100
+  desc: "A vibrant lip colour with a creamy, pigment-rich finish that lasts through the day."
+
 - category: "makeup"
   name: "Corset"
   sku: "KAB-CORSET"
   price: 14.4
   stock: 100
+  desc: "A flattering mauve-toned cream lipstick with smooth coverage and a satin finish."
+
 - category: "makeup"
   name: "Double D's"
   sku: "KAB-DOUBLE-D-S"
   price: 14.4
   stock: 100
+  desc: "A bold, full-coverage lipstick with rich pigment and a comfortable long-wear cream finish."
+
 - category: "makeup"
   name: "Whip"
   sku: "KAB-WHIP"
   price: 14.4
   stock: 100
+  desc: "A soft, creamy lipstick shade that applies smoothly for a natural, buildable look."
+
 - category: "makeup"
   name: "Candlelit"
   sku: "KAB-CANDLELIT"
   price: 14.4
   stock: 100
+  desc: "A warm-toned cream lipstick with a flattering satin finish and even, lasting colour."
+
 - category: "makeup"
   name: "Garter Belt"
   sku: "KAB-GARTER-BELT"
   price: 14.4
   stock: 100
+  desc: "A deep, romantic lipstick shade with intense pigment and a smooth cream texture."
+
 - category: "makeup"
   name: "Cherry Pie Gloss"
   sku: "KAB-CHERRY-PIE-GLOSS"
   price: 14.4
   stock: 100
+  desc: "A high-shine lip gloss in a warm cherry tint. Non-sticky formula that adds shine and a wash of colour on its own or over lipstick."
+
 - category: "makeup"
   name: "Lollipop Cream Lipgloss"
   sku: "KAB-LOLLIPOP-CREAM-LIPGLOSS"
   price: 14.4
   stock: 100
+  desc: "A creamy, cushiony lip gloss with a glossy finish and sweet-toned colour. Comfortable, non-tacky wear."
+
 - category: "makeup"
   name: "Mini Hydrating Tinted Lip Oil"
   sku: "KAB-MINI-HYDRATING-TINTED-LIP-OIL"
   price: 8.0
   stock: 100
+  desc: "A nourishing tinted lip oil in a travel-friendly size. Adds a sheer wash of colour and glossy shine while conditioning the lips."
+
 - category: "makeup"
   name: "Lime Lip Oil"
   sku: "KAB-LIME-LIP-OIL"
   price: 16.0
   stock: 100
+  desc: "A hydrating lip oil with a fresh lime tint. Adds glossy shine and conditions the lips for a soft, healthy look."
+
 - category: "makeup"
   name: "Hydrating Lip Oils"
   sku: "KAB-HYDRATING-LIP-OILS"
   price: 16.0
   stock: 100
+  desc: "Nourishing tinted lip oils that deliver glossy shine and a sheer wash of colour while hydrating and softening the lips."
+
 - category: "makeup"
   name: "PopTart Lip Liner"
   sku: "KAB-POPTART-LIP-LINER"
   price: 9.6
   stock: 100
+  desc: "A creamy lip liner in a playful pink tone that shapes and defines the lips with lasting wear."
+
 - category: "makeup"
   name: "Sugar + Spice Lip Liner"
   sku: "KAB-SUGAR-SPICE-LIP-LINER"
   price: 9.6
   stock: 100
+  desc: "A warm, spiced-nude lip liner that lines and fills the lips for a natural, defined look."
+
 - category: "makeup"
   name: "Lollipop Lip Liner"
   sku: "KAB-LOLLIPOP-LIP-LINER"
   price: 9.6
   stock: 100
+  desc: "A creamy lip liner that outlines and fills the lips, pairing with matching gloss or lipstick for a polished look."
+
 - category: "makeup"
   name: "Strawberry Daiquiri Lip Liner"
   sku: "KAB-STRAWBERRY-DAIQUIRI-LIP-LINER"
   price: 9.6
   stock: 100
+  desc: "A berry-toned lip liner that outlines and fills the lips for bold, long-lasting definition."
+
 - category: "makeup"
   name: "Strawberry Lemonade Lip Liner"
   sku: "KAB-STRAWBERRY-LEMONADE-LIP-LINER"
   price: 9.6
   stock: 100
+  desc: "A bright, fresh-toned lip liner that defines the lips and keeps colour in place."
+
 - category: "makeup"
   name: "Pina Colada Lip Liner"
   sku: "KAB-PINA-COLADA-LIP-LINER"
   price: 9.6
   stock: 100
+  desc: "A soft nude-leaning lip liner that defines the lip line and works under gloss or lipstick."
+
 - category: "makeup"
   name: "Cherry Pie Lip Liner"
   sku: "KAB-CHERRY-PIE-LIP-LINER"
   price: 9.6
   stock: 100
+  desc: "A creamy lip liner in a warm cherry shade to define, line, and fill the lips for longer-lasting colour."
+
 - category: "makeup"
   name: "Mind Eraser Lip Liner"
   sku: "KAB-MIND-ERASER-LIP-LINER"
   price: 9.6
   stock: 100
+  desc: "A versatile lip liner shade that defines and shapes the lips with smooth, long-wearing colour."
+
 - category: "makeup"
   name: "Sweetheart Lip Liner"
   sku: "KAB-SWEETHEART-LIP-LINER"
   price: 9.6
   stock: 100
+  desc: "A soft pink lip liner that shapes and defines the lips with a smooth, creamy formula."
+
 - category: "makeup"
   name: "Peach Cobbler Lip Liner"
   sku: "KAB-PEACH-COBBLER-LIP-LINER"
   price: 9.6
   stock: 100
+  desc: "A warm peach-toned lip liner that lines and fills the lips for a soft, natural finish."
+
 - category: "makeup"
   name: "Cosmopolitan Lip Liner"
   sku: "KAB-COSMOPOLITAN-LIP-LINER"
   price: 9.6
   stock: 100
+  desc: "A smooth lip liner in a flattering rosy tone that defines the lip line and prevents colour from feathering."
+
 - category: "makeup"
   name: "Lip Liner Bundle"
   sku: "KAB-LIP-LINER-BUNDLE"
   price: 96.0
   stock: 100
+  desc: "A curated bundle of KAB lip liners in a range of wearable shades to line, define, and fill the lips."
+
 - category: "makeup"
   name: "Undress Me Lip Kit"
   sku: "KAB-UNDRESS-ME-LIP-KIT"
   price: 36.0
   stock: 100
+  desc: "A soft nude lip kit pairing lip colour and a matching liner for a clean, polished look."
+
 - category: "makeup"
   name: "Cherry Pie Lip Kit"
   sku: "KAB-CHERRY-PIE-LIP-KIT"
   price: 36.0
   stock: 100
+  desc: "A coordinated lip kit pairing a cherry-toned lipstick or gloss with a matching liner for a complete, defined lip look."
+
 - category: "makeup"
   name: "Tiramisu Lip Kit"
   sku: "KAB-TIRAMISU-LIP-KIT"
   price: 36.0
   stock: 100
+  desc: "A warm neutral lip kit pairing lipstick with a matching liner in cozy tiramisu tones."
+
 - category: "makeup"
   name: "Red Velvet Lip Kit"
   sku: "KAB-RED-VELVET-LIP-KIT"
   price: 36.0
   stock: 100
+  desc: "A lip kit in a deep red-velvet shade, pairing lip colour with a matching liner for a polished, long-wearing finish."
+
 - category: "makeup"
   name: "Sending Nudes Lip Kit"
   sku: "KAB-SENDING-NUDES-LIP-KIT"
   price: 36.0
   stock: 100
+  desc: "A nude-toned lip kit with coordinated lip colour and liner for a natural, everyday finish."
+
 - category: "makeup"
   name: "Lollipop Lip Kit"
   sku: "KAB-LOLLIPOP-LIP-KIT"
   price: 36.0
   stock: 100
+  desc: "A sweet-toned lip kit combining lip colour and a matching liner for effortless, coordinated wear."
+
 - category: "makeup"
   name: "Virtue Lip Duo"
   sku: "KAB-VIRTUE-LIP-DUO"
   price: 24.0
   stock: 100
+  desc: "A wearable lip duo in soft, complementary tones for an everyday polished lip."
+
 - category: "makeup"
   name: "Lush Lip Duo"
   sku: "KAB-LUSH-LIP-DUO"
   price: 24.0
   stock: 100
+  desc: "A lip duo combining lip colour and gloss for a plush, dimensional finish."
+
 - category: "makeup"
   name: "Risque Lip Duo"
   sku: "KAB-RISQUE-LIP-DUO"
   price: 24.0
   stock: 100
+  desc: "A bold lip duo pairing statement lip colour with gloss for high-impact wear."
+
 - category: "makeup"
   name: "Kissable Lip Duo"
   sku: "KAB-KISSABLE-LIP-DUO"
   price: 24.0
   stock: 100
+  desc: "A two-piece lip duo pairing complementary lip products for a fuller, coordinated finish."
+
 - category: "makeup"
   name: "Setting Powder"
   sku: "KAB-SETTING-POWDER"
   price: 24.0
   stock: 100
+  desc: "A finishing setting powder that helps lock makeup in place, control shine, and smooth the look of the skin."
+
 - category: "makeup"
   name: "Hydrating Setting Mist"
   sku: "KAB-HYDRATING-SETTING-MIST"
   price: 22.4
   stock: 100
+  desc: "A lightweight hydrating setting mist that refreshes the skin and helps makeup last longer with a natural finish."
+
 - category: "makeup"
   name: "Bombshell Beauty Oil"
   sku: "KAB-BOMBSHELL-BEAUTY-OIL"
   price: 27.2
   stock: 100
+  desc: "A multi-use beauty oil for face and body that absorbs quickly to nourish and add a subtle glow."
+
 - category: "makeup"
   name: "Eyeshadow Quads"
   sku: "KAB-EYESHADOW-QUADS"
   price: 14.4
   stock: 100
+  desc: "A four-shade eyeshadow quad with coordinated matte and shimmer tones for building complete eye looks. Blendable, pigmented powders."
+
 - category: "makeup"
   name: "Limited Edition Naughty Or Ice Palette"
   sku: "KAB-LIMITED-EDITION-NAUGHTY-OR-ICE-PALETTE"
   price: 16.0
   stock: 100
+  desc: "A limited-edition eyeshadow palette with a curated mix of matte and shimmer shades for building festive, versatile eye looks."
+
 - category: "makeup"
   name: "Bubblegum Bliss Blush Duo"
   sku: "KAB-BUBBLEGUM-BLISS-BLUSH-DUO"
   price: 17.6
   stock: 100
+  desc: "A two-shade blush duo in soft, blendable pink tones for a natural flush. Buildable powder finish."
+
 - category: "makeup"
   name: "Cotton Candy Blushmeup"
   sku: "KAB-COTTON-CANDY-BLUSHMEUP"
   price: 24.0
   stock: 100
+  desc: "A soft pink powder blush that blends easily for a fresh, natural-looking flush."
+
 - category: "makeup"
   name: "Vanilla Bean Blushmeup"
   sku: "KAB-VANILLA-BEAN-BLUSHMEUP"
   price: 24.0
   stock: 100
+  desc: "A warm, neutral-toned powder blush that adds subtle dimension and a natural flush to the cheeks."
+
 - category: "beauty-tools"
   name: "Lash Curler"
   sku: "KAB-LASH-CURLER"
   price: 12.8
   stock: 100
+  desc: "A classic eyelash curler that lifts and curls lashes for a wide-eyed, defined look before mascara."
 
-# ── DISURI / Nilon / SHANY (from brand stores) ──
 - category: "makeup"
   name: "DISURI Glossy Blast Lip Gloss - Forbidden Red"
   sku: "DISURI-GLOSSY-BLAST-LIP-GLOSS-FORBIDDEN-RED"
   price: 10.38
   stock: 100
+  desc: "A high-shine lip gloss in a bold Forbidden Red. Non-sticky formula that delivers glossy, mirror-like shine and a pop of colour."
+
 - category: "makeup"
   name: "HD Beauty Canvas Foundation"
   sku: "NILON-HD-BEAUTY-CANVAS-FOUNDATION"
   price: 36.0
   stock: 100
+  desc: "An HD foundation offering smooth, buildable coverage and a natural finish. Available across a full range of shades to match every skin tone."
+
 - category: "makeup"
   name: "Radiance Cover Concealer"
   sku: "NILON-RADIANCE-COVER-CONCEALER"
   price: 18.0
   stock: 100
+  desc: "A creamy, full-coverage concealer that brightens and evens the skin. Available in a wide range of shades to match every complexion."
+
 - category: "makeup"
   name: "Gold Dust Luminous Powder"
   sku: "NILON-GOLD-DUST-LUMINOUS-POWDER"
   price: 16.2
   stock: 100
+  desc: "A finely milled luminous powder that adds a soft golden glow and radiant finish to the skin."
+
 - category: "makeup"
   name: "Perle d'Or Illuminating Cream - Platinum"
   sku: "NILON-PERLE-D-OR-ILLUMINATING-CREAM-PLATINUM"
   price: 22.5
   stock: 100
+  desc: "An illuminating cream in a platinum tone that adds a luminous, pearlescent glow to the high points of the face."
+
 - category: "beauty-tools"
   name: "SHANY Vanity Vox 15-Piece Brush Set"
   sku: "SHANY-VANITY-VOX-15-PIECE-BRUSH-SET"
   price: 40.0
   stock: 100
+  desc: "A 15-piece makeup brush set covering face and eye application, with soft, durable bristles for a flawless finish."
+
 - category: "beauty-tools"
   name: "SHANY Artisan's Easel Brush Set"
   sku: "SHANY-ARTISAN-S-EASEL-BRUSH-SET"
   price: 32.0
   stock: 100
+  desc: "A professional makeup brush set housed in an easel-style stand. Includes a range of face and eye brushes for complete application. Available in multiple finishes."
+
 - category: "makeup"
   name: "SHANY Dreamy Dozen Lip Liner Set"
   sku: "SHANY-DREAMY-DOZEN-LIP-LINER-SET"
   price: 12.0
   stock: 100
+  desc: "A set of twelve lip liners spanning a versatile range of shades to line, define, and fill the lips."
+
 - category: "beauty-tools"
   name: "SHANY Luxe Lashes Eyelash Curler"
   sku: "SHANY-LUXE-LASHES-EYELASH-CURLER"
   price: 8.0
   stock: 100
+  desc: "A precision eyelash curler that lifts and curls lashes for an open, defined eye. Available in multiple finishes."
+
 - category: "beauty-tools"
   name: "SHANY Mannequin Head Wig Stand"
   sku: "SHANY-MANNEQUIN-HEAD-WIG-STAND"
   price: 13.6
   stock: 100
+  desc: "A mannequin head and stand for styling, storing, and displaying wigs — a practical tool for stylists and at-home use."
+
 - category: "beauty-tools"
   name: "SHANY Rolling Makeup Trolley Case"
   sku: "SHANY-ROLLING-MAKEUP-TROLLEY-CASE"
   price: 239.2
   stock: 100
+  desc: "A professional rolling makeup case with multiple compartments and trays. Durable, lockable, and built for artists on the go. Available in several finishes."
+
 - category: "makeup"
   name: "SHANY Beauty Cliche Makeup Kit"
   sku: "SHANY-BEAUTY-CLICHE-MAKEUP-KIT"
   price: 39.2
   stock: 100
+  desc: "An all-in-one makeup kit with a curated selection of eyeshadows, blushes, and lip colours — a complete palette for creating full looks."
