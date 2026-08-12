@@ -82,8 +82,21 @@ jobs:
       - name: Trust the server host key
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ secrets.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
-          ssh-keyscan -p "${{ secrets.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          HOST="${{ secrets.SSH_HOST || '64.6.175.177' }}"
+          PORT="${{ secrets.SSH_PORT || '2206' }}"
+          # Retry keyscan a few times — GitHub runner → server can blip transiently.
+          # Fail the step only if we never get a single key line after all retries.
+          got=0
+          for i in 1 2 3 4 5; do
+            if ssh-keyscan -p "$PORT" -t rsa,ecdsa,ed25519 "$HOST" >> ~/.ssh/known_hosts 2>/dev/null \
+               && ssh-keyscan -p "$PORT" -t rsa,ecdsa,ed25519 -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
+              got=1; break
+            fi
+            echo "keyscan attempt $i failed, retrying in 5s..."; sleep 5
+          done
+          if [ "$got" != "1" ] || ! grep -q . ~/.ssh/known_hosts; then
+            echo "::error::ssh-keyscan could not reach $HOST:$PORT after retries"; exit 1
+          fi
 
       - name: Kamal deploy (or bootstrap)
         run: |
@@ -147,12 +160,25 @@ jobs:
       - name: Trust the server host key
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ secrets.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
-          ssh-keyscan -p "${{ secrets.SSH_PORT || '2206' }}" -t rsa,ecdsa,ed25519 -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          HOST="${{ secrets.SSH_HOST || '64.6.175.177' }}"
+          PORT="${{ secrets.SSH_PORT || '2206' }}"
+          # Retry keyscan a few times — GitHub runner → server can blip transiently.
+          # Fail the step only if we never get a single key line after all retries.
+          got=0
+          for i in 1 2 3 4 5; do
+            if ssh-keyscan -p "$PORT" -t rsa,ecdsa,ed25519 "$HOST" >> ~/.ssh/known_hosts 2>/dev/null \
+               && ssh-keyscan -p "$PORT" -t rsa,ecdsa,ed25519 -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
+              got=1; break
+            fi
+            echo "keyscan attempt $i failed, retrying in 5s..."; sleep 5
+          done
+          if [ "$got" != "1" ] || ! grep -q . ~/.ssh/known_hosts; then
+            echo "::error::ssh-keyscan could not reach $HOST:$PORT after retries"; exit 1
+          fi
 
       - name: Pull & run the container on the server
         run: |
-          ssh -p "${{ secrets.SSH_PORT || '2206' }}" deploy@"${{ secrets.SSH_HOST }}" bash -lc "
+          ssh -p "${{ secrets.SSH_PORT || '2206' }}" deploy@"${{ secrets.SSH_HOST || '64.6.175.177' }}" bash -lc "
             set -e
             echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
             docker pull '${{ env.IMAGE }}:${{ github.sha }}'
