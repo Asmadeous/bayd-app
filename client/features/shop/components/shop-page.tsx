@@ -3,9 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, MouseEvent } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+  ChevronLeft,
+  ChevronRight,
   Minus,
   PackageCheck,
   Plus,
@@ -43,6 +45,7 @@ interface ApiProduct {
   price: string;
   stock_quantity: number;
   image_url: string | null;
+  gallery_urls: string[] | null;
   category: string | null;
   has_variants: boolean;
   variants: ApiVariant[];
@@ -95,6 +98,7 @@ function mapApiProduct(p: ApiProduct, index: number): ShopProduct {
       src: p.image_url ?? "/images/lashes1.jpg",
       alt: p.name,
     },
+    gallery: (p.gallery_urls ?? []).filter((url): url is string => !!url),
     badge: BADGES[index % BADGES.length] ?? "New",
     description: p.description ?? "",
     details: [],
@@ -238,9 +242,9 @@ export function ShopPage() {
 
         {tab === "products" ? (
           <>
-            {/* Category filter */}
+            {/* Category filter — horizontal scroll on mobile, wraps on desktop */}
             <div className="mx-auto w-full max-w-[1760px] px-4 pt-6 sm:px-6 lg:px-8 2xl:px-10">
-              <div className="flex flex-wrap gap-2">
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:px-0 sm:overflow-visible">
                 {[{ id: 0, name: "All" }, ...categories].map((c) => {
                   const value = c.name === "All" ? null : c.name;
                   const active = activeCategory === value;
@@ -249,7 +253,7 @@ export function ShopPage() {
                       key={c.id}
                       type="button"
                       onClick={() => setActiveCategory(value)}
-                      className="rounded-none px-4 py-1.5 text-xs font-bold transition-colors"
+                      className="shrink-0 rounded-none px-4 py-2 text-xs font-bold transition-colors sm:py-1.5"
                       style={
                         active
                           ? { background: "#c96c83", color: "#fff" }
@@ -297,13 +301,13 @@ function ShopHero({ products }: { products: ShopProduct[] }) {
 
   return (
     <section className="overflow-hidden bg-[#f4f1eb] text-[#101217]">
-      <div className="mx-auto grid w-full max-w-[1760px] gap-10 px-4 pb-14 pt-10 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-20 lg:pt-16 2xl:px-10">
-        <div className="flex min-h-[540px] flex-col justify-between">
+      <div className="mx-auto grid w-full max-w-[1760px] gap-8 px-4 pb-10 pt-8 sm:gap-10 sm:px-6 sm:pb-14 sm:pt-10 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-20 lg:pt-16 2xl:px-10">
+        <div className="flex flex-col justify-between lg:min-h-[540px]">
           <ScrollReveal variant="fade-right">
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#a36f4d]">
               Beauty Shop
             </p>
-            <h1 className="mt-5 max-w-4xl text-5xl font-extrabold leading-[0.95] tracking-tight sm:text-7xl lg:text-8xl">
+            <h1 className="mt-4 max-w-4xl text-4xl font-extrabold leading-[0.98] tracking-tight sm:mt-5 sm:text-6xl lg:text-8xl lg:leading-[0.95]">
               Shop beauty essentials for every appointment.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-[#4f535a] sm:text-lg">
@@ -382,11 +386,32 @@ function ProductShowcase({
   ) => void;
   products: ShopProduct[];
 }) {
+  const PER_PAGE = 12;
+  const [page, setPage] = useState(1);
+  const pageCount = Math.max(1, Math.ceil(products.length / PER_PAGE));
+
+  // Reset to the first page whenever the filtered list changes (e.g. category
+  // switch) or shrinks below the current page.
+  useEffect(() => {
+    setPage(1);
+  }, [products.length]);
+
+  const currentPage = Math.min(page, pageCount);
+  const start = (currentPage - 1) * PER_PAGE;
+  const pageProducts = products.slice(start, start + PER_PAGE);
+
+  function goToPage(next: number) {
+    setPage(next);
+    document
+      .getElementById("products")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
-    <section className="bg-background py-20 text-[#101217]" id="products">
+    <section className="bg-background py-12 text-[#101217] sm:py-20" id="products">
       <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8 2xl:px-10">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-          {products.map((product, index) => (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+          {pageProducts.map((product, index) => (
             <ScrollReveal
               as="article"
               className="h-full"
@@ -398,6 +423,57 @@ function ProductShowcase({
             </ScrollReveal>
           ))}
         </div>
+
+        {products.length === 0 ? (
+          <p className="py-16 text-center text-sm font-semibold text-[#5f6268]">
+            No products found in this category.
+          </p>
+        ) : null}
+
+        {pageCount > 1 ? (
+          <nav
+            aria-label="Product pages"
+            className="mt-10 flex flex-wrap items-center justify-center gap-2 sm:mt-12"
+          >
+            <button
+              aria-label="Previous page"
+              className="grid size-10 place-items-center border border-black/10 bg-white text-[#101217] transition-colors hover:bg-[#101217] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-[#101217]"
+              disabled={currentPage === 1}
+              onClick={() => goToPage(currentPage - 1)}
+              type="button"
+            >
+              <ChevronLeft aria-hidden="true" className="size-5" />
+            </button>
+
+            {Array.from({ length: pageCount }, (_, i) => i + 1).map((n) => (
+              <button
+                aria-current={n === currentPage ? "page" : undefined}
+                aria-label={`Page ${n}`}
+                className={cn(
+                  "grid size-10 place-items-center border text-sm font-extrabold transition-colors",
+                  n === currentPage
+                    ? "border-[#101217] bg-[#101217] text-white"
+                    : "border-black/10 bg-white text-[#101217] hover:bg-[#f4f1eb]",
+                )}
+                key={n}
+                onClick={() => goToPage(n)}
+                type="button"
+              >
+                {n}
+              </button>
+            ))}
+
+            <button
+              aria-label="Next page"
+              className="grid size-10 place-items-center border border-black/10 bg-white text-[#101217] transition-colors hover:bg-[#101217] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-[#101217]"
+              disabled={currentPage === pageCount}
+              onClick={() => goToPage(currentPage + 1)}
+              type="button"
+            >
+              <ChevronRight aria-hidden="true" className="size-5" />
+            </button>
+          </nav>
+        ) : null}
       </div>
     </section>
   );
@@ -440,9 +516,6 @@ function ProductCard({
           </div>
           <p className="shrink-0 text-xl font-extrabold">{product.price}</p>
         </div>
-        <p className="mt-4 text-sm leading-6 text-[#5f6268]">
-          {product.description}
-        </p>
         {product.hasVariants && product.variants.length > 0 ? (
           <p className="mt-3 text-xs font-extrabold uppercase tracking-[0.16em] text-[#a36f4d]">
             {product.variants.length}{" "}
@@ -561,9 +634,19 @@ function ProductModal({
   const [selectedVariant, setSelectedVariant] = useState<ShopVariant | null>(
     null,
   );
+  const [activePhoto, setActivePhoto] = useState<string | null>(null);
+
+  // Full photo strip: main image first, then the rest of the gallery (deduped).
+  const mainSrc =
+    typeof product.image.src === "string" ? product.image.src : null;
+  const photos = Array.from(
+    new Set([mainSrc, ...product.gallery].filter((u): u is string => !!u)),
+  );
 
   const needsVariant = product.hasVariants && product.variants.length > 0;
-  const displayImage = selectedVariant?.imageUrl ?? product.image.src;
+  // Priority: chosen variant image > clicked thumbnail > main image.
+  const displayImage =
+    selectedVariant?.imageUrl ?? activePhoto ?? product.image.src;
   const displayPrice = selectedVariant
     ? `$${selectedVariant.price.toFixed(2)}`
     : product.price;
@@ -594,14 +677,46 @@ function ProductModal({
           <X aria-hidden="true" className="size-5" />
         </button>
 
-        <div className="relative min-h-[360px] overflow-hidden bg-[#ddd2c8] sm:min-h-[520px] lg:min-h-[620px]">
-          <Image
-            src={displayImage}
-            alt={selectedVariant ? `${product.name} — ${selectedVariant.label}` : product.image.alt}
-            fill
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            className="animate-service-image-grow-down object-cover"
-          />
+        <div className="flex flex-col gap-3">
+          <div className="relative min-h-[360px] flex-1 overflow-hidden bg-[#ddd2c8] sm:min-h-[520px] lg:min-h-[620px]">
+            <Image
+              src={displayImage}
+              alt={selectedVariant ? `${product.name} — ${selectedVariant.label}` : product.image.alt}
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="animate-service-image-grow-down object-cover"
+            />
+          </div>
+
+          {photos.length > 1 && !selectedVariant?.imageUrl ? (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {photos.map((src) => {
+                const isActive = displayImage === src;
+                return (
+                  <button
+                    aria-label="View product photo"
+                    className={cn(
+                      "relative size-16 shrink-0 overflow-hidden border bg-[#ddd2c8] transition-opacity sm:size-20",
+                      isActive
+                        ? "border-[#101217] opacity-100"
+                        : "border-black/10 opacity-70 hover:opacity-100",
+                    )}
+                    key={src}
+                    onClick={() => setActivePhoto(src)}
+                    type="button"
+                  >
+                    <Image
+                      src={src}
+                      alt=""
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
 
         <div className="px-1 py-8 lg:px-8 lg:py-0">
