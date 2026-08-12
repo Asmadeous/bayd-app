@@ -32,6 +32,10 @@ jobs:
     env:
       # kamal-proxy/registry
       KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      # config/deploy.yml reads the host/port from these (ERB), so a host change
+      # is just a secret update — never a code edit.
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT || '2206' }}
       # .kamal/secrets reads these from the environment:
       SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
       DB_USERNAME: ${{ secrets.DB_USERNAME }}
@@ -82,7 +86,7 @@ jobs:
       - name: Trust the server host key
         run: |
           mkdir -p ~/.ssh
-          HOST="${{ secrets.SSH_HOST || '64.6.175.177' }}"
+          HOST="${{ secrets.SSH_HOST }}"
           PORT="${{ secrets.SSH_PORT || '2206' }}"
           # Retry keyscan a few times — GitHub runner → server can blip transiently.
           # Fail the step only if we never get a single key line after all retries.
@@ -160,7 +164,7 @@ jobs:
       - name: Trust the server host key
         run: |
           mkdir -p ~/.ssh
-          HOST="${{ secrets.SSH_HOST || '64.6.175.177' }}"
+          HOST="${{ secrets.SSH_HOST }}"
           PORT="${{ secrets.SSH_PORT || '2206' }}"
           # Retry keyscan a few times — GitHub runner → server can blip transiently.
           # Fail the step only if we never get a single key line after all retries.
@@ -178,7 +182,7 @@ jobs:
 
       - name: Pull & run the container on the server
         run: |
-          ssh -p "${{ secrets.SSH_PORT || '2206' }}" deploy@"${{ secrets.SSH_HOST || '64.6.175.177' }}" bash -lc "
+          ssh -p "${{ secrets.SSH_PORT || '2206' }}" deploy@"${{ secrets.SSH_HOST }}" bash -lc "
             set -e
             echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin
             docker pull '${{ env.IMAGE }}:${{ github.sha }}'

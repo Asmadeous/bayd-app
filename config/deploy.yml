@@ -7,10 +7,11 @@ service: b_a_y_d_api
 # Image name on your registry. EDIT the registry user.
 image: ghcr.io/asmadeous/bayd-app
 
-# EDIT: your server's public IP (or api.baydspa.ca once DNS points at it).
+# Server host comes from the SSH_HOST env var (set in CI / your shell) so a
+# host/IP change never needs a code edit. Fails loudly if unset.
 servers:
   web:
-    - 64.6.175.177
+    - <%= ENV.fetch("SSH_HOST") %>
 
 # nginx terminates TLS and forwards to kamal-proxy, which listens on localhost
 # only (no public port, no Let's Encrypt — nginx handles certs). It still does
@@ -36,7 +37,7 @@ registry:
 # Connect as the non-root deploy user on the custom SSH port (root login disabled).
 ssh:
   user: deploy
-  port: 2206
+  port: <%= ENV.fetch("SSH_PORT", "2206") %>
 
 builder:
   arch: amd64
