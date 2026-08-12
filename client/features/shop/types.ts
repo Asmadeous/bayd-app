@@ -20,6 +20,7 @@ export type ShopProduct = {
     src: string | StaticImageData;
     alt: string;
   };
+  gallery: string[];
   badge: string;
   description: string;
   details: string[];

@@ -115,7 +115,12 @@ prod_cats = {
   "makeup"            => ProductCategory.find_or_create_by!(slug: "makeup")            { |c| c.name = "Makeup";           c.position = 6 },
   "beauty-tools"      => ProductCategory.find_or_create_by!(slug: "beauty-tools")      { |c| c.name = "Beauty Tools";     c.position = 7 },
   "skincare"          => ProductCategory.find_or_create_by!(slug: "skincare")          { |c| c.name = "Skincare";         c.position = 8 },
-  "health-wellness"   => ProductCategory.find_or_create_by!(slug: "health-wellness")   { |c| c.name = "Health & Wellness"; c.position = 9 }
+  "health-wellness"   => ProductCategory.find_or_create_by!(slug: "health-wellness")   { |c| c.name = "Health & Wellness"; c.position = 9 },
+  "nails"             => ProductCategory.find_or_create_by!(slug: "nails")             { |c| c.name = "Nails";            c.position = 10 },
+  "lashes"            => ProductCategory.find_or_create_by!(slug: "lashes")            { |c| c.name = "Lashes";           c.position = 11 },
+  "massage"           => ProductCategory.find_or_create_by!(slug: "massage")           { |c| c.name = "Massage";          c.position = 12 },
+  "waxing"            => ProductCategory.find_or_create_by!(slug: "waxing")            { |c| c.name = "Waxing";           c.position = 13 },
+  "spa"               => ProductCategory.find_or_create_by!(slug: "spa")               { |c| c.name = "Spa";              c.position = 14 }
 }
 prod_cats["mens-fragrances"].update!(parent: fragrances)
 prod_cats["womens-fragrances"].update!(parent: fragrances)
@@ -123,65 +128,74 @@ prod_cats["womens-fragrances"].update!(parent: fragrances)
 # Real catalog. Add new rows here as they come in.
 products_data = [
   # ── SYREN Fragrances · Men's ──
-  { category: "mens-fragrances",   name: "Syren - Black Caviar",          sku: "SYREN-BLACK-CAVIAR",          price: 66.50, stock: 100 },
-  { category: "mens-fragrances",   name: "Syren - Blue Caviar",           sku: "SYREN-BLUE-CAVIAR",           price: 66.50, stock: 100 },
-  { category: "mens-fragrances",   name: "Syren - Black Caviar Paradiso", sku: "SYREN-BLACK-CAVIAR-PARADISO", price: 66.50, stock: 100 },
-  { category: "mens-fragrances",   name: "Syren - Men's Discovery Set",   sku: "SYREN-MENS-DISCOVERY-SET",    price: 24.50, stock: 100 },
+  { category: "mens-fragrances",   name: "Syren - Black Caviar",          sku: "SYREN-BLACK-CAVIAR",          price: 66.50, stock: 100, desc: "A bold, sophisticated men's eau de parfum with a deep, long-lasting scent profile. Part of the Syren Caviar collection." },
+  { category: "mens-fragrances",   name: "Syren - Blue Caviar",           sku: "SYREN-BLUE-CAVIAR",           price: 66.50, stock: 100, desc: "A fresh yet refined men's eau de parfum with a crisp, modern character from the Syren Caviar line." },
+  { category: "mens-fragrances",   name: "Syren - Black Caviar Paradiso", sku: "SYREN-BLACK-CAVIAR-PARADISO", price: 66.50, stock: 100, desc: "A luxurious men's eau de parfum with a warm, layered scent. A richer take on Syren's signature Black Caviar." },
+  { category: "mens-fragrances",   name: "Syren - Men's Discovery Set",   sku: "SYREN-MENS-DISCOVERY-SET",    price: 24.50, stock: 100, desc: "A discovery set of Syren men's fragrances in travel sizes — an easy way to sample the collection before committing to a full bottle." },
   # ── SYREN Fragrances · Women's ──
-  { category: "womens-fragrances", name: "Syren - Pink Caviar",           sku: "SYREN-PINK-CAVIAR",           price: 66.50, stock: 100 },
-  { category: "womens-fragrances", name: "Syren - Women's Discovery Set", sku: "SYREN-WOMENS-DISCOVERY-SET",  price: 24.50, stock: 100 },
-  { category: "womens-fragrances", name: "Syren - Pink Caviar Lotus",     sku: "SYREN-PINK-CAVIAR-LOTUS",     price: 66.50, stock: 100 },
-  { category: "womens-fragrances", name: "Syren - Pink Caviar Luxe",      sku: "SYREN-PINK-CAVIAR-LUXE",      price: 66.50, stock: 100 },
+  { category: "womens-fragrances", name: "Syren - Pink Caviar",           sku: "SYREN-PINK-CAVIAR",           price: 66.50, stock: 100, desc: "An elegant women's eau de parfum with a refined, feminine scent profile from the Syren Caviar collection." },
+  { category: "womens-fragrances", name: "Syren - Women's Discovery Set", sku: "SYREN-WOMENS-DISCOVERY-SET",  price: 24.50, stock: 100, desc: "A discovery set of Syren women's fragrances in travel sizes — sample the collection before choosing a full bottle." },
+  { category: "womens-fragrances", name: "Syren - Pink Caviar Lotus",     sku: "SYREN-PINK-CAVIAR-LOTUS",     price: 66.50, stock: 100, desc: "A soft, floral women's eau de parfum built around delicate lotus notes. A lighter expression of Syren's Pink Caviar." },
+  { category: "womens-fragrances", name: "Syren - Pink Caviar Luxe",      sku: "SYREN-PINK-CAVIAR-LUXE",      price: 66.50, stock: 100, desc: "A luxurious, long-lasting women's eau de parfum with a deeper, more intense scent from the Syren Caviar line." },
   # ── CashyMart ──
   { category: "hair-accessories",  name: "Adjustable Satin Sleep Bonnet", sku: "CASHYMART-SATIN-SLEEP-BONNET", price: 19.32, stock: 100,
     desc: "Double-layer satin sleep bonnet. Weight: 65g. Length: 38cm (14.9 in). Adjustable fit." },
   # ── LIVS · Supplements ──
-  { category: "supplements",       name: "Tongkat Ali 900mg",             sku: "LIVS-TONGKAT-ALI-900MG",       price: 19.99, stock: 100 },
-  { category: "supplements",       name: "Berberine 1,500mg",             sku: "LIVS-BERBERINE-1500MG",        price: 19.99, stock: 100 },
-  { category: "supplements",       name: "Akkermansia + Inulin",          sku: "LIVS-AKKERMANSIA-INULIN",      price: 22.39, stock: 100 },
-  { category: "supplements",       name: "Trace Minerals Complex",        sku: "LIVS-TRACE-MINERALS-COMPLEX",  price: 17.99, stock: 100 },
-  { category: "supplements",       name: "Raw Shilajit Capsules",         sku: "LIVS-RAW-SHILAJIT",            price: 23.99, stock: 100 },
-  { category: "supplements",       name: "Organic Spirulina",             sku: "LIVS-ORGANIC-SPIRULINA",       price: 15.99, stock: 100 },
-  { category: "supplements",       name: "Women's Shilajit",              sku: "LIVS-WOMENS-SHILAJIT",         price: 23.99, stock: 100 },
-  { category: "supplements",       name: "Choline + Iron",                sku: "LIVS-CHOLINE-IRON",            price: 19.99, stock: 100 },
-  { category: "supplements",       name: "Berberine Capsules",            sku: "LIVS-BERBERINE-CAPSULES",      price: 17.59, stock: 100 },
-  { category: "supplements",       name: "Apigenin 300mg",                sku: "LIVS-APIGENIN-300MG",          price: 15.99, stock: 100 },
-  { category: "supplements",       name: "Turkesterone 1,500mg",          sku: "LIVS-TURKESTERONE-1500MG",     price: 22.39, stock: 100 },
-  { category: "supplements",       name: "Men's Shilajit",                sku: "LIVS-MENS-SHILAJIT",           price: 27.99, stock: 100 },
+  { category: "supplements",       name: "Tongkat Ali 900mg",             sku: "LIVS-TONGKAT-ALI-900MG",       price: 19.99, stock: 100, desc: "Tongkat Ali supplement, 900mg per serving. A traditional botanical taken to support energy and vitality. Vegetarian capsules." },
+  { category: "supplements",       name: "Berberine 1,500mg",             sku: "LIVS-BERBERINE-1500MG",        price: 19.99, stock: 100, desc: "Berberine supplement, 1,500mg per serving. A plant compound commonly taken to support metabolic and blood-sugar health." },
+  { category: "supplements",       name: "Akkermansia + Inulin",          sku: "LIVS-AKKERMANSIA-INULIN",      price: 22.39, stock: 100, desc: "A gut-health supplement combining Akkermansia with inulin, a prebiotic fibre that supports a healthy microbiome." },
+  { category: "supplements",       name: "Trace Minerals Complex",        sku: "LIVS-TRACE-MINERALS-COMPLEX",  price: 17.99, stock: 100, desc: "A trace minerals complex providing essential micro-minerals to support daily nutrition and overall wellness." },
+  { category: "supplements",       name: "Raw Shilajit Capsules",         sku: "LIVS-RAW-SHILAJIT",            price: 23.99, stock: 100, desc: "Raw Shilajit capsules, 10:1 extract with fulvic acid and 85+ trace minerals. Taken to support energy and mineral intake. 90 vegetarian capsules." },
+  { category: "supplements",       name: "Organic Spirulina",             sku: "LIVS-ORGANIC-SPIRULINA",       price: 15.99, stock: 100, desc: "Organic spirulina, a nutrient-dense blue-green algae rich in protein and antioxidants, taken as a daily wellness supplement." },
+  { category: "supplements",       name: "Women's Shilajit",              sku: "LIVS-WOMENS-SHILAJIT",         price: 23.99, stock: 100, desc: "A women's Shilajit supplement with fulvic acid and trace minerals, formulated to support energy and daily vitality." },
+  { category: "supplements",       name: "Choline + Iron",                sku: "LIVS-CHOLINE-IRON",            price: 19.99, stock: 100, desc: "A supplement combining choline and iron to support energy, cognitive function, and healthy iron levels." },
+  { category: "supplements",       name: "Berberine Capsules",            sku: "LIVS-BERBERINE-CAPSULES",      price: 17.59, stock: 100, desc: "Berberine capsules — a plant compound commonly taken to support metabolic health and blood-sugar balance." },
+  { category: "supplements",       name: "Apigenin 300mg",                sku: "LIVS-APIGENIN-300MG",          price: 15.99, stock: 100, desc: "Apigenin supplement, 300mg per serving. A plant flavonoid taken to support relaxation and overall wellness." },
+  { category: "supplements",       name: "Turkesterone 1,500mg",          sku: "LIVS-TURKESTERONE-1500MG",     price: 22.39, stock: 100, desc: "Turkesterone supplement, 1,500mg per serving. A plant compound popular among those supporting active, athletic lifestyles." },
+  { category: "supplements",       name: "Men's Shilajit",                sku: "LIVS-MENS-SHILAJIT",           price: 27.99, stock: 100, desc: "A men's Shilajit supplement with fulvic acid and trace minerals, taken to support energy, stamina, and vitality." },
   # ── LIVS · Bath & Body ──
-  { category: "bath-body",         name: "Bath Salts",                    sku: "LIVS-BATH-SALTS",              price: 8.00,  stock: 100 },
+  { category: "bath-body",         name: "Bath Salts",                    sku: "LIVS-BATH-SALTS",              price: 8.00,  stock: 100, desc: "Mineral bath salts that dissolve into a warm bath to soothe tired muscles and support a relaxing, spa-like soak at home." },
   # ── BeNat ──
   { category: "makeup",            name: "All-Natural Bronzer Loose Powder", sku: "BENAT-BRONZER-LOOSE-POWDER", price: 12.99, stock: 100,
     desc: "Eco-friendly all-natural loose bronzer powder." },
-  { category: "beauty-tools",      name: "Reusable Facial Rounds Pads (5pcs)", sku: "BENAT-FACIAL-ROUNDS-PADS-5PC", price: 8.44, stock: 100 },
-  { category: "beauty-tools",      name: "Electric Oil Applicator and Vibration Scalp Massager 2 in 1", sku: "BENAT-OIL-APPLICATOR-SCALP-MASSAGER", price: 25.99, stock: 100 },
-  { category: "beauty-tools",      name: "Smart Scalp Massager",          sku: "BENAT-SMART-SCALP-MASSAGER",   price: 25.99, stock: 100 },
-  { category: "bath-body",         name: "2-Pack All-Natural, Plastic-Free Deodorants", sku: "BENAT-DEODORANT-2PACK", price: 13.64, stock: 100 },
+  { category: "beauty-tools",      name: "Reusable Facial Rounds Pads (5pcs)", sku: "BENAT-FACIAL-ROUNDS-PADS-5PC", price: 8.44, stock: 100, desc: "A 5-piece set of reusable facial rounds — a soft, washable, eco-friendly alternative to disposable cotton pads for cleansing and toner." },
+  { category: "beauty-tools",      name: "Electric Oil Applicator and Vibration Scalp Massager 2 in 1", sku: "BENAT-OIL-APPLICATOR-SCALP-MASSAGER", price: 25.99, stock: 100, desc: "A 2-in-1 electric oil applicator and vibration scalp massager that helps distribute hair and scalp oils while stimulating the scalp." },
+  { category: "beauty-tools",      name: "Smart Scalp Massager",          sku: "BENAT-SMART-SCALP-MASSAGER",   price: 25.99, stock: 100, desc: "A handheld smart scalp massager that uses gentle vibration to stimulate the scalp, support relaxation, and promote circulation." },
+  { category: "bath-body",         name: "2-Pack All-Natural, Plastic-Free Deodorants", sku: "BENAT-DEODORANT-2PACK", price: 13.64, stock: 100, desc: "A 2-pack of all-natural, plastic-free deodorants. Aluminium-free formula that keeps you fresh with clean, skin-friendly ingredients." },
   # ── Koriderm ──
-  { category: "skincare",          name: "Koriderm Time Reverse Cream (All-In-One)", sku: "KORIDERM-TIME-REVERSE-CREAM", price: 18.74, stock: 100 },
+  { category: "skincare",          name: "Koriderm Time Reverse Cream (All-In-One)", sku: "KORIDERM-TIME-REVERSE-CREAM", price: 18.74, stock: 100, desc: "An all-in-one anti-ageing face cream formulated to hydrate, firm, and smooth the look of fine lines for a more youthful, radiant complexion." },
   # ── PURSONIC USA ──
-  { category: "skincare",          name: "Clear & Radiant Skin Bundle: Acne Foaming Wash", sku: "PURSONIC-CLEAR-RADIANT-ACNE-BUNDLE", price: 18.74, stock: 100 },
-  { category: "beauty-tools",      name: "Pursonic LED Glow Set – 7-in-1 LED Light Therapy Face Mask + 7-in-1 LED Face & Neck Sculpting Wand", sku: "PURSONIC-LED-GLOW-SET", price: 82.49, stock: 100 },
-  { category: "health-wellness",   name: "Wireless Muscle Stimulator Pulse Massager", sku: "PURSONIC-WIRELESS-MUSCLE-STIMULATOR", price: 22.49, stock: 100 },
-  { category: "health-wellness",   name: "Pursonic Rechargeable Abdominal Muscle Toner & Massager", sku: "PURSONIC-ABDOMINAL-MUSCLE-TONER", price: 29.99, stock: 100 },
-  { category: "health-wellness",   name: "Pursonic Blood Glucose Test Strips Refill Kit – 50 Test Strips + 50 Sterile Lancets", sku: "PURSONIC-GLUCOSE-TEST-STRIPS-REFILL", price: 9.73, stock: 100 }
+  { category: "skincare",          name: "Clear & Radiant Skin Bundle: Acne Foaming Wash", sku: "PURSONIC-CLEAR-RADIANT-ACNE-BUNDLE", price: 18.74, stock: 100, desc: "A clear-skin bundle centred on an acne foaming wash, formulated to cleanse blemish-prone skin and support a clearer, more radiant complexion." },
+  { category: "beauty-tools",      name: "Pursonic LED Glow Set – 7-in-1 LED Light Therapy Face Mask + 7-in-1 LED Face & Neck Sculpting Wand", sku: "PURSONIC-LED-GLOW-SET", price: 82.49, stock: 100, desc: "A 7-in-1 LED light therapy set with a face mask and a face & neck sculpting wand, using multiple light modes to support skin rejuvenation at home." },
+  { category: "health-wellness",   name: "Wireless Muscle Stimulator Pulse Massager", sku: "PURSONIC-WIRELESS-MUSCLE-STIMULATOR", price: 22.49, stock: 100, desc: "A wireless pulse massager that uses gentle electrical stimulation to help relax and relieve tired muscles." },
+  { category: "health-wellness",   name: "Pursonic Rechargeable Abdominal Muscle Toner & Massager", sku: "PURSONIC-ABDOMINAL-MUSCLE-TONER", price: 29.99, stock: 100, desc: "A rechargeable abdominal muscle toner and massager that uses stimulation technology to help tone and relax the core muscles." },
+  { category: "health-wellness",   name: "Pursonic Blood Glucose Test Strips Refill Kit – 50 Test Strips + 50 Sterile Lancets", sku: "PURSONIC-GLUCOSE-TEST-STRIPS-REFILL", price: 9.73, stock: 100, desc: "A blood glucose test strip refill kit including 50 test strips and 50 sterile lancets, for routine at-home glucose monitoring." }
 ]
 
-# Extended catalogue lives in db/seeds/products_extra.yml (brand-store imports).
+# Original brand-store catalogue (local images under client/public/images/products).
 extra_file = Rails.root.join("db/seeds/products_extra.yml")
 products_data += (YAML.load_file(extra_file) || []).map(&:symbolize_keys) if File.exist?(extra_file)
 
+# Shopify export — 164 products with live CDN image URLs.
+shopify_file = Rails.root.join("db/seeds/shopify_export.yml")
+products_data += (YAML.load_file(shopify_file) || []).map(&:symbolize_keys) if File.exist?(shopify_file)
+
 products = products_data.map do |p|
   prod = Product.find_or_initialize_by(sku: p[:sku])
-  # Main image is client/public/images/products/<sku-lowercased>.<ext> if present.
-  img = Dir.glob(Rails.root.join("client/public/images/products", "#{p[:sku].downcase}.*")).first
+  # Use provided image_url from YAML, or look for local file, or keep existing
+  image_url = p[:image_url]
+  unless image_url
+    img = Dir.glob(Rails.root.join("client/public/images/products", "#{p[:sku].downcase}.*")).first
+    image_url = img ? "/images/products/#{File.basename(img)}" : prod.image_url
+  end
   prod.update!(
     product_category: prod_cats[p[:category]],
     name:             p[:name],
     price:            p[:price],
     stock_quantity:   p[:stock],
     description:      p[:desc],
-    image_url:        img ? "/images/products/#{File.basename(img)}" : prod.image_url,
+    image_url:        image_url,
+    gallery_urls:     Array(p[:gallery]),
     active:           true
   )
   prod

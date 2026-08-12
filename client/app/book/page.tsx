@@ -5,6 +5,8 @@ import Link from "next/link"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User } from "lucide-react"
 
+import { SiteHeader } from "@/components/layout/site-header"
+import { SiteFooter } from "@/components/layout/site-footer"
 import api from "@/lib/api"
 import { useCoverage } from "@/lib/hooks/use-coverage"
 import { siteConfig } from "@/lib/site"
@@ -303,14 +305,16 @@ export default function PublicBookPage() {
   }
 
   return (
-    <Shell>
-      <div className="mb-5">
-        <span className="inline-flex items-center gap-1.5 bg-[#c96c83]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#c96c83]">
-          <Sparkles className="size-3.5" /> Book a service
-        </span>
-        <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Beauty, at your door</h1>
-        <p className="mt-1 text-sm font-medium text-[#5f6268]">No account needed. Payment after your service.</p>
-      </div>
+    <>
+      <SiteHeader />
+      <Shell>
+        <div className="mb-5">
+          <span className="inline-flex items-center gap-1.5 bg-[#c96c83]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#c96c83]">
+            <Sparkles className="size-3.5" /> Book a service
+          </span>
+          <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Beauty, at your door</h1>
+          <p className="mt-1 text-sm font-medium text-[#5f6268]">No account needed. Payment after your service.</p>
+        </div>
 
       {/* Stepper */}
       <div className="mb-6 flex items-center gap-2">
@@ -639,10 +643,12 @@ export default function PublicBookPage() {
         )}
       </div>
 
-      <p className="mt-4 text-center text-xs font-medium text-[#8a8d93]">
-        Already have an account? <Link href="/signin" className="font-bold text-[#c96c83]">Sign in</Link>
-      </p>
-    </Shell>
+        <p className="mt-4 text-center text-xs font-medium text-[#8a8d93]">
+          Already have an account? <Link href="/signin" className="font-bold text-[#c96c83]">Sign in</Link>
+        </p>
+      </Shell>
+      <SiteFooter />
+    </>
   )
 }
 
