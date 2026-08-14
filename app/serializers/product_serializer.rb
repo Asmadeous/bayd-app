@@ -1,6 +1,6 @@
 class ProductSerializer < Blueprinter::Base
   identifier :id
-  fields :name, :description, :sku, :price, :stock_quantity, :image_url, :gallery_urls
+  fields :name, :description, :sku, :price, :stock_quantity, :image_url, :gallery_urls, :shipping_speed
 
   field :category do |product, _opts|
     cat = product.product_category

@@ -103,3 +103,86 @@ export const pricingCategories: PriceCategory[] = [
     ],
   },
 ];
+
+// Facials are advertised as a range of options rather than discrete bookable
+// services, so they live here as static data (there is no DB equivalent). The
+// live /services page appends this section after the API-driven categories.
+export const FACIAL_SERVICES: PriceCategory = {
+  id: "facials",
+  title: "Facial Services",
+  summary:
+    "Personalized facial care, targeted treatments, and relaxation-focused options.",
+  accent: "bg-white/80",
+  items: [
+    {
+      name: "Basic / Express Facial",
+      duration: "30–60 min",
+      price: "$80–$150",
+      description:
+        "A cleansing, exfoliating, and hydrating facial that refreshes the skin — a great introduction or a quick reset between fuller treatments.",
+    },
+    {
+      name: "Signature / Hydrating Facial",
+      duration: "60–90 min",
+      price: "$120–$200",
+      description:
+        "A deeply nourishing facial that cleanses, exfoliates, and replenishes moisture for a smooth, radiant, well-rested glow.",
+    },
+    {
+      name: "Anti-Aging / Collagen-Boosting Facial",
+      duration: "60–90 min",
+      price: "$150–$250+",
+      description:
+        "A targeted anti-ageing facial that firms, smooths, and boosts collagen to soften the look of fine lines and restore youthful vitality.",
+    },
+    {
+      name: "Acne / Problem Skin Facial",
+      duration: "60–90 min",
+      price: "$140–$230",
+      description:
+        "A deep-cleansing facial for blemish-prone skin that clears congestion, calms breakouts, and supports a clearer, healthier complexion.",
+    },
+    {
+      name: "Brightening / Glow Facial",
+      duration: "60–90 min",
+      price: "$130–$220",
+      description:
+        "A brightening facial that targets dullness and uneven tone to reveal a fresh, luminous, even glow.",
+    },
+    {
+      name: "Sensitive / Soothing Facial",
+      duration: "60–90 min",
+      price: "$120–$200",
+      description:
+        "A gentle, calming facial formulated for sensitive skin that soothes redness and irritation while restoring comfort and balance.",
+    },
+    {
+      name: "Chemical Peel (Light / Superficial)",
+      duration: "30–60 min",
+      price: "$100–$200+",
+      description:
+        "A light chemical peel that gently resurfaces the skin to improve tone and texture and reveal a brighter, smoother complexion.",
+    },
+    {
+      name: "Back Facial",
+      duration: "45–75 min",
+      price: "$130–$210",
+      description:
+        "A cleansing and exfoliating treatment for the back that clears congestion and leaves hard-to-reach skin smooth and refreshed.",
+    },
+    {
+      name: "Relaxation Massage (Full Body or Targeted)",
+      duration: "30–90 min",
+      price: "$80–$180",
+      description:
+        "A soothing massage, full-body or focused on a target area, to release tension and leave you deeply relaxed.",
+    },
+    {
+      name: "Facial Massage (Add-on or Standalone)",
+      duration: "20–45 min",
+      price: "$50–$120",
+      description:
+        "A relaxing facial massage that eases tension, boosts circulation, and leaves the face lifted and glowing — as an add-on or on its own.",
+    },
+  ],
+};

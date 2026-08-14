@@ -353,7 +353,14 @@ export default function AdminServicesPage() {
           <DataTableBody>
             {services.map((service) => (
               <DataTableRow key={service.id}>
-                <DataTableCell className="font-bold text-[#101217]">{service.name}</DataTableCell>
+                <DataTableCell className="font-bold text-[#101217]">
+                  {service.name}
+                  {service.description ? (
+                    <span className="mt-0.5 block max-w-md truncate text-xs font-normal text-[#8a8d93]">
+                      {service.description}
+                    </span>
+                  ) : null}
+                </DataTableCell>
                 <DataTableCell>{service.service_category?.name}</DataTableCell>
                 <DataTableCell className="font-semibold text-[#101217]">
                   ${service.price}

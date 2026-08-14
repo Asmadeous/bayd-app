@@ -129,7 +129,7 @@ module SimplyBook
     def return_or_create_user
       return if email.blank?
 
-      existing_user || User.create!(email: email) do |u|
+      user = existing_user || User.create!(email: email) do |u|
         first, last = client_name.split(" ", 2)
         u.first_name = first
         u.last_name  = last
@@ -137,6 +137,13 @@ module SimplyBook
         u.role       = :customer
         u.password   = SecureRandom.hex(16)
       end
+
+      # This booking came FROM SimplyBook, so the user already IS a SimplyBook
+      # client. Record their SimplyBook client id (if we don't have it yet) so we
+      # never try to re-register them via the outbound onboarding path.
+      cid = @d.dig("client", "id") || @d["client_id"]
+      user.update_columns(simplybook_client_id: cid.to_s) if cid.present? && user.simplybook_client_id.blank?
+      user
     end
 
     def service

@@ -242,6 +242,18 @@ function PriceDirectory({ categories }: { categories: PriceCategory[] }) {
                                   </span>
                                 </>
                               )}
+                              {item.description ? (
+                                <span
+                                  className={cn(
+                                    "text-xs leading-5 text-[#8a817a]",
+                                    item.duration
+                                      ? "col-span-full"
+                                      : "col-span-full mt-0.5",
+                                  )}
+                                >
+                                  {item.description}
+                                </span>
+                              ) : null}
                             </div>
                           ))}
                         </div>

@@ -1,0 +1,84 @@
+require "rails_helper"
+
+RSpec.describe SimplyBook::Client do
+  # A stand-in Faraday response.
+  def resp(status, body)
+    instance_double(Faraday::Response, status: status, success?: status.between?(200, 299), body: body)
+  end
+
+  # A fake connection that answers get/post from queues we control. Any
+  # Faraday.new call in the client returns this same fake, so NO real HTTP
+  # is ever performed.
+  let(:conn) { instance_double(Faraday::Connection) }
+
+  before do
+    # Every Faraday.new (auth conn, admin @conn, public auth, public_conn) yields
+    # our fake connection. The block passed to Faraday.new is ignored.
+    allow(Faraday).to receive(:new).and_return(conn)
+
+    # Admin + public auth token fetches.
+    allow(conn).to receive(:post).with("/admin/auth", anything).and_return(resp(200, { "token" => "admin-tok" }))
+    allow(conn).to receive(:post).with("/public/auth/token", anything).and_return(resp(200, { "token" => "public-tok" }))
+  end
+
+  describe "#register_client" do
+    it "finds an existing client by email and returns its id (best-effort remind)" do
+      allow(conn).to receive(:get)
+        .with("/admin/clients", "filter[search]" => "jane@example.com")
+        .and_return(resp(200, { "data" => [ { "id" => "77", "email" => "jane@example.com" } ] }))
+      allow(conn).to receive(:post)
+        .with("/public/clients/remind-password", { email: "jane@example.com" })
+        .and_return(resp(200, {}))
+
+      id = described_class.new.register_client(name: "Jane", email: "jane@example.com")
+
+      expect(id).to eq("77")
+    end
+
+    it "creates the client when none exists, then returns the new id" do
+      allow(conn).to receive(:get)
+        .with("/admin/clients", "filter[search]" => "new@example.com")
+        .and_return(resp(200, { "data" => [] }))
+      allow(conn).to receive(:post)
+        .with("/admin/clients", { name: "New", email: "new@example.com" })
+        .and_return(resp(201, { "id" => "99" }))
+      allow(conn).to receive(:post)
+        .with("/public/clients/remind-password", { email: "new@example.com" })
+        .and_return(resp(200, {}))
+
+      id = described_class.new.register_client(name: "New", email: "new@example.com")
+
+      expect(id).to eq("99")
+    end
+
+    it "returns nil for a blank email without any HTTP client lookups" do
+      expect(conn).not_to receive(:get)
+
+      expect(described_class.new.register_client(name: "X", email: "   ")).to be_nil
+    end
+
+    it "is best-effort: never raises, returns nil when resolution fails" do
+      # The client lookup blows up; resolve_client_id rescues to nil, so
+      # register_client returns nil (cid blank) without raising.
+      allow(conn).to receive(:get).and_raise(Faraday::ConnectionFailed.new("boom"))
+
+      expect {
+        @result = described_class.new.register_client(name: "Jane", email: "jane@example.com")
+      }.not_to raise_error
+      expect(@result).to be_nil
+    end
+
+    it "still returns the id when the remind-password email fails" do
+      allow(conn).to receive(:get)
+        .with("/admin/clients", "filter[search]" => "jane@example.com")
+        .and_return(resp(200, { "data" => [ { "id" => "77", "email" => "jane@example.com" } ] }))
+      allow(conn).to receive(:post)
+        .with("/public/clients/remind-password", anything)
+        .and_raise(Faraday::TimeoutError.new("slow"))
+
+      id = described_class.new.register_client(name: "Jane", email: "jane@example.com")
+
+      expect(id).to eq("77") # remind is non-fatal
+    end
+  end
+end

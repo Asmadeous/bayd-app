@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User } from "lucide-react"
+import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, Eye, MapPin, Phone, Scissors, Send, Sparkles, User } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
@@ -28,6 +29,8 @@ const CLIENT_TYPES: { key: ClientType; label: string; hint: string }[] = [
 const PROVINCES = ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"]
 const TODAY = new Date().toISOString().split("T")[0]
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
+// Canadian postal code (space optional). Same rule the backend enforces.
+const CA_POSTAL = /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPRSTV-Z]\d$/i
 
 interface Provider { id: number; name: string | null; title: string | null; photo_url: string | null }
 interface ApiService {
@@ -36,6 +39,7 @@ interface ApiService {
   description: string | null
   duration_minutes: number
   price: string
+  image_url: string | null
   category_name: string | null
   kids_only: boolean
   requires_consultation: boolean
@@ -53,12 +57,25 @@ interface BookingRequestResponse {
 
 const GROUP_MAX = 5
 
+// Category → icon, used for the filter chips and the placeholder shown when a
+// service has no photo yet. Falls back to a sparkle for unknown categories.
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  Nails: Sparkles,
+  Lashes: Eye,
+  Massage: User,
+  Waxing: Scissors,
+  Spa: Sparkles,
+}
+function categoryIcon(name: string | null): LucideIcon {
+  return (name && CATEGORY_ICONS[name]) || Sparkles
+}
+
 const field =
   "h-11 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
 const lbl = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 const card = "border border-black/10 bg-white p-5 sm:p-6"
 
-const STEPS = ["Service", "Staff", "Time", "Details", "Payment"] as const
+const STEPS = ["Service", "Date", "Staff", "Details", "Payment"] as const
 
 export default function PublicBookPage() {
   const geo = useQuery<GeoResult>({
@@ -75,6 +92,7 @@ export default function PublicBookPage() {
   const [step, setStep] = useState(0)
   const [clientType, setClientType] = useState<ClientType>("adult")
   const [partySize, setPartySize] = useState(2)
+  const [categoryFilter, setCategoryFilter] = useState<string>("all") // "all" | category_name
   const [serviceId, setServiceId] = useState("")
   const [staff, setStaff] = useState<string>("any") // "any" | providerId
   const [date, setDate] = useState("")
@@ -95,21 +113,34 @@ export default function PublicBookPage() {
   const [bookedMsg, setBookedMsg] = useState("")
   const [view, setView] = useState<"form" | "booked" | "consultation">("form")
   const [error, setError] = useState<string | null>(null)
+  const [addressError, setAddressError] = useState<string | null>(null)
+  const [verifyingAddress, setVerifyingAddress] = useState(false)
 
   // Kids see only kids services; everyone else sees the regular menu.
   const menu = useMemo(
     () => services.filter((s) => (clientType === "kids" ? s.kids_only : !s.kids_only)),
     [services, clientType],
   )
+  // Distinct categories present in the current menu, for the filter chips.
+  const categories = useMemo(() => {
+    const seen: string[] = []
+    for (const s of menu) {
+      const key = s.category_name ?? "Other"
+      if (!seen.includes(key)) seen.push(key)
+    }
+    return seen
+  }, [menu])
+  // Group the menu by category, honouring the active category filter.
   const grouped = useMemo(() => {
     const map = new Map<string, ApiService[]>()
     for (const s of menu) {
       const key = s.category_name ?? "Other"
+      if (categoryFilter !== "all" && key !== categoryFilter) continue
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push(s)
     }
     return map
-  }, [menu])
+  }, [menu, categoryFilter])
 
   const selected = services.find((s) => String(s.id) === serviceId)
   const providers = selected?.providers ?? []
@@ -179,13 +210,46 @@ export default function PublicBookPage() {
 
   const isTimeValid = TIME_PATTERN.test(time)
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  const postalFormatOk = CA_POSTAL.test(postal.trim())
   const stepValid = [
     !!serviceId, // Service
+    !!date && isTimeValid, // Date & time
     !!staff, // Staff (auto or picked; "any" is valid)
-    !!date && isTimeValid, // Time
-    emailValid && !!line1.trim() && !!city.trim() && !!postal.trim(), // Details
+    // Details: email + all address fields + a Canadian postal format. The
+    // realness/Canada check runs against the backend when they tap Continue.
+    emailValid && !!line1.trim() && !!city.trim() && postalFormatOk,
     true, // Payment (pay-after is always valid)
   ]
+
+  // Verify the typed address is a real Canadian one (Google geocode via our
+  // backend) before advancing off the Details step. Blocks on failure.
+  async function verifyAddressThenAdvance() {
+    setAddressError(null)
+    if (!postalFormatOk) {
+      setAddressError("Enter a valid Canadian postal code (e.g. M5J 2X5).")
+      return
+    }
+    setVerifyingAddress(true)
+    try {
+      const { data } = await api.post<{ valid: boolean; in_canada: boolean; postal_format_ok: boolean; error?: string }>(
+        "/geo/verify_address",
+        { line1: line1.trim(), city: city.trim(), province, postal_code: postal.trim() },
+      )
+      if (data.valid) {
+        setStep((s) => s + 1)
+      } else if (!data.postal_format_ok) {
+        setAddressError("Enter a valid Canadian postal code (e.g. M5J 2X5).")
+      } else if (!data.in_canada) {
+        setAddressError("We couldn't find that address in Canada. Check the street, city, and postal code.")
+      } else {
+        setAddressError("Please double-check your address details.")
+      }
+    } catch {
+      setAddressError("Couldn't verify your address just now. Please try again.")
+    } finally {
+      setVerifyingAddress(false)
+    }
+  }
 
   // intent: "proceed" (bypass, pay after) | "pay_now" | "deposit" | "full"
   async function submit(intent: "proceed" | "pay_now" | "deposit" | "full") {
@@ -276,7 +340,8 @@ export default function PublicBookPage() {
           <h1 className="text-xl font-black tracking-tight">We&apos;ll call you</h1>
           <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#5f6268]">
             Your area is just outside our usual coverage, but our team will call to see if a technician can
-            reach you and arrange a consultation. Prefer to reach us now?
+            reach you and arrange a consultation. A minimum <span className="font-bold text-[#101217]">$50 travel
+            fee</span> applies to out-of-area visits, confirmed with you on the call. Prefer to reach us now?
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <a
@@ -313,7 +378,9 @@ export default function PublicBookPage() {
             <Sparkles className="size-3.5" /> Book a service
           </span>
           <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Beauty, at your door</h1>
-          <p className="mt-1 text-sm font-medium text-[#5f6268]">No account needed. Payment after your service.</p>
+          <p className="mt-1 text-sm font-medium text-[#5f6268]">
+            No account needed — just your email. You can book without paying now and settle up after your service.
+          </p>
         </div>
 
       {/* Stepper */}
@@ -352,6 +419,7 @@ export default function PublicBookPage() {
                 onClick={() => {
                   setClientType(ct.key)
                   setServiceId("") // service list changes with audience
+                  setCategoryFilter("all") // reset the category filter for the new menu
                 }}
                 className={cn(
                   "border px-3 py-2 text-sm font-bold transition-colors",
@@ -375,46 +443,104 @@ export default function PublicBookPage() {
                 ))}
               </select>
               <p className="mt-1.5 text-xs font-medium text-[#8a8d93]">
-                Group price = per-person price × people. A deposit is collected now to confirm the group booking.
+                Group price = per-person price × people. Groups require a deposit to confirm — the greater of 25%
+                or a <span className="font-bold text-[#101217]">$50 minimum</span> — paid now.
               </p>
             </div>
           ) : null}
 
           <label className={lbl}>Choose a service</label>
-          <div className="grid max-h-[26rem] gap-4 overflow-y-auto pr-1">
-            {Array.from(grouped.entries()).map(([category, list]) => (
-              <div key={category}>
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#a7abb2]">{category}</p>
-                <div className="grid gap-2">
-                  {list.map((s) => {
-                    const p = totalFor(s)
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => chooseService(s.id)}
-                        className="flex items-center justify-between border border-black/15 bg-white px-4 py-3 text-left transition-colors hover:border-[#c96c83]"
-                      >
-                        <span>
-                          <span className="block text-sm font-bold text-[#101217]">{s.name}</span>
-                          <span className="text-xs font-medium text-[#8a8d93]">{s.duration_minutes} min</span>
-                        </span>
-                        <span className="text-sm font-black text-[#c96c83]">
-                          {s.requires_consultation ? "Quote" : `$${p.toFixed(2)}`}
-                        </span>
-                      </button>
-                    )
-                  })}
+          {/* Category selector chips — filter the menu by Nails / Lashes / etc. */}
+          {categories.length > 1 ? (
+            <div className="mb-4 flex flex-wrap gap-2">
+              <CategoryChip
+                label="All"
+                active={categoryFilter === "all"}
+                onClick={() => setCategoryFilter("all")}
+              />
+              {categories.map((cat) => (
+                <CategoryChip
+                  key={cat}
+                  label={cat}
+                  Icon={categoryIcon(cat)}
+                  active={categoryFilter === cat}
+                  onClick={() => setCategoryFilter(cat)}
+                />
+              ))}
+            </div>
+          ) : null}
+
+          <div className="grid max-h-[30rem] gap-4 overflow-y-auto pr-1">
+            {Array.from(grouped.entries()).map(([category, list]) => {
+              const CatIcon = categoryIcon(category)
+              return (
+                <div key={category}>
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#a7abb2]">{category}</p>
+                  <div className="grid gap-2">
+                    {list.map((s) => {
+                      const p = totalFor(s)
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => chooseService(s.id)}
+                          className="flex items-start gap-3 border border-black/15 bg-white p-3 text-left transition-colors hover:border-[#c96c83]"
+                        >
+                          {/* Thumbnail — real photo, or a clean category-icon placeholder. */}
+                          <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-[#f0ece4] text-[#c96c83]">
+                            {s.image_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={s.image_url} alt={s.name} className="size-full object-cover" />
+                            ) : (
+                              <CatIcon className="size-6" />
+                            )}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-bold text-[#101217]">{s.name}</span>
+                            {s.description ? (
+                              <span className="mt-0.5 line-clamp-2 block text-xs leading-snug text-[#5f6268]">{s.description}</span>
+                            ) : null}
+                            <span className="mt-0.5 block text-xs font-medium text-[#8a8d93]">{s.duration_minutes} min</span>
+                          </span>
+                          <span className="shrink-0 self-center text-sm font-black text-[#c96c83]">
+                            {s.requires_consultation ? "Quote" : `$${p.toFixed(2)}`}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
             {menu.length === 0 ? <p className="text-sm font-medium text-[#8a8d93]">No services available.</p> : null}
           </div>
         </div>
       ) : null}
 
-      {/* Step 2 — Staff */}
+      {/* Step 2 — Date & time */}
       {step === 1 ? (
+        <div className={card}>
+          {selected ? (
+            <p className="mb-4 text-sm font-semibold text-[#101217]">
+              {selected.name} · <span className="text-[#c96c83]">{price != null ? `$${price.toFixed(2)}` : "Quote"}</span>
+            </p>
+          ) : null}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className={lbl}><CalendarDays className="mr-1 inline size-3.5" /> Date</label>
+              <input type="date" min={TODAY} className={field} value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
+            <div>
+              <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Time</label>
+              <input type="time" className={field} value={time} onChange={(e) => setTime(e.target.value)} />
+            </div>
+          </div>
+          <p className="mt-3 text-xs font-medium text-[#8a8d93]">Hours: Mon–Sat, 9:00 AM – 7:30 PM (Eastern).</p>
+        </div>
+      ) : null}
+
+      {/* Step 3 — Staff */}
+      {step === 2 ? (
         <div className={card}>
           <label className={lbl}>Choose your technician</label>
           {selected ? (
@@ -443,23 +569,6 @@ export default function PublicBookPage() {
         </div>
       ) : null}
 
-      {/* Step 3 — Time */}
-      {step === 2 ? (
-        <div className={card}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className={lbl}><CalendarDays className="mr-1 inline size-3.5" /> Date</label>
-              <input type="date" min={TODAY} className={field} value={date} onChange={(e) => setDate(e.target.value)} />
-            </div>
-            <div>
-              <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Time</label>
-              <input type="time" className={field} value={time} onChange={(e) => setTime(e.target.value)} />
-            </div>
-          </div>
-          <p className="mt-3 text-xs font-medium text-[#8a8d93]">Hours: Mon–Sat, 9:00 AM – 7:30 PM (Eastern).</p>
-        </div>
-      ) : null}
-
       {/* Step 4 — Details */}
       {step === 3 ? (
         <div className={card}>
@@ -478,8 +587,17 @@ export default function PublicBookPage() {
               <select className={field} value={province} onChange={(e) => setProvince(e.target.value)}>
                 {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
-              <input className={field} value={postal} onChange={(e) => setPostal(e.target.value)} placeholder="Postal code *" />
+              <input
+                className={cn(field, postal.trim() && !postalFormatOk ? "border-red-400 focus:border-red-500 focus:ring-red-500/20" : "")}
+                value={postal}
+                onChange={(e) => { setPostal(e.target.value); setAddressError(null) }}
+                placeholder="Postal code *"
+                autoCapitalize="characters"
+              />
             </div>
+            {postal.trim() && !postalFormatOk ? (
+              <p className="-mt-2 text-xs font-semibold text-red-600">Enter a valid Canadian postal code (e.g. M5J 2X5).</p>
+            ) : null}
             <label className="flex items-center gap-2 text-sm font-semibold text-[#101217]">
               <input type="checkbox" checked={isApartment} onChange={(e) => setIsApartment(e.target.checked)} className="size-4 accent-[#c96c83]" />
               This is an apartment / condo
@@ -498,12 +616,20 @@ export default function PublicBookPage() {
               <div className="mt-4 border border-amber-300 bg-amber-50 p-4">
                 <p className="text-sm font-bold text-amber-900">Just outside our usual area</p>
                 <p className="mt-1 text-sm font-medium text-amber-800">
-                  Submit below and our team will call to see if a technician can reach you.
+                  Submit below and our team will call to see if a technician can reach you. Visits outside our
+                  service area carry a minimum <span className="font-bold">$50 travel fee</span>, confirmed with you
+                  on the call.
                 </p>
               </div>
             ) : (
               <p className="mt-3 text-sm font-semibold text-emerald-700">✓ We serve your area.</p>
             )
+          ) : null}
+
+          {addressError ? (
+            <div className="mt-4 border border-red-300 bg-red-50 p-3">
+              <p className="text-sm font-bold text-red-700">{addressError}</p>
+            </div>
           ) : null}
 
           {error ? <p className="mt-3 text-sm font-bold text-red-600">{error}</p> : null}
@@ -566,6 +692,22 @@ export default function PublicBookPage() {
             </p>
           ) : null}
 
+          {/* Book-without-paying explainer (regular bookings only; groups must deposit). */}
+          {clientType !== "group" ? (
+            <div className="mt-5 border border-[#c96c83]/30 bg-[#c96c83]/5 p-4">
+              <p className="text-sm font-bold text-[#101217]">Prefer to pay later? You don&apos;t have to pay now.</p>
+              <p className="mt-1 text-sm font-medium text-[#5f6268]">
+                Tap <span className="font-bold text-[#101217]">&ldquo;Proceed to booking&rdquo;</span> to confirm with
+                just your email — no card required. Your technician arrives, and you settle up after the service
+                (card, or your card on file). We send your confirmation to{" "}
+                <span className="font-bold text-[#101217]">{email || "your email"}</span>.
+              </p>
+              <p className="mt-2 text-xs font-medium text-[#8a8d93]">
+                Or tap &ldquo;Pay now&rdquo; to pay securely online in advance — your choice.
+              </p>
+            </div>
+          ) : null}
+
           {error ? <p className="mt-3 text-sm font-bold text-red-600">{error}</p> : null}
         </div>
       ) : null}
@@ -594,11 +736,11 @@ export default function PublicBookPage() {
         ) : step < STEPS.length - 1 ? (
           <button
             type="button"
-            disabled={!stepValid[step]}
-            onClick={() => setStep((s) => s + 1)}
+            disabled={!stepValid[step] || (step === 3 && verifyingAddress)}
+            onClick={() => (step === 3 ? verifyAddressThenAdvance() : setStep((s) => s + 1))}
             className="h-12 flex-1 bg-[#101217] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
           >
-            Continue
+            {step === 3 && verifyingAddress ? "Verifying address…" : "Continue"}
           </button>
         ) : clientType === "group" ? (
           // Group: mandatory payment — deposit or full, both go to checkout.
@@ -649,6 +791,26 @@ export default function PublicBookPage() {
       </Shell>
       <SiteFooter />
     </>
+  )
+}
+
+function CategoryChip({
+  label, Icon, active, onClick,
+}: { label: string; Icon?: LucideIcon; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 border px-3 py-1.5 text-xs font-bold transition-colors",
+        active
+          ? "border-[#c96c83] bg-[#c96c83] text-white"
+          : "border-black/15 bg-white text-[#5f6268] hover:border-[#c96c83]",
+      )}
+    >
+      {Icon ? <Icon className="size-3.5" /> : null}
+      {label}
+    </button>
   )
 }
 
