@@ -3,8 +3,7 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, Eye, MapPin, Phone, Scissors, Send, Sparkles, User } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User } from "lucide-react"
 
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
@@ -56,19 +55,6 @@ interface BookingRequestResponse {
 }
 
 const GROUP_MAX = 5
-
-// Category → icon, used for the filter chips and the placeholder shown when a
-// service has no photo yet. Falls back to a sparkle for unknown categories.
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  Nails: Sparkles,
-  Lashes: Eye,
-  Massage: User,
-  Waxing: Scissors,
-  Spa: Sparkles,
-}
-function categoryIcon(name: string | null): LucideIcon {
-  return (name && CATEGORY_ICONS[name]) || Sparkles
-}
 
 const field =
   "h-11 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
@@ -462,7 +448,6 @@ export default function PublicBookPage() {
                 <CategoryChip
                   key={cat}
                   label={cat}
-                  Icon={categoryIcon(cat)}
                   active={categoryFilter === cat}
                   onClick={() => setCategoryFilter(cat)}
                 />
@@ -472,7 +457,6 @@ export default function PublicBookPage() {
 
           <div className="grid max-h-[30rem] gap-4 overflow-y-auto pr-1">
             {Array.from(grouped.entries()).map(([category, list]) => {
-              const CatIcon = categoryIcon(category)
               return (
                 <div key={category}>
                   <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#a7abb2]">{category}</p>
@@ -486,15 +470,15 @@ export default function PublicBookPage() {
                           onClick={() => chooseService(s.id)}
                           className="flex items-start gap-3 border border-black/15 bg-white p-3 text-left transition-colors hover:border-[#c96c83]"
                         >
-                          {/* Thumbnail — real photo, or a clean category-icon placeholder. */}
-                          <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-[#f0ece4] text-[#c96c83]">
-                            {s.image_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
+                          {/* Thumbnail — real photo (all services have one); neutral fill if missing. */}
+                          {s.image_url ? (
+                            <span className="size-16 shrink-0 overflow-hidden rounded-lg bg-[#f0ece4]">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={s.image_url} alt={s.name} className="size-full object-cover" />
-                            ) : (
-                              <CatIcon className="size-6" />
-                            )}
-                          </span>
+                            </span>
+                          ) : (
+                            <span className="size-16 shrink-0 rounded-lg bg-[#f0ece4]" />
+                          )}
                           <span className="min-w-0 flex-1">
                             <span className="block text-sm font-bold text-[#101217]">{s.name}</span>
                             {s.description ? (
@@ -795,20 +779,19 @@ export default function PublicBookPage() {
 }
 
 function CategoryChip({
-  label, Icon, active, onClick,
-}: { label: string; Icon?: LucideIcon; active: boolean; onClick: () => void }) {
+  label, active, onClick,
+}: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1.5 border px-3 py-1.5 text-xs font-bold transition-colors",
+        "inline-flex items-center border px-3 py-1.5 text-xs font-bold transition-colors",
         active
           ? "border-[#c96c83] bg-[#c96c83] text-white"
           : "border-black/15 bg-white text-[#5f6268] hover:border-[#c96c83]",
       )}
     >
-      {Icon ? <Icon className="size-3.5" /> : null}
       {label}
     </button>
   )
