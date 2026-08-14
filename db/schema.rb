@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_12_131145) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_13_131144) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -615,14 +615,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_131145) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.text "description"
+    t.boolean "featured", default: false, null: false
     t.jsonb "gallery_urls", default: [], null: false
     t.string "image_url"
     t.string "name", null: false
     t.decimal "price", precision: 10, scale: 2, default: "0.0", null: false
     t.bigint "product_category_id"
+    t.string "shipping_speed", default: "fast", null: false
     t.string "sku"
     t.integer "stock_quantity", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.index ["featured"], name: "index_products_on_featured"
     t.index ["product_category_id"], name: "index_products_on_product_category_id"
     t.index ["sku"], name: "index_products_on_sku", unique: true, where: "(sku IS NOT NULL)"
   end

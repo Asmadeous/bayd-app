@@ -1,7 +1,35 @@
 module Api
   module V1
     class ProductsController < ApplicationController
-      skip_before_action :authenticate_user!, only: %i[index show]
+      skip_before_action :authenticate_user!, only: %i[index show top_sellers]
+
+      # Powers the rotating "recommend products" popup. Ranks by units actually
+      # sold (paid/shipped orders). When the shop is new and there aren't enough
+      # real sales, backfills with `featured` products, then newest in-stock — so
+      # the widget is never empty. Returns up to `limit` (default 8).
+      def top_sellers
+        limit = (params[:limit].presence || 8).to_i.clamp(1, 24)
+        base  = Product.active.in_stock.includes({ product_category: :parent }, :product_variants)
+
+        sold_ids = OrderItem.joins(:order)
+                            .where(orders: { status: %w[paid shipped] })
+                            .group(:product_id).order(Arel.sql("SUM(quantity) DESC"))
+                            .limit(limit).pluck(:product_id)
+
+        ranked = base.where(id: sold_ids)
+                     .sort_by { |p| sold_ids.index(p.id) } # preserve sales rank
+
+        if ranked.size < limit
+          fill = base.where(featured: true).where.not(id: ranked.map(&:id)).limit(limit - ranked.size)
+          ranked += fill.to_a
+        end
+        if ranked.size < limit
+          fill = base.where.not(id: ranked.map(&:id)).order(created_at: :desc).limit(limit - ranked.size)
+          ranked += fill.to_a
+        end
+
+        render json: { data: ProductSerializer.render_as_hash(ranked) }
+      end
 
       def index
         scope = Product.active.in_stock.includes({ product_category: :parent }, :product_variants)

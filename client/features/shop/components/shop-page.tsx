@@ -46,6 +46,7 @@ interface ApiProduct {
   stock_quantity: number;
   image_url: string | null;
   gallery_urls: string[] | null;
+  shipping_speed: string | null;
   category: string | null;
   has_variants: boolean;
   variants: ApiVariant[];
@@ -99,6 +100,7 @@ function mapApiProduct(p: ApiProduct, index: number): ShopProduct {
       alt: p.name,
     },
     gallery: (p.gallery_urls ?? []).filter((url): url is string => !!url),
+    shippingSpeed: p.shipping_speed === "expedited" ? "expedited" : "fast",
     badge: BADGES[index % BADGES.length] ?? "New",
     description: p.description ?? "",
     details: [],
@@ -729,6 +731,17 @@ function ProductModal({
           <p className="animate-service-content-3 mt-5 text-3xl font-extrabold text-[#101217]">
             {displayPrice}
           </p>
+          <div className="animate-service-content-3 mt-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 bg-[#e8f0e8] px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-[#3a6b3a]">
+              <PackageCheck aria-hidden="true" className="size-3.5" />
+              {product.shippingSpeed === "expedited"
+                ? "Expedited shipping"
+                : "Fast shipping"}
+            </span>
+            <span className="text-xs font-semibold text-[#5f6268]">
+              Ships to USA &amp; Canada
+            </span>
+          </div>
           <p className="animate-service-content-4 mt-6 text-sm leading-6 text-[#3f4248]">
             {product.description}
           </p>

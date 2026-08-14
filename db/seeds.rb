@@ -33,55 +33,88 @@ puts "  #{categories.size} service categories"
 # "consult: true" == "Price varies" on the live menu (quote on request).
 services_data = [
   # Nails
-  { category: "nails",   name: "Manicure",                                     duration: 30,  price: 40.00 },
-  { category: "nails",   name: "Pedicure",                                     duration: 60,  price: 50.00 },
-  { category: "nails",   name: "Manicure and pedicure",                        duration: 75,  price: 75.00 },
-  { category: "nails",   name: "Shellac manicure",                             duration: 45,  price: 45.00 },
-  { category: "nails",   name: "Shellac Pedicure",                             duration: 45,  price: 55.00 },
-  { category: "nails",   name: "Shellac manicure and pedicure",                duration: 90,  price: 85.00 },
-  { category: "nails",   name: "Shellac manicure and regular pedicure",        duration: 90,  price: 80.00 },
-  { category: "nails",   name: "Regular Manicure and shellac pedicure",        duration: 90,  price: 80.00 },
-  { category: "nails",   name: "Shellac Polish Change",                        duration: 30,  price: 35.00 },
-  { category: "nails",   name: "Shellac removal",                              duration: 30,  price: 15.00 },
-  { category: "nails",   name: "Polish change",                                duration: 20,  price: 25.00 },
-  { category: "nails",   name: "Gel X",                                        duration: 75,  price: 80.00 },
-  { category: "nails",   name: "Gel overlay",                                  duration: 60,  price: 50.00 },
-  { category: "nails",   name: "Gel removal",                                  duration: 30,  price: 30.00 },
-  { category: "nails",   name: "Full Set nails",                               duration: 75,  price: 70.00 },
-  { category: "nails",   name: "Nail refil",                                   duration: 90,  price: 55.00 },
-  { category: "nails",   name: "Nail clip and file",                           duration: 15,  price: 20.00 },
-  { category: "nails",   name: "Nail repair",                                  duration: 15,  price: 0.00, consult: true },
-  { category: "nails",   name: "Paraffin add on",                             duration: 15,  price: 20.00 },
-  { category: "nails",   name: "French add on",                               duration: 30,  price: 10.00 },
-  { category: "nails",   name: "Princess manicure (children up to 13 years)",  duration: 15,  price: 25.00, kids: true },
-  { category: "nails",   name: "Princess Pedicure (children up to 13 years)",  duration: 30,  price: 40.00, kids: true },
-  { category: "nails",   name: "Princess manicure and pedicure (children)",    duration: 30,  price: 50.00, kids: true },
-  # Lashes
-  { category: "lashes",  name: "Lashes Mega Volume",                           duration: 180, price: 225.00 },
-  { category: "lashes",  name: "Lash refill mega",                             duration: 90,  price: 145.00 },
+  { category: "nails",   name: "Manicure",                                     duration: 30,  price: 40.00, desc: "A classic manicure at home — nails shaped and buffed, cuticles tidied, a relaxing hand massage, and a polish of your choice for a clean, put-together finish." },
+  { category: "nails",   name: "Pedicure",                                     duration: 60,  price: 50.00, desc: "A soothing at-home pedicure with a warm soak, nail shaping, cuticle care, gentle exfoliation, a foot-and-calf massage, and polish to finish." },
+  { category: "nails",   name: "Manicure and pedicure",                        duration: 75,  price: 75.00, desc: "Our full hand-and-foot treatment: a complete manicure and pedicure in one visit, with shaping, cuticle care, massage, and polish for both." },
+  { category: "nails",   name: "Shellac manicure",                             duration: 45,  price: 45.00, desc: "A gel-based shellac manicure with shaping, cuticle care, and a long-wearing, chip-resistant colour that stays glossy for up to two weeks." },
+  { category: "nails",   name: "Shellac Pedicure",                             duration: 45,  price: 55.00, desc: "A pedicure finished with durable shellac polish — soak, shaping, cuticle care, and a high-shine colour that lasts far longer than regular polish." },
+  { category: "nails",   name: "Shellac manicure and pedicure",                duration: 90,  price: 85.00, desc: "A complete shellac manicure and pedicure — long-lasting, chip-resistant colour on both hands and feet, with full shaping, cuticle care, and massage." },
+  { category: "nails",   name: "Shellac manicure and regular pedicure",        duration: 90,  price: 80.00, desc: "A long-wearing shellac manicure paired with a classic polish pedicure — the best of both, with full nail care and massage throughout." },
+  { category: "nails",   name: "Regular Manicure and shellac pedicure",        duration: 90,  price: 80.00, desc: "A classic polish manicure paired with a durable shellac pedicure, so your feet stay glossy and chip-free between visits." },
+  { category: "nails",   name: "Shellac Polish Change",                        duration: 30,  price: 35.00, desc: "A quick refresh that removes your existing shellac and applies a new long-lasting shellac colour — no full manicure needed." },
+  { category: "nails",   name: "Shellac removal",                              duration: 30,  price: 15.00, desc: "Gentle, careful removal of shellac or gel polish that protects the natural nail — ideal on its own or before a new set." },
+  { category: "nails",   name: "Polish change",                                duration: 15,  price: 25.00, desc: "A fast switch to a fresh regular-polish colour on nails that are already in good shape — perfect for a quick change of look." },
+  { category: "nails",   name: "Gel X",                                        duration: 75,  price: 80.00, desc: "A full set of soft-gel Gel-X extensions — lightweight, natural-looking length applied with gel for a strong, flexible, long-lasting finish." },
+  { category: "nails",   name: "Gel overlay",                                  duration: 60,  price: 50.00, desc: "A protective gel overlay applied over your natural nails to add strength and a durable, glossy finish without adding length." },
+  { category: "nails",   name: "Gel removal",                                  duration: 30,  price: 30.00, desc: "Safe, careful removal of gel or Gel-X enhancements that keeps the natural nail healthy underneath." },
+  { category: "nails",   name: "Full Set nails",                               duration: 75,  price: 70.00, desc: "A brand-new full set of nail extensions shaped and finished to your chosen length and style, with a polished, long-wearing result." },
+  { category: "nails",   name: "Nail refil",                                   duration: 90,  price: 55.00, desc: "A fill for grown-out extensions — regrowth is filled in, the shape restored, and the finish refreshed to keep your set looking new." },
+  { category: "nails",   name: "Nail clip and file",                           duration: 15,  price: 20.00, desc: "A simple tidy-up: nails clipped and filed to a neat, comfortable length and shape. Great as a quick maintenance visit." },
+  { category: "nails",   name: "Nail repair",                                  duration: 15,  price: 0.00, consult: true, desc: "Repair for a chipped, cracked, or broken nail or extension. Price is quoted on the spot based on what's needed." },
+  { category: "nails",   name: "Paraffin add on",                             duration: 15,  price: 20.00, desc: "A warm paraffin-wax treatment added to your manicure or pedicure to deeply soften and hydrate the hands or feet." },
+  { category: "nails",   name: "French add on",                               duration: 30,  price: 10.00, desc: "Add a timeless French finish — clean white tips over a natural base — to any manicure or nail service." },
+  { category: "nails",   name: "Princess manicure (children up to 13 years)",  duration: 15,  price: 25.00, kids: true, desc: "A gentle, fun manicure designed for children up to 13 — light nail shaping and a favourite polish colour for a first pampering experience." },
+  { category: "nails",   name: "Princess Pedicure (children up to 13 years)",  duration: 30,  price: 40.00, kids: true, desc: "A kid-friendly pedicure for children up to 13, with a gentle soak, careful nail care, and a fun polish colour of their choice." },
+  { category: "nails",   name: "Princess manicure and pedicure (children)",    duration: 30,  price: 50.00, kids: true, desc: "The full princess treatment for children — a gentle manicure and pedicure together, with fun colours and a little extra pampering." },
+  # Lashes — full sets
+  { category: "lashes",  name: "Lashes Classic set",                           duration: 90,  price: 135.00, image: "/images/services/lashes-classic-set.jpg", desc: "A full set of classic lash extensions — one extension applied to each natural lash for a natural, defined look, like a great coat of mascara." },
+  { category: "lashes",  name: "Lashes Hybrid Set",                            duration: 120, price: 155.00, image: "/images/services/lashes-hybrid-set.jpg", desc: "A hybrid lash set blending classic and volume techniques for added texture and fullness — more depth than classic, softer than a full volume set." },
+  { category: "lashes",  name: "Lashes Volume set",                            duration: 150, price: 160.00, image: "/images/services/lashes-volume-set.jpg", desc: "A full volume set using lightweight lash fans for a fluffy, glamorous, high-impact look with plenty of density." },
+  { category: "lashes",  name: "Lashes Glam Volume",                           duration: 150, price: 170.00, image: "/images/services/lashes-glam-volume.jpg", desc: "A dense, dramatic glam volume set with fuller fans for maximum impact — perfect for those who love a bold, glamorous lash look." },
+  { category: "lashes",  name: "Lashes Mega Volume",                           duration: 180, price: 225.00, image: "/images/services/lashes-mega-volume.jpg", desc: "Our fullest, most dramatic lash set — ultra-fine, high-count fans for maximum density and a bold, show-stopping finish." },
+  # Lashes — refills
+  { category: "lashes",  name: "Lash refill classic",                          duration: 60,  price: 100.00, image: "/images/services/lash-refill-classic.jpg", desc: "A maintenance fill for classic lashes — grown-out and shed extensions are replaced to keep your set looking full. Best booked within 2–3 weeks." },
+  { category: "lashes",  name: "Lash refill hybrid",                           duration: 60,  price: 115.00, image: "/images/services/lash-refill-hybrid.jpg", desc: "A maintenance fill for hybrid lashes to top up shed extensions and keep your set full. Best booked within 2–3 weeks of your last visit." },
+  { category: "lashes",  name: "Lash refill glam",                             duration: 90,  price: 125.00, image: "/images/services/lash-refill-glam.jpg", desc: "A maintenance fill for glam volume lashes, replacing shed fans to keep your look dense and dramatic. Best booked within 2–3 weeks." },
+  { category: "lashes",  name: "Lash refill volume",                           duration: 90,  price: 135.00, image: "/images/services/lash-refill-volume.jpg", desc: "A maintenance fill for volume lashes to restore fullness between appointments. Best booked within 2–3 weeks of your last visit." },
+  { category: "lashes",  name: "Lash refill mega",                             duration: 90,  price: 145.00, image: "/images/services/lash-refill-mega.jpg", desc: "A maintenance fill for mega volume lashes, replacing shed fans to keep your set at its fullest. Best booked within 2–3 weeks." },
   # Massage
-  { category: "massage", name: "Swedish Deep Tissue Massage",                  duration: 75,  price: 95.00 },
-  { category: "massage", name: "Thai foot massage",                            duration: 45,  price: 70.00 },
-  { category: "massage", name: "Back massage",                                 duration: 30,  price: 50.00 },
-  { category: "massage", name: "Shoulder massage",                             duration: 20,  price: 40.00 },
+  { category: "massage", name: "Swedish Deep Tissue Massage",                  duration: 75,  price: 95.00, desc: "A 75-minute massage blending relaxing Swedish strokes with deep-tissue pressure to ease tension and target tight muscles — on your own table or ours." },
+  { category: "massage", name: "Thai foot massage",                            duration: 45,  price: 70.00, desc: "A 45-minute Thai foot massage using pressure-point techniques on the feet and lower legs to relieve tension and boost circulation." },
+  { category: "massage", name: "Back massage",                                 duration: 30,  price: 50.00, desc: "A focused 30-minute back massage that targets tension across the back and shoulders — a quick, effective release for tight, tired muscles." },
+  { category: "massage", name: "Shoulder massage",                             duration: 15,  price: 40.00, desc: "A quick 15-minute shoulder and neck massage to release built-up tension — a perfect add-on or a fast reset for a stiff neck." },
   # Waxing
-  { category: "waxing",  name: "Wax Underarm",                                 duration: 20,  price: 30.00 },
-  { category: "waxing",  name: "Wax Half Arm",                                 duration: 30,  price: 25.00 },
-  { category: "waxing",  name: "Wax Full arm",                                 duration: 30,  price: 40.00 },
-  { category: "waxing",  name: "Wax Half leg",                                 duration: 30,  price: 35.00 },
-  { category: "waxing",  name: "Wax full leg",                                 duration: 45,  price: 55.00 },
-  { category: "waxing",  name: "Wax Bikini",                                   duration: 20,  price: 35.00 },
-  { category: "waxing",  name: "Brazilian (women only)",                       duration: 45,  price: 70.00 },
-  { category: "waxing",  name: "Wax Back",                                     duration: 20,  price: 40.00 },
-  { category: "waxing",  name: "Wax Full Face",                                duration: 30,  price: 35.00 },
-  { category: "waxing",  name: "Wax Chin and Upper Lip",                       duration: 15,  price: 20.00 },
-  { category: "waxing",  name: "Wax eyebrows and shaping",                     duration: 10,  price: 20.00 },
-  { category: "waxing",  name: "Wax Full body (women only)",                   duration: 90,  price: 175.00 },
-  { category: "waxing",  name: "Eyebrow tint",                                 duration: 15,  price: 10.00 },
+  { category: "waxing",  name: "Wax Underarm",                                 duration: 15,  price: 30.00, desc: "Quick, thorough underarm waxing for smooth, hair-free results that last far longer than shaving." },
+  { category: "waxing",  name: "Wax Half Arm",                                 duration: 30,  price: 25.00, desc: "Waxing for the lower or upper half of the arms, leaving skin smooth and hair-free." },
+  { category: "waxing",  name: "Wax Full arm",                                 duration: 30,  price: 40.00, desc: "Complete waxing of the full arm, from shoulder to wrist, for smooth, long-lasting results." },
+  { category: "waxing",  name: "Wax Half leg",                                 duration: 30,  price: 35.00, desc: "Waxing for the lower legs (knee to ankle), leaving skin smooth and hair-free for weeks." },
+  { category: "waxing",  name: "Wax full leg",                                 duration: 45,  price: 55.00, desc: "Complete full-leg waxing, from thigh to ankle, for smooth, long-lasting, hair-free legs." },
+  { category: "waxing",  name: "Wax Bikini",                                   duration: 15,  price: 35.00, desc: "A tidy bikini-line wax that removes hair beyond the swimsuit edge for a clean, comfortable finish." },
+  { category: "waxing",  name: "Brazilian (women only)",                       duration: 45,  price: 70.00, desc: "A complete Brazilian wax removing all hair from the intimate area, performed with care and discretion in the comfort of your own home. Women only." },
+  { category: "waxing",  name: "Wax Back",                                     duration: 15,  price: 40.00, desc: "Full-back waxing for smooth, hair-free skin that lasts far longer than shaving." },
+  { category: "waxing",  name: "Wax Full Face",                                duration: 30,  price: 35.00, desc: "Gentle full-face waxing to remove unwanted facial hair, leaving skin smooth and makeup-ready." },
+  { category: "waxing",  name: "Wax Chin and Upper Lip",                       duration: 15,  price: 20.00, desc: "Quick, precise waxing of the chin and upper lip to remove fine facial hair for a smooth finish." },
+  { category: "waxing",  name: "Wax eyebrows and shaping",                     duration: 15,  price: 20.00, desc: "Eyebrow waxing and shaping to clean up the brow line and define a shape that suits your face." },
+  { category: "waxing",  name: "Wax Full body (women only, excluding Brazilian)", duration: 90,  price: 175.00, desc: "Head-to-toe waxing covering arms, legs, underarms, and more in a single visit (excluding Brazilian). Women only." },
+  { category: "waxing",  name: "Eyebrow tint",                                 duration: 15,  price: 10.00, desc: "A semi-permanent tint that darkens and defines the brows for a fuller, more polished look without daily makeup." },
   # Spa / Body
-  { category: "spa",     name: "Body scrub",                                   duration: 30,  price: 50.00 },
-  { category: "spa",     name: "Group booking",                                duration: 270, price: 0.00, consult: true }
+  { category: "spa",     name: "Deluxe spa manicure + nail care",             duration: 60,  price: 65.00, image: "/images/services/nails-manicure.webp", desc: "An elevated spa manicure with extended nail and cuticle care, exfoliation, a hydrating mask, and a relaxing hand-and-arm massage, finished with polish." },
+  { category: "spa",     name: "Body scrub",                                   duration: 30,  price: 50.00, desc: "A full-body exfoliating scrub that sloughs away dead skin and leaves you feeling smooth, soft, and refreshed — a spa treatment at home." },
+  { category: "spa",     name: "Group booking",                                duration: 270, price: 0.00, consult: true, desc: "Book a shared session for a group — perfect for parties, bridal prep, or a spa day with friends. We bring the pampering to you. Price quoted based on your group and chosen services." }
 ]
+
+# Pick a real service photo for a menu entry. An explicit `image:` always wins;
+# otherwise we choose by service name (pedicure vs polish vs manicure) and fall
+# back to a per-category default. Every active service ends up with a photo —
+# files live under client/public/images/services/.
+def service_image_for(s)
+  return s[:image] if s[:image].present?
+  name = s[:name].to_s.downcase
+  case s[:category]
+  when "nails"
+    if    name.include?("pedicure")                              then "/images/services/nails-pedicure.webp"
+    elsif name.include?("polish") || name.include?("removal")    then "/images/services/nails-polish.webp"
+    elsif name.include?("clip") || name.include?("repair") ||
+          name.include?("paraffin") || name.include?("french")   then "/images/services/nails-care.webp"
+    elsif name.include?("gel") || name.include?("full set") ||
+          name.include?("refil") || name.include?("overlay")     then "/images/services/nails-finished.webp"
+    else                                                              "/images/services/nails-manicure.webp"
+    end
+  when "massage" then "/images/services/massage.jpg"
+  when "waxing"  then "/images/services/waxing.jpg"
+  when "spa"     then "/images/services/spa-facial.webp"
+  end
+end
 
 services = services_data.map do |s|
   svc = Service.find_or_initialize_by(name: s[:name])
@@ -89,12 +122,17 @@ services = services_data.map do |s|
     service_category:      categories[s[:category]],
     duration_minutes:      s[:duration],
     price:                 s[:price],
+    description:           s[:desc],
     requires_consultation: s.fetch(:consult, false),
     kids_only:             s.fetch(:kids, false),
     active:                true
   )
-  # Kids use the dedicated "Princess" services. Elderly = adult price + 20%.
-  svc.tier_prices_from("elderly" => (s[:price] * 1.2).round(2)) if s[:price].positive?
+  # Real service photo (explicit image: wins; else chosen by name/category).
+  img = service_image_for(s)
+  svc.image_url = img if img.present?
+  # Kids use the dedicated "Princess" services. Elderly pay the same as adults —
+  # no tier overrides (clears any previously-seeded elderly hike).
+  svc.tier_prices = {}
   svc.save!
   svc
 end
@@ -188,6 +226,12 @@ products = products_data.map do |p|
     img = Dir.glob(Rails.root.join("client/public/images/products", "#{p[:sku].downcase}.*")).first
     image_url = img ? "/images/products/#{File.basename(img)}" : prod.image_url
   end
+  # Shipping confidence badge (USA & Canada only). Bulky/device/kit items
+  # realistically ship slower → "expedited"; everything else is "fast".
+  # Explicit p[:shipping] wins; otherwise inferred from the name.
+  shipping = p[:shipping] ||
+    (p[:name].to_s.match?(/massager|fascia gun|drill|\bLED\b|muscle|trolley|mannequin|gift set|syringe|stimulator|toner/i) ? "expedited" : "fast")
+
   prod.update!(
     product_category: prod_cats[p[:category]],
     name:             p[:name],
@@ -196,6 +240,7 @@ products = products_data.map do |p|
     description:      p[:desc],
     image_url:        image_url,
     gallery_urls:     Array(p[:gallery]),
+    shipping_speed:   shipping,
     active:           true
   )
   prod
@@ -294,10 +339,24 @@ end
 puts "  1 admin user (admin@bayd.local — change password before launch)"
 
 # ── Blog (imported from the transferred export — source URLs excluded) ────────
+# Blog covers reuse our real work photos, matched by post category. The seed
+# rotates through each pool so posts sharing a category get different images.
+BLOG_COVER_IMAGES = {
+  "Nail Care" => %w[/images/nails1.jpg /images/nails2.jpg /images/nails4.jpg /images/nails5.jpg /images/nails6.jpg /images/nails7.jpg],
+  "Mobile Spa" => %w[/images/massage.jpg /images/massage1.jpg /images/massage2.jpg /images/Medicure1.jpg /images/pedicure1.jpg],
+  "Skincare" => %w[/images/lashes3.jpg /images/lashes5.jpg],
+  "Wellness" => %w[/images/pedicure2.jpg /images/pedicure3.jpg /images/massage2.jpg],
+  "Services" => %w[/images/waxing.jpg /images/waxing2.jpg /images/waxing3.jpg],
+  "News" => %w[/images/lashes1.jpg /images/nails4.jpg],
+  "Beauty Tips" => %w[/images/lashes2.jpg /images/lashes4.jpg /images/lashes6.jpg /images/lashes7.jpg],
+  "_default" => %w[/images/nails1.jpg /images/nails5.jpg /images/lashes2.jpg]
+}.freeze
+
 blog_export = Rails.root.join("db/seeds/blog_export.md")
 if blog_export.exist?
   blog_author = User.find_by(email: "susi@baydspa.ca") || User.find_by(role: :admin)
   seeded_titles = []
+  blog_cover_index = Hash.new(0) # per-category round-robin counter
 
   blog_export.read.split(/^\s*---\s*$/).each do |section|
     section = section.strip
@@ -341,14 +400,22 @@ if blog_export.exist?
     ]
     category = (category_rules.find { |kw, _| title.downcase.include?(kw) } || [ nil, "Beauty Tips" ]).last
 
+    # Reuse our real work photos as blog covers, matched to the post's topic and
+    # rotated so same-category posts don't repeat the same image. Falls back to a
+    # general nails set for uncategorised posts.
+    cover_pool = BLOG_COVER_IMAGES[category] || BLOG_COVER_IMAGES.fetch("_default")
+    cover = cover_pool[blog_cover_index[category] % cover_pool.size] # wrap if more posts than images
+    blog_cover_index[category] += 1
+
     post = BlogPost.find_or_initialize_by(title: title)
     post.update!(
-      author:       blog_author,
-      body:         body,
-      excerpt:      excerpt,
-      category:     category,
-      status:       status,
-      published_at: published_at || post.published_at || Time.current
+      author:          blog_author,
+      body:            body,
+      excerpt:         excerpt,
+      category:        category,
+      status:          status,
+      cover_image_url: cover,
+      published_at:    published_at || post.published_at || Time.current
     )
     seeded_titles << title
   end

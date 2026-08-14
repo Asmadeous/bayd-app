@@ -39,6 +39,7 @@ class AssignmentService
     booking = assign(ranked)
     return failure(:no_availability, :no_availability, "all_candidates_taken") unless booking
 
+    register_simplybook_client(booking) # book-by-email → SimplyBook PWA account
     push_to_simplybook(booking)
     Result.new(success: true, booking_request: @booking_request)
   rescue StandardError => e
@@ -227,6 +228,30 @@ class AssignmentService
     booking
   end
 
+  # ── SimplyBook client onboarding (best-effort) ────────────────────────────
+  # A booking customer's account lives in SimplyBook (they use the SimplyBook
+  # client PWA, not our dashboard). On their first booking, register them as a
+  # SimplyBook client and let SimplyBook email them a set-password link. We store
+  # the returned client id on the user so we NEVER register the same person twice
+  # — if it's already set, skip entirely. Unlike push_to_simplybook, this does
+  # NOT need the service/provider mapping (it only registers the client), so it
+  # runs even while booking-event sync is dormant.
+  def register_simplybook_client(booking)
+    user = booking&.user
+    return unless user
+    return if user.simplybook_client_id.present? # already registered — no double-create
+    return if ENV["SIMPLYBOOK_COMPANY"].blank?   # SimplyBook not configured
+
+    cid = SimplyBook::Client.new.register_client(
+      name:  simplybook_client_payload[:name],
+      email: user.email,
+      phone: user.phone
+    )
+    user.update_columns(simplybook_client_id: cid) if cid.present?
+  rescue StandardError => e
+    Rails.logger.warn("[AssignmentService] SimplyBook client onboarding failed for booking #{booking&.id}: #{e.message}")
+  end
+
   # ── SimplyBook outbound (best-effort) ─────────────────────────────────────
   def push_to_simplybook(booking)
     return unless booking
@@ -240,7 +265,12 @@ class AssignmentService
       unit_id:     booking.employee_profile.simplybook_unit_id,
       starts_at:   booking.starts_at,
       ends_at:     booking.ends_at,
-      client:      simplybook_client_payload
+      client:      simplybook_client_payload,
+      # Group bookings carry the party size so SimplyBook books that many slots.
+      count:       (booking.party_size.to_i if booking.client_type_group?),
+      # Record the client tier as a note (SimplyBook has one price per service,
+      # so this is how the provider sees adult/kids/elderly/group).
+      comment:     "Client type: #{booking.client_type}#{" (party of #{booking.party_size})" if booking.client_type_group?}"
     )
     booking.update_columns(simplybook_id: simplybook_id, synced_at: Time.current) if simplybook_id.present?
   rescue StandardError => e

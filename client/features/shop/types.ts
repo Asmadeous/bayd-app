@@ -21,6 +21,7 @@ export type ShopProduct = {
     alt: string;
   };
   gallery: string[];
+  shippingSpeed: "fast" | "expedited";
   badge: string;
   description: string;
   details: string[];

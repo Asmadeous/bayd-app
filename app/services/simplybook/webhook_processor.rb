@@ -3,7 +3,9 @@ module SimplyBook
   # SimplyBook v2 webhooks are thin (notification_id + event + booking_id), so we
   # fetch the full booking and upsert it via BookingMirror.
   class WebhookProcessor
-    CANCEL_EVENTS = %w[cancel canceled cancelled booking.cancelled].freeze
+    # SimplyBook's real cancel event is "cancel_booking"; the rest are kept for
+    # forward/backward compatibility with other payload shapes.
+    CANCEL_EVENTS = %w[cancel_booking cancel canceled cancelled booking.cancelled].freeze
 
     def initialize(sync_event)
       @event = sync_event

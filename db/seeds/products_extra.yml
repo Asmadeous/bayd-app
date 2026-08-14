@@ -453,3 +453,75 @@
   price: 39.2
   stock: 100
   desc: "An all-in-one makeup kit with a curated selection of eyeshadows, blushes, and lip colours — a complete palette for creating full looks."
+
+# ── Lash aftercare (B.A.Y.D — pairs with lash extension services) ──
+# Placeholder images: drop the real photo at
+# client/public/images/products/<sku-lowercased>.jpg to make it live.
+- category: "lashes"
+  name: "Lash Growth Serum"
+  sku: "BAYD-LASH-SERUM"
+  price: 24.99
+  stock: 100
+  image_url: "/images/products/bayd-lash-serum.jpg"
+  desc: "A nourishing lash growth serum that conditions and strengthens natural lashes, promoting longer, fuller-looking lashes. Ideal aftercare between extension fills."
+- category: "lashes"
+  name: "Lash Cleansing Foam"
+  sku: "BAYD-LASH-CLEANSING-FOAM"
+  price: 18.99
+  stock: 100
+  image_url: "/images/products/bayd-lash-cleansing-foam.jpg"
+  desc: "A gentle foaming cleanser formulated for lash extensions. Removes makeup, oil, and debris without weakening the lash bond, keeping extensions clean and long-lasting."
+
+# ── Lash & brow serums / care (brand-store imports) ──
+- category: "lashes"
+  name: "Revlon ColorStay Lash Serum + Liner"
+  sku: "REVLON-COLORSTAY-LASH-SERUM-LINER"
+  price: 18.63
+  stock: 100
+  image_url: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/image_204032.jpg?v=1786660107"
+  desc: "A serum and liquid liner in one, infused with Tahitian microalgae to condition the lash line while it defines. The flexible brush tip glides on deep black colour that won't smudge, transfer, fade, or bleed — water resistant, all-day wear."
+- category: "lashes"
+  name: "Lash & Brow Serum"
+  sku: "CJS-LASH-BROW-SERUM"
+  price: 10.00
+  stock: 100
+  image_url: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/IMG_2620.jpg?v=1786660129"
+  desc: "A nourishing lash and brow growth serum blending castor oil, black castor oil, jojoba, and lavender to strengthen and condition delicate hairs. Gentle enough for daily use, it helps you achieve fuller, longer, healthier-looking lashes and brows naturally."
+- category: "lashes"
+  name: "Max Factor False Lash Effect Lash & Brow Serum"
+  sku: "MAXFACTOR-FALSE-LASH-EFFECT-SERUM"
+  price: 15.33
+  stock: 100
+  image_url: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/image_174780.jpg?v=1786660133"
+  desc: "A 13 ml lash and brow treatment serum with biotin, peptides, and hyaluronic acid to nourish and strengthen lashes and brows for a fuller, healthier look over time."
+- category: "lashes"
+  name: "Lash Strengthening Serum + Volumizer"
+  sku: "NUGGELA-LASH-STRENGTHENING-SERUM"
+  price: 54.10
+  stock: 100
+  image_url: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/image_209401.jpg?v=1786660140"
+  desc: "A dual-action lash treatment: a strengthening serum that prolongs the growth cycle and darkens lash pigment, plus a volumizing serum for an instant fullness boost. Clinically shown to improve lash growth, thickness, and colour in under 28 days."
+- category: "lashes"
+  name: "Lash Conditioning Cleanser"
+  sku: "TALIKA-LASH-CONDITIONING-CLEANSER"
+  price: 21.50
+  stock: 100
+  image_url: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/image_161088.jpg?v=1786660155"
+  desc: "A gentle 120 ml eye-makeup remover and lash cleanser with cornflower water and silk protein. Its non-greasy formula cleanses the delicate eye area while conditioning and strengthening lashes and brows, soothing without irritation."
+- category: "lashes"
+  name: "Lash Extension Glue Remover Wipes (180 pcs)"
+  sku: "CASHYMART-LASH-EXTENSION-REMOVAL-WIPES"
+  price: 9.77
+  stock: 100
+  image_url: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/lash-extension-removal-cashymart-35079134970134.jpg?v=1786660173"
+  desc: "A box of 180 pre-saturated, non-woven wipes that gently and effectively dissolve lash-extension glue residue. Individually sealed for hygiene, skin-friendly, and mess-free — an easy way to remove extensions at home or in the studio."
+- category: "lashes"
+  name: "KYRO Lash Curler"
+  sku: "KYRO-LASH-CURLER"
+  price: 14.34
+  stock: 100
+  image_url: "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/LashCurlerbefore.jpg?v=1786660192"
+  gallery:
+    - "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/LashCurlersideviewafter.jpg?v=1786660193"
+    - "https://cdn.shopify.com/s/files/1/0667/1561/5293/files/LashCurlerafter.jpg?v=1786660194"
+  desc: "A precision eyelash curler with a grooved metal plate for a smooth, gentle, glue-free lift around sensitive eyes. Preps natural lashes before press-ons or mascara and creates a clean, natural curve — beginner-friendly and reusable."

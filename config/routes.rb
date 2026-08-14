@@ -16,7 +16,9 @@ Rails.application.routes.draw do
       resources :service_categories, only: :index
       resources :services,           only: %i[index show]
       resources :product_categories, only: %i[index show]
-      resources :products,           only: %i[index show]
+      resources :products, only: %i[index show] do
+        collection { get :top_sellers } # rotating recommend-products widget
+      end
 
       # Booking flow
       resources :booking_requests, only: %i[index show create]
@@ -87,6 +89,10 @@ Rails.application.routes.draw do
 
       # Country gate (public — "do we accept requests from your country?")
       get "geo", to: "geo#show"
+
+      # Address verification (public — geocode the typed address and confirm it's
+      # a real Canadian address before letting the booking form proceed).
+      post "geo/verify_address", to: "geo#verify_address"
 
       # Shop & checkout
       resources :orders, only: %i[index show create]

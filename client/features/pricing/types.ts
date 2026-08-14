@@ -3,6 +3,7 @@ export type PriceItem = {
   price: string;
   duration?: string;
   note?: string;
+  description?: string;
 };
 
 export type PriceCategory = {
