@@ -163,6 +163,13 @@ prod_cats = {
 prod_cats["mens-fragrances"].update!(parent: fragrances)
 prod_cats["womens-fragrances"].update!(parent: fragrances)
 
+# The current, valid set of product categories. Anything not in here is a
+# leftover from a previous schema (e.g. old "Massage Oils" / "Nail Care") and is
+# removed after the product cleanup below (once its products are gone).
+current_category_ids = ([ fragrances ] + prod_cats.values).map(&:id)
+# Re-activate the current set in case a prior run had toggled any off.
+ProductCategory.where(id: current_category_ids).where(active: false).update_all(active: true)
+
 # Real catalog. Add new rows here as they come in.
 products_data = [
   # ── SYREN Fragrances · Men's ──
@@ -245,6 +252,26 @@ products = products_data.map do |p|
   )
   prod
 end
+
+# Remove products no longer in the seed (leftovers from a previous catalog, e.g.
+# old "Massage Oils" items). DELETE the ones with no order history; those that
+# were ordered can't be destroyed (order_items are restrict_with_error) so we
+# deactivate them instead, keeping order records intact.
+keep_ids = products.map(&:id)
+Product.where.not(id: keep_ids).left_joins(:order_items).where(order_items: { id: nil }).destroy_all
+deactivated = Product.where.not(id: keep_ids).update_all(active: false) # survivors = had orders
+puts "  cleaned up stale products (deactivated #{deactivated} with order history)"
+
+# Now that stale products are gone, delete any leftover product categories from a
+# previous schema (e.g. old "Massage Oils" / "Nail Care"). Only delete empty ones;
+# a category that still has products (order-linked survivors) is deactivated so it
+# drops off the shop without orphaning those products.
+stale_cats = ProductCategory.where.not(id: current_category_ids)
+stale_cats.left_joins(:products).where(products: { id: nil }).destroy_all
+still_referenced = ProductCategory.where.not(id: current_category_ids)
+still_referenced.update_all(active: false)
+puts "  cleaned up stale product categories (deactivated #{still_referenced.count} still referenced)"
+
 puts "  #{products.size} products (#{products.count { |x| x.image_url.present? }} with images)"
 
 # ── Product colour/shade variants ─────────────────────────────────────────────

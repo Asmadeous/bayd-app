@@ -357,7 +357,7 @@ function ShopHero({ products }: { products: ShopProduct[] }) {
               <h2 className="mt-3 max-w-md text-4xl font-extrabold tracking-tight">
                 {featuredProduct.name}
               </h2>
-              <p className="mt-4 max-w-md text-sm leading-6 text-white/72">
+              <p className="mt-4 line-clamp-4 max-w-md text-sm leading-6 text-white/72">
                 {featuredProduct.description}
               </p>
             </div>
