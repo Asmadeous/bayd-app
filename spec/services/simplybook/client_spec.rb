@@ -81,4 +81,30 @@ RSpec.describe SimplyBook::Client do
       expect(id).to eq("77") # remind is non-fatal
     end
   end
+
+  describe "#create_booking with a client tier" do
+    let(:starts_at) { Time.zone.parse("2026-08-20 10:00:00") }
+    let(:ends_at)   { Time.zone.parse("2026-08-20 11:00:00") }
+
+    before do
+      # No client hash → skip client resolution. Booking POST succeeds.
+      allow(conn).to receive(:post).with("/admin/bookings", anything)
+        .and_return(resp(200, { "bookings" => [ { "id" => "555" } ] }))
+      allow(conn).to receive(:put).and_return(resp(200, {}))
+    end
+
+    # additional_fields push is DISABLED (see client.rb) — tied to repeated slow
+    # (5s+) requests that ended in a SimplyBook 404 on real bookings (#135, #136).
+    # Re-enable this test alongside the additional_fields code once the intake
+    # field setup is confirmed correct on SimplyBook's side.
+    it "never sends additional_fields, even when tier is given" do
+      described_class.new.create_booking(
+        service_id: "2", unit_id: "3", starts_at: starts_at, ends_at: ends_at, tier: "elderly"
+      )
+
+      expect(conn).to have_received(:post).with(
+        "/admin/bookings", hash_excluding(:additional_fields)
+      )
+    end
+  end
 end

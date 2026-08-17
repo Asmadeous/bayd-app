@@ -14,6 +14,21 @@ const STATUS_COLORS: Record<Booking["status"], string> = {
   no_show: "#d4754a",
 }
 
+// Who the booking is for, so the tech knows at a glance. Group shows the real
+// party size, not a hardcoded number.
+function clientTypeLabel(clientType: Booking["client_type"], partySize?: number): string {
+  switch (clientType) {
+    case "group":
+      return `Group of ${partySize && partySize > 1 ? partySize : 2}`
+    case "kids":
+      return "Kids"
+    case "elderly":
+      return "Elderly"
+    default:
+      return "Adult"
+  }
+}
+
 interface BookingCardProps {
   booking: Booking
   actions?: ReactNode
@@ -54,9 +69,18 @@ export function BookingCard({ booking, actions, className }: BookingCardProps) {
               {booking.service?.name}
             </span>
             <StatusBadgeFor status={booking.status} />
-            {booking.client_type && booking.client_type !== "adult" ? (
-              <span className="inline-flex min-h-6 items-center bg-[#a36f4d]/12 px-2.5 py-1 text-xs font-bold capitalize leading-none text-[#8a5738]">
-                {booking.client_type === "group" ? "Group (5)" : booking.client_type}
+            {booking.client_type ? (
+              <span className="inline-flex min-h-6 items-center bg-[#a36f4d]/12 px-2.5 py-1 text-xs font-bold leading-none text-[#8a5738]">
+                {clientTypeLabel(booking.client_type, booking.party_size)}
+              </span>
+            ) : null}
+            {booking.simplybook_sync_pending ? (
+              <span
+                title="This booking hasn't reached the SimplyBook calendar yet — it retries automatically, or push manually from Admin."
+                className="inline-flex min-h-6 items-center gap-1 bg-amber-500/15 px-2.5 py-1 text-xs font-bold leading-none text-amber-800"
+              >
+                <span aria-hidden="true">⚠</span>
+                Not synced to SimplyBook
               </span>
             ) : null}
           </div>

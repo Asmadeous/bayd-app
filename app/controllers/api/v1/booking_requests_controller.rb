@@ -20,6 +20,10 @@ module Api
         # These are Booking-level concerns (read from raw params by
         # apply_payment_choice / collect_initial_payment), not BookingRequest columns.
         attrs = booking_request_params.except(:payment_timing, :booked_for_name, :booked_for_phone, :tip, :gift_card_code)
+        # The customer picks a wall-clock time in the business's timezone (Toronto);
+        # the app runs in UTC. Interpret the naive "YYYY-MM-DDTHH:MM:SS" string as
+        # Toronto time so the stored instant is correct (no 4-hour UTC skew).
+        attrs[:requested_start] = BusinessHours.parse_local(attrs[:requested_start]) || attrs[:requested_start] if attrs[:requested_start].present?
         # Not-logged-in customers (and logged-in users) may pass the address inline.
         attrs[:address_id] = build_address!(booker).id if attrs[:address_id].blank? && params[:address].present?
 
@@ -133,7 +137,7 @@ module Api
       ERROR_MESSAGES = {
         no_coverage:     "Sorry, that address is outside our service area.",
         no_availability: "No technician is available for that time. Please try another slot.",
-        outside_hours:   "Please choose a time within our hours (10:00 AM–7:00 PM ET) that allows the full service to finish before close.",
+        outside_hours:   "Please choose a time within our hours (9:00 AM–7:00 PM ET) that allows the full service to finish before close.",
         failed:          "We couldn't complete your booking. Please try again."
       }.freeze
 

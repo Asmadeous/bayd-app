@@ -12,6 +12,9 @@ module Api
         end
 
         # Create a staff member: an employee-role User + their EmployeeProfile.
+        # If no SimplyBook provider id was supplied, we also create the provider
+        # in SimplyBook via the admin API (no email verification needed) and store
+        # the id — so the tech's booking account exists without app-hopping.
         def create
           profile = nil
           ActiveRecord::Base.transaction do
@@ -21,6 +24,7 @@ module Api
             user.save!
             profile = EmployeeProfile.create!(employee_params.merge(user: user))
           end
+          create_simplybook_provider(profile) if profile.simplybook_unit_id.blank?
           render json: EmployeeProfileSerializer.render_as_hash(profile), status: :created
         end
 
@@ -65,6 +69,24 @@ module Api
         end
 
         private
+
+        # Best-effort: create this tech as a provider in SimplyBook and store the
+        # returned id on the profile. Creating a provider is a pure admin-API
+        # write — no email verification. Never fails staff creation if SimplyBook
+        # is down/unconfigured; the admin can still type a unit id later.
+        def create_simplybook_provider(profile)
+          return if ENV["SIMPLYBOOK_COMPANY"].blank?
+
+          user = profile.user
+          name = [ user.first_name, user.last_name ].compact_blank.join(" ").presence || user.email
+          service_ids = profile.services.map(&:simplybook_event_id).compact
+          id = SimplyBook::Client.new.create_provider(
+            name: name, email: user.email, phone: user.phone, service_ids: service_ids
+          )
+          profile.update_columns(simplybook_unit_id: id) if id.present?
+        rescue StandardError => e
+          Rails.logger.warn("[Admin::EmployeesController] SimplyBook provider create failed for #{profile.id}: #{e.message}")
+        end
 
         def find_profile = EmployeeProfile.find(params[:id])
 

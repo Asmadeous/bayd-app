@@ -1,0 +1,165 @@
+<!--
+  Beauty @ Your Door — SimplyBook.me email template (HTML, branded)
+  =================================================================
+  Uses SimplyBook's REAL [square_bracket] tags (from your editor's "Template vars").
+  This is the CLIENT'S BOOKING CONFIRMATION. Variants for Reminder / Set-password
+  are at the bottom — swap the BODY-COPY block, keep header/details/footer.
+
+  Paste into: Settings → Templates → (the template you're editing) → Email Template.
+  Subject line suggestion: Booking confirmation for [service] at [company]
+
+  Notes on the tags used (confirmed from your screenshot):
+    [client]                 = client name        [service]    = service
+    [provider]               = technician          [company]    = company name
+    [date_start] [time_start]= appointment date/time
+    [client_address]         = client address (from "Client address" var)
+    [data_field_1]           = "Client type" intake field (adult/kids/elderly/group)
+    [feedback_link]          = leave-feedback link
+  If a tag renders as literal text in a test email, that variable isn't available
+  for THIS template type — delete that row. Do not invent tags.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0;padding:0;background-color:#f4f1eb;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#ffffff;border:1px solid rgba(0,0,0,0.08);">
+
+        <!-- Header / logo -->
+        <tr>
+          <td style="background-color:#101217;padding:24px 28px;" align="left">
+            <img src="https://baydspa.ca/images/brand/bayd-logo-white.png"
+                 alt="Beauty @ Your Door" width="150"
+                 style="display:block;height:auto;width:150px;max-width:60%;border:0;outline:none;text-decoration:none;" />
+          </td>
+        </tr>
+        <tr><td style="height:4px;background-color:#c96c83;line-height:4px;font-size:0;">&nbsp;</td></tr>
+
+        <!-- ===================== BODY COPY (confirmation) ===================== -->
+        <tr>
+          <td style="padding:32px 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;">
+            <p style="margin:0 0 6px 0;font-size:12px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:#a36f4d;">
+              Booking Confirmed
+            </p>
+            <h1 style="margin:0 0 14px 0;font-size:24px;line-height:1.25;font-weight:800;color:#101217;">
+              Dear [client], you're booked!
+            </h1>
+            <p style="margin:0 0 8px 0;font-size:15px;line-height:1.6;color:#5f6268;">
+              Thank you for booking an appointment with [company]. Here are your
+              details — we come to you.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Appointment details -->
+        <tr>
+          <td style="padding:16px 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f1eb;border:1px solid rgba(0,0,0,0.06);">
+              <tr><td style="padding:18px 20px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding:6px 0;font-size:13px;color:#8a8d93;width:120px;">Service</td>
+                    <td style="padding:6px 0;font-size:15px;font-weight:bold;color:#101217;">[service]</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;font-size:13px;color:#8a8d93;">Technician</td>
+                    <td style="padding:6px 0;font-size:15px;font-weight:bold;color:#101217;">[provider]</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;font-size:13px;color:#8a8d93;">Booked for</td>
+                    <td style="padding:6px 0;font-size:15px;font-weight:bold;color:#101217;">[data_field_1]</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;font-size:13px;color:#8a8d93;">Date</td>
+                    <td style="padding:6px 0;font-size:15px;font-weight:bold;color:#101217;">[date_start]</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;font-size:13px;color:#8a8d93;">Time</td>
+                    <td style="padding:6px 0;font-size:15px;font-weight:bold;color:#101217;">[time_start]</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;font-size:13px;color:#8a8d93;vertical-align:top;">Location</td>
+                    <td style="padding:6px 0;font-size:15px;font-weight:bold;color:#101217;">[client_address]</td>
+                  </tr>
+                </table>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Help line -->
+        <tr>
+          <td style="padding:16px 28px 28px 28px;font-family:Arial,Helvetica,sans-serif;">
+            <p style="margin:0 0 10px 0;font-size:14px;line-height:1.6;color:#101217;font-weight:bold;">
+              We look forward to seeing you!
+            </p>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#5f6268;">
+              Need to change anything? Reply to this email or call us at
+              <a href="tel:+16479708259" style="color:#c96c83;text-decoration:none;font-weight:bold;">+1&nbsp;(647)&nbsp;970-8259</a>.
+            </p>
+          </td>
+        </tr>
+        <!-- ===================== /BODY COPY ===================== -->
+
+        <!-- Footer -->
+        <tr>
+          <td style="background-color:#101217;padding:24px 28px;font-family:Arial,Helvetica,sans-serif;" align="left">
+            <p style="margin:0 0 6px 0;font-size:15px;font-weight:800;color:#ffffff;">[company]</p>
+            <p style="margin:0 0 12px 0;font-size:12px;line-height:1.6;color:rgba(255,255,255,0.6);">
+              Mobile beauty care brought to your home, office, hotel, or event across the Greater Toronto Area.
+            </p>
+            <p style="margin:0;font-size:12px;line-height:1.8;color:rgba(255,255,255,0.6);">
+              <a href="tel:+16479708259" style="color:rgba(255,255,255,0.85);text-decoration:none;">+1 (647) 970-8259</a>&nbsp;·&nbsp;
+              <a href="mailto:Bookings@baydspa.ca" style="color:rgba(255,255,255,0.85);text-decoration:none;">Bookings@baydspa.ca</a><br>
+              <a href="https://www.instagram.com/beauty_at_your.door" style="color:rgba(255,255,255,0.85);text-decoration:none;">Instagram</a>&nbsp;·&nbsp;
+              <a href="https://www.tiktok.com/@beauty_at_your_door" style="color:rgba(255,255,255,0.85);text-decoration:none;">TikTok</a>&nbsp;·&nbsp;
+              <a href="https://baydspa.ca" style="color:rgba(255,255,255,0.85);text-decoration:none;">baydspa.ca</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+      <p style="margin:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#a7abb2;">
+        You booked with [company]. To leave feedback after your visit, <a href="[feedback_link]" style="color:#a36f4d;">click here</a>.
+      </p>
+
+    </td>
+  </tr>
+</table>
+
+
+<!--
+  =====================================================================
+  BODY-COPY VARIANTS — replace ONLY the BODY COPY block (eyebrow +
+  heading + intro), keep header/details/footer identical.
+  =====================================================================
+
+  ── REMINDER (Reminder template to clients) ──
+    Eyebrow:  Appointment Reminder
+    Heading:  See you soon, [client]!
+    Intro:    A friendly reminder of your upcoming appointment with [company].
+              Please have your space ready and someone available to let your
+              technician in.
+
+  ── CANCELLATION (Cancellation confirmation to clients) ──
+    Eyebrow:  Booking Cancelled
+    Heading:  Your booking has been cancelled, [client]
+    Intro:    Your appointment for [service] on [date_start] has been cancelled.
+              To rebook, visit baydspa.ca or call us. (Remove the details box or
+              keep it for reference.)
+
+  ── SET PASSWORD / WELCOME ──
+    Eyebrow:  Welcome
+    Heading:  Welcome to [company], [client]
+    Intro:    Set your password to view and manage your bookings any time.
+    Replace the "Help line" block with a CTA button:
+      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+        <td style="background-color:#c96c83;">
+          [link_to_set_password]<a href="#" style="display:inline-block;padding:13px 26px;
+          font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;
+          font-family:Arial,Helvetica,sans-serif;">Set your password</a>[/link_to_set_password]
+        </td></tr></table>
+    Remove the appointment details box for this variant.
+    (NOTE: [link_to_set_password]...[/link_to_set_password] is a WRAPPER tag —
+    put your linked text between the open/close tags, per the editor.)
+-->

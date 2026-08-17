@@ -46,6 +46,15 @@ interface ApiService {
   providers?: Provider[]
 }
 interface GeoResult { allowed: boolean; country: string | null }
+interface AvailabilityResult { slots: string[]; mapped: boolean; date?: string }
+interface FreeProvider { employee_id: number; name: string | null; photo_url: string | null }
+interface AnyAvailabilityResult {
+  date: string
+  mapped: boolean
+  providers: { employee_id: number; name: string | null; title: string | null; photo_url: string | null; slots: string[] }[]
+  by_time: Record<string, FreeProvider[]>
+  next_available_date?: string | null
+}
 interface BookingRequestResponse {
   booking_request: { id: number; status: string }
   booking?: { id: number }
@@ -61,7 +70,7 @@ const field =
 const lbl = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 const card = "border border-black/10 bg-white p-5 sm:p-6"
 
-const STEPS = ["Service", "Date", "Staff", "Details", "Payment"] as const
+const STEPS = ["Details", "Service", "Staff", "Date", "Payment"] as const
 
 export default function PublicBookPage() {
   const geo = useQuery<GeoResult>({
@@ -101,6 +110,10 @@ export default function PublicBookPage() {
   const [error, setError] = useState<string | null>(null)
   const [addressError, setAddressError] = useState<string | null>(null)
   const [verifyingAddress, setVerifyingAddress] = useState(false)
+  // Geocoded customer coordinates (from address verification). Fed back to the
+  // availability query so travel-infeasible slots are filtered out on re-pick.
+  const [custLat, setCustLat] = useState<number | null>(null)
+  const [custLng, setCustLng] = useState<number | null>(null)
 
   // Kids see only kids services; everyone else sees the regular menu.
   const menu = useMemo(
@@ -141,6 +154,62 @@ export default function PublicBookPage() {
 
   const coverage = useCoverage(postal)
   const notServiced = coverage.data ? !coverage.data.covered : false
+
+  // Availability: fetch the chosen tech's open slots for the chosen date. Only a
+  // SPECIFIC tech has a SimplyBook schedule to read, so we skip when "any". When
+  // the tech/service isn't mapped to SimplyBook yet (mapped:false), the UI falls
+  // back to a free time input.
+  // Slots must fit the whole party for a group booking (N consecutive slots);
+  // adult/kids/elderly are single-slot, so count = 1 for them.
+  const slotCount = clientType === "group" ? partySize : 1
+  const canQuerySlots = !!serviceId && staff !== "any" && !!date
+  const availability = useQuery<AvailabilityResult>({
+    queryKey: ["availability", serviceId, staff, date, slotCount, custLat, custLng],
+    queryFn: () =>
+      api
+        .get<AvailabilityResult>("/availability", {
+          params: {
+            service_id: Number(serviceId), employee_id: Number(staff), date, count: slotCount,
+            latitude: custLat ?? undefined, longitude: custLng ?? undefined,
+          },
+        })
+        .then((r) => r.data),
+    enabled: canQuerySlots,
+    staleTime: 60 * 1000,
+  })
+  const slots = availability.data?.slots ?? []
+
+  // Availability across ALL eligible techs for this service+date. Powers two
+  // things: the "Any available" staff option, and the auto-shift suggestion when
+  // the customer's chosen tech has no open time on the date.
+  const canQueryAny = !!serviceId && !!date
+  const anyAvailability = useQuery<AnyAvailabilityResult>({
+    queryKey: ["availability-any", serviceId, date, slotCount, custLat, custLng],
+    queryFn: () =>
+      api
+        .get<AnyAvailabilityResult>("/availability/any", {
+          params: {
+            service_id: Number(serviceId), date, count: slotCount,
+            latitude: custLat ?? undefined, longitude: custLng ?? undefined,
+          },
+        })
+        .then((r) => r.data),
+    enabled: canQueryAny,
+    staleTime: 60 * 1000,
+  })
+  const anyMapped = anyAvailability.data?.mapped === true
+  const byTime = anyAvailability.data?.by_time ?? {}
+  const anyTimes = Object.keys(byTime)
+  const nextAvailableDate = anyAvailability.data?.next_available_date ?? null
+
+  // "Real slot mode" = SimplyBook has a schedule to pick from. True when a chosen
+  // tech is mapped, or when "Any available" is picked and the any-query is mapped.
+  const slotMode =
+    (canQuerySlots && availability.data?.mapped === true) || (staff === "any" && anyMapped)
+  // The customer chose a specific tech but they have NO open times that day, yet
+  // OTHER techs do → offer to shift to whoever is free ("someone pops up").
+  const chosenTechFull =
+    canQuerySlots && availability.data?.mapped === true && slots.length === 0 && anyMapped && anyTimes.length > 0
 
   const createBooking = useMutation({
     mutationFn: (pay: { timing: "pay_upfront" | "pay_after"; groupCharge?: "deposit" | "full" }) =>
@@ -191,19 +260,33 @@ export default function PublicBookPage() {
     setServiceId(String(id))
     const provs = services.find((s) => s.id === id)?.providers ?? []
     setStaff(provs.length === 1 ? String(provs[0].id) : "any") // auto-pick when only one tech
-    setStep(1)
+    setStep(2)
+  }
+
+  // Pick a time slot. In "any"/auto-shift mode we also bind the tech who is free
+  // at that time (the first available, or a specific one the customer taps).
+  function pickSlotWithTech(t: string, employeeId?: number) {
+    setTime(t)
+    if (employeeId != null) setStaff(String(employeeId))
+    else if (staff === "any") {
+      const free = byTime[t]?.[0]?.employee_id
+      if (free != null) setStaff(String(free))
+    }
   }
 
   const isTimeValid = TIME_PATTERN.test(time)
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
   const postalFormatOk = CA_POSTAL.test(postal.trim())
   const stepValid = [
-    !!serviceId, // Service
-    !!date && isTimeValid, // Date & time
-    !!staff, // Staff (auto or picked; "any" is valid)
     // Details: email + all address fields + a Canadian postal format. The
     // realness/Canada check runs against the backend when they tap Continue.
     emailValid && !!line1.trim() && !!city.trim() && postalFormatOk,
+    !!serviceId, // Service
+    !!staff, // Staff (auto or picked; "any" is valid)
+    // Date & time. In slot mode the picked time must be a real fetched slot (for
+    // the chosen tech, or any tech in "any"/auto-shift mode) so a stale time can't
+    // slip through; otherwise any valid HH:MM from the free input is fine.
+    !!date && isTimeValid && (!slotMode || slots.includes(time) || anyTimes.includes(time)),
     true, // Payment (pay-after is always valid)
   ]
 
@@ -217,11 +300,13 @@ export default function PublicBookPage() {
     }
     setVerifyingAddress(true)
     try {
-      const { data } = await api.post<{ valid: boolean; in_canada: boolean; postal_format_ok: boolean; error?: string }>(
+      const { data } = await api.post<{ valid: boolean; in_canada: boolean; postal_format_ok: boolean; error?: string; latitude?: number | null; longitude?: number | null }>(
         "/geo/verify_address",
         { line1: line1.trim(), city: city.trim(), province, postal_code: postal.trim() },
       )
       if (data.valid) {
+        setCustLat(data.latitude ?? null)
+        setCustLng(data.longitude ?? null)
         setStep((s) => s + 1)
       } else if (!data.postal_format_ok) {
         setAddressError("Enter a valid Canadian postal code (e.g. M5J 2X5).")
@@ -278,6 +363,15 @@ export default function PublicBookPage() {
       }
       if (res?.data?.code === "no_coverage") {
         requestCallback.mutate()
+        return
+      }
+      // The chosen slot isn't reachable for the tech (travel time between jobs).
+      // Now that we have the address coords, the Date step re-queries with them
+      // and shows only feasible slots — send the customer back to re-pick.
+      if (res?.data?.code === "no_availability") {
+        setTime("")
+        setStep(3)
+        setError("That time just became unavailable for travel reasons. Please pick another open slot.")
         return
       }
       setError(res?.data?.error ?? "Something went wrong. Please try again.")
@@ -393,8 +487,8 @@ export default function PublicBookPage() {
         ))}
       </div>
 
-      {/* Step 1 — Service (with age selector) */}
-      {step === 0 ? (
+      {/* Step 2 — Service (with age selector) */}
+      {step === 1 ? (
         <div className={card}>
           <label className={lbl}>Who is it for?</label>
           <div className="mb-5 flex flex-wrap gap-2">
@@ -501,29 +595,7 @@ export default function PublicBookPage() {
         </div>
       ) : null}
 
-      {/* Step 2 — Date & time */}
-      {step === 1 ? (
-        <div className={card}>
-          {selected ? (
-            <p className="mb-4 text-sm font-semibold text-[#101217]">
-              {selected.name} · <span className="text-[#c96c83]">{price != null ? `$${price.toFixed(2)}` : "Quote"}</span>
-            </p>
-          ) : null}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className={lbl}><CalendarDays className="mr-1 inline size-3.5" /> Date</label>
-              <input type="date" min={TODAY} className={field} value={date} onChange={(e) => setDate(e.target.value)} />
-            </div>
-            <div>
-              <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Time</label>
-              <input type="time" className={field} value={time} onChange={(e) => setTime(e.target.value)} />
-            </div>
-          </div>
-          <p className="mt-3 text-xs font-medium text-[#8a8d93]">Hours: Mon–Sat, 9:00 AM – 7:30 PM (Eastern).</p>
-        </div>
-      ) : null}
-
-      {/* Step 3 — Staff */}
+      {/* Step 3 — Staff (chosen before Date so we can show that tech's open slots) */}
       {step === 2 ? (
         <div className={card}>
           <label className={lbl}>Choose your technician</label>
@@ -553,8 +625,155 @@ export default function PublicBookPage() {
         </div>
       ) : null}
 
-      {/* Step 4 — Details */}
+      {/* Step 4 — Date & time. When the chosen tech has a SimplyBook schedule we
+          show their real open slots; otherwise a free date/time input. */}
       {step === 3 ? (
+        <div className={card}>
+          {selected ? (
+            <p className="mb-4 text-sm font-semibold text-[#101217]">
+              {selected.name} · {staffLabel}
+            </p>
+          ) : null}
+
+          <label className={lbl}><CalendarDays className="mr-1 inline size-3.5" /> Date</label>
+          <input
+            type="date"
+            min={TODAY}
+            className={field}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+
+          {/* Slot picker. Three real-availability modes + a free-time fallback. */}
+          {slotMode ? (
+            (availability.isFetching || anyAvailability.isFetching) ? (
+              <p className="mt-4 text-sm font-medium text-[#8a8d93]">Loading open times…</p>
+            ) : staff === "any" ? (
+              // ── "Any available" — merged open times across all techs ──────────
+              <div className="mt-4">
+                <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Available times</label>
+                {anyTimes.length === 0 ? (
+                  <NextDayPrompt
+                    nextDate={nextAvailableDate}
+                    onJump={(d) => { setDate(d); setTime("") }}
+                  />
+                ) : (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {anyTimes.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => pickSlotWithTech(s)}
+                          className={cn(
+                            "border px-3 py-2 text-sm font-bold transition-colors",
+                            time === s ? "border-[#c96c83] bg-[#c96c83]/10 text-[#c96c83]"
+                              : "border-black/15 bg-white text-[#5f6268] hover:border-black/30",
+                          )}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                    {time && byTime[time]?.length ? (
+                      <p className="mt-3 text-xs font-medium text-[#8a8d93]">
+                        {byTime[time].length > 1
+                          ? `${byTime[time].length} technicians free at ${time} — we'll assign ${byTime[time][0].name ?? "one"}.`
+                          : `${byTime[time][0].name ?? "A technician"} is free at ${time}.`}
+                      </p>
+                    ) : null}
+                  </>
+                )}
+              </div>
+            ) : chosenTechFull ? (
+              // ── Chosen tech is full → auto-shift: offer whoever IS free ───────
+              <div className="mt-4">
+                <div className="border border-amber-300 bg-amber-50 p-3">
+                  <p className="text-sm font-bold text-amber-900">{staffLabel} is fully booked on this date.</p>
+                  <p className="mt-1 text-sm font-medium text-amber-800">Pick another day, or book one of these available technicians:</p>
+                </div>
+                <div className="mt-3 space-y-3">
+                  {(anyAvailability.data?.providers ?? [])
+                    .filter((p) => p.slots.length > 0)
+                    .map((p) => (
+                      <div key={p.employee_id}>
+                        <p className="mb-1.5 text-xs font-bold text-[#101217]">{p.name ?? "Technician"}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {p.slots.map((s) => (
+                            <button
+                              key={`${p.employee_id}-${s}`}
+                              type="button"
+                              onClick={() => pickSlotWithTech(s, p.employee_id)}
+                              className={cn(
+                                "border px-3 py-2 text-sm font-bold transition-colors",
+                                time === s && String(p.employee_id) === staff
+                                  ? "border-[#c96c83] bg-[#c96c83]/10 text-[#c96c83]"
+                                  : "border-black/15 bg-white text-[#5f6268] hover:border-black/30",
+                              )}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : (
+              // ── Specific tech with their own open times ───────────────────────
+              <div className="mt-4">
+                <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Available times</label>
+                {slots.length === 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-[#8a8d93]">
+                      No open times for {staffLabel} on this date.
+                    </p>
+                    <NextDayPrompt
+                      nextDate={nextAvailableDate}
+                      onJump={(d) => { setDate(d); setTime("") }}
+                    />
+                    {providers.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => { setStaff("any"); setTime("") }}
+                        className="text-sm font-bold text-[#c96c83] underline-offset-2 hover:underline"
+                      >
+                        Or see all available technicians
+                      </button>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {slots.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setTime(s)}
+                        className={cn(
+                          "border px-3 py-2 text-sm font-bold transition-colors",
+                          time === s ? "border-[#c96c83] bg-[#c96c83]/10 text-[#c96c83]"
+                            : "border-black/15 bg-white text-[#5f6268] hover:border-black/30",
+                        )}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          ) : (
+            <div className="mt-4">
+              <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Time</label>
+              <input type="time" className={field} value={time} onChange={(e) => setTime(e.target.value)} />
+              <p className="mt-3 text-xs font-medium text-[#8a8d93]">Hours: Mon–Sat, 9:00 AM – 7:30 PM (Eastern).</p>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {/* Step 1 — Details */}
+      {step === 0 ? (
         <div className={card}>
           <label className={lbl}><User className="mr-1 inline size-3.5" /> Your details</label>
           <div className="grid gap-4">
@@ -707,8 +926,8 @@ export default function PublicBookPage() {
             <ChevronLeft className="size-4" /> Back
           </button>
         ) : null}
-        {step === 3 && notServiced ? (
-          // Out of area — offer a consultation call instead of proceeding to payment.
+        {step === 0 && notServiced ? (
+          // Out of area — offer a consultation call instead of proceeding to booking.
           <button
             type="button"
             disabled={!stepValid[step] || requestCallback.isPending}
@@ -720,11 +939,11 @@ export default function PublicBookPage() {
         ) : step < STEPS.length - 1 ? (
           <button
             type="button"
-            disabled={!stepValid[step] || (step === 3 && verifyingAddress)}
-            onClick={() => (step === 3 ? verifyAddressThenAdvance() : setStep((s) => s + 1))}
+            disabled={!stepValid[step] || (step === 0 && verifyingAddress)}
+            onClick={() => (step === 0 ? verifyAddressThenAdvance() : setStep((s) => s + 1))}
             className="h-12 flex-1 bg-[#101217] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
           >
-            {step === 3 && verifyingAddress ? "Verifying address…" : "Continue"}
+            {step === 0 && verifyingAddress ? "Verifying address…" : "Continue"}
           </button>
         ) : clientType === "group" ? (
           // Group: mandatory payment — deposit or full, both go to checkout.
@@ -775,6 +994,32 @@ export default function PublicBookPage() {
       </Shell>
       <SiteFooter />
     </>
+  )
+}
+
+// Shown when a day has no openings. If SimplyBook found the next date with an
+// opening, offer a one-tap jump to it; otherwise just prompt another day.
+function NextDayPrompt({ nextDate, onJump }: { nextDate: string | null; onJump: (d: string) => void }) {
+  if (!nextDate) {
+    return <p className="text-sm font-medium text-[#8a8d93]">No open times on this date. Try another day.</p>
+  }
+  const label = new Date(`${nextDate}T00:00:00`).toLocaleDateString("en-CA", {
+    weekday: "long", month: "long", day: "numeric",
+  })
+  return (
+    <div className="border border-[#c96c83]/30 bg-[#c96c83]/5 p-3">
+      <p className="text-sm font-medium text-[#5f6268]">
+        Fully booked on this date. The next available day is{" "}
+        <span className="font-bold text-[#101217]">{label}</span>.
+      </p>
+      <button
+        type="button"
+        onClick={() => onJump(nextDate)}
+        className="mt-2 inline-flex h-9 items-center bg-[#101217] px-4 text-sm font-bold text-white"
+      >
+        Jump to {label}
+      </button>
+    </div>
   )
 }
 

@@ -59,4 +59,34 @@ export function useUpdateProfile() {
   })
 }
 
+export interface StaffBookingInput {
+  service_id: number
+  starts_at: string // ISO datetime
+  customer: { email: string; first_name?: string; phone?: string }
+  client_type?: string
+  party_size?: number
+  address?: {
+    line1: string
+    city: string
+    province: string
+    postal_code: string
+    line2?: string
+    is_apartment?: boolean
+    buzz_code?: string
+  }
+  notes?: string
+  employee_id?: number
+}
+
+// Staff-initiated manual booking (force-book). Creates a booking directly for
+// the acting tech, skipping the customer-flow eligibility gates.
+export function useCreateStaffBooking() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (input: StaffBookingInput) =>
+      api.post<Booking>("/employee/bookings", input).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["employee-schedule"] }),
+  })
+}
+
 export type { EmployeeProfile }

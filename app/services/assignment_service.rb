@@ -1,8 +1,9 @@
 class AssignmentService
   STALENESS_THRESHOLD   = 5.minutes
-  TZ                    = ActiveSupport::TimeZone["America/Toronto"]
-  OPEN_HOUR             = 10   # 10:00 AM ET
-  CLOSE_HOUR            = 19   # 7:00 PM ET
+  # Company timezone + open hours (single source of truth in BusinessHours).
+  TZ                    = BusinessHours.zone
+  OPEN_HOUR             = BusinessHours::OPEN_HOUR   # 9:00 AM local
+  CLOSE_HOUR            = BusinessHours::CLOSE_HOUR  # 7:00 PM local
   AVG_SPEED_KMH         = 35
   MIN_TURNAROUND_MIN    = 15
   # Pre-booking priority: an on-demand job must leave this much extra margin
@@ -68,7 +69,9 @@ class AssignmentService
   # picked); on-demand uses the current ET time. We compare wall-clock minutes
   # so the appointment both starts at/after open and *finishes* at/before close.
   def within_operating_hours?
-    ls = @booking_request.requested_start || Time.current.in_time_zone(TZ)
+    # requested_start is stored in UTC; business hours (OPEN/CLOSE_HOUR) are in
+    # the company timezone — so compare against the LOCAL (Toronto) wall clock.
+    ls = (@booking_request.requested_start || Time.current).in_time_zone(TZ)
     le = ls + total_duration_minutes.minutes
     (ls.hour * 60 + ls.min) >= OPEN_HOUR * 60 &&
       (le.hour * 60 + le.min) <= CLOSE_HOUR * 60 &&
@@ -137,26 +140,16 @@ class AssignmentService
   end
 
   # Can the tech physically get here from their previous job, and on to the next?
+  # Delegates to the shared TravelFeasibility service (same logic the availability
+  # slot filter uses, so offered slots always pass this gate).
   def travel_feasible?(employee)
-    return true if customer_lat.nil? || customer_lng.nil?
-
-    active = employee.bookings.where(status: %w[confirmed in_progress])
-
-    prev_job = active.where("ends_at <= ?", requested_start).order(ends_at: :desc).first
-    if prev_job
-      d = haversine_km(prev_job.service_latitude, prev_job.service_longitude, customer_lat, customer_lng)
-      return false if prev_job.ends_at + travel_minutes(d).minutes > requested_start
-    end
-
-    next_job = active.where("starts_at >= ?", requested_end).order(starts_at: :asc).first
-    if next_job
-      d = haversine_km(customer_lat, customer_lng, next_job.service_latitude, next_job.service_longitude)
+    TravelFeasibility.new(
+      employee:        employee,
+      customer_lat:    customer_lat,
+      customer_lng:    customer_lng,
       # On-demand must not eat into the margin a pre-booked appointment needs.
-      buffer = on_demand? ? ON_DEMAND_NEXT_BUFFER_MIN : 0
-      return false if requested_end + (travel_minutes(d) + buffer).minutes > next_job.starts_at
-    end
-
-    true
+      next_buffer_min: (on_demand? ? ON_DEMAND_NEXT_BUFFER_MIN : 0)
+    ).feasible?(requested_start, requested_end)
   end
 
   def travel_minutes(distance_km)
@@ -265,16 +258,26 @@ class AssignmentService
       unit_id:     booking.employee_profile.simplybook_unit_id,
       starts_at:   booking.starts_at,
       ends_at:     booking.ends_at,
-      client:      simplybook_client_payload,
+      # Tag the tier onto the NAME sent for THIS booking only (shows directly on
+      # the SimplyBook calendar grid, next to the client name — the structured
+      # additional_fields tag is disabled, see simplybook/client.rb). This does
+      # NOT rename the customer's SimplyBook client record on repeat bookings:
+      # resolve_client_id matches an existing client by email and never renames
+      # it, so the tag only ever appears here, not on their permanent profile.
+      client:      simplybook_client_payload.merge(name: tagged_client_name(booking)),
       # Group bookings carry the party size so SimplyBook books that many slots.
       count:       (booking.party_size.to_i if booking.client_type_group?),
-      # Record the client tier as a note (SimplyBook has one price per service,
-      # so this is how the provider sees adult/kids/elderly/group).
       comment:     "Client type: #{booking.client_type}#{" (party of #{booking.party_size})" if booking.client_type_group?}"
     )
     booking.update_columns(simplybook_id: simplybook_id, synced_at: Time.current) if simplybook_id.present?
   rescue StandardError => e
     Rails.logger.warn("[AssignmentService] SimplyBook push failed for booking #{booking&.id}: #{e.message}")
+  end
+
+  def tagged_client_name(booking)
+    SimplyBook::Client.tag_client_name(
+      simplybook_client_payload[:name], client_type: booking.client_type, party_size: booking.party_size
+    )
   end
 
   def simplybook_client_payload

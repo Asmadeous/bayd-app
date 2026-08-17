@@ -123,6 +123,41 @@ namespace :simplybook do
          "techs: #{EmployeeProfile.where.not(simplybook_unit_id: nil).count}/#{EmployeeProfile.count}"
   end
 
+  # Link each mapped tech to the SimplyBook services they perform. Providers can
+  # be created without services attached, which makes SimplyBook return ZERO
+  # available slots (it thinks the tech performs nothing). This pushes each tech's
+  # service ids onto their SimplyBook provider so availability works. Idempotent.
+  #
+  #   bin/rails simplybook:sync_provider_services
+  #   DRY_RUN=1 bin/rails simplybook:sync_provider_services   # show, write nothing
+  desc "Link each SimplyBook provider to the services they perform (fixes empty availability)"
+  task sync_provider_services: :environment do
+    abort "✗ SIMPLYBOOK_COMPANY is blank" if ENV["SIMPLYBOOK_COMPANY"].blank?
+    dry = ENV["DRY_RUN"].present?
+    client = SimplyBook::Client.new
+
+    EmployeeProfile.includes(:user, :services).where.not(simplybook_unit_id: nil).find_each do |ep|
+      name = [ ep.user&.first_name, ep.user&.last_name ].compact.join(" ").strip.presence || ep.user&.email
+      service_ids = ep.services.map(&:simplybook_event_id).compact
+      if service_ids.empty?
+        puts "  – #{name}: no mapped services on our side, skipping"
+        next
+      end
+      if dry
+        puts "  ~ would link #{name} (unit #{ep.simplybook_unit_id}) → #{service_ids.size} services"
+        next
+      end
+      begin
+        client.update_provider_services(provider_id: ep.simplybook_unit_id, service_ids: service_ids)
+        puts "  ✓ #{name} (unit #{ep.simplybook_unit_id}) → #{service_ids.size} services"
+      rescue StandardError => e
+        puts "  ✗ #{name} — #{e.message}"
+      end
+    end
+
+    puts "\n#{dry ? 'DRY RUN — nothing written.' : 'Done. Availability should now return slots for mapped techs.'}"
+  end
+
   # Register our webhook in SimplyBook so app/PWA bookings (create, change,
   # cancel) flow back into our system. Without this, a customer rebooking in the
   # SimplyBook app never reaches us. Idempotent — skips events already registered.
