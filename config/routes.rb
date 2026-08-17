@@ -87,6 +87,13 @@ Rails.application.routes.draw do
       # Service-area coverage check (public — "do we serve this address?")
       get "coverage", to: "coverage#show"
 
+      # Technician availability (public — "what times are open?"): free slots for a
+      # service+tech+date, sourced from SimplyBook's provider schedule.
+      get "availability", to: "availability#show"
+      # Every eligible tech's open times for a service+date, so the booking form
+      # can auto-shift to another available tech when the chosen one is full.
+      get "availability/any", to: "availability#any"
+
       # Country gate (public — "do we accept requests from your country?")
       get "geo", to: "geo#show"
 
@@ -129,6 +136,8 @@ Rails.application.routes.draw do
         post   "gift_cards/:code/topup", to: "employees#topup_gift_card"
         # Overtime charge when a service runs over its allocated time
         post   "bookings/:id/overtime",  to: "employees#booking_overtime"
+        # Staff-initiated manual booking (force-book, skips eligibility gates)
+        post   "bookings",               to: "employees#create_booking"
       end
 
       # Work-scope video calls (customer ↔ staff)

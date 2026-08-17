@@ -1,7 +1,7 @@
 class BookingSerializer < Blueprinter::Base
   identifier :id
   fields :status, :starts_at, :ends_at, :subtotal, :travel_fee, :total,
-         :notes, :cancellation_reason, :created_at, :client_type,
+         :notes, :cancellation_reason, :created_at, :client_type, :party_size,
          :recurrence_active, :recurrence_interval_weeks, :auto_charge,
          :payment_timing, :payment_status, :deposit_amount,
          :booked_for_name, :booked_for_phone, :overtime_amount,
@@ -13,6 +13,16 @@ class BookingSerializer < Blueprinter::Base
 
   field :has_review do |booking|
     booking.review.present?
+  end
+
+  # True when this booking SHOULD have a SimplyBook counterpart (service +
+  # tech are both mapped) but the push never landed — flags it for staff so
+  # a failed push isn't silently invisible (it only shows on the reconcile
+  # job's warn log otherwise). nil when SimplyBook mapping doesn't apply.
+  field :simplybook_sync_pending do |booking|
+    next nil if booking.service&.simplybook_event_id.blank? || booking.employee_profile&.simplybook_unit_id.blank?
+
+    booking.simplybook_id.blank?
   end
 
   # Whether to surface the work-scope video call (special-needs / first-timers).

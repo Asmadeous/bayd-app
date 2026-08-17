@@ -3,6 +3,18 @@ import Image from "next/image";
 
 import { siteConfig } from "@/lib/site";
 
+// Accepted payment methods shown in the footer, from real logo/image assets in
+// public/. Interac covers Interac e-Transfer. Each renders on a white chip so the
+// brand colours read against the dark footer.
+const PAYMENT_METHODS: { label: string; src: string; w: number; h: number }[] = [
+  { label: "Visa", src: "/pngfind.com-visa-png-810117.png", w: 938, h: 356 },
+  { label: "Mastercard", src: "/pngfind.com-master-card-logo-png-2088053.png", w: 800, h: 480 },
+  { label: "Interac", src: "/interaclogosvg.png", w: 800, h: 450 },
+  { label: "Credit / Debit", src: "/credit-card.png", w: 512, h: 512 },
+  { label: "Cash", src: "/dollars.png", w: 512, h: 512 },
+  { label: "Cheque", src: "/cheque.png", w: 512, h: 512 },
+];
+
 export function SiteFooter() {
   return (
     <footer className="relative overflow-hidden border-t border-black/10 bg-[#101217] text-white">
@@ -149,6 +161,32 @@ export function SiteFooter() {
                 <path d="M12 2a10 10 0 0 0-3.6 19.3c-.1-.8-.2-2.1 0-3l1.2-5.1s-.3-.6-.3-1.6c0-1.5.9-2.6 2-2.6.9 0 1.4.7 1.4 1.6 0 1-.6 2.4-.9 3.7-.3 1.1.6 2 1.7 2 2 0 3.5-2.1 3.5-5.1 0-2.7-1.9-4.5-4.7-4.5a4.9 4.9 0 0 0-5.1 4.9c0 1 .4 2 .8 2.6.1.1.1.2.1.4l-.3 1.2c-.1.4-.3.5-.6.3-1.4-.6-2.2-2.6-2.2-4.3C5 8.2 7.5 5 12.5 5c3.9 0 6.9 2.8 6.9 6.5 0 3.8-2.4 6.9-5.8 6.9-1.1 0-2.2-.6-2.6-1.3l-.7 2.6c-.3 1-.9 2.2-1.3 2.9A10 10 0 1 0 12 2Z" />
               </svg>
             </a>
+          </div>
+        </div>
+
+        {/* Accepted payment methods — so clients stop asking what we take. */}
+        <div className="border-t border-white/10 pt-6 md:col-span-full">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/55">
+            Accepted payments
+          </p>
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-4">
+            {PAYMENT_METHODS.map((method) => (
+              <div key={method.label} className="flex w-14 flex-col items-center gap-1.5">
+                <span className="grid h-9 w-full place-items-center rounded-md border border-white/15 bg-white/95">
+                  <Image
+                    src={method.src}
+                    alt={method.label}
+                    width={method.w}
+                    height={method.h}
+                    className="max-h-5 w-auto max-w-[2.75rem] object-contain"
+                    unoptimized
+                  />
+                </span>
+                <span className="text-center text-[11px] font-medium leading-tight text-white/55">
+                  {method.label}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

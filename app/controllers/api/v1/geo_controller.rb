@@ -32,12 +32,17 @@ module Api
         result    = query.present? ? Geocoder.search(query).first : nil
         in_canada = result.present? && country_code_of(result) == "CA"
 
+        coords = in_canada ? (result.coordinates rescue nil) : nil
         render json: {
           valid:            postal_ok && in_canada,
           in_canada:        in_canada,
           postal_format_ok: postal_ok,
           formatted:        (result&.address if in_canada),
-          city:             (result&.city rescue nil)
+          city:             (result&.city rescue nil),
+          # Geocoded coordinates — the booking form feeds these back to the
+          # availability query so travel-infeasible slots are filtered out.
+          latitude:         coords&.first,
+          longitude:        coords&.last
         }
       rescue StandardError => e
         Rails.logger.warn("[GeoController#verify_address] #{e.class}: #{e.message}")

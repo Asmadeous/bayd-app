@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { CalendarDays, CheckCircle2, Clock3, List, MapPin, ToggleLeft, ToggleRight } from "lucide-react"
+import Link from "next/link"
+import { CalendarDays, CheckCircle2, Clock3, List, MapPin, Plus, ToggleLeft, ToggleRight } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { AppCalendar } from "@/components/dashboard/app-calendar"
@@ -61,23 +62,31 @@ export default function EmployeeDashboardPage() {
         title={profile?.on_shift ? "You are live for appointments." : "Start your shift when you are ready."}
         description="Track your assigned bookings, review the calendar, and keep your mobile service schedule organized."
         actions={
-          <Button
-            className="h-10 px-4 font-bold text-white"
-            disabled={toggleShift.isPending}
-            onClick={() => toggleShift.mutate()}
-            style={
-              profile?.on_shift
-                ? { background: "#5a9e5a", border: "none" }
-                : { background: "#c96c83", border: "none" }
-            }
-          >
-            {profile?.on_shift ? (
-              <ToggleRight aria-hidden="true" />
-            ) : (
-              <ToggleLeft aria-hidden="true" />
-            )}
-            {profile?.on_shift ? "End Shift" : "Start Shift"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/dashboard/employee/new-booking"
+              className="inline-flex h-10 items-center gap-1.5 border border-white/25 bg-white/10 px-4 text-sm font-bold text-white transition-colors hover:bg-white/20"
+            >
+              <Plus aria-hidden="true" className="size-4" /> New booking
+            </Link>
+            <Button
+              className="h-10 px-4 font-bold text-white"
+              disabled={toggleShift.isPending}
+              onClick={() => toggleShift.mutate()}
+              style={
+                profile?.on_shift
+                  ? { background: "#5a9e5a", border: "none" }
+                  : { background: "#c96c83", border: "none" }
+              }
+            >
+              {profile?.on_shift ? (
+                <ToggleRight aria-hidden="true" />
+              ) : (
+                <ToggleLeft aria-hidden="true" />
+              )}
+              {profile?.on_shift ? "End Shift" : "Start Shift"}
+            </Button>
+          </div>
         }
         aside={
           <div className="border border-white/12 bg-white/8 p-4">

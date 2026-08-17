@@ -3,8 +3,8 @@ require "rails_helper"
 RSpec.describe "POST /api/v1/geo/verify_address", type: :request do
   # A stand-in for a Geocoder::Result carrying just what the controller reads
   # (country_code, city, address, and data for the country-component fallback).
-  def geo_result(country_code:, city: "Toronto", address: "1 Front St W, Toronto, ON")
-    double("Geocoder::Result", country_code: country_code, city: city, address: address, data: {})
+  def geo_result(country_code:, city: "Toronto", address: "1 Front St W, Toronto, ON", coordinates: [ 43.6426, -79.3771 ])
+    double("Geocoder::Result", country_code: country_code, city: city, address: address, data: {}, coordinates: coordinates)
   end
 
   def post_verify(params)

@@ -13,12 +13,28 @@ module SimplyBook
     LOGIN       = ENV.fetch("SIMPLYBOOK_LOGIN", "")
     API_USER_KEY = ENV.fetch("SIMPLYBOOK_API_USER_KEY", "")
 
+    # "Ian Ndegwa (Kids)" / "Ian Ndegwa (Group of 4)" — tags the client tier onto
+    # THIS booking's name only, so it shows on the SimplyBook calendar grid (which
+    # only ever displays client name + service). Adult gets no tag, so a normal
+    # booking's calendar entry stays clean. The structured "Client type" intake
+    # field push is disabled (see create_booking) — it caused repeated slow (5s+)
+    # requests that ended in a 404 on /admin/bookings.
+    def self.tag_client_name(base_name, client_type:, party_size: nil)
+      return base_name if client_type.to_s == "adult"
+
+      tag = client_type.to_s == "group" ? "Group of #{party_size.to_i.clamp(2..)}" : client_type.to_s.capitalize
+      "#{base_name} (#{tag})"
+    end
+
     def initialize
       @token = fetch_token
       @conn  = Faraday.new(url: API_URL) do |f|
         f.request  :json
         f.response :json
-        f.request  :retry, max: 2
+        # GET/PUT/DELETE only — a POST (create_booking, create_client) must never
+        # be auto-retried on a timeout: if the first attempt actually landed on
+        # SimplyBook's side, retrying fires a second create for the same booking.
+        f.request  :retry, max: 2, methods: %i[get put delete]
         f.headers["X-Company-Login"] = COMPANY
         f.headers["X-Token"]         = @token
         f.adapter Faraday.default_adapter
@@ -33,7 +49,10 @@ module SimplyBook
     # service price — the SB service must have group booking enabled). `comment`
     # is a free-text note (we use it to record the client tier: adult/kids/
     # elderly/group), set via the comment endpoint after the booking is created.
-    def create_booking(service_id:, unit_id:, starts_at:, ends_at:, client: nil, count: nil, comment: nil)
+    # `tier` (adult/kids/elderly/group) is written to the "Client type" intake
+    # field so it shows on the provider's SimplyBook booking — a comment alone
+    # doesn't surface on the calendar. Sent only when that intake field exists.
+    def create_booking(service_id:, unit_id:, starts_at:, ends_at:, client: nil, count: nil, comment: nil, tier: nil)
       body = {
         service_id:     service_id,
         provider_id:    unit_id,
@@ -45,6 +64,14 @@ module SimplyBook
       if client.present? && (cid = resolve_client_id(**client.slice(:name, :email, :phone)))
         body[:client_id] = cid
       end
+      # DISABLED: additional_fields (the "Client type" intake tag) has been tied to
+      # repeated slow (5s+) requests that end in a SimplyBook 404 on /admin/bookings
+      # (bookings #135, #136 — confirmed booked locally but never reached SimplyBook).
+      # The comment fallback below still records the tier. Re-enable once the intake
+      # field setup on SimplyBook's side is confirmed correct.
+      # if tier.present? && (fid = additional_field_id(name: CLIENT_TYPE_FIELD))
+      #   body[:additional_fields] = [ { id: fid, value: tier.to_s } ]
+      # end
 
       resp = @conn.post("/admin/bookings", body)
       raise "SimplyBook error #{resp.status}: #{resp.body}" unless resp.success?
@@ -53,6 +80,25 @@ module SimplyBook
       id = resp.body.dig("bookings", 0, "id")&.to_s
       set_booking_comment(id, comment) if id && comment.present?
       id
+    end
+
+    # Resolve a SimplyBook intake/additional field id by its name (case-insensitive).
+    # Requires the Intake Forms custom feature + the field created in SimplyBook.
+    # Cached per instance; nil (best-effort) when the feature/field isn't set up.
+    CLIENT_TYPE_FIELD = "Client type".freeze
+    def additional_field_id(name:)
+      @additional_field_ids ||= {}
+      key = name.to_s.downcase
+      return @additional_field_ids[key] if @additional_field_ids.key?(key)
+
+      fields = Array(get("/admin/additional-fields"))
+      match = fields.find do |f|
+        [ f["name"], f["field_name"] ].compact.any? { |n| n.to_s.casecmp?(name.to_s) }
+      end
+      @additional_field_ids[key] = match&.dig("id")
+    rescue StandardError => e
+      Rails.logger.warn("[SimplyBook::Client] additional_field_id lookup failed: #{e.message}")
+      nil
     end
 
     # PUT /admin/bookings/{id}/comment — attach a note (e.g. the client tier) so
@@ -83,6 +129,54 @@ module SimplyBook
       resp = @conn.get("/admin/bookings/#{simplybook_id}")
       return nil unless resp.success?
       resp.body.is_a?(Hash) ? resp.body : nil
+    end
+
+    # ── Availability (admin API) — free bookable slots per provider/service ────
+    # Powers the customer-facing "pick an open slot" calendar. SimplyBook computes
+    # these from the provider's own working schedule minus existing bookings, so
+    # the provider controls their calendar in SimplyBook (their words: "the
+    # service provider controls their calendar").
+    #
+    # GET /admin/schedule/available-slots (per the REST v2 swagger) →
+    #   TimeSlotEntity[] = [ { "id":, "date": "YYYY-MM-DD", "time": "HH:MM:SS" }, … ]
+    # Required query params: service_id, provider_id, date, count. Returns the
+    # bookable start times as "HH:MM" strings for that provider+service on the
+    # date. Empty when the provider has no schedule configured or no free slots.
+    # Best-effort: never raises.
+    def available_slots(service_id:, provider_id:, date:, count: 1)
+      resp = @conn.get("/admin/schedule/available-slots",
+                       service_id:  service_id.to_s,
+                       provider_id: provider_id.to_s,
+                       date:        date.to_s,
+                       count:       [ count.to_i, 1 ].max)
+      return [] unless resp.success?
+
+      rows = resp.body.is_a?(Array) ? resp.body : Array(list_data(resp.body))
+      rows.filter_map { |s| normalize_slot_time(s) }.uniq.sort
+    rescue StandardError => e
+      Rails.logger.warn("[SimplyBook::Client] available_slots failed: #{e.message}")
+      []
+    end
+
+    # GET /admin/schedule/first-available-slot → the next open slot for this
+    # provider+service starting from `date`; SimplyBook rolls forward to a LATER
+    # date when the given day is fully booked. Returns "YYYY-MM-DD" (the date of
+    # that next slot) or nil. Used to un-dead-end a fully-booked day.
+    def first_available_date(service_id:, provider_id:, date:, count: 1)
+      resp = @conn.get("/admin/schedule/first-available-slot",
+                       service_id:  service_id.to_s,
+                       provider_id: provider_id.to_s,
+                       date:        date.to_s,
+                       count:       [ count.to_i, 1 ].max)
+      return nil unless resp.success?
+
+      body = resp.body
+      body = body.first if body.is_a?(Array)
+      d = body.is_a?(Hash) ? body["date"] : nil
+      d.to_s.match?(/\A\d{4}-\d{2}-\d{2}\z/) ? d.to_s : nil
+    rescue StandardError => e
+      Rails.logger.warn("[SimplyBook::Client] first_available_date failed: #{e.message}")
+      nil
     end
 
     # ── Client PWA onboarding (public API) ────────────────────────────────────
@@ -136,6 +230,33 @@ module SimplyBook
       resp.body["id"]&.to_s
     end
 
+    # PUT /admin/providers/{id} (ProviderWritableEntity) — set the SimplyBook
+    # service ids this provider can perform. This is what makes the provider
+    # bookable for those services (and makes available-slots return times).
+    # `name`/`qty` are re-sent because the writable entity replaces the record;
+    # we read the current provider first to preserve them. Returns true on success.
+    def update_provider_services(provider_id:, service_ids:)
+      current = get_provider(provider_id) || {}
+      body = {
+        name: current["name"].presence || "Provider #{provider_id}",
+        qty:  (current["qty"] || 1),
+        is_visible: current.fetch("is_visible", true),
+        services: Array(service_ids)
+      }
+      resp = @conn.put("/admin/providers/#{provider_id}", body)
+      raise "SimplyBook #{resp.status}: #{simplybook_error(resp)}" unless resp.success?
+      true
+    end
+
+    # GET /admin/providers/{id} → the provider hash (ProviderEntity), or nil.
+    def get_provider(provider_id)
+      resp = @conn.get("/admin/providers/#{provider_id}")
+      return nil unless resp.success?
+      body = resp.body
+      body = body.first if body.is_a?(Array)
+      body.is_a?(Hash) ? body : nil
+    end
+
     # POST /admin/services (ServiceWriteableEntity). `provider_ids` are SimplyBook
     # provider ids that can perform it. Raises with the error body on failure.
     def create_service(name:, duration:, price: nil, provider_ids: nil)
@@ -187,11 +308,25 @@ module SimplyBook
 
     private
 
+    # Admin token, CACHED. SimplyBook rate-limits /admin/auth attempts, so we must
+    # NOT re-authenticate on every SimplyBook::Client.new — every call would hit
+    # /admin/auth and quickly trip a 403 "Too many attempts". The token is valid
+    # ~1h; we cache it 55m and reuse it across every request and every client
+    # instance. Set SIMPLYBOOK_FORCE_REAUTH=1 to bypass the cache once if needed.
+    TOKEN_CACHE_KEY = "simplybook:admin_token".freeze
+    TOKEN_TTL = 55.minutes
+
     def fetch_token
+      cached = Rails.cache.read(TOKEN_CACHE_KEY) if defined?(Rails) && ENV["SIMPLYBOOK_FORCE_REAUTH"].blank?
+      return cached if cached.present?
+
       auth = Faraday.new(url: API_URL) { |f| f.request :json; f.response :json; f.adapter Faraday.default_adapter }
       resp = auth.post("/admin/auth", { company: COMPANY, login: LOGIN, password: API_USER_KEY })
       raise "SimplyBook auth failed: #{resp.status} #{resp.body}" unless resp.success?
-      resp.body["token"]
+
+      token = resp.body["token"]
+      Rails.cache.write(TOKEN_CACHE_KEY, token, expires_in: TOKEN_TTL) if defined?(Rails) && token.present?
+      token
     end
 
     # Faraday connection for the **public** API (/public/*). It authenticates via
@@ -207,7 +342,8 @@ module SimplyBook
         Faraday.new(url: API_URL) do |f|
           f.request  :json
           f.response :json
-          f.request  :retry, max: 2
+          # Same rule as the admin conn: never auto-retry a POST (register_client).
+          f.request  :retry, max: 2, methods: %i[get put delete]
           f.headers["X-Company-Login"] = COMPANY
           f.headers["X-Token"]         = token
           f.adapter Faraday.default_adapter
@@ -240,6 +376,18 @@ module SimplyBook
     # bare array depending on the resource.
     def list_data(body)
       body.is_a?(Hash) ? (body["data"] || []) : body
+    end
+
+    # A slot may come as a bare "HH:MM(:SS)" string or a hash keyed by time/
+    # start_time/datetime. Normalize any of these to an "HH:MM" start time, or nil.
+    def normalize_slot_time(slot)
+      raw = if slot.is_a?(Hash)
+        slot["time"] || slot["start_time"] || slot["start_datetime"] || slot["datetime"]
+      else
+        slot
+      end
+      m = raw.to_s.match(/(\d{1,2}):(\d{2})/)
+      m && format("%02d:%s", m[1].to_i, m[2])
     end
 
     def get(path, params = {})

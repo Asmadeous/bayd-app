@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, MouseEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ChevronLeft,
@@ -274,6 +274,7 @@ export function ShopPage() {
           <GiftCardTab />
         )}
 
+        <ShopPolicyBand />
         <ShopBookingBand />
       </main>
       <SiteFooter />
@@ -393,10 +394,13 @@ function ProductShowcase({
   const pageCount = Math.max(1, Math.ceil(products.length / PER_PAGE));
 
   // Reset to the first page whenever the filtered list changes (e.g. category
-  // switch) or shrinks below the current page.
-  useEffect(() => {
+  // switch) — tracked without an effect, adjusting state during render per
+  // https://react.dev/learn/you-might-not-need-an-effect.
+  const [prevLength, setPrevLength] = useState(products.length);
+  if (products.length !== prevLength) {
+    setPrevLength(products.length);
     setPage(1);
-  }, [products.length]);
+  }
 
   const currentPage = Math.min(page, pageCount);
   const start = (currentPage - 1) * PER_PAGE;
@@ -581,6 +585,96 @@ function MiniProductCard({
         <p className="mt-3 text-sm font-extrabold">{product.price}</p>
       </div>
     </article>
+  );
+}
+
+function ShopPolicyBand() {
+  return (
+    <section className="bg-[#f4f1eb] pt-8 pb-4" id="shop-policy">
+      <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8 2xl:px-10">
+        <ScrollReveal>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#a36f4d]">
+            Shipping &amp; refunds
+          </p>
+          <h2 className="mt-2 max-w-3xl text-2xl font-extrabold tracking-tight text-[#101217] sm:text-3xl">
+            Clear, simple policies.
+          </h2>
+        </ScrollReveal>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {/* Shipping */}
+          <ScrollReveal className="border border-black/10 bg-white p-5 sm:p-6" delay={0}>
+            <span className="grid size-10 place-items-center bg-[#e8f0e8] text-[#3a6b3a]">
+              <PackageCheck aria-hidden="true" className="size-5" />
+            </span>
+            <h3 className="mt-4 text-lg font-extrabold text-[#101217]">Shipping</h3>
+            <p className="mt-2 text-sm leading-6 text-[#5f6268]">
+              Orders ship within{" "}
+              <span className="font-bold text-[#101217]">2–7 business days</span>.
+              We ship across the USA &amp; Canada, and you&apos;ll get tracking
+              once your order is on its way.
+            </p>
+          </ScrollReveal>
+
+          {/* Refunds */}
+          <ScrollReveal className="border border-black/10 bg-white p-5 sm:p-6" delay={80}>
+            <span className="grid size-10 place-items-center bg-[#f7e9ec] text-[#c96c83]">
+              <svg
+                aria-hidden="true"
+                className="size-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+            </span>
+            <h3 className="mt-4 text-lg font-extrabold text-[#101217]">Refunds</h3>
+            <p className="mt-2 text-sm leading-6 text-[#5f6268]">
+              We only refund{" "}
+              <span className="font-bold text-[#101217]">damaged products</span>.
+              If your item arrives damaged, reach out and we&apos;ll make it
+              right. Refund requests must be made within{" "}
+              <span className="font-bold text-[#101217]">1 week</span> of
+              delivery — after that, orders can&apos;t be refunded.
+            </p>
+          </ScrollReveal>
+
+          {/* Support */}
+          <ScrollReveal className="border border-black/10 bg-white p-5 sm:p-6" delay={160}>
+            <span className="grid size-10 place-items-center bg-[#eef1ec] text-[#101217]">
+              <svg
+                aria-hidden="true"
+                className="size-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.9-.9L3 21l1.9-5.6A8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5Z" />
+              </svg>
+            </span>
+            <h3 className="mt-4 text-lg font-extrabold text-[#101217]">
+              Something wrong?
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-[#5f6268]">
+              Please reach out to our support team first — we&apos;re happy to
+              help and will always try to resolve it for you.{" "}
+              <Link href="/#contact" className="font-bold text-[#c96c83] underline-offset-2 hover:underline">
+                Contact support
+              </Link>
+              .
+            </p>
+          </ScrollReveal>
+        </div>
+      </div>
+    </section>
   );
 }
 

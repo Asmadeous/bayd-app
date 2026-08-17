@@ -16,6 +16,10 @@ export interface Booking {
   cancellation_reason: string | null
   has_review: boolean
   client_type: "adult" | "kids" | "elderly" | "group"
+  party_size: number
+  // true = service+tech are SimplyBook-mapped but the push never landed there.
+  // nil = SimplyBook mapping doesn't apply to this booking (nothing to flag).
+  simplybook_sync_pending: boolean | null
   meeting_recommended: boolean
   recurrence_active: boolean
   recurrence_interval_weeks: number | null
