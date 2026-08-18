@@ -7,6 +7,7 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -26,6 +27,7 @@ import {
   type Partner,
   type PartnerInput,
 } from "@/lib/hooks/use-partners"
+import { adminPartnersSteps } from "@/lib/tours/admin-partners-tour"
 
 const cad = (v: string | number) => `$${Number(v).toFixed(2)}`
 const dt = (s: string | null) => (s ? new Date(s).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" }) : "—")
@@ -57,18 +59,20 @@ export default function AdminPartnersPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Partners"
-        subtitle="Partner businesses supplying providers to the B.A.Y.D pool."
-        actions={
-          <Button size="sm" onClick={startCreate} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
-            <Plus aria-hidden="true" />
-            Add Partner
-          </Button>
-        }
-      />
+      <div data-tour="admin-partners-header">
+        <DashboardHeader
+          title="Partners"
+          subtitle="Partner businesses supplying providers to the B.A.Y.D pool."
+          actions={
+            <Button size="sm" onClick={startCreate} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+              <Plus aria-hidden="true" />
+              Add Partner
+            </Button>
+          }
+        />
+      </div>
 
-      <DashboardPanel>
+      <DashboardPanel data-tour="admin-partners-info">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">Payout model</p>
         <p className="mt-2 max-w-4xl text-sm leading-6 text-[#5f6268]">
           Partners supply technicians and coverage; B.A.Y.D collects payment and holds funds.
@@ -78,7 +82,7 @@ export default function AdminPartnersPage() {
       </DashboardPanel>
 
       {form && (
-        <DashboardPanel>
+        <DashboardPanel data-tour="admin-partners-form">
           <div className="mb-5">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
               Partner editor
@@ -134,7 +138,7 @@ export default function AdminPartnersPage() {
           description="Add partner businesses that supply providers to the B.A.Y.D pool."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="admin-partners-list">
           {partners.map((p) => (
             <DashboardPanel className="p-0" key={p.id}>
               <div className="px-5 py-4">
@@ -168,6 +172,8 @@ export default function AdminPartnersPage() {
           ))}
         </div>
       )}
+
+      <TutorialButton steps={adminPartnersSteps} pageKey="admin-partners" />
     </DashboardPage>
   )
 }

@@ -18,6 +18,7 @@ import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadge } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -27,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import api from "@/lib/api"
+import { adminUsersSteps } from "@/lib/tours/admin-users-tour"
 
 interface User {
   id: number
@@ -54,7 +56,9 @@ const ROLES = ["customer", "employee", "admin"]
 export default function AdminUsersPage() {
   const qc = useQueryClient()
   const [page, setPage] = useState(1)
-  const [roleFilter, setRoleFilter] = useState("")
+  // Defaults to customers only — Employees have their own dedicated tab.
+  // Switch the dropdown to "All roles" (or "employee"/"admin") to see others.
+  const [roleFilter, setRoleFilter] = useState("customer")
   const [q, setQ] = useState("")
   const [editId, setEditId] = useState<number | null>(null)
   const [editRole, setEditRole] = useState("")
@@ -98,12 +102,18 @@ export default function AdminUsersPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Customers"
-        subtitle={`${pagination?.total_count ?? "-"} registered users across customer, employee, and admin roles.`}
-      />
+      <div data-tour="admin-users-header">
+        <DashboardHeader
+          title="Customers"
+          subtitle={
+            roleFilter
+              ? `${pagination?.total_count ?? "-"} registered ${roleFilter}s.`
+              : `${pagination?.total_count ?? "-"} registered users across customer, employee, and admin roles.`
+          }
+        />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="admin-users-filters">
         <ToolbarSection>
           <label className="relative">
             <Search
@@ -150,87 +160,89 @@ export default function AdminUsersPage() {
           description="Adjust the search or role filter to find another account."
         />
       ) : (
-        <DataTable>
-          <DataTableHead>
-            <DataTableRow>
-              <DataTableHeaderCell>Name</DataTableHeaderCell>
-              <DataTableHeaderCell>Email</DataTableHeaderCell>
-              <DataTableHeaderCell>Role</DataTableHeaderCell>
-              <DataTableHeaderCell>Joined</DataTableHeaderCell>
-              <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
-            </DataTableRow>
-          </DataTableHead>
-          <DataTableBody>
-            {users.map((user) => (
-              <DataTableRow key={user.id}>
-                <DataTableCell className="font-bold text-[#101217]">
-                  {[user.first_name, user.last_name].filter(Boolean).join(" ") || "-"}
-                </DataTableCell>
-                <DataTableCell>{user.email}</DataTableCell>
-                <DataTableCell>
-                  {editId === user.id ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Select
-                        onValueChange={(value) => setEditRole(value ?? "")}
-                        value={editRole}
-                      >
-                        <SelectTrigger className="h-8 w-32 text-xs capitalize">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ROLES.map((role) => (
-                            <SelectItem className="capitalize" key={role} value={role}>
-                              {role}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+        <div data-tour="admin-users-list">
+          <DataTable>
+            <DataTableHead>
+              <DataTableRow>
+                <DataTableHeaderCell>Name</DataTableHeaderCell>
+                <DataTableHeaderCell>Email</DataTableHeaderCell>
+                <DataTableHeaderCell>Role</DataTableHeaderCell>
+                <DataTableHeaderCell>Joined</DataTableHeaderCell>
+                <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
+              </DataTableRow>
+            </DataTableHead>
+            <DataTableBody>
+              {users.map((user) => (
+                <DataTableRow key={user.id}>
+                  <DataTableCell className="font-bold text-[#101217]">
+                    {[user.first_name, user.last_name].filter(Boolean).join(" ") || "-"}
+                  </DataTableCell>
+                  <DataTableCell>{user.email}</DataTableCell>
+                  <DataTableCell>
+                    {editId === user.id ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Select
+                          onValueChange={(value) => setEditRole(value ?? "")}
+                          value={editRole}
+                        >
+                          <SelectTrigger className="h-8 w-32 text-xs capitalize">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ROLES.map((role) => (
+                              <SelectItem className="capitalize" key={role} value={role}>
+                                {role}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          onClick={() => updateMutation.mutate({ id: user.id, role: editRole })}
+                          size="xs"
+                          style={{ background: "#c96c83", border: "none", color: "#fff" }}
+                        >
+                          Save
+                        </Button>
+                        <Button onClick={() => setEditId(null)} size="xs" variant="ghost">
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <RoleBadge role={user.role} />
+                    )}
+                  </DataTableCell>
+                  <DataTableCell className="text-xs">
+                    {new Date(user.created_at).toLocaleDateString("en-CA")}
+                  </DataTableCell>
+                  <DataTableCell>
+                    <div className="flex justify-end gap-2">
                       <Button
-                        onClick={() => updateMutation.mutate({ id: user.id, role: editRole })}
+                        onClick={() => {
+                          setEditId(user.id)
+                          setEditRole(user.role)
+                        }}
                         size="xs"
-                        style={{ background: "#c96c83", border: "none", color: "#fff" }}
+                        variant="outline"
                       >
-                        Save
+                        Edit Role
                       </Button>
-                      <Button onClick={() => setEditId(null)} size="xs" variant="ghost">
-                        Cancel
+                      <Button
+                        disabled={deleteMutation.isPending}
+                        onClick={() => {
+                          if (confirm("Delete this user?")) deleteMutation.mutate(user.id)
+                        }}
+                        size="xs"
+                        variant="destructive"
+                      >
+                        Delete
                       </Button>
                     </div>
-                  ) : (
-                    <RoleBadge role={user.role} />
-                  )}
-                </DataTableCell>
-                <DataTableCell className="text-xs">
-                  {new Date(user.created_at).toLocaleDateString("en-CA")}
-                </DataTableCell>
-                <DataTableCell>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      onClick={() => {
-                        setEditId(user.id)
-                        setEditRole(user.role)
-                      }}
-                      size="xs"
-                      variant="outline"
-                    >
-                      Edit Role
-                    </Button>
-                    <Button
-                      disabled={deleteMutation.isPending}
-                      onClick={() => {
-                        if (confirm("Delete this user?")) deleteMutation.mutate(user.id)
-                      }}
-                      size="xs"
-                      variant="destructive"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </DataTableCell>
-              </DataTableRow>
-            ))}
-          </DataTableBody>
-        </DataTable>
+                  </DataTableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
+        </div>
       )}
 
       {pagination && pagination.total_pages > 1 ? (
@@ -258,6 +270,8 @@ export default function AdminUsersPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton steps={adminUsersSteps} pageKey="admin-users" />
     </DashboardPage>
   )
 }

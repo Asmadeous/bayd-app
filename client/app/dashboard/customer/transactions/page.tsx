@@ -14,8 +14,10 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { downloadInvoice, useInvoices, type Invoice } from "@/lib/hooks/use-invoices"
+import { customerTransactionsSteps } from "@/lib/tours/customer-transactions-tour"
 
 const cad = (value: string | number) => `$${Number(value).toFixed(2)}`
 
@@ -40,12 +42,14 @@ export default function CustomerTransactionsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Transactions"
-        subtitle="Review receipts, invoices, and payment history for your account."
-      />
+      <div data-tour="customer-transactions-header">
+        <DashboardHeader
+          title="Transactions"
+          subtitle="Review receipts, invoices, and payment history for your account."
+        />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="customer-transactions-filters">
         <ToolbarSection>
           <SegmentedControl>
             {KIND_FILTERS.map((filter) => (
@@ -75,7 +79,7 @@ export default function CustomerTransactionsPage() {
           description="Receipts and invoices appear here after a booking or purchase."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="customer-transactions-list">
           {invoices.map((invoice) => (
             <TransactionCard
               invoice={invoice}
@@ -115,6 +119,8 @@ export default function CustomerTransactionsPage() {
       {selectedInvoice ? (
         <ReceiptDialog invoice={selectedInvoice} onClose={() => setSelectedInvoice(null)} />
       ) : null}
+
+      <TutorialButton steps={customerTransactionsSteps} pageKey="customer-transactions" />
     </DashboardPage>
   )
 }

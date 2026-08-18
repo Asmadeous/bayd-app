@@ -15,7 +15,9 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
+import { adminBlogSteps } from "@/lib/tours/admin-blog-tour"
 import { cn } from "@/lib/utils"
 
 interface BlogPost { id: number; title: string; body?: string | null; excerpt?: string | null; cover_image_url?: string | null; status: string; published_at: string | null; created_at: string; author: { first_name: string | null; last_name: string | null } }
@@ -101,11 +103,13 @@ export default function AdminBlogPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Blog Posts" subtitle="Create and manage blog content"
-        actions={<Button size="sm" onClick={() => { resetForm(BLANK, null); setModal("create") }} style={{ background: "#c96c83", border: "none", color: "#fff" }}>+ New Post</Button>}
-      />
+      <div data-tour="blog-header">
+        <DashboardHeader title="Blog Posts" subtitle="Create and manage blog content"
+          actions={<Button size="sm" onClick={() => { resetForm(BLANK, null); setModal("create") }} style={{ background: "#c96c83", border: "none", color: "#fff" }}>+ New Post</Button>}
+        />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="blog-status-filter">
         <ToolbarSection>
           <SegmentedControl>
         {["", "draft", "published"].map((s) => (
@@ -118,7 +122,7 @@ export default function AdminBlogPage() {
       </DashboardToolbar>
 
       {modal !== null && (
-        <DashboardPanel className="space-y-4">
+        <DashboardPanel className="space-y-4" data-tour="blog-editor">
           <h3 className="font-semibold text-sm text-[#101217]">{modal === "create" ? "New Blog Post" : "Edit Post"}</h3>
           <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
             <button
@@ -222,7 +226,7 @@ export default function AdminBlogPage() {
           description="Create the first post to start publishing content."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="blog-post-list">
           {posts.map((p) => {
             const author = [p.author?.first_name, p.author?.last_name].filter(Boolean).join(" ")
             return (
@@ -252,7 +256,7 @@ export default function AdminBlogPage() {
       )}
 
       {data?.pagination && data.pagination.total_pages > 1 && (
-        <DashboardToolbar className="justify-end">
+        <DashboardToolbar className="justify-end" data-tour="blog-pagination">
           <ToolbarSection className="ml-auto">
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
           <span className="px-2 text-sm font-semibold text-[#5f6268]">{page} / {data.pagination.total_pages}</span>
@@ -260,6 +264,8 @@ export default function AdminBlogPage() {
           </ToolbarSection>
         </DashboardToolbar>
       )}
+
+      <TutorialButton steps={adminBlogSteps} pageKey="admin-blog" />
     </DashboardPage>
   )
 }

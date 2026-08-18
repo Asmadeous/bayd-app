@@ -9,8 +9,10 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MetricCard } from "@/components/dashboard/metric-card"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useAdminBookings } from "@/lib/hooks/use-admin"
+import { adminDashboardSteps } from "@/lib/tours/admin-tour"
 
 const quickLinks = [
   { label: "Calendar", href: "/dashboard/admin/calendar", icon: CalendarDays },
@@ -31,6 +33,7 @@ export default function AdminDashboardPage() {
   return (
     <DashboardPage maxWidth="wide">
       <DashboardHero
+        data-tour="admin-hero"
         eyebrow="Admin command center"
         title="Keep bookings, people, and service flow in view."
         description="Monitor active appointments, jump into operational queues, and keep Beauty @ Your Door moving from one dashboard."
@@ -68,7 +71,7 @@ export default function AdminDashboardPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div data-tour="admin-metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           icon={CalendarDays}
           label="Total bookings"
@@ -80,7 +83,7 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.72fr_1.28fr]">
-        <DashboardPanel>
+        <DashboardPanel data-tour="admin-shortcuts">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
               Shortcuts
@@ -109,7 +112,7 @@ export default function AdminDashboardPage() {
           </div>
         </DashboardPanel>
 
-        <DashboardPanel>
+        <DashboardPanel data-tour="admin-recent-bookings">
           <div className="mb-4 flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
@@ -143,6 +146,8 @@ export default function AdminDashboardPage() {
           )}
         </DashboardPanel>
       </div>
+
+      <TutorialButton steps={adminDashboardSteps} pageKey="admin-dashboard" />
     </DashboardPage>
   )
 }

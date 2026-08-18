@@ -4,7 +4,9 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
+import { adminContentSteps } from "@/lib/tours/admin-content-tour"
 
 interface BlogPost {
   id: number
@@ -33,7 +35,9 @@ export default function AdminContentPage() {
 
   return (
     <div className="space-y-6">
-      <DashboardHeader title="Content" subtitle="Manage blog posts" />
+      <div data-tour="content-header">
+        <DashboardHeader title="Content" subtitle="Manage blog posts" />
+      </div>
 
       {isLoading ? (
         <div className="text-sm text-[#5f6268]">Loading…</div>
@@ -42,7 +46,7 @@ export default function AdminContentPage() {
           No blog posts yet.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="content-post-list">
           {posts.map((post) => {
             const author = [post.author?.first_name, post.author?.last_name].filter(Boolean).join(" ")
             return (
@@ -73,12 +77,14 @@ export default function AdminContentPage() {
       )}
 
       {pagination && pagination.total_pages > 1 && (
-        <div className="flex items-center gap-3 justify-end">
+        <div className="flex items-center gap-3 justify-end" data-tour="content-pagination">
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
           <span className="text-sm text-[#5f6268]">{page} / {pagination.total_pages}</span>
           <Button variant="outline" size="sm" disabled={!pagination.next_page} onClick={() => setPage((p) => p + 1)}>Next</Button>
         </div>
       )}
+
+      <TutorialButton steps={adminContentSteps} pageKey="admin-content" />
     </div>
   )
 }

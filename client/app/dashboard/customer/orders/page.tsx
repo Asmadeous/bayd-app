@@ -10,8 +10,10 @@ import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { customerOrdersSteps } from "@/lib/tours/customer-orders-tour"
 
 interface Order {
   id: number
@@ -47,7 +49,9 @@ export default function CustomerOrdersPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Orders" subtitle="Track product orders from the B.A.Y.D shop." />
+      <div data-tour="customer-orders-header">
+        <DashboardHeader title="Orders" subtitle="Track product orders from the B.A.Y.D shop." />
+      </div>
 
       {isLoading ? (
         <DashboardPanel>
@@ -60,7 +64,7 @@ export default function CustomerOrdersPage() {
           description="Product orders from the shop will appear here."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="customer-orders-list">
           {orders.map((order) => (
             <DashboardPanel className="p-0" key={order.id}>
               <div className="flex flex-col gap-4 p-5 lg:flex-row lg:items-start lg:justify-between">
@@ -88,7 +92,7 @@ export default function CustomerOrdersPage() {
       )}
 
       {pagination && pagination.total_pages > 1 ? (
-        <DashboardToolbar className="justify-end">
+        <DashboardToolbar className="justify-end" data-tour="customer-orders-pagination">
           <ToolbarSection className="ml-auto">
             <Button
               disabled={page <= 1}
@@ -112,6 +116,8 @@ export default function CustomerOrdersPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton steps={customerOrdersSteps} pageKey="customer-orders" />
     </DashboardPage>
   )
 }

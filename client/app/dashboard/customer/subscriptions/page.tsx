@@ -7,6 +7,7 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -26,6 +27,7 @@ import {
   FREQUENCY_PRESETS,
   type Subscription,
 } from "@/lib/hooks/use-subscriptions"
+import { customerSubscriptionsSteps } from "@/lib/tours/customer-subscriptions-tour"
 
 const money = (v: string | number | null) => (v == null ? "—" : `$${Number(v).toFixed(2)}`)
 const dt = (s: string) => new Date(s).toLocaleString("en-CA", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
@@ -35,7 +37,9 @@ export default function CustomerSubscriptionsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Subscriptions" subtitle="Manage your recurring beauty services." />
+      <div data-tour="customer-subscriptions-header">
+        <DashboardHeader title="Subscriptions" subtitle="Manage your recurring beauty services." />
+      </div>
 
       {isLoading ? (
         <DashboardPanel>
@@ -48,10 +52,12 @@ export default function CustomerSubscriptionsPage() {
           description="Choose a frequency when you book a service to start one."
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2" data-tour="customer-subscriptions-list">
           {subs.map((s) => <SubscriptionCard key={s.id} subscription={s} />)}
         </div>
       )}
+
+      <TutorialButton steps={customerSubscriptionsSteps} pageKey="customer-subscriptions" />
     </DashboardPage>
   )
 }

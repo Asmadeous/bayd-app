@@ -8,9 +8,11 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { CardOnFile } from "@/components/dashboard/card-on-file"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useAuthStore } from "@/lib/stores/auth-store"
+import { customerSettingsSteps } from "@/lib/tours/customer-settings-tour"
 import { cn } from "@/lib/utils"
 
 const fieldClass =
@@ -63,18 +65,21 @@ export default function CustomerSettingsPage() {
 
   return (
     <DashboardPage>
-      <DashboardHeader
-        title="Account Settings"
-        subtitle="Keep your profile, contact details, and booking preferences current."
-      />
+      <div data-tour="customer-settings-header">
+        <DashboardHeader
+          title="Account Settings"
+          subtitle="Keep your profile, contact details, and booking preferences current."
+        />
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <DashboardPanel>
+        <DashboardPanel data-tour="customer-settings-form">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <button
                 aria-label="Choose profile photo"
                 className="group relative size-28 shrink-0 overflow-hidden border border-black/15 bg-white text-[#5f6268] outline-none transition-all hover:border-[#c96c83] hover:text-[#c96c83] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                data-tour="customer-settings-avatar"
                 onClick={() => avatarInputRef.current?.click()}
                 type="button"
               >
@@ -193,7 +198,7 @@ export default function CustomerSettingsPage() {
         </DashboardPanel>
 
         <div className="space-y-6">
-          <DashboardPanel className="space-y-4">
+          <DashboardPanel className="space-y-4" data-tour="customer-settings-summary">
             <div className="flex items-center gap-3">
               <span className="grid size-10 place-items-center border border-black/10 bg-[#f4f1eb] text-[#c96c83]">
                 <UserRound aria-hidden="true" className="size-5" />
@@ -211,9 +216,13 @@ export default function CustomerSettingsPage() {
             </div>
           </DashboardPanel>
 
-          <CardOnFile />
+          <div data-tour="customer-settings-card-on-file">
+            <CardOnFile />
+          </div>
         </div>
       </div>
+
+      <TutorialButton steps={customerSettingsSteps} pageKey="customer-settings" />
     </DashboardPage>
   )
 }

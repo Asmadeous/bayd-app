@@ -10,6 +10,7 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -25,6 +26,7 @@ import {
   useMarkAllNotificationsRead,
   type AppNotification,
 } from "@/lib/hooks/use-notifications"
+import { customerNotificationsSteps } from "@/lib/tours/customer-notifications-tour"
 
 export default function CustomerNotificationsPage() {
   const [page, setPage] = useState(1)
@@ -38,22 +40,24 @@ export default function CustomerNotificationsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        actions={
-          unread > 0 ? (
-            <Button
-              disabled={markAll.isPending}
-              onClick={() => markAll.mutate()}
-              size="sm"
-              variant="outline"
-            >
-              Mark all read
-            </Button>
-          ) : null
-        }
-        title="Notifications"
-        subtitle={unread > 0 ? `${unread} unread` : "You are all caught up."}
-      />
+      <div data-tour="customer-notifications-header">
+        <DashboardHeader
+          actions={
+            unread > 0 ? (
+              <Button
+                disabled={markAll.isPending}
+                onClick={() => markAll.mutate()}
+                size="sm"
+                variant="outline"
+              >
+                Mark all read
+              </Button>
+            ) : null
+          }
+          title="Notifications"
+          subtitle={unread > 0 ? `${unread} unread` : "You are all caught up."}
+        />
+      </div>
 
       {isLoading ? (
         <DashboardPanel>
@@ -66,7 +70,7 @@ export default function CustomerNotificationsPage() {
           description="Booking updates, receipts, and account notices will appear here."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="customer-notifications-list">
           {notifications.map((notification) => (
             <NotificationRow
               key={notification.id}
@@ -87,7 +91,7 @@ export default function CustomerNotificationsPage() {
       )}
 
       {data?.pagination && data.pagination.total_pages > 1 ? (
-        <DashboardToolbar className="justify-end">
+        <DashboardToolbar className="justify-end" data-tour="customer-notifications-pagination">
           <ToolbarSection className="ml-auto">
             <Button
               disabled={page <= 1}
@@ -120,6 +124,8 @@ export default function CustomerNotificationsPage() {
           }
         }}
       />
+
+      <TutorialButton steps={customerNotificationsSteps} pageKey="customer-notifications" />
     </DashboardPage>
   )
 }

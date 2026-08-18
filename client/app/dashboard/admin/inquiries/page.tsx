@@ -13,8 +13,10 @@ import {
   ToolbarSection,
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useAdminInquiries } from "@/lib/hooks/use-admin"
+import { adminInquiriesSteps } from "@/lib/tours/admin-inquiries-tour"
 
 type InquiryType = "franchise" | "jobs" | "contacts"
 
@@ -32,12 +34,14 @@ export default function AdminInquiriesPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Inquiries"
-        subtitle="Review incoming contact, franchise, and job inquiries."
-      />
+      <div data-tour="admin-inquiries-header">
+        <DashboardHeader
+          title="Inquiries"
+          subtitle="Review incoming contact, franchise, and job inquiries."
+        />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="admin-inquiries-tabs">
         <ToolbarSection>
           <SegmentedControl>
             {(["contacts", "franchise", "jobs"] as const).map((item) => (
@@ -60,7 +64,7 @@ export default function AdminInquiriesPage() {
           description="New inquiry submissions will appear here."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="admin-inquiries-list">
           {items.map((item, index) => (
             <DashboardPanel key={index}>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -112,6 +116,8 @@ export default function AdminInquiriesPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton steps={adminInquiriesSteps} pageKey="admin-inquiries" />
     </DashboardPage>
   )
 }

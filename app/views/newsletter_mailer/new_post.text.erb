@@ -1,0 +1,11 @@
+New on the blog: <%= @blog_post.title %>
+
+<% if @blog_post.excerpt.present? -%>
+<%= @blog_post.excerpt %>
+
+<% end -%>
+Read the full post: <%= @post_url %>
+
+---
+You're receiving this because you subscribed to the Beauty @ Your Door newsletter.
+Unsubscribe: <%= @unsubscribe_url %>

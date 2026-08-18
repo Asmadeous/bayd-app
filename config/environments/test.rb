@@ -28,6 +28,11 @@ Rails.application.configure do
   # Disable request forgery protection in test environment.
   config.action_controller.allow_forgery_protection = false
 
+  # Mailers that build links via route helpers (e.g. NewsletterMailer's
+  # unsubscribe URL) need a host even in test — there's no request to infer
+  # one from.
+  config.action_mailer.default_url_options = { host: "localhost", port: 3003 }
+
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr
 

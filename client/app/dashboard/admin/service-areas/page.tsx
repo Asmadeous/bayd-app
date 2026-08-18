@@ -8,8 +8,10 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useAdminServiceAreas, useUpdateServiceArea } from "@/lib/hooks/use-admin"
+import { adminServiceAreasSteps } from "@/lib/tours/admin-service-areas-tour"
 
 const fieldClass =
   "h-9 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
@@ -56,7 +58,9 @@ export default function AdminServiceAreasPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Service Areas" subtitle="Configure GTA service zones and travel fees." />
+      <div data-tour="admin-service-areas-header">
+        <DashboardHeader title="Service Areas" subtitle="Configure GTA service zones and travel fees." />
+      </div>
 
       {isLoading ? (
         <DashboardPanel>
@@ -69,7 +73,7 @@ export default function AdminServiceAreasPage() {
           description="Configured service zones will appear here."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="admin-service-areas-list">
           {areas.map((area) => (
             <DashboardPanel key={area.id}>
               {editing === area.id ? (
@@ -169,6 +173,8 @@ export default function AdminServiceAreasPage() {
           ))}
         </div>
       )}
+
+      <TutorialButton steps={adminServiceAreasSteps} pageKey="admin-service-areas" />
     </DashboardPage>
   )
 }

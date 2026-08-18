@@ -8,8 +8,10 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MetricCard } from "@/components/dashboard/metric-card"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useLoyalty, useReferral } from "@/lib/hooks/use-account"
+import { customerLoyaltySteps } from "@/lib/tours/customer-loyalty-tour"
 
 export default function CustomerLoyaltyPage() {
   const { data: loyalty, isLoading } = useLoyalty()
@@ -33,12 +35,14 @@ export default function CustomerLoyaltyPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Loyalty Program"
-        subtitle="Earn points on every booking and redeem them for future beauty services."
-      />
+      <div data-tour="customer-loyalty-header">
+        <DashboardHeader
+          title="Loyalty Program"
+          subtitle="Earn points on every booking and redeem them for future beauty services."
+        />
+      </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3" data-tour="customer-loyalty-metrics">
         <MetricCard
           accent
           icon={Star}
@@ -50,7 +54,7 @@ export default function CustomerLoyaltyPage() {
       </div>
 
       {referral ? (
-        <DashboardPanel className="space-y-4">
+        <DashboardPanel className="space-y-4" data-tour="customer-loyalty-referral">
           <div className="flex items-center gap-3">
             <span className="grid size-10 place-items-center border border-black/10 bg-[#f4f1eb] text-[#c96c83]">
               <Gift aria-hidden="true" className="size-5" />
@@ -83,7 +87,7 @@ export default function CustomerLoyaltyPage() {
         </DashboardPanel>
       ) : null}
 
-      <DashboardPanel>
+      <DashboardPanel data-tour="customer-loyalty-history">
         <h2 className="text-sm font-extrabold text-[#101217]">Points history</h2>
         {isLoading ? (
           <p className="mt-4 text-sm text-[#5f6268]">Loading points history...</p>
@@ -118,6 +122,8 @@ export default function CustomerLoyaltyPage() {
           </div>
         )}
       </DashboardPanel>
+
+      <TutorialButton steps={customerLoyaltySteps} pageKey="customer-loyalty" />
     </DashboardPage>
   )
 }

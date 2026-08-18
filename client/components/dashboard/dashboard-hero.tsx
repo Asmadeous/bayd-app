@@ -1,14 +1,13 @@
-import type { ReactNode } from "react"
+import type { ReactNode, HTMLAttributes } from "react"
 
 import { cn } from "@/lib/utils"
 
-type DashboardHeroProps = {
+type DashboardHeroProps = HTMLAttributes<HTMLElement> & {
   eyebrow?: string
   title: string
   description?: string
   actions?: ReactNode
   aside?: ReactNode
-  className?: string
 }
 
 export function DashboardHero({
@@ -18,6 +17,7 @@ export function DashboardHero({
   actions,
   aside,
   className,
+  ...rest
 }: DashboardHeroProps) {
   return (
     <section
@@ -26,6 +26,7 @@ export function DashboardHero({
         "bg-[linear-gradient(120deg,rgba(240,200,211,0.16),transparent_34%),linear-gradient(90deg,#17110d,#101217)]",
         className,
       )}
+      {...rest}
     >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <div className="min-w-0">

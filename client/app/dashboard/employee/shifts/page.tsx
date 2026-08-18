@@ -10,8 +10,10 @@ import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboa
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { StatusBadge } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useShifts, type Shift } from "@/lib/hooks/use-time-clock"
+import { employeeShiftsSteps } from "@/lib/tours/employee-tour"
 
 const dt = (s: string | null) =>
   s
@@ -37,34 +39,38 @@ export default function EmployeeShiftsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="My Shifts"
-        subtitle="Your clock-in history and travel reimbursement."
-      />
+      <div data-tour="shifts-header">
+        <DashboardHeader
+          title="My Shifts"
+          subtitle="Your clock-in history and travel reimbursement."
+        />
+      </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div data-tour="shifts-stats" className="grid gap-4 md:grid-cols-3">
         <StatCard label="Total Shifts" value={data?.pagination.total_count ?? 0} />
         <StatCard label="Distance Travelled" value={`${(totals?.distance_km ?? 0).toFixed(1)} km`} />
         <StatCard label="Fuel Reimbursement" value={`$${(totals?.fuel_reimbursement ?? 0).toFixed(2)}`} accent />
       </div>
 
-      {isLoading ? (
-        <DashboardPanel>
-          <p className="text-sm text-[#5f6268]">Loading shifts...</p>
-        </DashboardPanel>
-      ) : shifts.length === 0 ? (
-        <EmptyState
-          icon={Fuel}
-          title="No shifts yet"
-          description="Clock in from your dashboard to start tracking shift history."
-        />
-      ) : (
-        <div className="space-y-3">
-          {shifts.map((shift) => (
-            <ShiftRow key={shift.id} shift={shift} />
-          ))}
-        </div>
-      )}
+      <div data-tour="shifts-list">
+        {isLoading ? (
+          <DashboardPanel>
+            <p className="text-sm text-[#5f6268]">Loading shifts...</p>
+          </DashboardPanel>
+        ) : shifts.length === 0 ? (
+          <EmptyState
+            icon={Fuel}
+            title="No shifts yet"
+            description="Clock in from your dashboard to start tracking shift history."
+          />
+        ) : (
+          <div className="space-y-3">
+            {shifts.map((shift) => (
+              <ShiftRow key={shift.id} shift={shift} />
+            ))}
+          </div>
+        )}
+      </div>
 
       {data?.pagination && data.pagination.total_pages > 1 ? (
         <DashboardToolbar className="justify-end">
@@ -91,6 +97,11 @@ export default function EmployeeShiftsPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton
+        steps={employeeShiftsSteps}
+        pageKey="employee-shifts"
+      />
     </DashboardPage>
   )
 }

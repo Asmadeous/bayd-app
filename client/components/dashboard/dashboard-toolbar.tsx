@@ -1,10 +1,9 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react"
+import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
 
-type DashboardToolbarProps = {
+type DashboardToolbarProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode
-  className?: string
 }
 
 type ToolbarSectionProps = {
@@ -12,13 +11,14 @@ type ToolbarSectionProps = {
   className?: string
 }
 
-export function DashboardToolbar({ children, className }: DashboardToolbarProps) {
+export function DashboardToolbar({ children, className, ...rest }: DashboardToolbarProps) {
   return (
     <div
       className={cn(
         "flex flex-col gap-3 border border-black/10 bg-white/70 px-4 py-3 shadow-sm shadow-black/[0.03] sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
+      {...rest}
     >
       {children}
     </div>

@@ -13,6 +13,7 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -28,6 +29,7 @@ import {
   useDeleteSubscription,
 } from "@/lib/hooks/use-admin"
 import type { Subscription } from "@/lib/hooks/use-subscriptions"
+import { adminSubscriptionsSteps } from "@/lib/tours/admin-subscriptions-tour"
 
 const STATUSES = ["active", "paused", "cancelled"]
 const UNITS = ["day", "week", "month", "year"]
@@ -44,9 +46,11 @@ export default function AdminSubscriptionsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Subscriptions" subtitle="All recurring service plans." />
+      <div data-tour="admin-subscriptions-header">
+        <DashboardHeader title="Subscriptions" subtitle="All recurring service plans." />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="admin-subscriptions-filter">
         <ToolbarSection>
           <SegmentedControl>
             {["", ...STATUSES].map((item) => (
@@ -73,7 +77,7 @@ export default function AdminSubscriptionsPage() {
           description="Recurring customer service plans will appear here."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="admin-subscriptions-list">
           {subs.map((s) => (
             <Row key={s.id} subscription={s}
               onSaveFreq={(unit, count) => update.mutate({ id: s.id, interval_unit: unit, interval_count: count })}
@@ -94,6 +98,8 @@ export default function AdminSubscriptionsPage() {
           </ToolbarSection>
         </DashboardToolbar>
       )}
+
+      <TutorialButton steps={adminSubscriptionsSteps} pageKey="admin-subscriptions" />
     </DashboardPage>
   )
 }

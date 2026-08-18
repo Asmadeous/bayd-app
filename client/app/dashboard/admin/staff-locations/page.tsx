@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { StaffMap } from "@/components/dashboard/staff-map"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import { adminStaffLocationsSteps } from "@/lib/tours/admin-staff-locations-tour"
 
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? ""
 
@@ -36,25 +38,29 @@ export default function AdminStaffLocationsPage() {
 
   return (
     <div className="space-y-6">
-      <DashboardHeader title="Staff Locations" subtitle="Live positions, distance travelled, and fuel compensation" />
+      <div data-tour="admin-staff-locations-header">
+        <DashboardHeader title="Staff Locations" subtitle="Live positions, distance travelled, and fuel compensation" />
+      </div>
 
-      {MAPS_KEY ? (
-        // Interactive Google map (browser key). Pins update on each refresh.
-        <div className="overflow-hidden rounded-xl border border-black/8 bg-white">
-          <StaffMap staff={rows} />
-        </div>
-      ) : data?.map_image ? (
-        // Fallback: server-rendered static map (no browser key configured).
-        <div className="overflow-hidden rounded-xl border border-black/8 bg-white">
-          <Image src={data.map_image} alt="Staff locations map" width={1280} height={800} unoptimized className="h-auto w-full" />
-        </div>
-      ) : (
-        <div className="rounded-xl border border-dashed border-black/15 bg-[#f4f1eb] px-5 py-10 text-center text-sm text-[#5f6268]">
-          No live staff locations to map yet.
-        </div>
-      )}
+      <div data-tour="admin-staff-locations-map">
+        {MAPS_KEY ? (
+          // Interactive Google map (browser key). Pins update on each refresh.
+          <div className="overflow-hidden rounded-xl border border-black/8 bg-white">
+            <StaffMap staff={rows} />
+          </div>
+        ) : data?.map_image ? (
+          // Fallback: server-rendered static map (no browser key configured).
+          <div className="overflow-hidden rounded-xl border border-black/8 bg-white">
+            <Image src={data.map_image} alt="Staff locations map" width={1280} height={800} unoptimized className="h-auto w-full" />
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-black/15 bg-[#f4f1eb] px-5 py-10 text-center text-sm text-[#5f6268]">
+            No live staff locations to map yet.
+          </div>
+        )}
+      </div>
 
-      <div className="rounded-xl border border-black/8 bg-white overflow-x-auto">
+      <div className="rounded-xl border border-black/8 bg-white overflow-x-auto" data-tour="admin-staff-locations-table">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-black/8 text-left text-xs text-[#5f6268]">
@@ -96,6 +102,8 @@ export default function AdminStaffLocationsPage() {
           )}
         </table>
       </div>
+
+      <TutorialButton steps={adminStaffLocationsSteps} pageKey="admin-staff-locations" />
     </div>
   )
 }

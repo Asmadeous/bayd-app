@@ -18,8 +18,10 @@ import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MetricCard } from "@/components/dashboard/metric-card"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { adminLoyaltySteps } from "@/lib/tours/admin-loyalty-tour"
 
 interface LoyaltyAccount {
   id: number
@@ -48,9 +50,11 @@ export default function AdminLoyaltyPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Loyalty Program" subtitle="Review customer points balances." />
+      <div data-tour="admin-loyalty-header">
+        <DashboardHeader title="Loyalty Program" subtitle="Review customer points balances." />
+      </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3" data-tour="admin-loyalty-metrics">
         <MetricCard icon={Star} label="Total Accounts" value={data?.pagination?.total_count ?? "-"} />
         <MetricCard accent icon={Star} label="Points Outstanding" value={totalPoints.toLocaleString()} />
       </div>
@@ -66,6 +70,7 @@ export default function AdminLoyaltyPage() {
           description="Customer loyalty accounts will appear here."
         />
       ) : (
+        <div data-tour="admin-loyalty-table">
         <DataTable>
           <DataTableHead>
             <DataTableRow>
@@ -94,6 +99,7 @@ export default function AdminLoyaltyPage() {
             })}
           </DataTableBody>
         </DataTable>
+        </div>
       )}
 
       {data?.pagination && data.pagination.total_pages > 1 ? (
@@ -121,6 +127,8 @@ export default function AdminLoyaltyPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton steps={adminLoyaltySteps} pageKey="admin-loyalty" />
     </DashboardPage>
   )
 }

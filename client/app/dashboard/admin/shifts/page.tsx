@@ -18,6 +18,7 @@ import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboa
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { StatusBadge } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/select"
 import { useAdminEmployees } from "@/lib/hooks/use-admin"
 import { useAdminShifts, useDeleteShift, type AdminShiftFilters, type Shift } from "@/lib/hooks/use-time-clock"
+import { adminShiftsSteps } from "@/lib/tours/admin-shifts-tour"
 
 const dt = (s: string | null) =>
   s
@@ -61,12 +63,14 @@ export default function AdminShiftsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Fuel Compensation"
-        subtitle="Staff shifts, travel distance, and reimbursement owed."
-      />
+      <div data-tour="admin-shifts-header">
+        <DashboardHeader
+          title="Fuel Compensation"
+          subtitle="Staff shifts, travel distance, and reimbursement owed."
+        />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="admin-shifts-filters">
         <ToolbarSection>
           <Field label="Employee">
             <Select
@@ -127,7 +131,7 @@ export default function AdminShiftsPage() {
         ) : null}
       </DashboardToolbar>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3" data-tour="admin-shifts-stats">
         <StatCard label="Shifts" value={totals?.shifts ?? 0} />
         <StatCard label="Total Distance" value={`${(totals?.distance_km ?? 0).toFixed(1)} km`} />
         <StatCard label="Total Owed" value={`$${(totals?.fuel_reimbursement ?? 0).toFixed(2)}`} accent />
@@ -144,6 +148,7 @@ export default function AdminShiftsPage() {
           description="Adjust the filters to find another shift record."
         />
       ) : (
+        <div data-tour="admin-shifts-list">
         <DataTable>
           <DataTableHead>
             <DataTableRow>
@@ -195,6 +200,7 @@ export default function AdminShiftsPage() {
             ))}
           </DataTableBody>
         </DataTable>
+        </div>
       )}
 
       {data?.pagination && data.pagination.total_pages > 1 ? (
@@ -222,6 +228,8 @@ export default function AdminShiftsPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton steps={adminShiftsSteps} pageKey="admin-shifts" />
     </DashboardPage>
   )
 }

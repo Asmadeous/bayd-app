@@ -12,9 +12,11 @@ import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useBookings } from "@/lib/hooks/use-bookings"
 import type { Booking } from "@/lib/hooks/use-bookings"
+import { customerDashboardSteps } from "@/lib/tours/customer-tour"
 
 export default function CustomerDashboardPage() {
   const { data, isLoading } = useBookings(1)
@@ -35,6 +37,7 @@ export default function CustomerDashboardPage() {
   return (
     <DashboardPage maxWidth="wide">
       <DashboardHero
+        data-tour="customer-hero"
         eyebrow="Customer dashboard"
         title="Your beauty schedule, ready when you are."
         description="Review upcoming appointments, book your next service, and keep your Beauty @ Your Door account organized."
@@ -67,7 +70,7 @@ export default function CustomerDashboardPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div data-tour="customer-metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard accent icon={Clock3} label="Upcoming" value={upcoming.length} />
         <MetricCard icon={CheckCircle2} label="Completed" value={completed.length} />
         <MetricCard icon={CalendarDays} label="Total bookings" value={bookings.length} />
@@ -75,18 +78,20 @@ export default function CustomerDashboardPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.75fr)]">
-        <AppCalendar
-          bookings={bookings}
-          onSelectDay={(date) => setSelectedDate(date)}
-          footer={
-            <SelectedDayAppointments
-              bookings={selectedDayBookings}
-              bookHref={bookServiceHref}
-              date={selectedDate}
-              isLoading={isLoading}
-            />
-          }
-        />
+        <div data-tour="customer-calendar">
+          <AppCalendar
+            bookings={bookings}
+            onSelectDay={(date) => setSelectedDate(date)}
+            footer={
+              <SelectedDayAppointments
+                bookings={selectedDayBookings}
+                bookHref={bookServiceHref}
+                date={selectedDate}
+                isLoading={isLoading}
+              />
+            }
+          />
+        </div>
 
         <div className="space-y-6">
           <DashboardPanel className="space-y-4" tone="warm">
@@ -107,7 +112,7 @@ export default function CustomerDashboardPage() {
             </Link>
           </DashboardPanel>
 
-          <DashboardPanel>
+          <DashboardPanel data-tour="customer-upcoming">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
@@ -149,6 +154,8 @@ export default function CustomerDashboardPage() {
           </DashboardPanel>
         </div>
       </div>
+
+      <TutorialButton steps={customerDashboardSteps} pageKey="customer-dashboard" />
     </DashboardPage>
   )
 }

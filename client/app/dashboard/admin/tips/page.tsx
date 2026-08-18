@@ -15,8 +15,10 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { adminTipsSteps } from "@/lib/tours/admin-tips-tour"
 
 interface TipOwed {
   employee_profile_id: number
@@ -40,10 +42,12 @@ export default function AdminTipsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Tips Owed"
-        subtitle="Card tips collected on the customer's behalf and owed to each technician."
-      />
+      <div data-tour="admin-tips-header">
+        <DashboardHeader
+          title="Tips Owed"
+          subtitle="Card tips collected on the customer's behalf and owed to each technician."
+        />
+      </div>
 
       {isLoading ? (
         <DashboardPanel>
@@ -56,40 +60,44 @@ export default function AdminTipsPage() {
           description="Outstanding technician tips will appear here."
         />
       ) : (
-        <DataTable>
-          <DataTableHead>
-            <DataTableRow>
-              <DataTableHeaderCell>Technician</DataTableHeaderCell>
-              <DataTableHeaderCell>Amount Owed</DataTableHeaderCell>
-              <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
-            </DataTableRow>
-          </DataTableHead>
-          <DataTableBody>
-            {rows.map((row) => (
-              <DataTableRow key={row.employee_profile_id}>
-                <DataTableCell className="font-bold text-[#101217]">
-                  {row.technician ?? `#${row.employee_profile_id}`}
-                </DataTableCell>
-                <DataTableCell className="font-heading text-xl font-extrabold text-[#101217]">
-                  ${Number(row.amount_owed).toFixed(2)}
-                </DataTableCell>
-                <DataTableCell>
-                  <div className="flex justify-end">
-                    <Button
-                      disabled={payout.isPending}
-                      onClick={() => payout.mutate(row.employee_profile_id)}
-                      size="xs"
-                      variant="outline"
-                    >
-                      Mark paid out
-                    </Button>
-                  </div>
-                </DataTableCell>
+        <div data-tour="admin-tips-list">
+          <DataTable>
+            <DataTableHead>
+              <DataTableRow>
+                <DataTableHeaderCell>Technician</DataTableHeaderCell>
+                <DataTableHeaderCell>Amount Owed</DataTableHeaderCell>
+                <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
               </DataTableRow>
-            ))}
-          </DataTableBody>
-        </DataTable>
+            </DataTableHead>
+            <DataTableBody>
+              {rows.map((row) => (
+                <DataTableRow key={row.employee_profile_id}>
+                  <DataTableCell className="font-bold text-[#101217]">
+                    {row.technician ?? `#${row.employee_profile_id}`}
+                  </DataTableCell>
+                  <DataTableCell className="font-heading text-xl font-extrabold text-[#101217]">
+                    ${Number(row.amount_owed).toFixed(2)}
+                  </DataTableCell>
+                  <DataTableCell>
+                    <div className="flex justify-end">
+                      <Button
+                        disabled={payout.isPending}
+                        onClick={() => payout.mutate(row.employee_profile_id)}
+                        size="xs"
+                        variant="outline"
+                      >
+                        Mark paid out
+                      </Button>
+                    </div>
+                  </DataTableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
+        </div>
       )}
+
+      <TutorialButton steps={adminTipsSteps} pageKey="admin-tips" />
     </DashboardPage>
   )
 }

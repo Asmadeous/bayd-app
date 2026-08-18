@@ -1,8 +1,8 @@
-import type { ElementType, ReactNode } from "react"
+import type { ElementType, HTMLAttributes, ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
 
-type DashboardPanelProps = {
+type DashboardPanelProps = HTMLAttributes<HTMLElement> & {
   children: ReactNode
   as?: ElementType
   className?: string
@@ -29,11 +29,12 @@ export function DashboardPanel({
   className,
   tone = "surface",
   padding = "md",
+  ...rest
 }: DashboardPanelProps) {
   const Component = as ?? "section"
 
   return (
-    <Component className={cn("border", toneClasses[tone], paddingClasses[padding], className)}>
+    <Component className={cn("border", toneClasses[tone], paddingClasses[padding], className)} {...rest}>
       {children}
     </Component>
   )

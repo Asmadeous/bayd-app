@@ -3,6 +3,8 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/dashboard/sidebar"
+import { TourOverlay } from "@/components/dashboard/tour-overlay"
+import { DashboardTourProvider } from "@/lib/tours/tour-provider"
 import { useAuthStore } from "@/lib/stores/auth-store"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -32,13 +34,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!isAuthenticated) return null
 
   return (
-    <div className="min-h-screen bg-[#f4f1eb] text-[#101217] lg:flex">
-      <Sidebar />
-      <main className="min-w-0 flex-1">
-        <div className="mx-auto w-full max-w-[1540px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 2xl:px-10">
-          {children}
-        </div>
-      </main>
-    </div>
+    <DashboardTourProvider>
+      <div className="min-h-screen bg-[#f4f1eb] text-[#101217] lg:flex">
+        <Sidebar />
+        <main className="min-w-0 flex-1">
+          <div className="mx-auto w-full max-w-[1540px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 2xl:px-10">
+            {children}
+          </div>
+        </main>
+      </div>
+      <TourOverlay />
+    </DashboardTourProvider>
   )
 }

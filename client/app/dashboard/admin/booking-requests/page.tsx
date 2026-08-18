@@ -15,8 +15,10 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadge, StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { adminBookingRequestsSteps } from "@/lib/tours/admin-booking-requests-tour"
 
 interface BookingRequest {
   id: number
@@ -59,12 +61,14 @@ export default function AdminBookingRequestsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Booking Requests"
-        subtitle="Review incoming service requests and assignment outcomes."
-      />
+      <div data-tour="booking-requests-header">
+        <DashboardHeader
+          title="Booking Requests"
+          subtitle="Review incoming service requests and assignment outcomes."
+        />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="booking-requests-filters">
         <ToolbarSection>
           <SegmentedControl>
             {["", ...STATUSES].map((requestStatus) => (
@@ -94,7 +98,7 @@ export default function AdminBookingRequestsPage() {
           description="Try another status filter or check back when new booking requests arrive."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="booking-requests-list">
           {requests.map((request) => {
             const name =
               [request.user?.first_name, request.user?.last_name].filter(Boolean).join(" ") ||
@@ -129,7 +133,7 @@ export default function AdminBookingRequestsPage() {
       )}
 
       {data?.pagination && data.pagination.total_pages > 1 ? (
-        <DashboardToolbar className="justify-end">
+        <DashboardToolbar className="justify-end" data-tour="booking-requests-pagination">
           <ToolbarSection className="ml-auto">
             <Button
               disabled={page <= 1}
@@ -153,6 +157,8 @@ export default function AdminBookingRequestsPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton steps={adminBookingRequestsSteps} pageKey="admin-booking-requests" />
     </DashboardPage>
   )
 }

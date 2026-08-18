@@ -9,8 +9,10 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { customerAddressesSteps } from "@/lib/tours/customer-addresses-tour"
 
 interface Address {
   id: number
@@ -67,24 +69,27 @@ export default function CustomerAddressesPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        actions={
-          <Button
-            onClick={() => setAdding((value) => !value)}
-            size="sm"
-            style={adding ? undefined : { background: "#c96c83", border: "none", color: "#fff" }}
-            variant={adding ? "outline" : "default"}
-          >
-            {!adding ? <Plus aria-hidden="true" className="size-4" /> : null}
-            {adding ? "Cancel" : "Add Address"}
-          </Button>
-        }
-        title="Addresses"
-        subtitle="Manage service locations for mobile beauty appointments."
-      />
+      <div data-tour="customer-addresses-header">
+        <DashboardHeader
+          actions={
+            <Button
+              data-tour="customer-addresses-add"
+              onClick={() => setAdding((value) => !value)}
+              size="sm"
+              style={adding ? undefined : { background: "#c96c83", border: "none", color: "#fff" }}
+              variant={adding ? "outline" : "default"}
+            >
+              {!adding ? <Plus aria-hidden="true" className="size-4" /> : null}
+              {adding ? "Cancel" : "Add Address"}
+            </Button>
+          }
+          title="Addresses"
+          subtitle="Manage service locations for mobile beauty appointments."
+        />
+      </div>
 
       {adding ? (
-        <DashboardPanel>
+        <DashboardPanel data-tour="customer-addresses-form">
           <div className="mb-5">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
               Service location
@@ -128,7 +133,7 @@ export default function CustomerAddressesPage() {
           description="Add a service address to make checkout and booking faster."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="customer-addresses-list">
           {addresses.map((address) => (
             <DashboardPanel className="p-0" key={address.id}>
               <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
@@ -168,6 +173,8 @@ export default function CustomerAddressesPage() {
           ))}
         </div>
       )}
+
+      <TutorialButton steps={customerAddressesSteps} pageKey="customer-addresses" />
     </DashboardPage>
   )
 }

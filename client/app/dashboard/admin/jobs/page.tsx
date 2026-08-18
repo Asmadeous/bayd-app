@@ -13,6 +13,7 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -30,6 +31,7 @@ import {
   downloadApplicationDocument,
   type AdminJobPosting,
 } from "@/lib/hooks/use-admin"
+import { adminJobsSteps } from "@/lib/tours/admin-jobs-tour"
 
 const TYPES = ["full_time", "part_time", "contract", "temporary", "internship"]
 const TYPE_LABEL: Record<string, string> = {
@@ -44,8 +46,10 @@ export default function AdminJobsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Jobs" subtitle="Manage job postings and applications" />
-      <DashboardToolbar>
+      <div data-tour="admin-jobs-header">
+        <DashboardHeader title="Jobs" subtitle="Manage job postings and applications" />
+      </div>
+      <DashboardToolbar data-tour="admin-jobs-tabs">
         <ToolbarSection>
           <SegmentedControl>
         {(["postings", "applications"] as const).map((t) => (
@@ -60,7 +64,11 @@ export default function AdminJobsPage() {
           </SegmentedControl>
         </ToolbarSection>
       </DashboardToolbar>
-      {tab === "postings" ? <PostingsTab /> : <ApplicationsTab />}
+      <div data-tour="admin-jobs-content">
+        {tab === "postings" ? <PostingsTab /> : <ApplicationsTab />}
+      </div>
+
+      <TutorialButton steps={adminJobsSteps} pageKey="admin-jobs" />
     </DashboardPage>
   )
 }

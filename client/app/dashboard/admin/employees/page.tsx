@@ -14,6 +14,7 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadge } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { PasswordInput } from "@/components/ui/password-input"
 import {
@@ -35,6 +36,7 @@ import {
   type EmployeeInput,
 } from "@/lib/hooks/use-admin"
 import { useAdminPartners, type Partner } from "@/lib/hooks/use-partners"
+import { adminEmployeesSteps } from "@/lib/tours/admin-employees-tour"
 
 const cad = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 })
 
@@ -75,24 +77,26 @@ export default function AdminEmployeesPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Employees"
-        subtitle="Profiles, shifts, dispatch coverage, partners, and performance KPIs."
-        actions={
-          <Button
-            size="sm"
-            onClick={() => setModal("create")}
-            style={{ background: "#c96c83", border: "none", color: "#fff" }}
-          >
-            <Plus aria-hidden="true" />
-            Add Staff
-          </Button>
-        }
-      />
+      <div data-tour="employees-header">
+        <DashboardHeader
+          title="Employees"
+          subtitle="Profiles, shifts, dispatch coverage, partners, and performance KPIs."
+          actions={
+            <Button
+              size="sm"
+              onClick={() => setModal("create")}
+              style={{ background: "#c96c83", border: "none", color: "#fff" }}
+            >
+              <Plus aria-hidden="true" />
+              Add Staff
+            </Button>
+          }
+        />
+      </div>
 
       {modal && <StaffModal mode={modal} partners={partners} onClose={() => setModal(null)} />}
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="employees-kpi-period">
         <ToolbarSection>
           <span className="text-xs font-bold uppercase tracking-[0.16em] text-[#6b6f76]">
             KPIs for
@@ -135,7 +139,7 @@ export default function AdminEmployeesPage() {
           }
         />
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2" data-tour="employees-list">
           {employees.map((emp) => (
             <EmployeeCard key={emp.id} employee={emp} kpi={kpiById.get(emp.id)} partners={partners} onEdit={() => setModal(emp)} />
           ))}
@@ -143,7 +147,7 @@ export default function AdminEmployeesPage() {
       )}
 
       {pagination && pagination.total_pages > 1 && (
-        <DashboardToolbar className="justify-end">
+        <DashboardToolbar className="justify-end" data-tour="employees-pagination">
           <ToolbarSection className="ml-auto">
             <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
             <span className="px-2 text-sm font-semibold text-[#5f6268]">{page} / {pagination.total_pages}</span>
@@ -151,6 +155,8 @@ export default function AdminEmployeesPage() {
           </ToolbarSection>
         </DashboardToolbar>
       )}
+
+      <TutorialButton steps={adminEmployeesSteps} pageKey="admin-employees" />
     </DashboardPage>
   )
 }
