@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
@@ -20,6 +20,25 @@ interface Candidate {
 export function ReassignControl({ bookingId }: { bookingId: number }) {
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+
+    function handlePointerDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false)
+    }
+
+    document.addEventListener("mousedown", handlePointerDown)
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [open])
 
   const { data, isLoading } = useQuery<{ candidates: Candidate[] }>({
     queryKey: ["booking-candidates", bookingId],
@@ -40,7 +59,7 @@ export function ReassignControl({ bookingId }: { bookingId: number }) {
   const candidates = data?.candidates ?? []
 
   return (
-    <div className="relative">
+    <div className="relative" ref={rootRef}>
       <Button size="xs" variant="outline" onClick={() => setOpen((o) => !o)}>
         Reassign
       </Button>

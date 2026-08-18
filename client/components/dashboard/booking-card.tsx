@@ -56,7 +56,7 @@ export function BookingCard({ booking, actions, className }: BookingCardProps) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden border border-black/10 bg-white px-4 py-4 shadow-sm shadow-black/[0.03] sm:px-5",
+        "relative border border-black/10 bg-white px-4 py-4 shadow-sm shadow-black/[0.03] sm:px-5",
         className
       )}
     >
