@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 
+import { NewsletterSignup } from "@/components/layout/newsletter-signup";
 import { siteConfig } from "@/lib/site";
 
 // Accepted payment methods shown in the footer, from real logo/image assets in
@@ -37,6 +38,11 @@ export function SiteFooter() {
             group-ready beauty appointments brought to homes, offices, hotels,
             and events.
           </p>
+
+          <p className="mt-8 text-xs font-bold uppercase tracking-[0.18em] text-white/55">
+            Get new posts by email
+          </p>
+          <NewsletterSignup />
         </div>
 
         <div className="text-sm text-white/62">

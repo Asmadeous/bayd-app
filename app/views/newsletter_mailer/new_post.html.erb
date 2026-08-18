@@ -1,0 +1,18 @@
+<h1 style="font-size:22px; margin:16px 0 8px;">New on the blog</h1>
+
+<% if @blog_post.cover_image_url.present? %>
+  <img src="<%= @blog_post.cover_image_url %>" alt="" style="width:100%; border-radius:10px; margin:12px 0;" />
+<% end %>
+
+<h2 style="font-size:18px; margin:8px 0;"><%= @blog_post.title %></h2>
+
+<% if @blog_post.excerpt.present? %>
+  <p style="font-size:15px; line-height:1.6; color:#4f535a;"><%= @blog_post.excerpt %></p>
+<% end %>
+
+<a href="<%= @post_url %>" class="btn">Read the full post</a>
+
+<p class="muted">
+  You're receiving this because you subscribed to the Beauty @ Your Door newsletter.
+  <a href="<%= @unsubscribe_url %>">Unsubscribe</a>
+</p>
