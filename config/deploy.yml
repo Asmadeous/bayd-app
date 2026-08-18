@@ -74,8 +74,10 @@ env:
     SQUARE_BASE_URL: https://connect.squareup.com
     SQUARE_WEBHOOK_NOTIFICATION_URL: https://api.baydspa.ca/api/v1/webhooks/square
 
-    # Mail
-    SMTP_PORT: "587"
+    # Mail — 465 = SpaceMail's implicit-TLS port (see smtp_settings in
+    # config/environments/production.rb, which auto-selects TLS vs STARTTLS
+    # based on this port).
+    SMTP_PORT: "465"
 
     # Google OAuth callback (must exactly match a redirect URI in Google Console)
     GOOGLE_REDIRECT_URI: https://api.baydspa.ca/api/v1/auth/google/callback
