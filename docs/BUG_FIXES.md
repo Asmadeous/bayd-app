@@ -188,3 +188,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Replaced the browser confirmation with the shared `AlertDialog`, included the subscriber email in the confirmation copy, and added BAYD toast feedback for successful and failed removals.
 - **Verification:** Targeted ESLint passed for the newsletter page. `git diff --check` passed.
 - **Follow-up:** None.
+
+---
+
+## 2026-08-19 — Service area editor was inline and implied radius controlled booking coverage
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and service area workflow
+- **Reported behavior:** Editing a service area opened an inline form with no client-side validation, no visible API error handling, and copy that described latitude/longitude/radius as the bookable circular zone.
+- **Expected behavior:** Service area editing should use the shared dialog pattern, validate field values before save, show inline and toast errors, and avoid implying radius controls bookings when current backend coverage is postal-code based.
+- **Root cause:** `client/app/dashboard/admin/service-areas/page.tsx` submitted raw inline form values directly to the update hook and used helper text that did not match `ServiceArea.covers?`, which checks configured postal codes rather than radius metadata.
+- **Fix:** Moved service area editing into the shared `Dialog`, added Zod validation for name, travel fee, latitude, longitude, and radius, added inline field errors and BAYD toast feedback, and updated helper/list copy to describe radius as map metadata while showing postal-code coverage count.
+- **Verification:** Targeted ESLint passed for the service areas page. `git diff --check` passed.
+- **Follow-up:** Create/delete service area workflows remain intentionally out of scope because they need slug handling and coverage/employee-assignment decisions.
