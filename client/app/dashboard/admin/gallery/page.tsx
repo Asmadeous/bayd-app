@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { ImagePlus, Images, UploadCloud } from "lucide-react"
-import api from "@/lib/api"
+import { useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Images, Plus, Trash2 } from "lucide-react"
+import { z } from "zod"
+
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -15,7 +17,27 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Select,
   SelectContent,
@@ -23,8 +45,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import api from "@/lib/api"
 import { adminGallerySteps } from "@/lib/tours/admin-gallery-tour"
-import { cn } from "@/lib/utils"
 
 interface GalleryItem {
   id: number
@@ -40,95 +62,191 @@ interface GalleryItem {
   employee_profile: { id: number; title: string | null; user: { first_name: string | null; last_name: string | null } } | null
 }
 
-interface PagedResponse<T> { data: T[]; pagination: { current_page: number; total_pages: number; next_page: number | null; total_count: number } }
+interface PagedResponse<T> {
+  data: T[]
+  pagination: { current_page: number; total_pages: number; next_page: number | null; total_count: number }
+}
 
-const CATEGORIES = ["Lashes", "Nails", "Massage", "Pedicure", "Waxing"]
-const SIZES = ["standard", "wide", "tall"]
-const BLANK = { title: "", category: "Nails", description: "", image_url: "", image_alt: "", size: "standard", featured: false, active: true, position: 0, employee_profile_id: "" }
-const fieldClass =
-  "h-11 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const CATEGORIES = ["Team", "Lashes", "Nails", "Pedicure", "Massage"] as const
+const SIZES = ["standard", "wide", "tall"] as const
+type GalleryFormState = {
+  title: string
+  category: string
+  description: string
+  image_url: string
+  image_alt: string
+  size: string
+  featured: boolean
+  active: boolean
+  position: string
+  employee_profile_id: string
+}
+
+const BLANK: GalleryFormState = {
+  title: "",
+  category: "Nails",
+  description: "",
+  image_url: "",
+  image_alt: "",
+  size: "standard",
+  featured: false,
+  active: true,
+  position: "0",
+  employee_profile_id: "",
+}
+
+type GalleryFormErrors = Partial<Record<keyof GalleryFormState | "base", string>>
+
+const gallerySchema = z.object({
+  title: z.string().trim().min(1, "Title is required."),
+  category: z.enum(CATEGORIES, "Choose a valid category."),
+  description: z.string(),
+  image_url: z
+    .string()
+    .trim()
+    .min(1, "Image URL is required.")
+    .refine((value) => z.url().safeParse(value).success, "Enter a valid image URL."),
+  image_alt: z.string(),
+  size: z.enum(SIZES, "Choose a valid display size."),
+  featured: z.boolean(),
+  active: z.boolean(),
+  position: z
+    .string()
+    .trim()
+    .min(1, "Position is required.")
+    .refine((value) => Number.isInteger(Number(value)), "Position must be a whole number."),
+  employee_profile_id: z.string(),
+})
+
+const inputClass =
+  "h-10 w-full border border-black/15 bg-white px-3 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const errorInputClass =
+  "border-[#b75c68] focus:border-[#b75c68] focus:ring-[#b75c68]/20"
 const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 export default function AdminGalleryPage() {
   const qc = useQueryClient()
+  const { toast } = useToast()
   const [page, setPage] = useState(1)
   const [catFilter, setCatFilter] = useState("")
-  const [modal, setModal] = useState<"create" | number | null>(null)
-  const [form, setForm] = useState<typeof BLANK>(BLANK)
-  const imageInputRef = useRef<HTMLInputElement>(null)
-  const imagePreviewObjectUrlRef = useRef<string | null>(null)
-  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
-  const [isDraggingImage, setIsDraggingImage] = useState(false)
-
-  useEffect(() => {
-    return () => {
-      if (imagePreviewObjectUrlRef.current) {
-        URL.revokeObjectURL(imagePreviewObjectUrlRef.current)
-      }
-    }
-  }, [])
+  const [editing, setEditing] = useState<"create" | number | null>(null)
+  const [form, setForm] = useState<GalleryFormState>(BLANK)
+  const [errors, setErrors] = useState<GalleryFormErrors>({})
 
   const { data, isLoading } = useQuery<PagedResponse<GalleryItem>>({
     queryKey: ["admin-gallery", page, catFilter],
     queryFn: () => api.get<PagedResponse<GalleryItem>>("/admin/gallery_items", { params: { page, category: catFilter || undefined } }).then((r) => r.data),
   })
 
-  const createMutation = useMutation({ mutationFn: () => api.post("/admin/gallery_items", buildGalleryPayload(), galleryRequestConfig()), onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-gallery"] }); setModal(null); resetForm(BLANK) } })
-  const updateMutation = useMutation({ mutationFn: (id: number) => api.patch(`/admin/gallery_items/${id}`, buildGalleryPayload(), galleryRequestConfig()), onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-gallery"] }); setModal(null) } })
-  const deleteMutation = useMutation({ mutationFn: (id: number) => api.delete(`/admin/gallery_items/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-gallery"] }) })
+  const createMutation = useMutation({
+    mutationFn: (payload: Record<string, unknown>) => api.post("/admin/gallery_items", payload).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-gallery"] })
+      closeEditor()
+      toast({ title: "Gallery item added", description: "The new image is available in the gallery." })
+    },
+    onError: (error) => handleMutationError(error, "Could not add this gallery item."),
+  })
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: Record<string, unknown> }) => api.patch(`/admin/gallery_items/${id}`, payload).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-gallery"] })
+      closeEditor()
+      toast({ title: "Gallery item updated", description: "The gallery item changes were saved." })
+    },
+    onError: (error) => handleMutationError(error, "Could not update this gallery item."),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => api.delete(`/admin/gallery_items/${id}`).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-gallery"] })
+      toast({ title: "Gallery item deleted", description: "The image was removed from the gallery." })
+    },
+    onError: (error) => toast({ title: "Gallery item not deleted", description: getApiErrorMessage(error, "Could not delete this gallery item."), variant: "error" }),
+  })
 
   const items = data?.data ?? []
 
-  function resetForm(nextForm: typeof BLANK, previewUrl: string | null = nextForm.image_url || null) {
-    if (imagePreviewObjectUrlRef.current) {
-      URL.revokeObjectURL(imagePreviewObjectUrlRef.current)
-      imagePreviewObjectUrlRef.current = null
-    }
-    setForm(nextForm)
-    setSelectedImageFile(null)
-    setImagePreviewUrl(previewUrl)
-    setIsDraggingImage(false)
+  function handleMutationError(error: unknown, fallback: string) {
+    const message = getApiErrorMessage(error, fallback)
+    setErrors({ base: message })
+    toast({ title: "Gallery item not saved", description: message, variant: "error" })
+  }
+
+  function openCreate() {
+    setForm(BLANK)
+    setErrors({})
+    setEditing("create")
   }
 
   function openEdit(item: GalleryItem) {
-    resetForm({
-      title: item.title, category: item.category, description: item.description ?? "",
-      image_url: item.image_url, image_alt: item.image_alt ?? "", size: item.size,
-      featured: item.featured, active: item.active, position: item.position,
+    setForm({
+      title: item.title,
+      category: item.category,
+      description: item.description ?? "",
+      image_url: item.image_url,
+      image_alt: item.image_alt ?? "",
+      size: item.size,
+      featured: item.featured,
+      active: item.active,
+      position: String(item.position),
       employee_profile_id: item.employee_profile ? String(item.employee_profile.id) : "",
-    }, item.image_url)
-    setModal(item.id)
+    })
+    setErrors({})
+    setEditing(item.id)
   }
 
-  function handleImageFile(file: File | undefined) {
-    if (!file) return
+  function closeEditor() {
+    setEditing(null)
+    setForm(BLANK)
+    setErrors({})
+  }
 
-    if (imagePreviewObjectUrlRef.current) {
-      URL.revokeObjectURL(imagePreviewObjectUrlRef.current)
+  function set<K extends keyof GalleryFormState>(key: K, value: GalleryFormState[K]) {
+    setForm((current) => ({ ...current, [key]: value }))
+    setErrors((current) => {
+      if (!current[key] && !current.base) return current
+      const next = { ...current }
+      delete next[key]
+      delete next.base
+      return next
+    })
+  }
+
+  function submit() {
+    const result = gallerySchema.safeParse(form)
+    if (!result.success) {
+      const nextErrors = getFieldErrors(result.error)
+      setErrors(nextErrors)
+      toast({
+        title: "Gallery item needs attention",
+        description: nextErrors.base ?? "Check the highlighted fields and try again.",
+        variant: "error",
+      })
+      return
     }
 
-    const objectUrl = URL.createObjectURL(file)
-    imagePreviewObjectUrlRef.current = objectUrl
-    setSelectedImageFile(file)
-    setImagePreviewUrl(objectUrl)
+    const payload = {
+      title: form.title.trim(),
+      category: form.category,
+      description: form.description.trim() || undefined,
+      image_url: form.image_url.trim(),
+      image_alt: form.image_alt.trim() || undefined,
+      size: form.size,
+      featured: form.featured,
+      active: form.active,
+      position: Number(form.position),
+      employee_profile_id: form.employee_profile_id || undefined,
+    }
+
+    if (editing === "create") {
+      createMutation.mutate(payload)
+    } else if (typeof editing === "number") {
+      updateMutation.mutate({ id: editing, payload })
+    }
   }
 
-  function buildGalleryPayload() {
-    if (!selectedImageFile) return form
-
-    const payload = new FormData()
-    Object.entries(form).forEach(([key, value]) => {
-      if (key === "image_url") return
-      payload.append(key, String(value))
-    })
-    payload.append("image", selectedImageFile)
-    return payload
-  }
-
-  function galleryRequestConfig() {
-    return selectedImageFile ? { headers: { "Content-Type": "multipart/form-data" } } : undefined
-  }
+  const saving = createMutation.isPending || updateMutation.isPending
 
   return (
     <DashboardPage maxWidth="wide">
@@ -136,174 +254,177 @@ export default function AdminGalleryPage() {
         <DashboardHeader
           title="Gallery"
           subtitle={`${data?.pagination?.total_count ?? "—"} items`}
-          actions={<Button size="sm" onClick={() => { resetForm(BLANK, null); setModal("create") }} style={{ background: "#c96c83", border: "none", color: "#fff" }}>+ Add Item</Button>}
+          actions={
+            <Button size="sm" onClick={openCreate} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+              <Plus className="size-4" /> Add item
+            </Button>
+          }
         />
       </div>
 
       <DashboardToolbar data-tour="admin-gallery-filters">
         <ToolbarSection>
           <SegmentedControl>
-        {["", ...CATEGORIES].map((c) => (
-          <SegmentButton active={catFilter === c} key={c || "all"} onClick={() => setCatFilter(c)}>
-            {c || "All"}
-          </SegmentButton>
-        ))}
+            {["", ...CATEGORIES].map((category) => (
+              <SegmentButton active={catFilter === category} key={category || "all"} onClick={() => setCatFilter(category)}>
+                {category || "All"}
+              </SegmentButton>
+            ))}
           </SegmentedControl>
         </ToolbarSection>
       </DashboardToolbar>
 
-      {modal !== null && (
-        <DashboardPanel className="space-y-4" data-tour="admin-gallery-form">
-          <h3 className="font-semibold text-sm text-[#101217]">{modal === "create" ? "Add Gallery Item" : "Edit Gallery Item"}</h3>
+      <Dialog open={editing !== null} onOpenChange={(open) => { if (!open) closeEditor() }}>
+        <DialogContent data-tour="admin-gallery-form" className="max-w-4xl">
+          <DialogHeader className="pr-14">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+              Gallery
+            </p>
+            <DialogTitle>{editing === "create" ? "Add gallery item" : "Edit gallery item"}</DialogTitle>
+            <DialogDescription>
+              Add a public gallery image URL, category, display size, and visibility details.
+            </DialogDescription>
+          </DialogHeader>
 
-          <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
-            <button
-              className={cn(
-                "group relative flex min-h-64 overflow-hidden border border-dashed border-black/15 bg-[#fbfaf7] text-left outline-none transition-colors hover:border-[#c96c83] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20",
-                isDraggingImage && "border-[#c96c83] bg-[#c96c83]/8"
-              )}
-              onClick={() => imageInputRef.current?.click()}
-              onDragLeave={() => setIsDraggingImage(false)}
-              onDragOver={(event) => {
-                event.preventDefault()
-                setIsDraggingImage(true)
-              }}
-              onDrop={(event) => {
-                event.preventDefault()
-                setIsDraggingImage(false)
-                handleImageFile(event.dataTransfer.files?.[0])
-              }}
-              type="button"
-            >
-              {imagePreviewUrl ? (
-                <span
-                  aria-label={form.image_alt || form.title || "Gallery preview"}
-                  className="size-full bg-cover bg-center"
-                  role="img"
-                  style={{ backgroundImage: `url(${imagePreviewUrl})` }}
-                />
-              ) : (
-                <span className="flex w-full flex-col items-center justify-center gap-3 px-6 py-10 text-center text-[#5f6268]">
-                  <ImagePlus aria-hidden="true" className="size-10 text-[#c96c83]" />
-                  <span className="text-sm font-extrabold text-[#101217]">Add gallery image</span>
-                  <span className="text-xs leading-5">
-                    Drop a finished service photo here or click to choose one.
-                  </span>
-                </span>
-              )}
-              {imagePreviewUrl ? (
-                <span className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-black/62 px-4 py-3 text-xs font-bold uppercase tracking-[0.14em] text-white opacity-0 transition-opacity group-hover:opacity-100">
-                  <UploadCloud aria-hidden="true" className="size-4" />
-                  Replace image
-                </span>
-              ) : null}
-            </button>
-
-            <div className="space-y-3">
-              <p className="text-base font-extrabold text-[#101217]">Gallery image</p>
-              <p className="max-w-xl text-sm leading-6 text-[#5f6268]">
-                Choose a polished service photo that shows the final look clearly for customers
-                browsing the public gallery.
-              </p>
-              {selectedImageFile ? (
-                <p className="truncate text-xs font-bold uppercase tracking-[0.14em] text-[#a36f4d]">
-                  {selectedImageFile.name}
-                </p>
-              ) : form.image_url ? (
-                <p className="truncate text-xs font-bold uppercase tracking-[0.14em] text-[#a36f4d]">
-                  Existing gallery image
-                </p>
-              ) : null}
-              <input
-                ref={imageInputRef}
-                accept="image/*"
-                className="sr-only"
-                type="file"
-                onChange={(event) => handleImageFile(event.target.files?.[0])}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>Title *</label>
-              <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required
-                className={fieldClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Alt Text</label>
-              <input value={form.image_alt} onChange={(e) => setForm((f) => ({ ...f, image_alt: e.target.value }))}
-                className={fieldClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Category *</label>
-              <Select
-                onValueChange={(value) => setForm((current) => ({ ...current, category: value ?? "" }))}
-                value={form.category}
+          <DialogBody>
+            {errors.base ? (
+              <div
+                aria-live="polite"
+                className="mb-4 border border-[#b75c68]/25 bg-[#fff5f6] px-4 py-3 text-sm font-semibold text-[#8f3f4b]"
               >
-                <SelectTrigger className="h-11">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className={labelClass}>Size</label>
-              <Select
-                onValueChange={(value) => setForm((current) => ({ ...current, size: value ?? "standard" }))}
-                value={form.size}
-              >
-                <SelectTrigger className="h-11 capitalize">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SIZES.map((size) => (
-                    <SelectItem className="capitalize" key={size} value={size}>
-                      {size}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className={labelClass}>Position (sort order)</label>
-              <input type="number" value={form.position} onChange={(e) => setForm((f) => ({ ...f, position: Number(e.target.value) }))}
-                className={fieldClass} />
-            </div>
-            <div className="sm:col-span-2">
-              <label className={labelClass}>Description</label>
-              <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2}
-                className="w-full resize-none border border-black/15 bg-white px-3 py-2 text-sm font-semibold focus:outline-none focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20" />
-            </div>
-          </div>
+                {errors.base}
+              </div>
+            ) : null}
 
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-[#101217]">
-              <input type="checkbox" checked={form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} className="accent-[#c96c83]" />
-              Featured
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-[#101217]">
-              <input type="checkbox" checked={form.active} onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))} className="accent-[#c96c83]" />
-              Active (visible publicly)
-            </label>
-          </div>
+            <div className="grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
+              <div className="space-y-3">
+                <div className="flex min-h-64 overflow-hidden border border-black/10 bg-[#fbfaf7]">
+                  {form.image_url ? (
+                    <span
+                      aria-label={form.image_alt || form.title || "Gallery preview"}
+                      className="size-full bg-cover bg-center"
+                      role="img"
+                      style={{ backgroundImage: `url(${form.image_url})` }}
+                    />
+                  ) : (
+                    <span className="flex w-full flex-col items-center justify-center gap-3 px-6 py-10 text-center text-[#5f6268]">
+                      <Images aria-hidden="true" className="size-10 text-[#c96c83]" />
+                      <span className="text-sm font-extrabold text-[#101217]">Image preview</span>
+                      <span className="text-xs leading-5">
+                        Add an image URL to preview the gallery item.
+                      </span>
+                    </span>
+                  )}
+                </div>
+                <Field error={errors.image_url} label="Image URL">
+                  <input
+                    aria-invalid={Boolean(errors.image_url)}
+                    className={fieldClass(errors.image_url)}
+                    onChange={(event) => set("image_url", event.target.value)}
+                    placeholder="https://example.com/gallery-photo.jpg"
+                    value={form.image_url}
+                  />
+                </Field>
+              </div>
 
-          <div className="flex gap-2">
-            <Button size="sm" disabled={createMutation.isPending || updateMutation.isPending || !form.title || (!form.image_url && !selectedImageFile)}
-              onClick={() => modal === "create" ? createMutation.mutate() : updateMutation.mutate(modal as number)}
-              style={{ background: "#c96c83", border: "none", color: "#fff" }}>
-              {modal === "create" ? "Add to Gallery" : "Save Changes"}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field error={errors.title} label="Title">
+                  <input
+                    aria-invalid={Boolean(errors.title)}
+                    className={fieldClass(errors.title)}
+                    onChange={(event) => set("title", event.target.value)}
+                    placeholder="Example: Classic lash set"
+                    value={form.title}
+                  />
+                </Field>
+                <Field error={errors.image_alt} label="Alt text">
+                  <input
+                    aria-invalid={Boolean(errors.image_alt)}
+                    className={fieldClass(errors.image_alt)}
+                    onChange={(event) => set("image_alt", event.target.value)}
+                    placeholder="Describe the image for accessibility"
+                    value={form.image_alt}
+                  />
+                </Field>
+                <Field error={errors.category} label="Category">
+                  <Select onValueChange={(value) => set("category", value ?? "Nails")} value={form.category}>
+                    <SelectTrigger aria-invalid={Boolean(errors.category)} className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field error={errors.size} label="Display size">
+                  <Select onValueChange={(value) => set("size", value ?? "standard")} value={form.size}>
+                    <SelectTrigger aria-invalid={Boolean(errors.size)} className="h-10 capitalize">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SIZES.map((size) => (
+                        <SelectItem className="capitalize" key={size} value={size}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field error={errors.position} label="Position">
+                  <input
+                    aria-invalid={Boolean(errors.position)}
+                    className={fieldClass(errors.position)}
+                    inputMode="numeric"
+                    onChange={(event) => set("position", event.target.value)}
+                    placeholder="0"
+                    type="number"
+                    value={form.position}
+                  />
+                </Field>
+                <Field className="sm:col-span-2" error={errors.description} label="Description">
+                  <textarea
+                    aria-invalid={Boolean(errors.description)}
+                    className={`min-h-24 w-full resize-none border border-black/15 bg-white px-3 py-2 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20 ${errors.description ? errorInputClass : ""}`}
+                    onChange={(event) => set("description", event.target.value)}
+                    placeholder="Optional short description"
+                    value={form.description}
+                  />
+                </Field>
+                <div className="sm:col-span-2 flex flex-wrap gap-4">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-[#101217]">
+                    <input
+                      checked={form.featured}
+                      className="accent-[#c96c83]"
+                      onChange={(event) => set("featured", event.target.checked)}
+                      type="checkbox"
+                    />
+                    Featured
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-[#101217]">
+                    <input
+                      checked={form.active}
+                      className="accent-[#c96c83]"
+                      onChange={(event) => set("active", event.target.checked)}
+                      type="checkbox"
+                    />
+                    Active publicly
+                  </label>
+                </div>
+              </div>
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button size="sm" disabled={saving || !form.title || !form.image_url} onClick={submit} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+              {saving ? "Saving..." : editing === "create" ? "Add to gallery" : "Save changes"}
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
-          </div>
-        </DashboardPanel>
-      )}
+            <Button size="sm" variant="ghost" onClick={closeEditor}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {isLoading ? (
         <DashboardPanel>
@@ -316,37 +437,15 @@ export default function AdminGalleryPage() {
           description="Add your first photo above."
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" data-tour="admin-gallery-grid">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4" data-tour="admin-gallery-grid">
           {items.map((item) => (
-            <div key={item.id} className="group relative overflow-hidden border border-black/10 bg-white shadow-sm shadow-black/[0.03]">
-              <div className="aspect-square">
-                <span
-                  aria-label={item.image_alt ?? item.title}
-                  className="block size-full bg-cover bg-center"
-                  role="img"
-                  style={{ backgroundImage: `url(${item.image_url})` }}
-                />
-              </div>
-              {/* Overlay on hover */}
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                <p className="text-white text-xs font-semibold truncate">{item.title}</p>
-                <p className="text-white/70 text-xs">{item.category}</p>
-                <div className="flex gap-1.5 mt-2">
-                  <Button size="xs" variant="secondary" onClick={() => openEdit(item)}>Edit</Button>
-                  <Button size="xs" variant="destructive" disabled={deleteMutation.isPending}
-                    onClick={() => { if (confirm(`Delete "${item.title}"?`)) deleteMutation.mutate(item.id) }}>Delete</Button>
-                </div>
-              </div>
-              {/* Badges */}
-              <div className="absolute top-2 left-2 flex gap-1">
-                {item.featured && (
-                  <span className="px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "#c96c83", color: "#fff" }}>Featured</span>
-                )}
-                {!item.active && (
-                  <span className="bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">Hidden</span>
-                )}
-              </div>
-            </div>
+            <GalleryCard
+              deleting={deleteMutation.isPending}
+              item={item}
+              key={item.id}
+              onDelete={() => deleteMutation.mutate(item.id)}
+              onEdit={() => openEdit(item)}
+            />
           ))}
         </div>
       )}
@@ -354,9 +453,9 @@ export default function AdminGalleryPage() {
       {data?.pagination && data.pagination.total_pages > 1 && (
         <DashboardToolbar className="justify-end">
           <ToolbarSection className="ml-auto">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-          <span className="px-2 text-sm font-semibold text-[#5f6268]">{page} / {data.pagination.total_pages}</span>
-          <Button variant="outline" size="sm" disabled={!data.pagination.next_page} onClick={() => setPage((p) => p + 1)}>Next</Button>
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
+            <span className="px-2 text-sm font-semibold text-[#5f6268]">{page} / {data.pagination.total_pages}</span>
+            <Button variant="outline" size="sm" disabled={!data.pagination.next_page} onClick={() => setPage((p) => p + 1)}>Next</Button>
           </ToolbarSection>
         </DashboardToolbar>
       )}
@@ -364,4 +463,94 @@ export default function AdminGalleryPage() {
       <TutorialButton steps={adminGallerySteps} pageKey="admin-gallery" />
     </DashboardPage>
   )
+}
+
+function GalleryCard({ deleting, item, onDelete, onEdit }: {
+  deleting: boolean
+  item: GalleryItem
+  onDelete: () => void
+  onEdit: () => void
+}) {
+  return (
+    <div className="group relative overflow-hidden border border-black/10 bg-white shadow-sm shadow-black/[0.03]">
+      <div className="aspect-square">
+        <span
+          aria-label={item.image_alt ?? item.title}
+          className="block size-full bg-cover bg-center"
+          role="img"
+          style={{ backgroundImage: `url(${item.image_url})` }}
+        />
+      </div>
+      <div className="absolute inset-0 flex flex-col justify-end bg-black/60 p-3 opacity-0 transition-opacity group-hover:opacity-100">
+        <p className="truncate text-xs font-semibold text-white">{item.title}</p>
+        <p className="text-xs text-white/70">{item.category}</p>
+        <div className="mt-2 flex gap-1.5">
+          <Button size="xs" variant="secondary" onClick={onEdit}>Edit</Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="xs" variant="destructive" disabled={deleting}>
+                <Trash2 className="size-3.5" /> Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete gallery item?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete “{item.title}” from the gallery. It will no longer appear on the public gallery page.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete}>Delete item</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+      <div className="absolute left-2 top-2 flex gap-1">
+        {item.featured ? (
+          <span className="px-1.5 py-0.5 text-[10px] font-bold" style={{ background: "#c96c83", color: "#fff" }}>Featured</span>
+        ) : null}
+        {!item.active ? (
+          <span className="bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white">Hidden</span>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function Field({ children, className, error, label }: {
+  children: React.ReactNode
+  className?: string
+  error?: string
+  label: string
+}) {
+  return (
+    <label className={className}>
+      <span className={labelClass}>{label}</span>
+      {children}
+      {error ? <span className="mt-1 block text-xs font-semibold text-[#b75c68]">{error}</span> : null}
+    </label>
+  )
+}
+
+function fieldClass(error?: string) {
+  return `${inputClass} ${error ? errorInputClass : ""}`
+}
+
+function getFieldErrors(error: z.ZodError<GalleryFormState>): GalleryFormErrors {
+  const next: GalleryFormErrors = {}
+  for (const issue of error.issues) {
+    const key = issue.path.at(-1)
+    if (typeof key === "string" && !next[key as keyof GalleryFormErrors]) {
+      next[key as keyof GalleryFormErrors] = issue.message
+    }
+  }
+  next.base = "Check the highlighted fields and try again."
+  return next
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

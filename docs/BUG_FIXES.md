@@ -162,3 +162,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Replaced the inline editor with dedicated `/dashboard/admin/blog/new` and `/dashboard/admin/blog/:id/edit` pages, added a reusable validated blog post form with inline errors and BAYD toast feedback, added shadcn `AlertDialog` confirmations for publish, unpublish, and delete, and permitted `category` in the admin blog post controller.
 - **Verification:** Targeted ESLint passed for the blog list, new-post page, edit-post page, and shared blog form. Ruby syntax check passed for the admin blog posts controller. `git diff --check` passed.
 - **Follow-up:** The cover image workflow currently uses a URL field. If direct image uploads are required, the backend needs an explicit Active Storage attachment or upload endpoint for blog covers.
+
+---
+
+## 2026-08-19 — Gallery form was inline, lightly validated, and used browser delete confirmation
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and gallery workflow
+- **Reported behavior:** The Gallery admin page used a large inline add/edit form, submitted lightly validated form state, had misleading image upload/drop UI without backend upload handling, and used the browser’s native delete confirmation.
+- **Expected behavior:** Gallery add/edit should use the shared dialog pattern, show field-level validation and toast feedback, align category choices with backend validations, and confirm destructive deletes with the shared shadcn-style alert dialog.
+- **Root cause:** `client/app/dashboard/admin/gallery/page.tsx` owned all editor state inline, sent raw payloads directly to the API, included a frontend-only upload UI while the backend only accepts `image_url`, and called `confirm(...)` before deletion. The frontend category list also included `Waxing`, while `GalleryItem::CATEGORIES` allows `Team`, `Lashes`, `Nails`, `Pedicure`, and `Massage`.
+- **Fix:** Moved gallery add/edit into the shared `Dialog`, added a Zod validation schema, inline field errors, BAYD toast feedback for save/delete failures, image URL preview instead of unsupported file upload UI, category options aligned to the backend model, and a shadcn `AlertDialog` for delete confirmation.
+- **Verification:** Targeted ESLint passed for the gallery page. `git diff --check` passed.
+- **Follow-up:** Real image upload support remains intentionally out of scope until the backend has an explicit upload/attachment implementation for gallery images.
