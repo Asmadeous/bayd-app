@@ -48,7 +48,7 @@ module Api
         private
 
         def permitted_params
-          params.permit(:title, :body, :excerpt, :cover_image_url, :status, :published_at, :meta_title, :meta_description)
+          params.permit(:title, :body, :excerpt, :cover_image_url, :category, :status, :published_at)
         end
 
         def generate_slug(title)

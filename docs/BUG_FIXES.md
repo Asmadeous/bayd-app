@@ -149,3 +149,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Moved gift card issuing into the shared `Dialog`, added a Zod validation schema for amount, expiration date, and recipient email, converted placeholders into labels, added inline errors and BAYD toast feedback, normalized the create payload, and replaced the delete browser confirmation with the shared `AlertDialog`.
 - **Verification:** Targeted ESLint passed for the gift cards page. `git diff --check` passed.
 - **Follow-up:** The top-up mini form still only guards invalid amounts by disabling behavior; it can receive the same field-level validation treatment if staff payment flows need stricter visible feedback.
+
+---
+
+## 2026-08-19 — Blog post editor was inline and publish actions lacked confirmation
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and blog post admin API
+- **Reported behavior:** Blog post creation and editing happened inside a large inline panel on the list page. Publish and unpublish changed public visibility immediately, and delete still used native browser confirmation.
+- **Expected behavior:** Blog create/edit should use focused pages because blog posts are long-form content. Publish, unpublish, and delete should require branded shadcn-style confirmation alerts before changing public visibility or removing content.
+- **Root cause:** `client/app/dashboard/admin/blog/page.tsx` owned both list and editor state, submitted lightly validated form state, and called mutations directly from row buttons. The delete flow still used `confirm(...)`. The admin blog API also did not permit the existing `category` column, so category could not be saved from the admin editor.
+- **Fix:** Replaced the inline editor with dedicated `/dashboard/admin/blog/new` and `/dashboard/admin/blog/:id/edit` pages, added a reusable validated blog post form with inline errors and BAYD toast feedback, added shadcn `AlertDialog` confirmations for publish, unpublish, and delete, and permitted `category` in the admin blog post controller.
+- **Verification:** Targeted ESLint passed for the blog list, new-post page, edit-post page, and shared blog form. Ruby syntax check passed for the admin blog posts controller. `git diff --check` passed.
+- **Follow-up:** The cover image workflow currently uses a URL field. If direct image uploads are required, the backend needs an explicit Active Storage attachment or upload endpoint for blog covers.
