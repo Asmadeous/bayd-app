@@ -136,3 +136,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Moved manual invoice creation into the shared `Dialog`, added a Zod validation schema, converted placeholders into labeled fields, added inline errors and BAYD toast feedback, handled backend save errors, auto-calculated total from subtotal plus tax, improved amount calculation for line items, and replaced invoice delete with the shared `AlertDialog`.
 - **Verification:** Targeted ESLint passed for the invoices page.
 - **Follow-up:** Customer selection still uses a numeric user ID. A searchable customer picker would be a better long-term admin workflow.
+
+---
+
+## 2026-08-19 — Gift card form lacked validation and used browser delete confirmation
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and gift card workflow
+- **Reported behavior:** The admin Gift Cards page used an inline issue form with placeholder-only fields and no visible client-side validation. Deleting a gift card used the browser’s native confirmation alert.
+- **Expected behavior:** Gift card issuing should use a standard dialog with clear labels, field-level validation, visible backend errors, and toast feedback. Gift card deletion should use the shared shadcn-style destructive confirmation.
+- **Root cause:** `client/app/dashboard/admin/gift-cards/page.tsx` submitted raw form state directly to the API and rendered the form inline. The delete button called `confirm(...)` directly instead of the shared `AlertDialog` primitive.
+- **Fix:** Moved gift card issuing into the shared `Dialog`, added a Zod validation schema for amount, expiration date, and recipient email, converted placeholders into labels, added inline errors and BAYD toast feedback, normalized the create payload, and replaced the delete browser confirmation with the shared `AlertDialog`.
+- **Verification:** Targeted ESLint passed for the gift cards page. `git diff --check` passed.
+- **Follow-up:** The top-up mini form still only guards invalid amounts by disabling behavior; it can receive the same field-level validation treatment if staff payment flows need stricter visible feedback.
