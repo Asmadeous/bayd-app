@@ -175,3 +175,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Moved gallery add/edit into the shared `Dialog`, added a Zod validation schema, inline field errors, BAYD toast feedback for save/delete failures, image URL preview instead of unsupported file upload UI, category options aligned to the backend model, and a shadcn `AlertDialog` for delete confirmation.
 - **Verification:** Targeted ESLint passed for the gallery page. `git diff --check` passed.
 - **Follow-up:** Real image upload support remains intentionally out of scope until the backend has an explicit upload/attachment implementation for gallery images.
+
+---
+
+## 2026-08-19 — Newsletter subscriber removal used browser confirmation
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and newsletter workflow
+- **Reported behavior:** Removing a newsletter subscriber used the browser’s native confirmation dialog and did not show branded success or failure feedback.
+- **Expected behavior:** Subscriber removal should use the shared shadcn-style destructive confirmation and show clear toast feedback after success or API failure.
+- **Root cause:** `client/app/dashboard/admin/newsletter/page.tsx` called `confirm(...)` directly from the Remove button and only invalidated the subscriber query after deletion.
+- **Fix:** Replaced the browser confirmation with the shared `AlertDialog`, included the subscriber email in the confirmation copy, and added BAYD toast feedback for successful and failed removals.
+- **Verification:** Targeted ESLint passed for the newsletter page. `git diff --check` passed.
+- **Follow-up:** None.

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Mail } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import {
   DataTable,
   DataTableBody,
@@ -20,6 +21,17 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { adminNewsletterSteps } from "@/lib/tours/admin-newsletter-tour"
@@ -29,6 +41,7 @@ interface PagedResponse<T> { data: T[]; pagination: { current_page: number; tota
 
 export default function AdminNewsletterPage() {
   const qc = useQueryClient()
+  const { toast } = useToast()
   const [page, setPage] = useState(1)
 
   const { data, isLoading } = useQuery<PagedResponse<Subscriber>>({
@@ -41,7 +54,17 @@ export default function AdminNewsletterPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/admin/newsletter_subscribers/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-newsletter"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-newsletter"] })
+      toast({ title: "Subscriber removed", description: "The email has been unsubscribed from the newsletter." })
+    },
+    onError: (error) => {
+      toast({
+        title: "Subscriber not removed",
+        description: getApiErrorMessage(error, "Could not remove this newsletter subscriber."),
+        variant: "error",
+      })
+    },
   })
 
   const subscribers = data?.data ?? []
@@ -96,16 +119,31 @@ export default function AdminNewsletterPage() {
                 </DataTableCell>
                 <DataTableCell>
                   <div className="flex justify-end">
-                    <Button
-                      disabled={deleteMutation.isPending}
-                      onClick={() => {
-                        if (confirm("Unsubscribe this email?")) deleteMutation.mutate(subscriber.id)
-                      }}
-                      size="xs"
-                      variant="destructive"
-                    >
-                      Remove
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          disabled={deleteMutation.isPending}
+                          size="xs"
+                          variant="destructive"
+                        >
+                          Remove
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove newsletter subscriber?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will unsubscribe {subscriber.email} from the newsletter. They will no longer receive newsletter emails.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteMutation.mutate(subscriber.id)}>
+                            Remove subscriber
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </DataTableCell>
               </DataTableRow>
@@ -144,4 +182,9 @@ export default function AdminNewsletterPage() {
       <TutorialButton steps={adminNewsletterSteps} pageKey="admin-newsletter" />
     </DashboardPage>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }
