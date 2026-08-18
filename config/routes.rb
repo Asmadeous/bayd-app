@@ -256,7 +256,9 @@ Rails.application.routes.draw do
         resources :reviews,       only: %i[index destroy] do
           member { post :approve; post :feature }
         end
-        resources :service_areas, only: %i[index create update destroy]
+        resources :service_areas, only: %i[index create update destroy] do
+          collection { get :coverage }
+        end
 
         # Blog (full CRUD)
         resources :blog_posts, only: %i[index show create update destroy] do

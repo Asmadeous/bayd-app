@@ -86,12 +86,17 @@ Rails.application.configure do
     host: ENV.fetch("APP_HOST", "baydspa.ca"),
     protocol: "https"
   }
+  smtp_port = ENV.fetch("SMTP_PORT", 587).to_i
   config.action_mailer.smtp_settings = {
     address:        ENV["SMTP_ADDRESS"],
-    port:           ENV.fetch("SMTP_PORT", 587).to_i,
+    port:           smtp_port,
     user_name:      ENV["SMTP_USERNAME"],
     password:       ENV["SMTP_PASSWORD"],
     authentication: :plain,
-    enable_starttls_auto: true
+    # Port 465 = implicit TLS (connection is encrypted from the start, no
+    # STARTTLS handshake). Port 587/25 = STARTTLS (plain connection upgraded
+    # to TLS). Using the wrong mode for the port fails the handshake.
+    tls: smtp_port == 465,
+    enable_starttls_auto: smtp_port != 465
   }
 end
