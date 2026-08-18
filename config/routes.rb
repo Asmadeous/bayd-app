@@ -7,6 +7,8 @@ Rails.application.routes.draw do
       post  "auth/register",   to: "auth#register"
       post  "auth/login",      to: "auth#login"
       post  "auth/staff_login", to: "auth#staff_login"
+      post  "auth/magic_link",        to: "auth#request_magic_link"
+      get   "auth/magic_link/verify", to: "auth#verify_magic_link"
       get   "auth/me",       to: "auth#me"
       patch "auth/me",       to: "auth#update_me"
       get   "auth/google",          to: "google_auth#start"

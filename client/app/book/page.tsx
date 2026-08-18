@@ -215,7 +215,11 @@ export default function PublicBookPage() {
     mutationFn: (pay: { timing: "pay_upfront" | "pay_after"; groupCharge?: "deposit" | "full" }) =>
       api
         .post<BookingRequestResponse>("/booking_requests", {
-          customer: { first_name: name.trim() || undefined, email: email.trim(), phone: phone.trim() },
+          customer: {
+            first_name: name.trim() || undefined,
+            email: email.trim() || undefined,
+            phone: phone.trim() || undefined,
+          },
           address: {
             line1: line1.trim(),
             line2: unit.trim() || undefined,
@@ -276,11 +280,15 @@ export default function PublicBookPage() {
 
   const isTimeValid = TIME_PATTERN.test(time)
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+  // At least one of email/phone is required, not both — a customer without an
+  // inbox can still book by phone (staff/notifications reach them by call/SMS).
+  // If an email IS given it must be well-formed; a bare phone number is fine.
+  const contactValid = email.trim() ? emailValid : !!phone.trim()
   const postalFormatOk = CA_POSTAL.test(postal.trim())
   const stepValid = [
-    // Details: email + all address fields + a Canadian postal format. The
-    // realness/Canada check runs against the backend when they tap Continue.
-    emailValid && !!line1.trim() && !!city.trim() && postalFormatOk,
+    // Details: a contact method + all address fields + a Canadian postal
+    // format. The realness/Canada check runs against the backend on Continue.
+    contactValid && !!line1.trim() && !!city.trim() && postalFormatOk,
     !!serviceId, // Service
     !!staff, // Staff (auto or picked; "any" is valid)
     // Date & time. In slot mode the picked time must be a real fetched slot (for
@@ -401,8 +409,13 @@ export default function PublicBookPage() {
           <CheckCircle2 className="mx-auto mb-3 size-9 text-emerald-600" />
           <h1 className="text-xl font-black tracking-tight">You&apos;re booked!</h1>
           <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#5f6268]">
-            {bookedMsg || "Your appointment is confirmed."} We&apos;ll reach you at{" "}
-            <span className="font-bold text-[#101217]">{email}</span>.
+            {bookedMsg || "Your appointment is confirmed."}{" "}
+            {email.trim() || phone.trim() ? (
+              <>
+                We&apos;ll reach you at{" "}
+                <span className="font-bold text-[#101217]">{email.trim() || phone.trim()}</span>.
+              </>
+            ) : null}
           </p>
           <Link href="/" className="mt-5 inline-block bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
             Back to home
@@ -459,7 +472,7 @@ export default function PublicBookPage() {
           </span>
           <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Beauty, at your door</h1>
           <p className="mt-1 text-sm font-medium text-[#5f6268]">
-            No account needed — just your email. You can book without paying now and settle up after your service.
+            No account needed — just your email or phone number. You can book without paying now and settle up after your service.
           </p>
         </div>
 
@@ -779,9 +792,24 @@ export default function PublicBookPage() {
           <div className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder="First name" />
-              <input className={field} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" inputMode="tel" />
+              <input
+                className={field}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder={email.trim() ? "Phone" : "Phone *"}
+                inputMode="tel"
+              />
             </div>
-            <input className={field} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email *" type="email" />
+            <input
+              className={field}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={phone.trim() ? "Email" : "Email *"}
+              type="email"
+            />
+            <p className="-mt-2 text-xs font-medium text-[#8a8d93]">
+              Enter an email or a phone number — at least one is required so we can reach you.
+            </p>
 
             <label className={cn(lbl, "mt-1")}><MapPin className="mr-1 inline size-3.5" /> Service address</label>
             <input className={field} value={line1} onChange={(e) => setLine1(e.target.value)} placeholder="Street address *" />
@@ -900,10 +928,10 @@ export default function PublicBookPage() {
             <div className="mt-5 border border-[#c96c83]/30 bg-[#c96c83]/5 p-4">
               <p className="text-sm font-bold text-[#101217]">Prefer to pay later? You don&apos;t have to pay now.</p>
               <p className="mt-1 text-sm font-medium text-[#5f6268]">
-                Tap <span className="font-bold text-[#101217]">&ldquo;Proceed to booking&rdquo;</span> to confirm with
-                just your email — no card required. Your technician arrives, and you settle up after the service
+                Tap <span className="font-bold text-[#101217]">&ldquo;Proceed to booking&rdquo;</span> to confirm —
+                no card required. Your technician arrives, and you settle up after the service
                 (card, or your card on file). We send your confirmation to{" "}
-                <span className="font-bold text-[#101217]">{email || "your email"}</span>.
+                <span className="font-bold text-[#101217]">{email.trim() || phone.trim() || "your contact info"}</span>.
               </p>
               <p className="mt-2 text-xs font-medium text-[#8a8d93]">
                 Or tap &ldquo;Pay now&rdquo; to pay securely online in advance — your choice.

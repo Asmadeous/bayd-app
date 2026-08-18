@@ -1,0 +1,13 @@
+<h1 style="font-size:22px; margin:16px 0 8px;">Sign in to your account</h1>
+
+<p style="font-size:15px; line-height:1.6; color:#4f535a;">
+  Hi<%= @user.first_name.present? ? " #{@user.first_name}" : "" %>, click the button below to
+  sign in. This link works once and expires in <%= @expires_in_minutes %> minutes.
+</p>
+
+<a href="<%= @sign_in_url %>" class="btn">Sign in</a>
+
+<p class="muted">
+  If you didn't request this, you can safely ignore this email — no one can access your
+  account without clicking this link.
+</p>

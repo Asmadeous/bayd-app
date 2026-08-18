@@ -36,13 +36,27 @@ class ApplicationController < ActionController::API
   end
 
   # The one way a not-logged-in customer is resolved from public input:
-  # find-or-create by email (passwordless). Used by public booking + checkout.
-  # `source` is a params hash (e.g. params.require(:customer)).
+  # find-or-create by email OR phone (passwordless, at least one required).
+  # Used by public booking + checkout. `source` is a params hash (e.g.
+  # params.require(:customer)).
+  #
+  # Email is the account's identity key when present (unique, used for
+  # magic-link login) — an existing account is always matched by email first.
+  # A phone-only booking looks up the most recent account with that phone
+  # (phone isn't unique — numbers get shared/reassigned) and falls back to
+  # creating a new phone-only account. A customer who later adds an email to a
+  # phone-only account gains magic-link login; until then they have no way to
+  # sign back in (staff can look their bookings up by phone).
   def find_or_create_customer(source)
     email = source[:email].to_s.downcase.strip
-    raise ActionController::ParameterMissing, :email if email.blank?
+    phone = source[:phone].to_s.strip
+    raise ActionController::ParameterMissing, :email_or_phone if email.blank? && phone.blank?
 
-    user = User.find_or_initialize_by(email: email)
+    user = if email.present?
+      User.find_or_initialize_by(email: email)
+    else
+      User.where(phone: phone, role: :customer).order(created_at: :desc).first || User.new
+    end
     user.role ||= :customer
     contact = source.permit(
       :first_name, :last_name, :phone, :marketing_opt_in,

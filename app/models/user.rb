@@ -20,13 +20,20 @@ class User < ApplicationRecord
   has_many :notifications, dependent: :destroy
   has_many :invoices, dependent: :destroy
   has_many :subscriptions, dependent: :destroy
+  has_many :magic_link_tokens, dependent: :destroy
 
   # Referrals — a user can be referred by one other user and refer many.
   belongs_to :referred_by, class_name: "User", optional: true
   has_many   :referrals, class_name: "User", foreign_key: :referred_by_id, dependent: :nullify
 
+  # Email is required for staff (they log in with email + password via
+  # staff_login and need magic-link/notification delivery), but a customer can
+  # exist on phone alone — see ApplicationController#find_or_create_customer.
   validates :email, presence: true, uniqueness: { case_sensitive: false },
-                    format: { with: URI::MailTo::EMAIL_REGEXP }
+                    format: { with: URI::MailTo::EMAIL_REGEXP }, unless: -> { customer? }
+  validates :email, uniqueness: { case_sensitive: false },
+                    format: { with: URI::MailTo::EMAIL_REGEXP }, allow_nil: true, if: -> { customer? }
+  validate :email_or_phone_present, if: :customer?
   validates :role, presence: true
   # Password required on create for non-SSO users; optional on update
   # Passwordless by design: customers are identified by email (+ phone), created
@@ -43,6 +50,12 @@ class User < ApplicationRecord
   end
 
   private
+
+  def email_or_phone_present
+    return if email.present? || phone.present?
+
+    errors.add(:base, "Email or phone is required")
+  end
 
   def assign_referral_code
     return if referral_code.present?
