@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_18_092642) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_18_095050) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -467,6 +467,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_092642) do
   create_table "magic_link_tokens", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "expires_at", null: false
+    t.string "purpose", default: "sign_in", null: false
     t.string "token_digest", null: false
     t.datetime "updated_at", null: false
     t.datetime "used_at"

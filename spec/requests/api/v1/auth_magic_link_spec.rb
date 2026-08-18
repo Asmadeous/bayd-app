@@ -24,10 +24,10 @@ RSpec.describe "Magic-link sign-in", type: :request do
     end
 
     it "403s for a staff/admin email (never gets a magic link) so the UI can prompt for a password" do
-      create(:user, email: "staff@example.com", role: :employee, password: "supersecret1")
+      create(:user, email: "staff@baydspa.ca", role: :employee, password: "supersecret1")
 
       expect {
-        post "/api/v1/auth/magic_link", params: { email: "staff@example.com" }, as: :json
+        post "/api/v1/auth/magic_link", params: { email: "staff@baydspa.ca" }, as: :json
       }.not_to have_enqueued_mail(MagicLinkMailer, :sign_in)
 
       expect(response).to have_http_status(:forbidden)

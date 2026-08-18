@@ -32,6 +32,20 @@ RSpec.describe MagicLinkToken do
 
       expect(described_class.find_usable(raw)).to be_nil
     end
+
+    it "a sign_in token can't be used to satisfy a password_reset lookup" do
+      raw = described_class.issue!(user, purpose: "sign_in")
+
+      expect(described_class.find_usable(raw, purpose: "password_reset")).to be_nil
+      expect(described_class.find_usable(raw, purpose: "sign_in")).to be_present
+    end
+
+    it "a password_reset token can't be used to satisfy a sign_in lookup" do
+      raw = described_class.issue!(user, purpose: "password_reset")
+
+      expect(described_class.find_usable(raw, purpose: "sign_in")).to be_nil
+      expect(described_class.find_usable(raw, purpose: "password_reset")).to be_present
+    end
   end
 
   describe "#consume!" do

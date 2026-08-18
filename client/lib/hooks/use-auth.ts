@@ -69,6 +69,18 @@ export function useAuth() {
       api.post<{ message: string }>("/auth/magic_link", { email }).then((r) => r.data),
   })
 
+  // Staff/admin password reset (customers are passwordless — nothing to
+  // reset). Same shape as the magic link: always responds success.
+  const requestPasswordResetMutation = useMutation({
+    mutationFn: (email: string) =>
+      api.post<{ message: string }>("/auth/password_reset", { email }).then((r) => r.data),
+  })
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (data: { token: string; password: string }) =>
+      api.post<{ message: string }>("/auth/password_reset/confirm", data).then((r) => r.data),
+  })
+
   const updateMeMutation = useMutation({
     mutationFn: (data: {
       first_name?: string; last_name?: string; phone?: string; marketing_opt_in?: boolean; avatar_url?: string
@@ -95,6 +107,8 @@ export function useAuth() {
     staffLogin: staffLoginMutation,
     loginWithGoogle,
     requestMagicLink: requestMagicLinkMutation,
+    requestPasswordReset: requestPasswordResetMutation,
+    resetPassword: resetPasswordMutation,
     updateMe: updateMeMutation,
   }
 }

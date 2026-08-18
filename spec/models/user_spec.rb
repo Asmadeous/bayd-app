@@ -25,6 +25,34 @@ RSpec.describe User do
     end
   end
 
+  describe "employee email domain restriction" do
+    it "accepts an employee with a @baydspa.ca email" do
+      user = build(:user, email: "newtech@baydspa.ca", role: :employee)
+      expect(user).to be_valid
+    end
+
+    it "rejects an employee with any other domain" do
+      user = build(:user, email: "newtech@gmail.com", role: :employee)
+      expect(user).not_to be_valid
+      expect(user.errors[:email]).to include("must be a @baydspa.ca address for staff accounts")
+    end
+
+    it "does NOT restrict admin to the company domain" do
+      user = build(:user, email: "owner@gmail.com", role: :admin)
+      expect(user).to be_valid
+    end
+
+    it "does NOT restrict customers to the company domain" do
+      user = build(:user, email: "shopper@gmail.com", role: :customer)
+      expect(user).to be_valid
+    end
+
+    it "is case-insensitive on the domain" do
+      user = build(:user, email: "newtech@BAYDSPA.CA", role: :employee)
+      expect(user).to be_valid
+    end
+  end
+
   describe "email uniqueness" do
     it "allows multiple customers with no email (nulls aren't unique-constrained)" do
       create(:user, email: nil, phone: "+16471111111", role: :customer)

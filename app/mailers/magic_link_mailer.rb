@@ -9,4 +9,15 @@ class MagicLinkMailer < ApplicationMailer
 
     mail(to: user.email, subject: "Your Beauty @ Your Door sign-in link")
   end
+
+  def password_reset(user, raw_token)
+    @user = user
+    # Points at the FRONTEND reset-password page (unlike sign_in) — the
+    # customer needs to type a new password there, which then POSTs to
+    # AuthController#reset_password with the token.
+    @reset_url = "#{ENV.fetch('APP_URL', 'http://localhost:3001')}/reset-password?token=#{raw_token}"
+    @expires_in_minutes = (MagicLinkToken::TTL / 60).to_i
+
+    mail(to: user.email, subject: "Reset your Beauty @ Your Door password")
+  end
 end

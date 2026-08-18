@@ -3,6 +3,7 @@ module Api
     class AuthController < ApplicationController
       skip_before_action :authenticate_user!, only: %i[
         register login staff_login request_magic_link verify_magic_link
+        request_password_reset reset_password
       ]
 
       # Customers: passwordless, email-keyed. register == login (find-or-create).
@@ -46,6 +47,34 @@ module Api
 
         token.consume!
         redirect_to "#{frontend_url}/auth/callback?token=#{generate_token(token.user)}", allow_other_host: true
+      end
+
+      # Staff/admin password reset (customers are passwordless — nothing to
+      # reset). Same enumeration-safe shape as request_magic_link: always
+      # responds success, and a customer email is silently ignored rather than
+      # 403ing, so this can't be used to probe which emails are staff either.
+      def request_password_reset
+        email = params[:email].to_s.downcase.strip
+        user = User.find_by(email: email) if email.present?
+        if user && !user.customer?
+          raw_token = MagicLinkToken.issue!(user, purpose: "password_reset")
+          MagicLinkMailer.password_reset(user, raw_token).deliver_later
+        end
+        render json: { message: "If that email has an account, a password reset link is on its way." }
+      end
+
+      # POST { token:, password: } — sets the new password directly (no
+      # redirect; the frontend reset-password page calls this with the token
+      # from the query string, matching the existing "forgot" form's shape).
+      def reset_password
+        token = MagicLinkToken.find_usable(params[:token], purpose: "password_reset")
+        return render(json: { error: "That reset link is invalid or has expired." }, status: :unprocessable_entity) unless token
+
+        user = token.user
+        user.password = params[:password]
+        user.save!
+        token.consume!
+        render json: { message: "Password updated. You can sign in now." }
       end
 
       # Staff & admin: dedicated endpoint, email + password (never email-only).

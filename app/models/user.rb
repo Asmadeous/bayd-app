@@ -3,6 +3,12 @@ class User < ApplicationRecord
 
   enum :role, { customer: "customer", employee: "employee", admin: "admin" }
 
+  # Staff accounts are provisioned by an admin, never self-registered — locking
+  # employee logins to the company domain closes off a phishing/impersonation
+  # vector (a stray @gmail.com "employee" account) without restricting admin,
+  # who may legitimately need a different real-world email.
+  EMPLOYEE_EMAIL_DOMAIN = "@baydspa.ca".freeze
+
   has_one  :employee_profile, dependent: :destroy
   has_many :addresses, dependent: :destroy
   has_many :booking_requests, dependent: :destroy
@@ -34,6 +40,7 @@ class User < ApplicationRecord
   validates :email, uniqueness: { case_sensitive: false },
                     format: { with: URI::MailTo::EMAIL_REGEXP }, allow_nil: true, if: -> { customer? }
   validate :email_or_phone_present, if: :customer?
+  validate :employee_email_on_company_domain, if: :employee?
   validates :role, presence: true
   # Password required on create for non-SSO users; optional on update
   # Passwordless by design: customers are identified by email (+ phone), created
@@ -55,6 +62,12 @@ class User < ApplicationRecord
     return if email.present? || phone.present?
 
     errors.add(:base, "Email or phone is required")
+  end
+
+  def employee_email_on_company_domain
+    return if email.to_s.downcase.end_with?(EMPLOYEE_EMAIL_DOMAIN)
+
+    errors.add(:email, "must be a #{EMPLOYEE_EMAIL_DOMAIN} address for staff accounts")
   end
 
   def assign_referral_code

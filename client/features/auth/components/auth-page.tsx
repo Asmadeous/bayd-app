@@ -20,7 +20,7 @@ type AuthPageProps = {
 export function AuthPage({ content }: AuthPageProps) {
   const searchParams = useSearchParams()
   const referralCode = searchParams.get("ref") ?? undefined
-  const { register, staffLogin, requestMagicLink } = useAuth()
+  const { register, staffLogin, requestMagicLink, requestPasswordReset } = useAuth()
   const [values, setValues] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -76,8 +76,8 @@ export function AuthPage({ content }: AuthPageProps) {
         })
         setSuccess("Your account has been created. Opening your dashboard now.")
       } else if (content.mode === "forgot") {
-        // Placeholder — no forgot-password endpoint yet
-        setSuccess("Password reset by email is not available yet. Please contact support and we will help restore access to your account.")
+        await requestPasswordReset.mutateAsync(values.email ?? "")
+        setSuccess(`Check your email — if ${values.email} has a staff account, a password reset link is on its way.`)
         setLoading(false)
         return
       }
