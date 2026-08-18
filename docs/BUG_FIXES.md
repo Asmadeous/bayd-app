@@ -110,3 +110,29 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Added a reusable shadcn-style `Dialog` primitive backed by `@radix-ui/react-dialog` and moved the validated service create/edit form into a centered, scrollable modal with a header, body, footer, close button, and existing validation/error behavior.
 - **Verification:** Targeted ESLint passed for the services page and the new dialog component.
 - **Follow-up:** Other large inline admin editors can migrate to the shared dialog when their workflows are touched.
+
+---
+
+## 2026-08-18 — Product catalog editor lacked validation, modal editing, and branded delete confirmation
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and product catalog backend
+- **Reported behavior:** The Products admin page still used the older inline editor, browser confirmation for deletes, and no visible validation or backend error handling.
+- **Expected behavior:** Product create/edit should match the improved Services workflow: modal editor, client-side validation, inline errors, toast feedback, and a shadcn-style destructive confirmation.
+- **Root cause:** `client/app/dashboard/admin/products/page.tsx` submitted raw form state directly to the API, rendered the form in an inline `DashboardPanel`, and used `confirm(...)` before deletion. The admin product API also accepted `stock_qty` even though the model/schema use `stock_quantity`.
+- **Fix:** Added a Zod product form schema, inline field errors, mutation error handling, BAYD toast feedback, modal create/edit using the shared `Dialog`, delete confirmation using the shared `AlertDialog`, and normalized the admin product stock field to `stock_quantity` while preserving backend compatibility for the old `stock_qty` key.
+- **Verification:** Targeted ESLint passed for the products page. Ruby syntax check passed for `app/controllers/api/v1/admin/products_controller.rb`.
+- **Follow-up:** Product category remains optional because the backend model allows it; make it required only if the product workflow needs that rule.
+
+---
+
+## 2026-08-18 — Manual invoice form was inline and lightly validated
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and invoice workflow
+- **Reported behavior:** The Manual Invoice form opened inline, relied on placeholders instead of standard labels, and only disabled submit for a missing customer ID or total. API failures were not surfaced clearly.
+- **Expected behavior:** Manual invoice creation should use a standard dialog, labeled fields, client-side validation, inline errors, toast feedback, and visible backend error handling.
+- **Root cause:** `client/app/dashboard/admin/invoices/page.tsx` rendered `ManualInvoiceForm` as an inline `DashboardPanel` and submitted raw form values with minimal checks. Invoice delete also used `confirm(...)`.
+- **Fix:** Moved manual invoice creation into the shared `Dialog`, added a Zod validation schema, converted placeholders into labeled fields, added inline errors and BAYD toast feedback, handled backend save errors, auto-calculated total from subtotal plus tax, improved amount calculation for line items, and replaced invoice delete with the shared `AlertDialog`.
+- **Verification:** Targeted ESLint passed for the invoices page.
+- **Follow-up:** Customer selection still uses a numeric user ID. A searchable customer picker would be a better long-term admin workflow.

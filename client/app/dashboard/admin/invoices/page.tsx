@@ -2,6 +2,9 @@
 
 import { useState } from "react"
 import { Download, FileText, Mail, Plus, Trash2 } from "lucide-react"
+import { z } from "zod"
+
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -14,7 +17,27 @@ import {
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Select,
   SelectContent,
@@ -34,6 +57,56 @@ import { downloadInvoice, type Invoice } from "@/lib/hooks/use-invoices"
 const cad = (v: string | number) => `$${Number(v).toFixed(2)}`
 const STATUSES = ["issued", "paid", "void", "refunded"]
 const KINDS = ["booking", "order", "gift_card", "manual"]
+const PAYMENT_METHODS = ["card", "cash", "etransfer", "manual"]
+
+const BLANK_MANUAL_INVOICE = {
+  user_id: "",
+  description: "",
+  subtotal: "",
+  tax: "",
+  total: "",
+  payment_method: "card",
+  notes: "",
+}
+
+type ManualInvoiceFormState = typeof BLANK_MANUAL_INVOICE
+type ManualInvoiceFormErrors = Partial<Record<keyof ManualInvoiceFormState | "base", string>>
+
+const optionalMoney = (label: string) =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .refine((value) => !value || Number.isFinite(Number(value)), `${label} must be a number.`)
+    .refine((value) => !value || Number(value) >= 0, `${label} cannot be negative.`)
+
+const manualInvoiceSchema = z.object({
+  user_id: z
+    .string()
+    .trim()
+    .min(1, "Customer user ID is required.")
+    .refine((value) => Number.isInteger(Number(value)) && Number(value) > 0, "Enter a valid customer user ID."),
+  description: z.string().trim().min(1, "Description is required."),
+  subtotal: optionalMoney("Subtotal"),
+  tax: optionalMoney("Tax"),
+  total: z
+    .string()
+    .trim()
+    .min(1, "Total is required.")
+    .refine((value) => Number.isFinite(Number(value)), "Total must be a number.")
+    .refine((value) => Number(value) > 0, "Total must be greater than 0."),
+  payment_method: z.string().trim().min(1, "Payment method is required."),
+  notes: z.string(),
+}).refine((value) => !value.tax || Number(value.tax) <= Number(value.total), {
+  message: "Tax cannot be greater than the total.",
+  path: ["tax"],
+})
+
+const inputClass =
+  "h-10 w-full border border-black/15 bg-white px-3 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const errorInputClass =
+  "border-[#b75c68] focus:border-[#b75c68] focus:ring-[#b75c68]/20"
+const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 export default function AdminInvoicesPage() {
   const [status, setStatus] = useState("")
@@ -52,7 +125,7 @@ export default function AdminInvoicesPage() {
           title="Invoices"
           subtitle="All transactions across bookings, products, and gift cards."
           actions={
-            <Button size="sm" onClick={() => setCreating((c) => !c)} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+            <Button size="sm" onClick={() => setCreating(true)} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
               <Plus className="size-4" /> Manual invoice
             </Button>
           }
@@ -64,15 +137,24 @@ export default function AdminInvoicesPage() {
         <Filter label="Type" value={kind} set={setKind} options={KINDS} />
       </div>
 
-      {creating && (
-        <div data-tour="admin-invoices-form">
-        <ManualInvoiceForm
-          saving={save.isPending}
-          onCancel={() => setCreating(false)}
-          onSave={async (d) => { await save.mutateAsync(d); setCreating(false) }}
-        />
-        </div>
-      )}
+      <Dialog open={creating} onOpenChange={setCreating}>
+        <DialogContent data-tour="admin-invoices-form" className="max-w-3xl">
+          <DialogHeader className="pr-14">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+              Manual invoice
+            </p>
+            <DialogTitle>Create manual invoice</DialogTitle>
+            <DialogDescription>
+              Create an invoice for an existing customer and email the generated PDF.
+            </DialogDescription>
+          </DialogHeader>
+          <ManualInvoiceForm
+            saving={save.isPending}
+            onCancel={() => setCreating(false)}
+            onSave={async (d) => { await save.mutateAsync(d); setCreating(false) }}
+          />
+        </DialogContent>
+      </Dialog>
 
       {isLoading ? (
         <DashboardPanel>
@@ -89,7 +171,8 @@ export default function AdminInvoicesPage() {
           {invoices.map((inv) => (
             <Row key={inv.id} invoice={inv}
               onStatus={(s) => save.mutate({ id: inv.id, status: s })}
-              onDelete={() => { if (confirm("Delete this invoice?")) del.mutate(inv.id) }}
+              deleting={del.isPending}
+              onDelete={() => del.mutate(inv.id)}
               onResend={() => resend.mutate(inv.id)}
             />
           ))}
@@ -101,8 +184,9 @@ export default function AdminInvoicesPage() {
   )
 }
 
-function Row({ invoice, onStatus, onDelete, onResend }: {
+function Row({ deleting, invoice, onStatus, onDelete, onResend }: {
   invoice: Invoice
+  deleting: boolean
   onStatus: (s: string) => void
   onDelete: () => void
   onResend: () => void
@@ -139,7 +223,26 @@ function Row({ invoice, onStatus, onDelete, onResend }: {
           </Button>
         )}
         <Button size="xs" variant="outline" onClick={onResend} title="Re-email to customer"><Mail className="size-3.5" /></Button>
-        <Button size="xs" variant="outline" onClick={onDelete}><Trash2 className="size-3.5 text-[#d4754a]" /></Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button disabled={deleting} size="xs" variant="outline">
+              <Trash2 className="size-3.5 text-[#d4754a]" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete invoice?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove invoice {invoice.invoice_number}. The customer will no longer see this
+                invoice in their transactions.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onDelete}>Delete invoice</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardPanel>
   )
@@ -147,45 +250,195 @@ function Row({ invoice, onStatus, onDelete, onResend }: {
 
 function ManualInvoiceForm({ saving, onSave, onCancel }: {
   saving: boolean
-  onSave: (data: Record<string, unknown>) => void
+  onSave: (data: Record<string, unknown>) => Promise<void>
   onCancel: () => void
 }) {
-  const [f, setF] = useState({ user_id: "", description: "", subtotal: "", tax: "", total: "", payment_method: "card", notes: "" })
-  const field = "h-10 border border-black/15 rounded-lg px-3 text-sm focus:outline-none focus:border-[#c96c83]"
-  const set = (k: string, v: string) => setF((s) => ({ ...s, [k]: v }))
+  const { toast } = useToast()
+  const [f, setF] = useState(BLANK_MANUAL_INVOICE)
+  const [errors, setErrors] = useState<ManualInvoiceFormErrors>({})
 
-  function submit() {
-    onSave({
-      user_id: Number(f.user_id),
-      kind: "manual",
-      status: "issued",
-      payment_method: f.payment_method,
-      subtotal: Number(f.subtotal || f.total || 0),
-      tax: Number(f.tax || 0),
-      total: Number(f.total || f.subtotal || 0),
-      notes: f.notes,
-      line_items: f.description ? [{ description: f.description, quantity: 1, unit_price: Number(f.total || 0), amount: Number(f.total || 0) }] : [],
+  function set<K extends keyof ManualInvoiceFormState>(key: K, value: ManualInvoiceFormState[K]) {
+    setF((current) => ({ ...current, [key]: value }))
+    setErrors((current) => {
+      if (!current[key] && !current.base) return current
+      const next = { ...current }
+      delete next[key]
+      delete next.base
+      return next
     })
   }
 
+  function setAmount(key: "subtotal" | "tax", value: string) {
+    setF((current) => {
+      const next = { ...current, [key]: value }
+      const subtotal = Number(next.subtotal || 0)
+      const tax = Number(next.tax || 0)
+      const hasCalculatedAmount = next.subtotal !== "" || next.tax !== ""
+
+      if (hasCalculatedAmount && Number.isFinite(subtotal) && Number.isFinite(tax)) {
+        next.total = (subtotal + tax).toFixed(2)
+      } else if (!hasCalculatedAmount) {
+        next.total = ""
+      }
+
+      return next
+    })
+    setErrors((current) => {
+      if (!current[key] && !current.total && !current.base) return current
+      const next = { ...current }
+      delete next[key]
+      delete next.total
+      delete next.base
+      return next
+    })
+  }
+
+  async function submit() {
+    const result = manualInvoiceSchema.safeParse(f)
+    if (!result.success) {
+      const nextErrors = getFieldErrors(result.error)
+      setErrors(nextErrors)
+      toast({
+        title: "Manual invoice needs attention",
+        description: nextErrors.base ?? "Check the highlighted fields and try again.",
+        variant: "error",
+      })
+      return
+    }
+
+    const total = Number(f.total)
+    const tax = Number(f.tax || 0)
+    const subtotal = Number(f.subtotal || Math.max(total - tax, 0))
+
+    try {
+      await onSave({
+        user_id: Number(f.user_id),
+        kind: "manual",
+        status: "issued",
+        payment_method: f.payment_method,
+        subtotal,
+        tax,
+        total,
+        notes: f.notes,
+        line_items: [
+          {
+            description: f.description.trim(),
+            quantity: 1,
+            unit_price: subtotal,
+            amount: subtotal,
+          },
+        ],
+      })
+    } catch (error) {
+      const message = getApiErrorMessage(error, "Could not create this invoice.")
+      setErrors({ base: message })
+      toast({ title: "Invoice not created", description: message, variant: "error" })
+    }
+  }
+
   return (
-    <DashboardPanel className="space-y-3 border-[#c96c83]/30">
-      <div className="grid sm:grid-cols-2 gap-3">
-        <input className={field} placeholder="Customer user ID *" value={f.user_id} onChange={(e) => set("user_id", e.target.value)} />
-        <input className={field} placeholder="Payment method" value={f.payment_method} onChange={(e) => set("payment_method", e.target.value)} />
-        <input className={`${field} sm:col-span-2`} placeholder="Description" value={f.description} onChange={(e) => set("description", e.target.value)} />
-        <input className={field} placeholder="Subtotal" value={f.subtotal} onChange={(e) => set("subtotal", e.target.value)} />
-        <input className={field} placeholder="Tax" value={f.tax} onChange={(e) => set("tax", e.target.value)} />
-        <input className={field} placeholder="Total *" value={f.total} onChange={(e) => set("total", e.target.value)} />
-      </div>
-      <input className={`${field} w-full`} placeholder="Notes" value={f.notes} onChange={(e) => set("notes", e.target.value)} />
-      <div className="flex gap-2">
+    <>
+      <DialogBody>
+        {errors.base ? (
+          <div
+            aria-live="polite"
+            className="mb-4 border border-[#b75c68]/25 bg-[#fff5f6] px-4 py-3 text-sm font-semibold text-[#8f3f4b]"
+          >
+            {errors.base}
+          </div>
+        ) : null}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field error={errors.user_id} label="Customer user ID">
+            <input
+              aria-invalid={Boolean(errors.user_id)}
+              className={fieldClass(errors.user_id)}
+              inputMode="numeric"
+              onChange={(event) => set("user_id", event.target.value)}
+              placeholder="Example: 42"
+              value={f.user_id}
+            />
+          </Field>
+          <Field error={errors.payment_method} label="Payment method">
+            <Select onValueChange={(value) => set("payment_method", value)} value={f.payment_method}>
+              <SelectTrigger aria-invalid={Boolean(errors.payment_method)}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYMENT_METHODS.map((method) => (
+                  <SelectItem key={method} value={method}>
+                    {method.replace("_", " ")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field className="sm:col-span-2" error={errors.description} label="Line item description">
+            <input
+              aria-invalid={Boolean(errors.description)}
+              className={fieldClass(errors.description)}
+              onChange={(event) => set("description", event.target.value)}
+              placeholder="Example: Custom beauty package"
+              value={f.description}
+            />
+          </Field>
+          <Field error={errors.subtotal} label="Subtotal">
+            <input
+              aria-invalid={Boolean(errors.subtotal)}
+              className={fieldClass(errors.subtotal)}
+              inputMode="decimal"
+              min="0"
+              onChange={(event) => setAmount("subtotal", event.target.value)}
+              placeholder="0.00"
+              step="0.01"
+              type="number"
+              value={f.subtotal}
+            />
+          </Field>
+          <Field error={errors.tax} label="Tax">
+            <input
+              aria-invalid={Boolean(errors.tax)}
+              className={fieldClass(errors.tax)}
+              inputMode="decimal"
+              min="0"
+              onChange={(event) => setAmount("tax", event.target.value)}
+              placeholder="0.00"
+              step="0.01"
+              type="number"
+              value={f.tax}
+            />
+          </Field>
+          <Field error={errors.total} label="Total">
+            <input
+              aria-invalid={Boolean(errors.total)}
+              className={fieldClass(errors.total)}
+              inputMode="decimal"
+              min="0"
+              onChange={(event) => set("total", event.target.value)}
+              placeholder="Auto-calculated"
+              readOnly={f.subtotal !== "" || f.tax !== ""}
+              step="0.01"
+              type="number"
+              value={f.total}
+            />
+          </Field>
+          <Field className="sm:col-span-2" label="Internal notes">
+            <textarea
+              className="min-h-24 w-full resize-none border border-black/15 bg-white px-3 py-2 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+              onChange={(event) => set("notes", event.target.value)}
+              placeholder="Optional context for the invoice"
+              value={f.notes}
+            />
+          </Field>
+        </div>
+      </DialogBody>
+      <DialogFooter>
         <Button size="sm" disabled={saving || !f.user_id || !f.total} onClick={submit} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
-          {saving ? "Saving…" : "Create & email"}
+          {saving ? "Saving..." : "Create & email"}
         </Button>
         <Button size="sm" variant="ghost" onClick={onCancel}>Cancel</Button>
-      </div>
-    </DashboardPanel>
+      </DialogFooter>
+    </>
   )
 }
 
@@ -204,4 +457,40 @@ function Filter({ label, value, set, options }: { label: string; value: string; 
       </ToolbarSection>
     </DashboardToolbar>
   )
+}
+
+function Field({ children, className, error, label }: {
+  children: React.ReactNode
+  className?: string
+  error?: string
+  label: string
+}) {
+  return (
+    <label className={className}>
+      <span className={labelClass}>{label}</span>
+      {children}
+      {error ? <span className="mt-1 block text-xs font-semibold text-[#b75c68]">{error}</span> : null}
+    </label>
+  )
+}
+
+function fieldClass(error?: string) {
+  return `${inputClass} ${error ? errorInputClass : ""}`
+}
+
+function getFieldErrors(error: z.ZodError<ManualInvoiceFormState>): ManualInvoiceFormErrors {
+  const next: ManualInvoiceFormErrors = {}
+  for (const issue of error.issues) {
+    const key = issue.path.at(-1)
+    if (typeof key === "string" && !next[key as keyof ManualInvoiceFormErrors]) {
+      next[key as keyof ManualInvoiceFormErrors] = issue.message
+    }
+  }
+  next.base = "Check the highlighted fields and try again."
+  return next
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }
