@@ -4,20 +4,25 @@ export const adminServiceAreasSteps: StepType[] = [
   {
     selector: '[data-tour="admin-service-areas-header"]',
     content:
-      "Welcome to Service Areas! This page controls which parts of the GTA the mobile " +
-      "team will travel to, what travel fee applies in each zone, and where bookings are " +
-      "blocked entirely.",
+      "Welcome to Service Areas! This shows the REAL coverage map — built from each " +
+      "technician's postal-code (FSA) list, which is what actually decides whether a " +
+      "booking can be accepted. To change coverage, edit an FSA list on a tech's profile " +
+      "(Dashboard → Employees), not from this page.",
+    position: "bottom",
+  },
+  {
+    selector: '[data-tour="admin-service-areas-metrics"]',
+    content:
+      "A quick summary: how many distinct FSAs (postal-code zones) are covered in " +
+      "total, and how many technicians have at least one FSA assigned.",
     position: "bottom",
   },
   {
     selector: '[data-tour="admin-service-areas-list"]',
     content:
-      "Each card is one service area. It shows the zone name, whether it's active, the " +
-      "travel fee charged for bookings there, and its boundary — a circular zone defined " +
-      "by a center point (latitude/longitude) and a radius in kilometres.\n\n" +
-      "Click 'Edit' on any zone to update its name, travel fee, active status, or " +
-      "boundary. Leaving the boundary fields blank means that zone serves everywhere. " +
-      "Addresses that fall outside every active zone won't be able to book.",
+      "Each row is one FSA (e.g. \"L5L\") with the technician(s) who cover it. If an " +
+      "address's FSA doesn't appear here at all, a booking there will be rejected as " +
+      "out of coverage.",
     position: "top",
   },
 ]
