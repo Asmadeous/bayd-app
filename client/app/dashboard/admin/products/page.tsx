@@ -18,6 +18,7 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -27,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import api from "@/lib/api"
+import { adminProductsSteps } from "@/lib/tours/admin-products-tour"
 
 interface Product {
   id: number
@@ -125,23 +127,26 @@ export default function AdminProductsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        actions={
-          <Button
-            onClick={openCreate}
-            size="sm"
-            style={{ background: "#c96c83", border: "none", color: "#fff" }}
-          >
-            <Plus aria-hidden="true" />
-            Add Product
-          </Button>
-        }
-        title="Products"
-        subtitle="Manage shop products, stock levels, and catalog status."
-      />
+      <div data-tour="admin-products-header">
+        <DashboardHeader
+          actions={
+            <Button
+              data-tour="admin-products-add"
+              onClick={openCreate}
+              size="sm"
+              style={{ background: "#c96c83", border: "none", color: "#fff" }}
+            >
+              <Plus aria-hidden="true" />
+              Add Product
+            </Button>
+          }
+          title="Products"
+          subtitle="Manage shop products, stock levels, and catalog status."
+        />
+      </div>
 
       {modal !== null ? (
-        <DashboardPanel>
+        <DashboardPanel data-tour="admin-products-editor">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
@@ -251,7 +256,10 @@ export default function AdminProductsPage() {
         </DashboardPanel>
       ) : null}
 
-      <DashboardPanel className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <DashboardPanel
+        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+        data-tour="admin-products-stats"
+      >
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">Catalog</p>
           <h2 className="mt-1 text-lg font-extrabold text-[#101217]">Product Library</h2>
@@ -286,49 +294,53 @@ export default function AdminProductsPage() {
           description="Create the first product for the shop catalog."
         />
       ) : (
-        <DataTable>
-          <DataTableHead>
-            <DataTableRow>
-              <DataTableHeaderCell>Name</DataTableHeaderCell>
-              <DataTableHeaderCell>Category</DataTableHeaderCell>
-              <DataTableHeaderCell>Price</DataTableHeaderCell>
-              <DataTableHeaderCell>Stock</DataTableHeaderCell>
-              <DataTableHeaderCell>Status</DataTableHeaderCell>
-              <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
-            </DataTableRow>
-          </DataTableHead>
-          <DataTableBody>
-            {products.map((product) => (
-              <DataTableRow key={product.id}>
-                <DataTableCell className="font-bold text-[#101217]">{product.name}</DataTableCell>
-                <DataTableCell>{product.product_category?.name}</DataTableCell>
-                <DataTableCell className="font-semibold text-[#101217]">${product.price}</DataTableCell>
-                <DataTableCell>{product.stock_qty}</DataTableCell>
-                <DataTableCell>
-                  <StatusBadgeFor status={product.active ? "active" : "inactive"} />
-                </DataTableCell>
-                <DataTableCell>
-                  <div className="flex justify-end gap-2">
-                    <Button onClick={() => openEdit(product)} size="xs" variant="outline">
-                      Edit
-                    </Button>
-                    <Button
-                      disabled={deleteMutation.isPending}
-                      onClick={() => {
-                        if (confirm(`Delete "${product.name}"?`)) deleteMutation.mutate(product.id)
-                      }}
-                      size="xs"
-                      variant="destructive"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </DataTableCell>
+        <div data-tour="admin-products-list">
+          <DataTable>
+            <DataTableHead>
+              <DataTableRow>
+                <DataTableHeaderCell>Name</DataTableHeaderCell>
+                <DataTableHeaderCell>Category</DataTableHeaderCell>
+                <DataTableHeaderCell>Price</DataTableHeaderCell>
+                <DataTableHeaderCell>Stock</DataTableHeaderCell>
+                <DataTableHeaderCell>Status</DataTableHeaderCell>
+                <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
               </DataTableRow>
-            ))}
-          </DataTableBody>
-        </DataTable>
+            </DataTableHead>
+            <DataTableBody>
+              {products.map((product) => (
+                <DataTableRow key={product.id}>
+                  <DataTableCell className="font-bold text-[#101217]">{product.name}</DataTableCell>
+                  <DataTableCell>{product.product_category?.name}</DataTableCell>
+                  <DataTableCell className="font-semibold text-[#101217]">${product.price}</DataTableCell>
+                  <DataTableCell>{product.stock_qty}</DataTableCell>
+                  <DataTableCell>
+                    <StatusBadgeFor status={product.active ? "active" : "inactive"} />
+                  </DataTableCell>
+                  <DataTableCell>
+                    <div className="flex justify-end gap-2">
+                      <Button onClick={() => openEdit(product)} size="xs" variant="outline">
+                        Edit
+                      </Button>
+                      <Button
+                        disabled={deleteMutation.isPending}
+                        onClick={() => {
+                          if (confirm(`Delete "${product.name}"?`)) deleteMutation.mutate(product.id)
+                        }}
+                        size="xs"
+                        variant="destructive"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </DataTableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
+        </div>
       )}
+
+      <TutorialButton steps={adminProductsSteps} pageKey="admin-products" />
     </DashboardPage>
   )
 }

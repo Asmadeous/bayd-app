@@ -9,17 +9,21 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { GiftCardVisual } from "@/components/gift-card-visual"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { openHelcimPay } from "@/lib/helcim-pay"
 import { useGiftCards, type GiftCard } from "@/lib/hooks/use-gift-cards"
+import { customerGiftCardsSteps } from "@/lib/tours/customer-gift-cards-tour"
 
 export default function CustomerGiftCardsPage() {
   const { data: cards = [], isLoading } = useGiftCards()
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Gift Cards" subtitle="Cards you have purchased or received." />
+      <div data-tour="customer-giftcards-header">
+        <DashboardHeader title="Gift Cards" subtitle="Cards you have purchased or received." />
+      </div>
 
       {isLoading ? (
         <DashboardPanel>
@@ -32,12 +36,14 @@ export default function CustomerGiftCardsPage() {
           description="Purchased and received gift cards will appear here."
         />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-tour="customer-giftcards-list">
           {cards.map((card) => (
             <CustomerCard key={card.id} card={card} />
           ))}
         </div>
       )}
+
+      <TutorialButton steps={customerGiftCardsSteps} pageKey="customer-gift-cards" />
     </DashboardPage>
   )
 }
@@ -88,7 +94,7 @@ function CustomerCard({ card }: { card: GiftCard }) {
         {card.recipient_email ? `Sent to ${card.recipient_email}` : "Saved to your account"}
         {card.delivered_at ? " / delivered" : ""}
       </p>
-      <div className="flex flex-wrap items-center gap-2 border-t border-black/8 pt-3">
+      <div className="flex flex-wrap items-center gap-2 border-t border-black/8 pt-3" data-tour="customer-giftcards-topup">
         <input
           type="number"
           min="0"

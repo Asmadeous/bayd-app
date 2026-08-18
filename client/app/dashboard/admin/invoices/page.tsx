@@ -13,6 +13,7 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -27,6 +28,7 @@ import {
   useDeleteInvoice,
   useResendInvoice,
 } from "@/lib/hooks/use-admin"
+import { adminInvoicesSteps } from "@/lib/tours/admin-invoices-tour"
 import { downloadInvoice, type Invoice } from "@/lib/hooks/use-invoices"
 
 const cad = (v: string | number) => `$${Number(v).toFixed(2)}`
@@ -45,27 +47,31 @@ export default function AdminInvoicesPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Invoices"
-        subtitle="All transactions across bookings, products, and gift cards."
-        actions={
-          <Button size="sm" onClick={() => setCreating((c) => !c)} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
-            <Plus className="size-4" /> Manual invoice
-          </Button>
-        }
-      />
+      <div data-tour="admin-invoices-header">
+        <DashboardHeader
+          title="Invoices"
+          subtitle="All transactions across bookings, products, and gift cards."
+          actions={
+            <Button size="sm" onClick={() => setCreating((c) => !c)} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+              <Plus className="size-4" /> Manual invoice
+            </Button>
+          }
+        />
+      </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2" data-tour="admin-invoices-filters">
         <Filter label="Status" value={status} set={setStatus} options={STATUSES} />
         <Filter label="Type" value={kind} set={setKind} options={KINDS} />
       </div>
 
       {creating && (
+        <div data-tour="admin-invoices-form">
         <ManualInvoiceForm
           saving={save.isPending}
           onCancel={() => setCreating(false)}
           onSave={async (d) => { await save.mutateAsync(d); setCreating(false) }}
         />
+        </div>
       )}
 
       {isLoading ? (
@@ -79,7 +85,7 @@ export default function AdminInvoicesPage() {
           description="Invoices matching the selected filters will appear here."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="admin-invoices-list">
           {invoices.map((inv) => (
             <Row key={inv.id} invoice={inv}
               onStatus={(s) => save.mutate({ id: inv.id, status: s })}
@@ -89,6 +95,8 @@ export default function AdminInvoicesPage() {
           ))}
         </div>
       )}
+
+      <TutorialButton steps={adminInvoicesSteps} pageKey="admin-invoices" />
     </DashboardPage>
   )
 }

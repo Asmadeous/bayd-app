@@ -13,6 +13,7 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { GiftCardVisual } from "@/components/gift-card-visual"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import {
@@ -29,6 +30,7 @@ import {
   useDeliverGiftCard,
   useTopupGiftCard,
 } from "@/lib/hooks/use-admin"
+import { adminGiftCardsSteps } from "@/lib/tours/admin-gift-cards-tour"
 import type { GiftCard } from "@/lib/hooks/use-gift-cards"
 
 const BLANK = {
@@ -47,17 +49,19 @@ export default function AdminGiftCardsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Gift Cards"
-        subtitle="Issue, manage, and send gift cards."
-        actions={
-          <Button size="sm" onClick={() => setCreating((v) => !v)} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
-            <Plus className="size-4" /> Issue card
-          </Button>
-        }
-      />
+      <div data-tour="admin-giftcards-header">
+        <DashboardHeader
+          title="Gift Cards"
+          subtitle="Issue, manage, and send gift cards."
+          actions={
+            <Button size="sm" onClick={() => setCreating((v) => !v)} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+              <Plus className="size-4" /> Issue card
+            </Button>
+          }
+        />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="admin-giftcards-filters">
         <ToolbarSection>
           <SegmentedControl>
         {[["", "All"], ["true", "Active"], ["false", "Disabled"]].map(([v, l]) => (
@@ -70,11 +74,13 @@ export default function AdminGiftCardsPage() {
       </DashboardToolbar>
 
       {creating && (
+        <div data-tour="admin-giftcards-form">
         <CreateForm
           saving={save.isPending}
           onCancel={() => setCreating(false)}
           onSave={async (d) => { await save.mutateAsync(d); setCreating(false) }}
         />
+        </div>
       )}
 
       {isLoading ? (
@@ -88,7 +94,7 @@ export default function AdminGiftCardsPage() {
           description="Issued gift cards will appear here."
         />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-tour="admin-giftcards-grid">
           {cards.map((c) => (
             <AdminCard key={c.id} card={c}
               onToggle={() => save.mutate({ id: c.id, active: !c.active })}
@@ -109,6 +115,8 @@ export default function AdminGiftCardsPage() {
           </ToolbarSection>
         </DashboardToolbar>
       )}
+
+      <TutorialButton steps={adminGiftCardsSteps} pageKey="admin-gift-cards" />
     </DashboardPage>
   )
 }

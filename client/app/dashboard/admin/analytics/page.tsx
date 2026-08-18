@@ -11,11 +11,13 @@ import {
   ToolbarSection,
 } from "@/components/dashboard/dashboard-toolbar"
 import { MetricCard } from "@/components/dashboard/metric-card"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import {
   useAdminAnalytics,
   type AnalyticsPeriod,
   type AnalyticsEmployee,
 } from "@/lib/hooks/use-admin"
+import { adminAnalyticsSteps } from "@/lib/tours/admin-analytics-tour"
 
 const PERIODS: { key: AnalyticsPeriod; label: string }[] = [
   { key: "7d", label: "7 days" },
@@ -39,12 +41,14 @@ export default function AdminAnalyticsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Analytics"
-        subtitle="Sales performance and worker KPIs."
-      />
+      <div data-tour="analytics-header">
+        <DashboardHeader
+          title="Analytics"
+          subtitle="Sales performance and worker KPIs."
+        />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="analytics-period">
         <ToolbarSection>
           <SegmentedControl>
             {PERIODS.map((item) => (
@@ -66,7 +70,7 @@ export default function AdminAnalyticsPage() {
         </DashboardPanel>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div data-tour="analytics-summary" className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <MetricCard label="Total Revenue" value={cad.format(s!.total_revenue)} accent />
             <MetricCard label="Service Revenue" value={cad.format(s!.service_revenue)} />
             <MetricCard label="Product Revenue" value={cad.format(s!.product_revenue)} />
@@ -84,18 +88,30 @@ export default function AdminAnalyticsPage() {
           </div>
 
           {/* Revenue trend */}
-          <RevenueTrend trend={data.revenue_trend} />
+          <div data-tour="analytics-trend">
+            <RevenueTrend trend={data.revenue_trend} />
+          </div>
 
           {/* Invoices / transactions */}
-          {data.invoices && <InvoicesPanel invoices={data.invoices} />}
+          {data.invoices && (
+            <div data-tour="analytics-invoices">
+              <InvoicesPanel invoices={data.invoices} />
+            </div>
+          )}
 
           {/* Employee leaderboard */}
-          <EmployeeLeaderboard employees={data.employees} />
+          <div data-tour="analytics-leaderboard">
+            <EmployeeLeaderboard employees={data.employees} />
+          </div>
 
           {/* Top services */}
-          <TopServices services={data.top_services} />
+          <div data-tour="analytics-top-services">
+            <TopServices services={data.top_services} />
+          </div>
         </>
       )}
+
+      <TutorialButton steps={adminAnalyticsSteps} pageKey="admin-analytics" />
     </DashboardPage>
   )
 }

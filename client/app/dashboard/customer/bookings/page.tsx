@@ -18,8 +18,10 @@ import { AppCalendar } from "@/components/dashboard/app-calendar"
 import { BookingCard } from "@/components/dashboard/booking-card"
 import { ReviewDialog } from "@/components/dashboard/review-dialog"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useBookings, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
+import { customerBookingsSteps } from "@/lib/tours/customer-bookings-tour"
 
 const ALL_STATUSES: Booking["status"][] = [
   "pending", "confirmed", "in_progress", "completed", "cancelled", "no_show",
@@ -73,9 +75,11 @@ export default function CustomerBookingsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Bookings" subtitle="Review appointments as a list or calendar" />
+      <div data-tour="customer-bookings-header">
+        <DashboardHeader title="Bookings" subtitle="Review appointments as a list or calendar" />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="customer-bookings-view-toggle">
         <ToolbarSection>
           <SegmentedControl>
             {([
@@ -103,7 +107,7 @@ export default function CustomerBookingsPage() {
       </DashboardToolbar>
 
       {view === "list" ? (
-        <DashboardToolbar>
+        <DashboardToolbar data-tour="customer-bookings-filters">
           <ToolbarSection>
             <SegmentedControl>
               {(["all", ...ALL_STATUSES] as const).map((status) => (
@@ -120,6 +124,7 @@ export default function CustomerBookingsPage() {
         </DashboardToolbar>
       ) : null}
 
+      <div data-tour="customer-bookings-content">
       {isLoading ? (
         <DashboardPanel>
           <p className="text-sm text-[#5f6268]">Loading bookings...</p>
@@ -214,6 +219,7 @@ export default function CustomerBookingsPage() {
           )}
         </>
       )}
+      </div>
 
       {reviewBooking && (
         <ReviewDialog
@@ -221,6 +227,8 @@ export default function CustomerBookingsPage() {
           onClose={() => setReviewBooking(null)}
         />
       )}
+
+      <TutorialButton steps={customerBookingsSteps} pageKey="customer-bookings" />
     </DashboardPage>
   )
 }

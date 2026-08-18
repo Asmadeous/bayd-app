@@ -19,8 +19,10 @@ import {
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { StaffBookingActions } from "@/components/dashboard/staff-booking-actions"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useEmployeeProfile, useEmployeeSchedule, useToggleShift } from "@/lib/hooks/use-employee"
+import { employeeDashboardSteps } from "@/lib/tours/employee-tour"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
 type ScheduleView = "list" | "calendar"
@@ -58,6 +60,7 @@ export default function EmployeeDashboardPage() {
   return (
     <DashboardPage maxWidth="wide">
       <DashboardHero
+        data-tour="employee-hero"
         eyebrow="Employee schedule"
         title={profile?.on_shift ? "You are live for appointments." : "Start your shift when you are ready."}
         description="Track your assigned bookings, review the calendar, and keep your mobile service schedule organized."
@@ -65,11 +68,13 @@ export default function EmployeeDashboardPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/dashboard/employee/new-booking"
+              data-tour="employee-new-booking"
               className="inline-flex h-10 items-center gap-1.5 border border-white/25 bg-white/10 px-4 text-sm font-bold text-white transition-colors hover:bg-white/20"
             >
               <Plus aria-hidden="true" className="size-4" /> New booking
             </Link>
             <Button
+              data-tour="employee-shift-toggle"
               className="h-10 px-4 font-bold text-white"
               disabled={toggleShift.isPending}
               onClick={() => toggleShift.mutate()}
@@ -89,7 +94,7 @@ export default function EmployeeDashboardPage() {
           </div>
         }
         aside={
-          <div className="border border-white/12 bg-white/8 p-4">
+          <div data-tour="employee-next-appointment" className="border border-white/12 bg-white/8 p-4">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f0c8d3]">
               Next appointment
             </p>
@@ -109,7 +114,7 @@ export default function EmployeeDashboardPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div data-tour="employee-metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           accent={profile?.on_shift}
           icon={profile?.on_shift ? ToggleRight : ToggleLeft}
@@ -121,7 +126,7 @@ export default function EmployeeDashboardPage() {
         <MetricCard icon={CheckCircle2} label="Total bookings" value={bookings.length} />
       </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="employee-toolbar">
         <ToolbarSection>
           <SegmentedControl>
             {([
@@ -148,37 +153,44 @@ export default function EmployeeDashboardPage() {
         </ToolbarSection>
       </DashboardToolbar>
 
-      {isLoading ? (
-        <DashboardPanel>
-          <p className="text-sm text-[#5f6268]">Loading schedule...</p>
-        </DashboardPanel>
-      ) : view === "calendar" ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.75fr)]">
-          <AppCalendar
-            bookings={bookings}
-            onSelectDay={(date, dayBookings) => setSelectedDay({ date, bookings: dayBookings })}
-          />
-
-          <SchedulePanel selectedDay={selectedDay} visibleBookings={visibleBookings} />
-        </div>
-      ) : listBookings.length === 0 ? (
-        <EmptyState
-          className="border-black/8 py-10"
-          icon={MapPin}
-          title="No appointments"
-          description="Appointments assigned to you will appear here."
-        />
-      ) : (
-        <DashboardPanel className="space-y-3">
-          {listBookings.map((booking) => (
-            <BookingCard
-              actions={<StaffBookingActions booking={booking} />}
-              booking={booking}
-              key={booking.id}
+      <div data-tour="employee-schedule">
+        {isLoading ? (
+          <DashboardPanel>
+            <p className="text-sm text-[#5f6268]">Loading schedule...</p>
+          </DashboardPanel>
+        ) : view === "calendar" ? (
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.75fr)]">
+            <AppCalendar
+              bookings={bookings}
+              onSelectDay={(date, dayBookings) => setSelectedDay({ date, bookings: dayBookings })}
             />
-          ))}
-        </DashboardPanel>
-      )}
+
+            <SchedulePanel selectedDay={selectedDay} visibleBookings={visibleBookings} />
+          </div>
+        ) : listBookings.length === 0 ? (
+          <EmptyState
+            className="border-black/8 py-10"
+            icon={MapPin}
+            title="No appointments"
+            description="Appointments assigned to you will appear here."
+          />
+        ) : (
+          <DashboardPanel className="space-y-3">
+            {listBookings.map((booking) => (
+              <BookingCard
+                actions={<StaffBookingActions booking={booking} />}
+                booking={booking}
+                key={booking.id}
+              />
+            ))}
+          </DashboardPanel>
+        )}
+      </div>
+
+      <TutorialButton
+        steps={employeeDashboardSteps}
+        pageKey="employee-dashboard"
+      />
     </DashboardPage>
   )
 }

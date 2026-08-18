@@ -7,7 +7,9 @@ import { BookingCard } from "@/components/dashboard/booking-card"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { useAdminBookings } from "@/lib/hooks/use-admin"
+import { adminCalendarSteps } from "@/lib/tours/admin-calendar-tour"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
 export default function AdminCalendarPage() {
@@ -17,7 +19,9 @@ export default function AdminCalendarPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Company Calendar" subtitle="All bookings across the business." />
+      <div data-tour="calendar-header">
+        <DashboardHeader title="Company Calendar" subtitle="All bookings across the business." />
+      </div>
 
       {isLoading ? (
         <DashboardPanel>
@@ -25,12 +29,14 @@ export default function AdminCalendarPage() {
         </DashboardPanel>
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_26rem]">
-          <AppCalendar
-            bookings={bookings}
-            onSelectDay={(date, bks) => setSelectedDay({ date, bookings: bks })}
-          />
+          <div data-tour="calendar-grid">
+            <AppCalendar
+              bookings={bookings}
+              onSelectDay={(date, bks) => setSelectedDay({ date, bookings: bks })}
+            />
+          </div>
 
-          <DashboardPanel>
+          <DashboardPanel data-tour="calendar-day-panel">
             <h2 className="text-base font-extrabold text-[#101217]">
               {selectedDay
                 ? selectedDay.date.toLocaleDateString("en-CA", {
@@ -60,6 +66,8 @@ export default function AdminCalendarPage() {
           </DashboardPanel>
         </div>
       )}
+
+      <TutorialButton steps={adminCalendarSteps} pageKey="admin-calendar" />
     </DashboardPage>
   )
 }

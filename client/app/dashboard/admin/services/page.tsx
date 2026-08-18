@@ -18,6 +18,7 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -27,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import api from "@/lib/api"
+import { adminServicesSteps } from "@/lib/tours/admin-services-tour"
 
 interface Service {
   id: number
@@ -142,23 +144,26 @@ export default function AdminServicesPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        actions={
-          <Button
-            onClick={openCreate}
-            size="sm"
-            style={{ background: "#c96c83", border: "none", color: "#fff" }}
-          >
-            <Plus aria-hidden="true" />
-            Add Service
-          </Button>
-        }
-        title="Services"
-        subtitle="Manage the beauty service catalog customers can book."
-      />
+      <div data-tour="admin-services-header">
+        <DashboardHeader
+          actions={
+            <Button
+              data-tour="admin-services-add"
+              onClick={openCreate}
+              size="sm"
+              style={{ background: "#c96c83", border: "none", color: "#fff" }}
+            >
+              <Plus aria-hidden="true" />
+              Add Service
+            </Button>
+          }
+          title="Services"
+          subtitle="Manage the beauty service catalog customers can book."
+        />
+      </div>
 
       {modal !== null ? (
-        <DashboardPanel>
+        <DashboardPanel data-tour="admin-services-editor">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
@@ -306,7 +311,10 @@ export default function AdminServicesPage() {
         </DashboardPanel>
       ) : null}
 
-      <DashboardPanel className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <DashboardPanel
+        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+        data-tour="admin-services-stats"
+      >
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">Catalog</p>
           <h2 className="mt-1 text-lg font-extrabold text-[#101217]">Service Library</h2>
@@ -339,65 +347,69 @@ export default function AdminServicesPage() {
           description="Create the first service customers can book."
         />
       ) : (
-        <DataTable>
-          <DataTableHead>
-            <DataTableRow>
-              <DataTableHeaderCell>Name</DataTableHeaderCell>
-              <DataTableHeaderCell>Category</DataTableHeaderCell>
-              <DataTableHeaderCell>Price</DataTableHeaderCell>
-              <DataTableHeaderCell>Duration</DataTableHeaderCell>
-              <DataTableHeaderCell>Status</DataTableHeaderCell>
-              <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
-            </DataTableRow>
-          </DataTableHead>
-          <DataTableBody>
-            {services.map((service) => (
-              <DataTableRow key={service.id}>
-                <DataTableCell className="font-bold text-[#101217]">
-                  {service.name}
-                  {service.description ? (
-                    <span className="mt-0.5 block max-w-md truncate text-xs font-normal text-[#8a8d93]">
-                      {service.description}
-                    </span>
-                  ) : null}
-                </DataTableCell>
-                <DataTableCell>{service.service_category?.name}</DataTableCell>
-                <DataTableCell className="font-semibold text-[#101217]">
-                  ${service.price}
-                  {service.tier_prices && Object.keys(service.tier_prices).length > 0 ? (
-                    <span className="mt-1 block text-[11px] font-semibold text-[#8a8d93]">
-                      {TIER_FIELDS.filter((tier) => service.tier_prices?.[tier.key] != null)
-                        .map((tier) => `${tier.key}: $${service.tier_prices?.[tier.key]}`)
-                        .join(" / ")}
-                    </span>
-                  ) : null}
-                </DataTableCell>
-                <DataTableCell>{service.duration_minutes} min</DataTableCell>
-                <DataTableCell>
-                  <StatusBadgeFor status={service.active ? "active" : "inactive"} />
-                </DataTableCell>
-                <DataTableCell>
-                  <div className="flex justify-end gap-2">
-                    <Button onClick={() => openEdit(service)} size="xs" variant="outline">
-                      Edit
-                    </Button>
-                    <Button
-                      disabled={deleteMutation.isPending}
-                      onClick={() => {
-                        if (confirm(`Delete "${service.name}"?`)) deleteMutation.mutate(service.id)
-                      }}
-                      size="xs"
-                      variant="destructive"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </DataTableCell>
+        <div data-tour="admin-services-list">
+          <DataTable>
+            <DataTableHead>
+              <DataTableRow>
+                <DataTableHeaderCell>Name</DataTableHeaderCell>
+                <DataTableHeaderCell>Category</DataTableHeaderCell>
+                <DataTableHeaderCell>Price</DataTableHeaderCell>
+                <DataTableHeaderCell>Duration</DataTableHeaderCell>
+                <DataTableHeaderCell>Status</DataTableHeaderCell>
+                <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
               </DataTableRow>
-            ))}
-          </DataTableBody>
-        </DataTable>
+            </DataTableHead>
+            <DataTableBody>
+              {services.map((service) => (
+                <DataTableRow key={service.id}>
+                  <DataTableCell className="font-bold text-[#101217]">
+                    {service.name}
+                    {service.description ? (
+                      <span className="mt-0.5 block max-w-md truncate text-xs font-normal text-[#8a8d93]">
+                        {service.description}
+                      </span>
+                    ) : null}
+                  </DataTableCell>
+                  <DataTableCell>{service.service_category?.name}</DataTableCell>
+                  <DataTableCell className="font-semibold text-[#101217]">
+                    ${service.price}
+                    {service.tier_prices && Object.keys(service.tier_prices).length > 0 ? (
+                      <span className="mt-1 block text-[11px] font-semibold text-[#8a8d93]">
+                        {TIER_FIELDS.filter((tier) => service.tier_prices?.[tier.key] != null)
+                          .map((tier) => `${tier.key}: $${service.tier_prices?.[tier.key]}`)
+                          .join(" / ")}
+                      </span>
+                    ) : null}
+                  </DataTableCell>
+                  <DataTableCell>{service.duration_minutes} min</DataTableCell>
+                  <DataTableCell>
+                    <StatusBadgeFor status={service.active ? "active" : "inactive"} />
+                  </DataTableCell>
+                  <DataTableCell>
+                    <div className="flex justify-end gap-2">
+                      <Button onClick={() => openEdit(service)} size="xs" variant="outline">
+                        Edit
+                      </Button>
+                      <Button
+                        disabled={deleteMutation.isPending}
+                        onClick={() => {
+                          if (confirm(`Delete "${service.name}"?`)) deleteMutation.mutate(service.id)
+                        }}
+                        size="xs"
+                        variant="destructive"
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </DataTableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
+        </div>
       )}
+
+      <TutorialButton steps={adminServicesSteps} pageKey="admin-services" />
     </DashboardPage>
   )
 }

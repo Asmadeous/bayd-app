@@ -8,6 +8,7 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -17,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import api from "@/lib/api"
+import { adminCallbacksSteps } from "@/lib/tours/admin-callbacks-tour"
 
 interface CallbackRequest {
   id: number
@@ -48,10 +50,12 @@ export default function AdminCallbacksPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Callbacks"
-        subtitle="Customers outside dispatch coverage who need a follow-up call."
-      />
+      <div data-tour="callbacks-header">
+        <DashboardHeader
+          title="Callbacks"
+          subtitle="Customers outside dispatch coverage who need a follow-up call."
+        />
+      </div>
 
       {isLoading ? (
         <DashboardPanel>
@@ -64,7 +68,7 @@ export default function AdminCallbacksPage() {
           description="Out-of-area customer requests will appear here for follow-up."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="callbacks-list">
           {rows.map((request) => {
             const name =
               request.contact_name ||
@@ -123,6 +127,8 @@ export default function AdminCallbacksPage() {
           })}
         </div>
       )}
+
+      <TutorialButton steps={adminCallbacksSteps} pageKey="admin-callbacks" />
     </DashboardPage>
   )
 }

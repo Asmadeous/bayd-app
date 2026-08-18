@@ -16,9 +16,11 @@ import {
   ToolbarSection,
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useAdminBookings, useUpdateBooking } from "@/lib/hooks/use-admin"
 import { ReassignControl } from "@/components/dashboard/reassign-control"
+import { adminBookingsSteps } from "@/lib/tours/admin-bookings-tour"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
 const STATUSES: Array<Booking["status"] | "all"> = [
@@ -126,9 +128,11 @@ export default function AdminBookingsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Bookings" subtitle="Manage company appointments by list or calendar." />
+      <div data-tour="bookings-header">
+        <DashboardHeader title="Bookings" subtitle="Manage company appointments by list or calendar." />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="bookings-view-toggle">
         <ToolbarSection>
           <SegmentedControl>
             {([
@@ -156,7 +160,7 @@ export default function AdminBookingsPage() {
       </DashboardToolbar>
 
       {view === "list" ? (
-        <DashboardToolbar>
+        <DashboardToolbar data-tour="bookings-status-filter">
           <ToolbarSection>
             <SegmentedControl>
               {STATUSES.map((status) => (
@@ -173,72 +177,74 @@ export default function AdminBookingsPage() {
         </DashboardToolbar>
       ) : null}
 
-      {isLoading ? (
-        <DashboardPanel>
-          <p className="text-sm text-[#5f6268]">Loading bookings...</p>
-        </DashboardPanel>
-      ) : view === "calendar" ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <AppCalendar
-            bookings={bookings}
-            onSelectDay={(date, dayBookings) =>
-              setSelectedDay({ date, bookings: dayBookings })
-            }
-          />
+      <div data-tour="bookings-content">
+        {isLoading ? (
+          <DashboardPanel>
+            <p className="text-sm text-[#5f6268]">Loading bookings...</p>
+          </DashboardPanel>
+        ) : view === "calendar" ? (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <AppCalendar
+              bookings={bookings}
+              onSelectDay={(date, dayBookings) =>
+                setSelectedDay({ date, bookings: dayBookings })
+              }
+            />
 
-          <DashboardPanel className="space-y-3">
-            <h2 className="text-sm font-semibold text-[#101217]">
-              {selectedDay
-                ? selectedDateLabel
-                : `All bookings (${bookings.length} shown)`}
-            </h2>
-            {selectedDay ? (
-              selectedDay.bookings.length === 0 ? (
-                <EmptyState
-                  icon={CalendarDays}
-                  title="No bookings on this day"
-                  description="Select another date to review scheduled appointments."
-                />
+            <DashboardPanel className="space-y-3">
+              <h2 className="text-sm font-semibold text-[#101217]">
+                {selectedDay
+                  ? selectedDateLabel
+                  : `All bookings (${bookings.length} shown)`}
+              </h2>
+              {selectedDay ? (
+                selectedDay.bookings.length === 0 ? (
+                  <EmptyState
+                    icon={CalendarDays}
+                    title="No bookings on this day"
+                    description="Select another date to review scheduled appointments."
+                  />
+                ) : (
+                  selectedDay.bookings.map((booking) => (
+                    <BookingCard
+                      actions={renderBookingActions(booking)}
+                      booking={booking}
+                      key={booking.id}
+                    />
+                  ))
+                )
               ) : (
-                selectedDay.bookings.map((booking) => (
+                bookings.slice(0, 8).map((booking) => (
                   <BookingCard
                     actions={renderBookingActions(booking)}
                     booking={booking}
                     key={booking.id}
                   />
                 ))
-              )
-            ) : (
-              bookings.slice(0, 8).map((booking) => (
-                <BookingCard
-                  actions={renderBookingActions(booking)}
-                  booking={booking}
-                  key={booking.id}
-                />
-              ))
-            )}
-          </DashboardPanel>
-        </div>
-      ) : bookings.length === 0 ? (
-        <EmptyState
-          icon={CalendarDays}
-          title="No bookings found"
-          description="Try another status filter or check back when new customer requests are submitted."
-        />
-      ) : (
-        <div className="space-y-3">
-          {bookings.map((booking) => (
-            <BookingCard
-              actions={renderBookingActions(booking)}
-              booking={booking}
-              key={booking.id}
-            />
-          ))}
-        </div>
-      )}
+              )}
+            </DashboardPanel>
+          </div>
+        ) : bookings.length === 0 ? (
+          <EmptyState
+            icon={CalendarDays}
+            title="No bookings found"
+            description="Try another status filter or check back when new customer requests are submitted."
+          />
+        ) : (
+          <div className="space-y-3">
+            {bookings.map((booking) => (
+              <BookingCard
+                actions={renderBookingActions(booking)}
+                booking={booking}
+                key={booking.id}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {view === "list" && pagination && pagination.total_pages > 1 ? (
-        <DashboardToolbar className="justify-end">
+        <DashboardToolbar className="justify-end" data-tour="bookings-pagination">
           <ToolbarSection className="ml-auto">
             <Button
               disabled={page <= 1}
@@ -262,6 +268,8 @@ export default function AdminBookingsPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton steps={adminBookingsSteps} pageKey="admin-bookings" />
     </DashboardPage>
   )
 }

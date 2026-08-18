@@ -8,8 +8,10 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useEmployeeProfile, useUpdateProfile } from "@/lib/hooks/use-employee"
+import { employeeProfileSteps } from "@/lib/tours/employee-tour"
 import { cn } from "@/lib/utils"
 
 const fieldClass =
@@ -72,10 +74,12 @@ export default function EmployeeProfilePage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Profile" subtitle="Update the professional profile clients see." />
+      <div data-tour="profile-header">
+        <DashboardHeader title="Profile" subtitle="Update the professional profile clients see." />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
-        <DashboardPanel className="space-y-5">
+        <DashboardPanel data-tour="profile-card" className="space-y-5">
           <div className="mx-auto grid size-28 place-items-center overflow-hidden border border-black/10 bg-[#f4f1eb] text-[#5f6268]">
             {displayPhotoUrl ? (
               <Image
@@ -114,7 +118,7 @@ export default function EmployeeProfilePage() {
           ) : null}
         </DashboardPanel>
 
-        <DashboardPanel>
+        <DashboardPanel data-tour="profile-form">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <button
@@ -203,6 +207,11 @@ export default function EmployeeProfilePage() {
           </form>
         </DashboardPanel>
       </div>
+
+      <TutorialButton
+        steps={employeeProfileSteps}
+        pageKey="employee-profile"
+      />
     </DashboardPage>
   )
 }

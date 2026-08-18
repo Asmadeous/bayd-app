@@ -14,6 +14,7 @@ import {
   ToolbarSection,
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -22,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { adminGallerySteps } from "@/lib/tours/admin-gallery-tour"
 import { cn } from "@/lib/utils"
 
 interface GalleryItem {
@@ -130,13 +132,15 @@ export default function AdminGalleryPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Gallery"
-        subtitle={`${data?.pagination?.total_count ?? "—"} items`}
-        actions={<Button size="sm" onClick={() => { resetForm(BLANK, null); setModal("create") }} style={{ background: "#c96c83", border: "none", color: "#fff" }}>+ Add Item</Button>}
-      />
+      <div data-tour="admin-gallery-header">
+        <DashboardHeader
+          title="Gallery"
+          subtitle={`${data?.pagination?.total_count ?? "—"} items`}
+          actions={<Button size="sm" onClick={() => { resetForm(BLANK, null); setModal("create") }} style={{ background: "#c96c83", border: "none", color: "#fff" }}>+ Add Item</Button>}
+        />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="admin-gallery-filters">
         <ToolbarSection>
           <SegmentedControl>
         {["", ...CATEGORIES].map((c) => (
@@ -149,7 +153,7 @@ export default function AdminGalleryPage() {
       </DashboardToolbar>
 
       {modal !== null && (
-        <DashboardPanel className="space-y-4">
+        <DashboardPanel className="space-y-4" data-tour="admin-gallery-form">
           <h3 className="font-semibold text-sm text-[#101217]">{modal === "create" ? "Add Gallery Item" : "Edit Gallery Item"}</h3>
 
           <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
@@ -312,7 +316,7 @@ export default function AdminGalleryPage() {
           description="Add your first photo above."
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" data-tour="admin-gallery-grid">
           {items.map((item) => (
             <div key={item.id} className="group relative overflow-hidden border border-black/10 bg-white shadow-sm shadow-black/[0.03]">
               <div className="aspect-square">
@@ -356,6 +360,8 @@ export default function AdminGalleryPage() {
           </ToolbarSection>
         </DashboardToolbar>
       )}
+
+      <TutorialButton steps={adminGallerySteps} pageKey="admin-gallery" />
     </DashboardPage>
   )
 }

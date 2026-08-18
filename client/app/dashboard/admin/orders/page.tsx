@@ -15,6 +15,7 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -24,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import api from "@/lib/api"
+import { adminOrdersSteps } from "@/lib/tours/admin-orders-tour"
 
 interface Order {
   id: number
@@ -73,9 +75,11 @@ export default function AdminOrdersPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Orders" subtitle="Review shop orders and update fulfillment status." />
+      <div data-tour="admin-orders-header">
+        <DashboardHeader title="Orders" subtitle="Review shop orders and update fulfillment status." />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="admin-orders-filters">
         <ToolbarSection>
           <SegmentedControl>
             {["", ...ORDER_STATUSES].map((orderStatus) => (
@@ -105,7 +109,7 @@ export default function AdminOrdersPage() {
           description="Try another status filter or check back when new shop orders come in."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="admin-orders-list">
           {orders.map((order) => {
             const name =
               [order.user?.first_name, order.user?.last_name].filter(Boolean).join(" ") ||
@@ -184,6 +188,8 @@ export default function AdminOrdersPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton steps={adminOrdersSteps} pageKey="admin-orders" />
     </DashboardPage>
   )
 }

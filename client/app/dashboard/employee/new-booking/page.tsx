@@ -8,9 +8,11 @@ import { CheckCircle2, ChevronLeft } from "lucide-react"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { useCreateStaffBooking, type StaffBookingInput } from "@/lib/hooks/use-employee"
+import { employeeNewBookingSteps } from "@/lib/tours/employee-tour"
 
 interface ApiService {
   id: number
@@ -109,17 +111,19 @@ export default function StaffNewBookingPage() {
 
   return (
     <DashboardPage maxWidth="narrow">
-      <DashboardHeader
-        title="New booking"
-        subtitle="Book a client in manually. This goes straight onto your schedule."
-        actions={
-          <Link href="/dashboard/employee" className="inline-flex h-10 items-center gap-1 border border-black/15 bg-white px-4 text-sm font-bold text-[#101217]">
-            <ChevronLeft className="size-4" /> Back
-          </Link>
-        }
-      />
+      <div data-tour="new-booking-header">
+        <DashboardHeader
+          title="New booking"
+          subtitle="Book a client in manually. This goes straight onto your schedule."
+          actions={
+            <Link href="/dashboard/employee" className="inline-flex h-10 items-center gap-1 border border-black/15 bg-white px-4 text-sm font-bold text-[#101217]">
+              <ChevronLeft className="size-4" /> Back
+            </Link>
+          }
+        />
+      </div>
 
-      <DashboardPanel>
+      <DashboardPanel data-tour="new-booking-form">
         <div className="grid gap-5">
           <div>
             <label className={labelClass}>Service</label>
@@ -205,6 +209,8 @@ export default function StaffNewBookingPage() {
           </Button>
         </div>
       </DashboardPanel>
+
+      <TutorialButton steps={employeeNewBookingSteps} pageKey="employee-new-booking" />
     </DashboardPage>
   )
 }

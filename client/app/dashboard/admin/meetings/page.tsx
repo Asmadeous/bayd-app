@@ -14,8 +14,10 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useAdminMeetings, useDeleteMeeting } from "@/lib/hooks/use-meetings"
+import { adminMeetingsSteps } from "@/lib/tours/admin-meetings-tour"
 
 const STATUSES = ["scheduled", "completed", "cancelled"]
 const dt = (s: string | null) =>
@@ -42,12 +44,14 @@ export default function AdminMeetingsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader
-        title="Work-Scope Calls"
-        subtitle="Video consultations between customers and staff."
-      />
+      <div data-tour="admin-meetings-header">
+        <DashboardHeader
+          title="Work-Scope Calls"
+          subtitle="Video consultations between customers and staff."
+        />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="admin-meetings-filters">
         <ToolbarSection>
           <SegmentedControl>
             {["", ...STATUSES].map((meetingStatus) => (
@@ -77,7 +81,7 @@ export default function AdminMeetingsPage() {
           description="Scheduled consultations will appear here."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="admin-meetings-list">
           {meetings.map((meeting) => (
             <DashboardPanel className="p-0" key={meeting.id}>
               <div className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
@@ -146,6 +150,8 @@ export default function AdminMeetingsPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton steps={adminMeetingsSteps} pageKey="admin-meetings" />
     </DashboardPage>
   )
 }

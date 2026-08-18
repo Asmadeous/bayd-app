@@ -186,12 +186,13 @@ export function Sidebar() {
       ) : null}
 
       <aside
+        data-tour="sidebar"
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-[19rem] max-w-[86vw] shrink-0 flex-col border-r border-white/10 bg-[#101217] text-white shadow-2xl shadow-black/25 transition-transform duration-300 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:translate-x-0 lg:shadow-none",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="relative isolate overflow-hidden border-b border-white/10 bg-[linear-gradient(135deg,rgba(240,200,211,0.12),transparent_42%)] px-5 py-5">
+        <div data-tour="sidebar-brand" className="relative isolate overflow-hidden border-b border-white/10 bg-[linear-gradient(135deg,rgba(240,200,211,0.12),transparent_42%)] px-5 py-5">
           <div className="flex items-center justify-between gap-4">
             <Link href="/dashboard" className="flex items-center gap-3" onClick={closeMobileNav}>
               <BrandMark tone="light" />
@@ -207,7 +208,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        <div className="border-b border-white/10 px-4 py-4">
+        <div data-tour="sidebar-profile" className="border-b border-white/10 px-4 py-4">
           <div className="flex items-center gap-3">
             <div className="grid size-11 shrink-0 place-items-center overflow-hidden border border-white/10 bg-white/10">
               {user?.avatar_url ? (
@@ -230,6 +231,7 @@ export function Sidebar() {
         </div>
 
         <nav
+          data-tour="sidebar-nav"
           className={cn(
             "flex-1 overflow-y-auto px-3 py-4",
             isAdmin && "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
@@ -257,7 +259,7 @@ export function Sidebar() {
           )}
         </nav>
 
-        <div className="border-t border-white/10 p-3">
+        <div data-tour="sidebar-signout" className="border-t border-white/10 p-3">
           <button
             className="flex w-full items-center gap-3 px-3 py-3 text-sm font-semibold text-white/58 transition-colors hover:bg-white/6 hover:text-white"
             onClick={handleLogout}

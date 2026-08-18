@@ -19,8 +19,10 @@ import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboa
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { StatusBadge } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
+import { adminNewsletterSteps } from "@/lib/tours/admin-newsletter-tour"
 
 interface Subscriber { id: number; email: string; confirmed: boolean; created_at: string }
 interface PagedResponse<T> { data: T[]; pagination: { current_page: number; total_pages: number; next_page: number | null; total_count: number } }
@@ -46,9 +48,11 @@ export default function AdminNewsletterPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Newsletter" subtitle="Manage newsletter subscribers." />
+      <div data-tour="admin-newsletter-header">
+        <DashboardHeader title="Newsletter" subtitle="Manage newsletter subscribers." />
+      </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3" data-tour="admin-newsletter-metrics">
         <MetricCard
           accent
           icon={Mail}
@@ -68,6 +72,7 @@ export default function AdminNewsletterPage() {
           description="Newsletter subscribers will appear here."
         />
       ) : (
+        <div data-tour="admin-newsletter-table">
         <DataTable>
           <DataTableHead>
             <DataTableRow>
@@ -107,6 +112,7 @@ export default function AdminNewsletterPage() {
             ))}
           </DataTableBody>
         </DataTable>
+        </div>
       )}
 
       {data?.pagination && data.pagination.total_pages > 1 ? (
@@ -134,6 +140,8 @@ export default function AdminNewsletterPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton steps={adminNewsletterSteps} pageKey="admin-newsletter" />
     </DashboardPage>
   )
 }

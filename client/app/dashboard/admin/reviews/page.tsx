@@ -14,8 +14,10 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useAdminReviews, useApproveReview } from "@/lib/hooks/use-admin"
+import { adminReviewsSteps } from "@/lib/tours/admin-reviews-tour"
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -46,9 +48,11 @@ export default function AdminReviewsPage() {
 
   return (
     <DashboardPage maxWidth="wide">
-      <DashboardHeader title="Reviews" subtitle="Moderate customer reviews." />
+      <div data-tour="admin-reviews-header">
+        <DashboardHeader title="Reviews" subtitle="Moderate customer reviews." />
+      </div>
 
-      <DashboardToolbar>
+      <DashboardToolbar data-tour="admin-reviews-filter">
         <ToolbarSection>
           <SegmentedControl>
             {(["all", "pending", "approved"] as const).map((item) => (
@@ -71,7 +75,7 @@ export default function AdminReviewsPage() {
           description="Customer reviews matching this filter will appear here."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3" data-tour="admin-reviews-list">
           {reviews.map((review) => {
             const clientName = [review.user?.first_name, review.user?.last_name].filter(Boolean).join(" ") || "Anonymous"
             const employeeName = [review.employee_profile?.user?.first_name, review.employee_profile?.user?.last_name].filter(Boolean).join(" ")
@@ -136,6 +140,8 @@ export default function AdminReviewsPage() {
           </ToolbarSection>
         </DashboardToolbar>
       ) : null}
+
+      <TutorialButton steps={adminReviewsSteps} pageKey="admin-reviews" />
     </DashboardPage>
   )
 }
