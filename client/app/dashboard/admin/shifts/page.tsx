@@ -20,6 +20,7 @@ import { StatCard } from "@/components/dashboard/stat-card"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import {
   Select,
   SelectContent,
@@ -106,18 +107,19 @@ export default function AdminShiftsPage() {
             </Select>
           </Field>
           <Field label="From">
-            <input
-              className="h-10 border border-black/15 bg-white px-2 text-sm outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
-              onChange={(event) => set({ from: event.target.value || undefined })}
-              type="date"
+            <DatePicker
+              className="h-10 w-40"
+              onChange={(value) => set({ from: value || undefined })}
+              placeholder="From date"
               value={filters.from ?? ""}
             />
           </Field>
           <Field label="To">
-            <input
-              className="h-10 border border-black/15 bg-white px-2 text-sm outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
-              onChange={(event) => set({ to: event.target.value || undefined })}
-              type="date"
+            <DatePicker
+              className="h-10 w-40"
+              min={filters.from}
+              onChange={(value) => set({ to: value || undefined })}
+              placeholder="To date"
               value={filters.to ?? ""}
             />
           </Field>

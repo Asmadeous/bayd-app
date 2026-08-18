@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { SmoothHashScroll } from "@/components/smooth-hash-scroll";
 import { TawkToChat } from "@/components/tawk-to-chat";
+import { BaydToastProvider } from "@/components/bayd-toast-provider";
 import { Providers } from "@/app/providers";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
@@ -99,7 +100,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <SmoothHashScroll />
         <TawkToChat />
-        <Providers>{children}</Providers>
+        <Providers>
+          <BaydToastProvider>{children}</BaydToastProvider>
+        </Providers>
       </body>
     </html>
   );
