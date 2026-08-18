@@ -334,15 +334,24 @@ employee_data = [
 employees = employee_data.map do |e|
   user = User.find_or_initialize_by(email: e[:email])
   # Shared temporary password for handover — tell each tech theirs out of band
-  # and have them change it via the password-reset flow before going live.
-  user.update!(first_name: e[:first], last_name: "", role: :employee, password: "TempStaff2026!")
+  # and have them change it via the password-reset flow before going live. Only
+  # set on FIRST creation: db:seed reruns on every deploy (see deploy.yml), so
+  # setting this unconditionally would silently overwrite a real password the
+  # tech has since changed, locking them out.
+  user.password = "TempStaff2026!" if user.new_record?
+  user.update!(first_name: e[:first], last_name: "", role: :employee)
 
   profile = EmployeeProfile.find_or_initialize_by(user: user)
-  profile.update!(
+  # on_shift is live app state (the tech's own clock-in/out toggle) — only seed
+  # it on first creation, same reasoning as the password above: db:seed reruns
+  # on every deploy and must never silently overwrite live shift status.
+  profile.on_shift = e[:on_shift] if profile.new_record?
+  profile.assign_attributes(
     title: e[:title], years_experience: e[:yrs], bio: e[:bio],
     base_latitude: e[:lat], base_longitude: e[:lng], service_fsas: e[:fsas],
-    active: true, dispatchable: true, on_shift: e[:on_shift]
+    active: true, dispatchable: true
   )
+  profile.save!
 
   # Service-area zones.
   EmployeeServiceArea.where(employee_profile: profile).delete_all
