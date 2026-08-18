@@ -1,0 +1,9 @@
+Sign in to your account
+
+Hi<%= @user.first_name.present? ? " #{@user.first_name}" : "" %>, click the link below to sign
+in. This link works once and expires in <%= @expires_in_minutes %> minutes.
+
+<%= @sign_in_url %>
+
+If you didn't request this, you can safely ignore this email — no one can access your account
+without clicking this link.

@@ -20,14 +20,15 @@ type AuthPageProps = {
 export function AuthPage({ content }: AuthPageProps) {
   const searchParams = useSearchParams()
   const referralCode = searchParams.get("ref") ?? undefined
-  const { login, register, staffLogin } = useAuth()
+  const { register, staffLogin, requestMagicLink, requestPasswordReset } = useAuth()
   const [values, setValues] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   // Two-step for staff/admin: after entering an email that belongs to a staff
-  // account, the customer login 403s and we reveal a password step.
+  // account, requesting a magic link 403s and we reveal a password step.
   const [needsPassword, setNeedsPassword] = useState(false)
+  const [magicLinkSent, setMagicLinkSent] = useState(false)
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -42,10 +43,12 @@ export function AuthPage({ content }: AuthPageProps) {
           await staffLogin.mutateAsync({ email: values.email ?? "", password: values.password ?? "" })
           setSuccess("Welcome back. Opening your dashboard now.")
         } else {
-          // Step 1 — email. Customers sign in; staff emails 403 → ask for password.
+          // Step 1 — email. Customers get a one-click sign-in link by email
+          // (no instant token — proves inbox ownership first); staff emails
+          // 403 → ask for password instead.
           try {
-            await login.mutateAsync({ email: values.email ?? "", phone: values.phone || undefined })
-            setSuccess("Welcome back. Opening your dashboard now.")
+            await requestMagicLink.mutateAsync(values.email ?? "")
+            setMagicLinkSent(true)
           } catch (err: unknown) {
             const status = (err as { response?: { status?: number } })?.response?.status
             if (status === 403) {
@@ -73,8 +76,8 @@ export function AuthPage({ content }: AuthPageProps) {
         })
         setSuccess("Your account has been created. Opening your dashboard now.")
       } else if (content.mode === "forgot") {
-        // Placeholder — no forgot-password endpoint yet
-        setSuccess("Password reset by email is not available yet. Please contact support and we will help restore access to your account.")
+        await requestPasswordReset.mutateAsync(values.email ?? "")
+        setSuccess(`Check your email — if ${values.email} has a staff account, a password reset link is on its way.`)
         setLoading(false)
         return
       }
@@ -175,6 +178,21 @@ export function AuthPage({ content }: AuthPageProps) {
               </p>
             </div>
 
+            {magicLinkSent ? (
+              <div className="mt-9 space-y-5">
+                <p className="rounded-lg border border-[#5a9e5a]/25 bg-[#5a9e5a]/10 px-4 py-3 text-sm font-semibold text-[#3f7a3f]">
+                  Check your email — we sent a sign-in link to {values.email}. It works once and
+                  expires in 15 minutes.
+                </p>
+                <button
+                  className="text-sm font-extrabold text-[#101217] transition-colors hover:text-[#c96c83]"
+                  onClick={() => setMagicLinkSent(false)}
+                  type="button"
+                >
+                  Use a different email
+                </button>
+              </div>
+            ) : (
             <form className="mt-9 space-y-5" onSubmit={handleSubmit}>
               {content.fields.map((field) => (
                 <label className="block" key={field.name}>
@@ -364,8 +382,9 @@ export function AuthPage({ content }: AuthPageProps) {
                     : content.primaryAction}
               </button>
             </form>
+            )}
 
-            {content.mode !== "forgot" && <GoogleSignIn />}
+            {content.mode !== "forgot" && !magicLinkSent && <GoogleSignIn />}
 
             <div className="mt-7 border-t border-black/10 pt-6">
               <p className="text-sm text-[#5f6268]">

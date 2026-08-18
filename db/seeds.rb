@@ -333,14 +333,25 @@ employee_data = [
 
 employees = employee_data.map do |e|
   user = User.find_or_initialize_by(email: e[:email])
-  user.update!(first_name: e[:first], last_name: "", role: :employee, password: "password123")
+  # Shared temporary password for handover — tell each tech theirs out of band
+  # and have them change it via the password-reset flow before going live. Only
+  # set on FIRST creation: db:seed reruns on every deploy (see deploy.yml), so
+  # setting this unconditionally would silently overwrite a real password the
+  # tech has since changed, locking them out.
+  user.password = "TempStaff2026!" if user.new_record?
+  user.update!(first_name: e[:first], last_name: "", role: :employee)
 
   profile = EmployeeProfile.find_or_initialize_by(user: user)
-  profile.update!(
+  # on_shift is live app state (the tech's own clock-in/out toggle) — only seed
+  # it on first creation, same reasoning as the password above: db:seed reruns
+  # on every deploy and must never silently overwrite live shift status.
+  profile.on_shift = e[:on_shift] if profile.new_record?
+  profile.assign_attributes(
     title: e[:title], years_experience: e[:yrs], bio: e[:bio],
     base_latitude: e[:lat], base_longitude: e[:lng], service_fsas: e[:fsas],
-    active: true, dispatchable: true, on_shift: e[:on_shift]
+    active: true, dispatchable: true
   )
+  profile.save!
 
   # Service-area zones.
   EmployeeServiceArea.where(employee_profile: profile).delete_all
@@ -359,11 +370,10 @@ end
 puts "  #{employees.size} employee profiles"
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
-# Change these credentials before going live.
-User.find_or_create_by!(email: "admin@bayd.local") do |u|
+User.find_or_create_by!(email: "bookings@baydspa.ca") do |u|
   u.first_name = "Admin"; u.last_name = "BAYD"; u.role = :admin; u.password = "adminpass123"
 end
-puts "  1 admin user (admin@bayd.local — change password before launch)"
+puts "  1 admin user (bookings@baydspa.ca)"
 
 # ── Blog (imported from the transferred export — source URLs excluded) ────────
 # Blog covers reuse our real work photos, matched by post category. The seed
@@ -503,36 +513,6 @@ puts "  22 gallery items"
 end
 puts "  4 job postings"
 
-# ── Blog ──────────────────────────────────────────────────────────────────────
-author = User.find_by(role: :admin)
-[
-  { title: "5 Lash Aftercare Tips", excerpt: "Keep your extensions flawless for weeks.", cover: "/images/lashes1.jpg" },
-  { title: "Why Mobile Beauty Is the Future", excerpt: "Salon-quality service at your door.", cover: "/images/massage.jpg" },
-  { title: "Gel vs Classic Manicure", excerpt: "Which one is right for you?", cover: "/images/nails1.jpg" }
-].each do |b|
-  BlogPost.find_or_create_by!(title: b[:title]) do |post|
-    post.author = author; post.excerpt = b[:excerpt]
-    post.body = "#{b[:excerpt]}\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. " * 6
-    post.cover_image_url = b[:cover]; post.status = "published"; post.published_at = Time.current - rand(1..40).days
-  end
-end
-puts "  3 blog posts"
-
-# ── Newsletter + inbound inquiries ────────────────────────────────────────────
-%w[fan1@example.com fan2@example.com fan3@example.com].each do |em|
-  NewsletterSubscriber.find_or_create_by!(email: em)
-end
-ContactMessage.find_or_create_by!(email: "lead@example.com") do |m|
-  m.name = "Jordan Lee"; m.message = "Do you service the Oakville area?"
-end
-FranchiseInquiry.find_or_create_by!(email: "investor@example.com") do |f|
-  f.name = "Sam Carter" if f.respond_to?(:name=)
-end
-JobApplication.find_or_create_by!(email: "applicant@example.com") do |j|
-  j.name = "Riley Adams"
-end
-puts "  newsletter + inquiries"
-
 # ── Invoices / transactions backfill (idempotent; PDFs rendered inline) ────────
 invoice_sources =
   Booking.where(status: "completed").order(starts_at: :desc).limit(15).to_a +
@@ -551,4 +531,4 @@ rescue StandardError => e
 end
 puts "  #{invoiced} invoices generated (#{Invoice.count} total)"
 
-puts "Done. Log in as admin@bayd.local / adminpass123 or maya@example.com / password123"
+puts "Done. Log in as bookings@baydspa.ca / adminpass123 (change this password before handing over)."

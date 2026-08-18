@@ -60,6 +60,27 @@ export function useAuth() {
     window.location.href = `${API_BASE_URL}/auth/google`
   }
 
+  // Dashboard sign-in for an EXISTING account: request a one-click sign-in
+  // link by email instead of trusting whatever email is typed. The backend
+  // always responds success (no account-enumeration signal) — the link, once
+  // clicked, redirects through /auth/callback?token=… same as Google OAuth.
+  const requestMagicLinkMutation = useMutation({
+    mutationFn: (email: string) =>
+      api.post<{ message: string }>("/auth/magic_link", { email }).then((r) => r.data),
+  })
+
+  // Staff/admin password reset (customers are passwordless — nothing to
+  // reset). Same shape as the magic link: always responds success.
+  const requestPasswordResetMutation = useMutation({
+    mutationFn: (email: string) =>
+      api.post<{ message: string }>("/auth/password_reset", { email }).then((r) => r.data),
+  })
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (data: { token: string; password: string }) =>
+      api.post<{ message: string }>("/auth/password_reset/confirm", data).then((r) => r.data),
+  })
+
   const updateMeMutation = useMutation({
     mutationFn: (data: {
       first_name?: string; last_name?: string; phone?: string; marketing_opt_in?: boolean; avatar_url?: string
@@ -85,6 +106,9 @@ export function useAuth() {
     register: registerMutation,
     staffLogin: staffLoginMutation,
     loginWithGoogle,
+    requestMagicLink: requestMagicLinkMutation,
+    requestPasswordReset: requestPasswordResetMutation,
+    resetPassword: resetPasswordMutation,
     updateMe: updateMeMutation,
   }
 }

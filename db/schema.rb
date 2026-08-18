@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_13_131144) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_18_095050) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -464,6 +464,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_131144) do
     t.index ["loyalty_account_id"], name: "index_loyalty_transactions_on_loyalty_account_id"
   end
 
+  create_table "magic_link_tokens", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "purpose", default: "sign_in", null: false
+    t.string "token_digest", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "used_at"
+    t.bigint "user_id", null: false
+    t.index ["token_digest"], name: "index_magic_link_tokens_on_token_digest", unique: true
+    t.index ["user_id"], name: "index_magic_link_tokens_on_user_id"
+  end
+
   create_table "meetings", force: :cascade do |t|
     t.bigint "booking_id", null: false
     t.datetime "created_at", null: false
@@ -773,7 +785,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_131144) do
     t.string "city"
     t.string "country", default: "Canada"
     t.datetime "created_at", null: false
-    t.string "email", null: false
+    t.string "email"
     t.string "first_name"
     t.string "google_uid"
     t.string "helcim_card_token"
@@ -794,6 +806,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_131144) do
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["google_uid"], name: "index_users_on_google_uid", unique: true, where: "(google_uid IS NOT NULL)"
+    t.index ["phone"], name: "index_users_on_phone"
     t.index ["referral_code"], name: "index_users_on_referral_code", unique: true, where: "(referral_code IS NOT NULL)"
     t.index ["referred_by_id"], name: "index_users_on_referred_by_id"
     t.index ["role"], name: "index_users_on_role"
@@ -846,6 +859,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_131144) do
   add_foreign_key "loyalty_accounts", "users"
   add_foreign_key "loyalty_transactions", "bookings"
   add_foreign_key "loyalty_transactions", "loyalty_accounts"
+  add_foreign_key "magic_link_tokens", "users"
   add_foreign_key "meetings", "bookings"
   add_foreign_key "newsletter_subscribers", "users"
   add_foreign_key "notifications", "bookings"
