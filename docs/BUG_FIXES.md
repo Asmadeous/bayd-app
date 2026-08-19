@@ -331,3 +331,42 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Added toast-backed success/error/query-failure feedback across the employee dashboard, profile, shifts, reviews, gift cards, new booking, time clock, and staff booking actions; added field-level validation and shared Select/DatePicker controls to manual booking; added positive-amount validation for top-ups and overtime; rejected past manual booking dates; made employee date, duration, distance, and currency formatting defensive; and clarified that profile photo selection is currently preview-only.
 - **Verification:** Targeted ESLint passed for affected employee pages and shared controls. `git diff --check` passed.
 - **Follow-up:** Real profile photo upload still needs backend/storage support before selected files can be persisted.
+
+---
+
+## 2026-08-19 — Customer dashboard core actions lacked confirmations and feedback
+
+- **Branch:** `bugfix/customer-dashboard-errors`
+- **Area:** Customer dashboard frontend workflow
+- **Reported behavior:** Customers could cancel bookings, remove addresses, remove saved cards, and cancel subscriptions with little or no branded confirmation or feedback. Address creation and customer settings saves had weak or missing error handling, and subscription money/date formatting assumed valid values.
+- **Expected behavior:** High-impact customer actions should use shared confirmations, show clear success/error feedback, reject incomplete address forms before submission, and render partial API data safely.
+- **Root cause:** Several customer dashboard pages and shared controls called mutations directly or used native browser confirmation while relying on disabled buttons or inline-only messages for validation and failures.
+- **Fix:** Added `AlertDialog` confirmations for booking cancellation, address removal, card removal, and subscription cancellation; added BAYD toast success/error/load-failure feedback across bookings, addresses, settings, subscriptions, and card-on-file; added field-level address validation; made subscription money/date formatting defensive; and clarified that customer avatar selection is preview-only until upload support exists.
+- **Verification:** Targeted ESLint passed for affected customer pages and card-on-file. `git diff --check` passed.
+- **Follow-up:** Remaining customer commerce, notification, loyalty, transaction, and overview pages still need the same feedback/formatting pass.
+
+---
+
+## 2026-08-19 — Customer dashboard booking linked back to the guest flow
+
+- **Branch:** `bugfix/customer-dashboard-errors`
+- **Area:** Customer dashboard booking workflow
+- **Reported behavior:** Dashboard booking CTAs sent signed-in customers to the public `/book` flow, which uses the landing page shell, re-asks for known account details, and ignored the dashboard-selected `date` query parameter.
+- **Expected behavior:** Signed-in customers should book from inside the dashboard with known profile/address details prefilled and selected dashboard context preserved.
+- **Root cause:** Customer dashboard links pointed to `/book`, and the public booking page owned all booking state internally without an authenticated dashboard variant.
+- **Fix:** Extracted the public page into a reusable `BookingFlow`, added `/dashboard/customer/book`, prefilled customer profile and saved/default address data, preserved `date`/`service` query parameters, hid public header/footer/sign-in copy in dashboard mode, and updated dashboard/shared booking CTAs to route authenticated customers into the dashboard booking flow.
+- **Verification:** Targeted ESLint passed for the booking flow, customer booking route, dashboard overview, and shared booking button. `git diff --check` passed.
+- **Follow-up:** The dashboard booking flow still uses the existing booking form controls; a later polish pass can replace remaining native controls with shared dashboard primitives.
+
+---
+
+## 2026-08-19 — Remaining customer dashboard pages lacked failure feedback
+
+- **Branch:** `bugfix/customer-dashboard-errors`
+- **Area:** Customer dashboard frontend workflow
+- **Reported behavior:** Gift-card top-ups, notification read actions, loyalty referral copy, invoice downloads, order history, transaction history, and dashboard overview loads could fail silently. Several customer pages also rendered dates, totals, and tax rates directly from raw API values.
+- **Expected behavior:** Lower-volume customer actions should show clear BAYD success/error feedback, reject invalid user-entered amounts before submission, and render partial or malformed API data gracefully.
+- **Root cause:** The remaining customer pages mostly relied on query default states and direct mutation calls without local toast handlers, while display helpers converted raw date and currency fields without validation.
+- **Fix:** Added toast-backed load/action feedback across gift cards, notifications, orders, loyalty, transactions, overview, and review submission; added positive amount validation for gift-card top-ups; handled PDF download failures; made booking cards and customer date/currency/tax rendering defensive; and preserved inline status messages where they already helped.
+- **Verification:** Targeted ESLint passed for affected customer pages and shared booking/review widgets. `git diff --check` passed, and no native `confirm()`/`alert()` calls remain in the scanned customer dashboard surface.
+- **Follow-up:** The dashboard booking flow still uses the existing booking form controls; a later polish pass can replace remaining native controls with shared dashboard primitives.

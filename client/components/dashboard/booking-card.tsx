@@ -43,14 +43,8 @@ export function BookingCard({ booking, actions, className }: BookingCardProps) {
     .filter(Boolean)
     .join(" ")
 
-  const date = new Date(booking.starts_at)
-  const dateStr = date.toLocaleDateString("en-CA", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
-  const timeStr = date.toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit" })
+  const dateLabel = formatBookingDateTime(booking.starts_at)
+  const total = formatCurrency(booking.total)
   const color = STATUS_COLORS[booking.status]
 
   return (
@@ -88,7 +82,7 @@ export function BookingCard({ booking, actions, className }: BookingCardProps) {
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs leading-5 text-[#5f6268]">
             <span className="inline-flex items-center gap-1.5">
               <CalendarDays aria-hidden="true" className="size-3.5 text-[#c96c83]" />
-              {dateStr} at {timeStr}
+              {dateLabel}
             </span>
             {employeeName ? (
               <span className="inline-flex items-center gap-1.5">
@@ -96,7 +90,7 @@ export function BookingCard({ booking, actions, className }: BookingCardProps) {
                 {employeeName}
               </span>
             ) : null}
-            <span className="font-bold text-[#101217]">${booking.total}</span>
+            <span className="font-bold text-[#101217]">{total}</span>
           </div>
 
           {booking.recurrence_active && booking.recurrence_interval_weeks && (
@@ -118,4 +112,23 @@ export function BookingCard({ booking, actions, className }: BookingCardProps) {
       </div>
     </div>
   )
+}
+
+function formatBookingDateTime(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "Date not available"
+
+  const dateStr = date.toLocaleDateString("en-CA", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
+  const timeStr = date.toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit" })
+  return `${dateStr} at ${timeStr}`
+}
+
+function formatCurrency(value: string | number) {
+  const amount = Number(value)
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
 }

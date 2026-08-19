@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { X } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { Button } from "@/components/ui/button"
 import { useSubmitReview, type Booking } from "@/lib/hooks/use-bookings"
 
@@ -13,6 +14,7 @@ interface ReviewDialogProps {
 
 /** Modal letting a customer rate the technician who served a completed booking. */
 export function ReviewDialog({ booking, onClose }: ReviewDialogProps) {
+  const { toast } = useToast()
   const [rating, setRating] = useState(0)
   const [hover, setHover] = useState(0)
   const [body, setBody] = useState("")
@@ -26,10 +28,30 @@ export function ReviewDialog({ booking, onClose }: ReviewDialogProps) {
     .join(" ")
 
   function handleSubmit() {
-    if (rating < 1) return
+    if (rating < 1) {
+      toast({
+        title: "Choose a rating",
+        description: "Select at least one star before submitting your review.",
+        variant: "error",
+      })
+      return
+    }
+
     submit.mutate(
       { bookingId: booking.id, rating, body: body.trim() || undefined },
-      { onSuccess: onClose },
+      {
+        onSuccess: () => {
+          toast({ title: "Review submitted", variant: "success" })
+          onClose()
+        },
+        onError: (error) => {
+          toast({
+            title: "Review could not be submitted",
+            description: getApiErrorMessage(error, "Please try again."),
+            variant: "error",
+          })
+        },
+      },
     )
   }
 
@@ -106,7 +128,7 @@ export function ReviewDialog({ booking, onClose }: ReviewDialogProps) {
           </Button>
           <Button
             size="sm"
-            disabled={rating < 1 || submit.isPending}
+            disabled={submit.isPending}
             onClick={handleSubmit}
             style={{ background: "#c96c83", border: "none", color: "#fff" }}
           >
@@ -116,4 +138,9 @@ export function ReviewDialog({ booking, onClose }: ReviewDialogProps) {
       </div>
     </div>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { CheckCircle2, ImagePlus, Mail, UserRound } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -20,6 +21,7 @@ const fieldClass =
 const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 export default function CustomerSettingsPage() {
+  const { toast } = useToast()
   const { user } = useAuthStore()
   const { updateMe } = useAuth()
   const avatarInputRef = useRef<HTMLInputElement>(null)
@@ -58,9 +60,22 @@ export default function CustomerSettingsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await updateMe.mutateAsync(form)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    try {
+      await updateMe.mutateAsync(form)
+      setSaved(true)
+      toast({
+        title: "Settings saved",
+        description: selectedAvatarFile ? "Profile details were saved. Photo upload is not connected yet." : undefined,
+        variant: "success",
+      })
+      setTimeout(() => setSaved(false), 2500)
+    } catch (error) {
+      toast({
+        title: "Settings not saved",
+        description: getApiErrorMessage(error, "Could not save your account settings."),
+        variant: "error",
+      })
+    }
   }
 
   return (
@@ -111,6 +126,11 @@ export default function CustomerSettingsPage() {
                 {selectedAvatarFile ? (
                   <p className="mt-3 truncate text-xs font-bold uppercase tracking-[0.14em] text-[#a36f4d]">
                     {selectedAvatarFile.name}
+                  </p>
+                ) : null}
+                {selectedAvatarFile ? (
+                  <p className="mt-2 max-w-xl text-xs font-semibold text-[#8a8d93]">
+                    Preview only. Photo upload is not connected yet.
                   </p>
                 ) : null}
               </div>
@@ -225,4 +245,9 @@ export default function CustomerSettingsPage() {
       <TutorialButton steps={customerSettingsSteps} pageKey="customer-settings" />
     </DashboardPage>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

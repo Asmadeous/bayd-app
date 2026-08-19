@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { MouseEvent } from "react"
 import Link from "next/link"
 import { ArrowRight, Bell, Check, MailOpen } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -29,14 +30,55 @@ import {
 import { customerNotificationsSteps } from "@/lib/tours/customer-notifications-tour"
 
 export default function CustomerNotificationsPage() {
+  const { toast } = useToast()
   const [page, setPage] = useState(1)
   const [selectedNotification, setSelectedNotification] = useState<AppNotification | null>(null)
-  const { data, isLoading } = useNotifications(page)
+  const { data, isError, isLoading } = useNotifications(page)
   const markRead = useMarkNotificationRead()
   const markAll = useMarkAllNotificationsRead()
 
   const notifications = data?.data ?? []
   const unread = data?.unread_count ?? 0
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Notifications could not be loaded",
+        description: "Refresh the page or try again shortly.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
+
+  function markNotificationRead(id: number, showSuccess: boolean) {
+    markRead.mutate(id, {
+      onSuccess: () => {
+        if (showSuccess) {
+          toast({ title: "Notification marked read", variant: "success" })
+        }
+      },
+      onError: (error) => {
+        toast({
+          title: "Notification could not be updated",
+          description: getApiErrorMessage(error, "Please try again."),
+          variant: "error",
+        })
+      },
+    })
+  }
+
+  function markAllRead() {
+    markAll.mutate(undefined, {
+      onSuccess: () => toast({ title: "All notifications marked read", variant: "success" }),
+      onError: (error) => {
+        toast({
+          title: "Notifications could not be updated",
+          description: getApiErrorMessage(error, "Please try again."),
+          variant: "error",
+        })
+      },
+    })
+  }
 
   return (
     <DashboardPage maxWidth="wide">
@@ -46,7 +88,7 @@ export default function CustomerNotificationsPage() {
             unread > 0 ? (
               <Button
                 disabled={markAll.isPending}
-                onClick={() => markAll.mutate()}
+                onClick={markAllRead}
                 size="sm"
                 variant="outline"
               >
@@ -78,12 +120,12 @@ export default function CustomerNotificationsPage() {
               onOpen={() => {
                 setSelectedNotification(notification)
                 if (!notification.read_at) {
-                  markRead.mutate(notification.id)
+                  markNotificationRead(notification.id, false)
                 }
               }}
               onRead={(event) => {
                 event.stopPropagation()
-                markRead.mutate(notification.id)
+                markNotificationRead(notification.id, true)
               }}
             />
           ))}
@@ -285,14 +327,20 @@ function NotificationDetailsSheet({
 }
 
 function formatNotificationDate(value: string) {
-  return new Date(value).toLocaleDateString("en-CA", {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+
+  return date.toLocaleDateString("en-CA", {
     month: "short",
     day: "numeric",
   })
 }
 
 function formatNotificationDateTime(value: string) {
-  return new Date(value).toLocaleDateString("en-CA", {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+
+  return date.toLocaleDateString("en-CA", {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -312,4 +360,9 @@ function formatMetadataValue(value: unknown) {
   }
 
   return JSON.stringify(value)
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

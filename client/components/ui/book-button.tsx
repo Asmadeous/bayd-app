@@ -18,12 +18,13 @@ export function BookButton({
   serviceId,
   authenticatedHref,
 }: BookButtonProps) {
-  const { isAuthenticated, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
   const router = useRouter();
 
   function handleClick() {
     const query = serviceId ? `?service=${serviceId}` : "";
-    const dest = authenticatedHref ?? `/book${query}`;
+    const isCustomer = _hasHydrated && isAuthenticated && user?.role === "customer";
+    const dest = isCustomer ? authenticatedHref ?? `/dashboard/customer/book${query}` : `/book${query}`;
     router.push(dest);
   }
 
