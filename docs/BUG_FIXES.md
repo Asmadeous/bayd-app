@@ -240,3 +240,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Moved posting create/edit into the shared `Dialog`, added Zod validation for title, employment type, status, salary values, and salary range ordering, added inline field errors and BAYD toast feedback, replaced posting deletion with the shared `AlertDialog`, and added toast-backed failure handling for application status updates and secure document downloads.
 - **Verification:** Targeted ESLint passed for the jobs page. `git diff --check` passed.
 - **Follow-up:** Application deletion remains out of scope because the current page does not expose that workflow.
+
+---
+
+## 2026-08-19 — Booking status actions lacked confirmations and failure feedback
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and booking workflow
+- **Reported behavior:** Starting, completing, cancelling, and reassigning bookings happened with little or no visible feedback. Completing a booking was immediate, cancelling did not capture a reason, and reassignment failures only showed a small inline message.
+- **Expected behavior:** High-impact booking status changes should use branded confirmations where appropriate, cancellation should preserve an admin-entered reason, and status/reassignment API failures should be visible through the shared toast pattern.
+- **Root cause:** `client/app/dashboard/admin/bookings/page.tsx` called the update mutation directly from action buttons without mutation-level `onError` handling. `client/components/dashboard/reassign-control.tsx` handled assignment failures only inline and did not report candidate-load or success states through toasts.
+- **Fix:** Added BAYD toast feedback for booking status updates, added an `AlertDialog` confirmation for completing a booking, added a cancellation `Dialog` with a reason field passed to the existing API, and added toast-backed success/error handling to reassignment and candidate loading.
+- **Verification:** Targeted ESLint passed for the bookings page and reassignment control. `git diff --check` passed.
+- **Follow-up:** Calendar mode still uses the current paginated booking response; a full-calendar data source should be handled separately if admins need complete month coverage.

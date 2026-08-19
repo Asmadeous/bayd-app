@@ -4,6 +4,7 @@ import { useState } from "react"
 import { CalendarDays, List } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { AppCalendar } from "@/components/dashboard/app-calendar"
 import { BookingCard } from "@/components/dashboard/booking-card"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
@@ -17,7 +18,27 @@ import {
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useAdminBookings, useUpdateBooking } from "@/lib/hooks/use-admin"
 import { ReassignControl } from "@/components/dashboard/reassign-control"
 import { adminBookingsSteps } from "@/lib/tours/admin-bookings-tour"
@@ -36,6 +57,7 @@ const STATUSES: Array<Booking["status"] | "all"> = [
 type BookingsView = "list" | "calendar"
 
 export default function AdminBookingsPage() {
+  const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [page, setPage] = useState(1)
@@ -47,6 +69,9 @@ export default function AdminBookingsPage() {
     date: Date
     bookings: Booking[]
   } | null>(null)
+  const [cancellingBooking, setCancellingBooking] = useState<Booking | null>(null)
+  const [cancellationReason, setCancellationReason] = useState("")
+  const [cancellationError, setCancellationError] = useState<string | null>(null)
   const { data, isLoading } = useAdminBookings({
     status: view === "list" && filter !== "all" ? filter : undefined,
     page,
@@ -72,6 +97,45 @@ export default function AdminBookingsPage() {
     )
   }
 
+  function updateBookingStatus(booking: Booking, status: Booking["status"], cancellation_reason?: string) {
+    updateMutation.mutate(
+      { id: booking.id, status, cancellation_reason },
+      {
+        onSuccess: () => {
+          const label = status.replace("_", " ")
+          toast({ title: "Booking updated", description: `Booking marked ${label}.`, variant: "success" })
+          if (status === "cancelled") {
+            setCancellingBooking(null)
+            setCancellationReason("")
+            setCancellationError(null)
+          }
+        },
+        onError: (error: unknown) => {
+          const message = getApiErrorMessage(error, "Could not update this booking.")
+          if (status === "cancelled") setCancellationError(message)
+          toast({ title: "Booking not updated", description: message, variant: "error" })
+        },
+      }
+    )
+  }
+
+  function openCancelDialog(booking: Booking) {
+    setCancellingBooking(booking)
+    setCancellationReason("")
+    setCancellationError(null)
+  }
+
+  function closeCancelDialog() {
+    setCancellingBooking(null)
+    setCancellationReason("")
+    setCancellationError(null)
+  }
+
+  function confirmCancellation() {
+    if (!cancellingBooking) return
+    updateBookingStatus(cancellingBooking, "cancelled", cancellationReason.trim())
+  }
+
   function renderBookingActions(booking: Booking) {
     return (
       <>
@@ -83,9 +147,7 @@ export default function AdminBookingsPage() {
         {booking.status === "confirmed" && (
           <Button
             disabled={updateMutation.isPending}
-            onClick={() =>
-              updateMutation.mutate({ id: booking.id, status: "in_progress" })
-            }
+            onClick={() => updateBookingStatus(booking, "in_progress")}
             size="xs"
             style={{ background: "#d4a843", border: "none", color: "#fff" }}
           >
@@ -93,23 +155,36 @@ export default function AdminBookingsPage() {
           </Button>
         )}
         {booking.status === "in_progress" && (
-          <Button
-            disabled={updateMutation.isPending}
-            onClick={() =>
-              updateMutation.mutate({ id: booking.id, status: "completed" })
-            }
-            size="xs"
-            style={{ background: "#5a9e5a", border: "none", color: "#fff" }}
-          >
-            Complete
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                disabled={updateMutation.isPending}
+                size="xs"
+                style={{ background: "#5a9e5a", border: "none", color: "#fff" }}
+              >
+                Complete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Complete booking?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This marks the appointment complete and can trigger loyalty, review, and rebooking follow-up workflows.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => updateBookingStatus(booking, "completed")}>
+                  Complete booking
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
         {(booking.status === "pending" || booking.status === "confirmed") && (
           <Button
             disabled={updateMutation.isPending}
-            onClick={() =>
-              updateMutation.mutate({ id: booking.id, status: "cancelled" })
-            }
+            onClick={() => openCancelDialog(booking)}
             size="xs"
             variant="destructive"
           >
@@ -131,6 +206,57 @@ export default function AdminBookingsPage() {
       <div data-tour="bookings-header">
         <DashboardHeader title="Bookings" subtitle="Manage company appointments by list or calendar." />
       </div>
+
+      <Dialog open={cancellingBooking !== null} onOpenChange={(open) => { if (!open) closeCancelDialog() }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader className="pr-14">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+              Booking status
+            </p>
+            <DialogTitle>Cancel booking?</DialogTitle>
+            <DialogDescription>
+              Add the reason for cancelling so the booking history is clear for staff and customer follow-up.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            {cancellationError ? (
+              <div
+                aria-live="polite"
+                className="mb-4 border border-[#b75c68]/25 bg-[#fff5f6] px-4 py-3 text-sm font-semibold text-[#8f3f4b]"
+              >
+                {cancellationError}
+              </div>
+            ) : null}
+            <label>
+              <span className="mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">
+                Cancellation reason
+              </span>
+              <textarea
+                className="min-h-28 w-full border border-black/15 bg-white px-3 py-2 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+                onChange={(event) => {
+                  setCancellationReason(event.target.value)
+                  setCancellationError(null)
+                }}
+                placeholder="Customer requested cancellation, staff unavailable, duplicate booking..."
+                value={cancellationReason}
+              />
+            </label>
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              disabled={updateMutation.isPending}
+              onClick={confirmCancellation}
+              size="sm"
+              variant="destructive"
+            >
+              {updateMutation.isPending ? "Cancelling..." : "Cancel booking"}
+            </Button>
+            <Button onClick={closeCancelDialog} size="sm" variant="ghost">
+              Keep booking
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <DashboardToolbar data-tour="bookings-view-toggle">
         <ToolbarSection>
@@ -272,4 +398,9 @@ export default function AdminBookingsPage() {
       <TutorialButton steps={adminBookingsSteps} pageKey="admin-bookings" />
     </DashboardPage>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }
