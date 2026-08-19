@@ -292,3 +292,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Replaced delete with the shared `AlertDialog`, added toast success/error feedback for deletion and query failures, made scheduled date formatting defensive, and disabled the room link when the URL is missing or invalid.
 - **Verification:** Targeted ESLint passed for the meetings page. `git diff --check` passed.
 - **Follow-up:** Admin meeting lifecycle actions such as complete/cancel remain out of scope because the admin backend currently exposes only list/show/delete.
+
+---
+
+## 2026-08-19 — Fuel compensation shift deletion used browser confirmation
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and fuel compensation workflow
+- **Reported behavior:** Deleting a shift record used the browser confirmation dialog, delete/list failures were silent, invalid date ranges could be submitted from the filter state, and numeric/date display assumed valid values.
+- **Expected behavior:** Shift deletion should use the shared branded confirmation pattern, API failures should show BAYD toast feedback, date filters should reject invalid ranges, and report formatting should fail gracefully.
+- **Root cause:** `client/app/dashboard/admin/shifts/page.tsx` called `confirm(...)` before delete, invoked the delete mutation without local success/error handlers, and formatted dates, duration, distance, and reimbursement directly from raw values.
+- **Fix:** Replaced delete with the shared `AlertDialog`, added a stronger warning for deleting open shifts, added toast success/error feedback for deletion and query failures, added frontend date-range validation, and made date/duration/distance/currency formatting defensive.
+- **Verification:** Targeted ESLint passed for the shifts page. `git diff --check` passed.
+- **Follow-up:** Backend hardening for invalid date query params remains out of scope for this frontend-only change.
