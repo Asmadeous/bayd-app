@@ -16,16 +16,13 @@ module Api
         # in SimplyBook via the admin API (no email verification needed) and store
         # the id — so the tech's booking account exists without app-hopping.
         def create
-          profile = nil
-          ActiveRecord::Base.transaction do
-            user = User.new(user_params)
-            user.role = :employee
-            user.password = params.dig(:employee, :password).presence || SecureRandom.alphanumeric(14)
-            user.save!
-            profile = EmployeeProfile.create!(employee_params.merge(user: user))
-          end
-          create_simplybook_provider(profile) if profile.simplybook_unit_id.blank?
-          render json: EmployeeProfileSerializer.render_as_hash(profile), status: :created
+          result = ProviderFactory.create!(
+            user_attrs:    user_params.to_h.symbolize_keys,
+            profile_attrs: employee_params,
+            role:          :employee,
+            password:      params.dig(:employee, :password)
+          )
+          render json: EmployeeProfileSerializer.render_as_hash(result.profile), status: :created
         end
 
         def update
@@ -69,24 +66,6 @@ module Api
         end
 
         private
-
-        # Best-effort: create this tech as a provider in SimplyBook and store the
-        # returned id on the profile. Creating a provider is a pure admin-API
-        # write — no email verification. Never fails staff creation if SimplyBook
-        # is down/unconfigured; the admin can still type a unit id later.
-        def create_simplybook_provider(profile)
-          return if ENV["SIMPLYBOOK_COMPANY"].blank?
-
-          user = profile.user
-          name = [ user.first_name, user.last_name ].compact_blank.join(" ").presence || user.email
-          service_ids = profile.services.map(&:simplybook_event_id).compact
-          id = SimplyBook::Client.new.create_provider(
-            name: name, email: user.email, phone: user.phone, service_ids: service_ids
-          )
-          profile.update_columns(simplybook_unit_id: id) if id.present?
-        rescue StandardError => e
-          Rails.logger.warn("[Admin::EmployeesController] SimplyBook provider create failed for #{profile.id}: #{e.message}")
-        end
 
         def find_profile = EmployeeProfile.find(params[:id])
 

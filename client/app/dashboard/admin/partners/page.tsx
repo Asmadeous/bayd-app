@@ -31,7 +31,7 @@ import { adminPartnersSteps } from "@/lib/tours/admin-partners-tour"
 
 const cad = (v: string | number) => `$${Number(v).toFixed(2)}`
 const dt = (s: string | null) => (s ? new Date(s).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" }) : "—")
-const BLANK: PartnerInput = { name: "", email: "", phone: "", platform_fee_pct: "20", status: "active", payout_notes: "" }
+const BLANK: PartnerInput = { name: "", email: "", phone: "", platform_fee_pct: "20", status: "active", payout_notes: "", password: "" }
 
 export default function AdminPartnersPage() {
   const { data, isLoading } = useAdminPartners()
@@ -79,6 +79,12 @@ export default function AdminPartnersPage() {
           Each partner earns their share of completed bookings after the platform fee. Settle owed
           amounts into a payout, then mark it paid once funds are sent.
         </p>
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-[#5f6268]">
+          Creating a partner also creates a provider login (they sign in with the email and
+          password below) and a bookable provider profile. That provider is <strong>dormant</strong>
+          {" "}until you set its coverage areas and services on the{" "}
+          <strong>Employees</strong> page — it won&apos;t take bookings until then.
+        </p>
       </DashboardPanel>
 
       {form && (
@@ -94,8 +100,11 @@ export default function AdminPartnersPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Field label="Name"><input value={form.name ?? ""} onChange={(e) => setForm((f) => ({ ...f!, name: e.target.value }))} className={inputCls} /></Field>
             <Field label="Platform fee (%)"><input type="number" min="0" max="100" step="0.5" value={form.platform_fee_pct ?? ""} onChange={(e) => setForm((f) => ({ ...f!, platform_fee_pct: e.target.value }))} className={inputCls} /></Field>
-            <Field label="Email"><input type="email" value={form.email ?? ""} onChange={(e) => setForm((f) => ({ ...f!, email: e.target.value }))} className={inputCls} /></Field>
+            <Field label="Email (login)"><input type="email" value={form.email ?? ""} onChange={(e) => setForm((f) => ({ ...f!, email: e.target.value }))} placeholder="partner's own email" className={inputCls} /></Field>
             <Field label="Phone"><input value={form.phone ?? ""} onChange={(e) => setForm((f) => ({ ...f!, phone: e.target.value }))} className={inputCls} /></Field>
+            {!editingId && (
+              <Field label="Login password (optional)"><input type="text" value={form.password ?? ""} onChange={(e) => setForm((f) => ({ ...f!, password: e.target.value }))} placeholder="auto-generated if blank" className={inputCls} /></Field>
+            )}
             <Field label="Status">
               <Select
                 onValueChange={(value) => setForm((f) => ({ ...f!, status: value as Partner["status"] }))}
@@ -115,7 +124,7 @@ export default function AdminPartnersPage() {
             <Field label="Payout notes"><input value={form.payout_notes ?? ""} onChange={(e) => setForm((f) => ({ ...f!, payout_notes: e.target.value }))} placeholder="e-transfer email, bank ref..." className={inputCls} /></Field>
           </div>
           <div className="mt-5 flex gap-2">
-            <Button size="sm" disabled={!form.name || create.isPending || update.isPending} onClick={save} style={{ background: "#c96c83", border: "none", color: "#fff" }}>Save</Button>
+            <Button size="sm" disabled={!form.name || (!editingId && !form.email) || create.isPending || update.isPending} onClick={save} style={{ background: "#c96c83", border: "none", color: "#fff" }}>Save</Button>
             <Button size="sm" variant="ghost" onClick={() => { setForm(null); setEditingId(null) }}>Cancel</Button>
           </div>
         </DashboardPanel>

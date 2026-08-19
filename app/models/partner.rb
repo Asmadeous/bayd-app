@@ -6,10 +6,42 @@ class Partner < ApplicationRecord
   enum :status, { active: "active", inactive: "inactive" }, prefix: true
 
   validates :name, presence: true
+  # Email is the partner's provider login (staff_login), so it's required and
+  # must be unique across all users — surfaced clearly at create time.
+  validates :email, presence: true
   validates :slug, presence: true, uniqueness: true
   validates :platform_fee_pct, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
 
   before_validation :assign_slug, on: :create
+
+  # The single EmployeeProfile that represents this partner as a bookable
+  # provider (a partner may in theory have several employee_profiles, but we
+  # auto-create and manage exactly one "org" provider — the first).
+  def provider
+    employee_profiles.order(:created_at).first
+  end
+
+  # Create this partner's bookable provider (partner-role User + EmployeeProfile
+  # linked back via partner_id), unless one already exists. The provider is
+  # created active + dispatchable but stays DORMANT (no availability) until an
+  # admin sets its coverage FSAs + services on the Employees page. Idempotent.
+  def ensure_provider!(password: nil)
+    return provider if provider.present?
+
+    ProviderFactory.create!(
+      role:          :partner,
+      password:      password,
+      user_attrs:    { email: email, first_name: name, phone: phone },
+      profile_attrs: { partner_id: id, title: "#{name} (Partner)", active: true, dispatchable: true }
+    ).profile
+  end
+
+  # Deactivate this partner's provider so it stops taking bookings, without
+  # destroying it (bookings/payout history depend on the profile). Used on
+  # partner deletion instead of a hard delete.
+  def deactivate_provider!
+    provider&.update!(active: false, dispatchable: false)
+  end
 
   # Bookings completed by this partner's providers that haven't been paid out.
   def unsettled_bookings
