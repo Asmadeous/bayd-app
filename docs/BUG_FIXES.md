@@ -266,3 +266,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Aligned the admin API include tree to `address` and assigned employee data, updated the page types/display fields, added all valid status filters, added a details dialog backed by `GET /admin/booking_requests/:id`, displayed assignment attempts/candidates, added toast feedback for query failures, and refreshed the admin tour copy.
 - **Verification:** Targeted ESLint passed for the booking requests page and tour copy. Ruby syntax check passed for the admin booking requests controller. `git diff --check` passed.
 - **Follow-up:** Assignment attempt candidates currently show employee IDs from the stored audit payload; enriching historical candidate rows with names would require backend-side lookup or a richer audit format.
+
+---
+
+## 2026-08-19 — Subscription admin actions lacked confirmations and validation
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and subscription workflow
+- **Reported behavior:** Cancelling a subscription happened immediately, deleting used the browser confirmation dialog, frequency edits accepted invalid values until backend rejection, and subscription mutations had no branded success or failure feedback.
+- **Expected behavior:** Subscription cancellation/deletion should use branded confirmations, frequency edits should validate positive whole numbers before save, and update/cancel/delete mutations should surface success and API failures through the shared toast pattern.
+- **Root cause:** `client/app/dashboard/admin/subscriptions/page.tsx` called admin subscription mutations directly from row controls, used `confirm(...)` for deletion, and only disabled frequency save with a loose numeric truthiness check.
+- **Fix:** Added BAYD toast success/error feedback for status, frequency, cancellation, and deletion updates; replaced delete with the shared `AlertDialog`; added a cancellation confirmation dialog; added inline positive-integer validation for frequency count; disabled row controls during pending mutations; and made next-run date formatting defensive.
+- **Verification:** Targeted ESLint passed for the subscriptions page. `git diff --check` passed.
+- **Follow-up:** Bulk subscription operations remain out of scope.
