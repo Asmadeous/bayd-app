@@ -14,8 +14,8 @@ export const adminBookingRequestsSteps: StepType[] = [
     content:
       "Filter requests by status:\n\n" +
       "• Pending — Waiting to be matched with a technician\n" +
-      "• Assigned — Successfully matched and turned into a booking\n" +
-      "• Failed — Could not be assigned (e.g. no coverage in that area)\n\n" +
+      "• Assigned/Booked — Successfully matched or turned into a booking\n" +
+      "• No coverage/availability or Failed — Needs manual follow-up\n\n" +
       "The count of visible requests is shown on the right.",
     position: "bottom",
   },
@@ -23,8 +23,8 @@ export const adminBookingRequestsSteps: StepType[] = [
     selector: '[data-tour="booking-requests-list"]',
     content:
       "Each card shows the requested service, current status, request type, the " +
-      "customer's name and service area, their preferred date/time, and when the " +
-      "request came in. Use this list to spot failed requests that need manual follow-up.",
+      "customer, address, requested time, and when the request came in. Open Details " +
+      "to review assignment attempts for requests that need manual follow-up.",
     position: "top",
   },
   {

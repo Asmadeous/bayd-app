@@ -253,3 +253,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Added BAYD toast feedback for booking status updates, added an `AlertDialog` confirmation for completing a booking, added a cancellation `Dialog` with a reason field passed to the existing API, and added toast-backed success/error handling to reassignment and candidate loading.
 - **Verification:** Targeted ESLint passed for the bookings page and reassignment control. `git diff --check` passed.
 - **Follow-up:** Calendar mode still uses the current paginated booking response; a full-calendar data source should be handled separately if admins need complete month coverage.
+
+---
+
+## 2026-08-19 — Booking request admin used stale fields and hid assignment diagnostics
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and booking request API shape
+- **Reported behavior:** The Booking Requests page expected `request_type`, `preferred_at`, and `service_area` fields even though current booking requests use `kind`, `requested_start`, and `address`. Status filters omitted valid failure statuses, and admins could not inspect assignment attempts from the list.
+- **Expected behavior:** The request list should display current request data, filter by all valid statuses, and expose assignment diagnostics for failed/no-coverage/no-availability requests.
+- **Root cause:** `client/app/dashboard/admin/booking-requests/page.tsx` still reflected an older request shape. The admin booking request controller also included `service_area`, which is no longer an association on `BookingRequest`.
+- **Fix:** Aligned the admin API include tree to `address` and assigned employee data, updated the page types/display fields, added all valid status filters, added a details dialog backed by `GET /admin/booking_requests/:id`, displayed assignment attempts/candidates, added toast feedback for query failures, and refreshed the admin tour copy.
+- **Verification:** Targeted ESLint passed for the booking requests page and tour copy. Ruby syntax check passed for the admin booking requests controller. `git diff --check` passed.
+- **Follow-up:** Assignment attempt candidates currently show employee IDs from the stored audit payload; enriching historical candidate rows with names would require backend-side lookup or a richer audit format.
