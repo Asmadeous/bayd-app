@@ -1,23 +1,12 @@
 puts "Seeding..."
 
-# ── Service areas (real zones served) ─────────────────────────────────────────
-# Coordinates are the real city centres. travel_fee left at 0 — set real values
-# when confirmed (the old $5/$10 were demo placeholders).
-AREA_DATA = {
-  "mississauga" => { name: "Mississauga", lat: 43.5890, lng: -79.6441, radius_km: 18 },
-  "brampton"    => { name: "Brampton",    lat: 43.7315, lng: -79.7624, radius_km: 16 },
-  "toronto"     => { name: "Toronto",     lat: 43.6532, lng: -79.3832, radius_km: 22 }
-}.freeze
-
-areas = AREA_DATA.to_h do |slug, a|
-  area = ServiceArea.find_or_initialize_by(slug: slug)
-  area.update!(
-    name: a[:name], travel_fee: 0, active: true,
-    center_latitude: a[:lat], center_longitude: a[:lng], radius_meters: a[:radius_km] * 1000
-  )
-  [ slug, area ]
-end
-puts "  #{areas.size} service areas"
+# NOTE: ServiceArea (zones with postal_codes + travel_fee) is a real, working
+# admin CRUD feature (Dashboard → Service Areas) but is NOT wired into any
+# coverage or pricing logic yet — AssignmentService/CoverageController check
+# coverage entirely via EmployeeProfile#service_fsas below. Deliberately not
+# seeded here: a ServiceArea row with no postal_codes and a placeholder $0 fee
+# would sit in the admin panel looking configured while controlling nothing.
+# Set real zones there once ServiceArea is wired into coverage/travel pricing.
 
 # ── Service categories ────────────────────────────────────────────────────────
 categories = {
@@ -35,6 +24,7 @@ services_data = [
   # Nails
   { category: "nails",   name: "Manicure",                                     duration: 30,  price: 40.00, desc: "A classic manicure at home — nails shaped and buffed, cuticles tidied, a relaxing hand massage, and a polish of your choice for a clean, put-together finish." },
   { category: "nails",   name: "Pedicure",                                     duration: 60,  price: 50.00, desc: "A soothing at-home pedicure with a warm soak, nail shaping, cuticle care, gentle exfoliation, a foot-and-calf massage, and polish to finish." },
+  { category: "nails",   name: "Jelly Spa Pedicure",                           duration: 50,  price: 75.00, desc: "An upgraded spa pedicure using a jelly-textured soak that softens skin while you relax, with nail shaping, cuticle care, exfoliation, and a foot-and-calf massage before polish." },
   { category: "nails",   name: "Manicure and pedicure",                        duration: 75,  price: 75.00, desc: "Our full hand-and-foot treatment: a complete manicure and pedicure in one visit, with shaping, cuticle care, massage, and polish for both." },
   { category: "nails",   name: "Shellac manicure",                             duration: 45,  price: 45.00, desc: "A gel-based shellac manicure with shaping, cuticle care, and a long-wearing, chip-resistant colour that stays glossy for up to two weeks." },
   { category: "nails",   name: "Shellac Pedicure",                             duration: 45,  price: 55.00, desc: "A pedicure finished with durable shellac polish — soak, shaping, cuticle care, and a high-shine colour that lasts far longer than regular polish." },
@@ -315,19 +305,19 @@ end
 employee_data = [
   { first: "Susi", email: "susi@baydspa.ca", title: "Nail Tech, Waxing and Massages", yrs: 28,
     bio: "Meet Susi, an exceptional entrepreneur and visionary in the world of beauty. With an impressive 28 years of unparalleled experience, Susi has earned a reputation as a trailblazer and an industry icon. Her unwavering dedication to excellence and her innovative approach to beauty services have established her as a formidable force in the market. Get ready to dive into the extraordinary journey of Susi, a true master of her craft.",
-    lat: 43.5890, lng: -79.6441, areas: %w[mississauga brampton toronto], specialties: %w[nails waxing massage spa], on_shift: true,
+    lat: 43.5890, lng: -79.6441, specialties: %w[nails waxing massage spa], on_shift: true,
     fsas: %w[L7A L6X L6Y L6W L6V L6Z L6R L6S L5N L5W L5T L5M L5L L5K L5J L5H L5V L5R L5B L5G L5A L5E L5Y L5X L5P L4V L4T L5S L6M L6L L6J L6H L6K M9C M9B M9A M8W M8V M8Z M8X M8Y L9T M6S] },
   { first: "Claire", email: "claire@baydspa.ca", title: "Lash Artist for Mississauga", yrs: 17,
     bio: "Claire is a certified eyelash extension technician and coach since 2009, with extensive international experience across Europe and 8 years of expertise in Canada. She is a true master of her craft, skilled in all types of eyelash extensions and capable of creating any style or design tailored perfectly to each client. A devoted mother of three children, Claire now brings her expertise beyond her own home studio, providing professional, personalized eyelash services in clients' homes. With a passion for enhancing natural beauty, she combines precision, creativity, and professionalism in every appointment. Her extensive collection of diplomas and certificates reflects her commitment to excellence and continuous mastery of the latest techniques in eyelash artistry.",
-    lat: 43.5453, lng: -79.5697, areas: %w[mississauga], specialties: %w[lashes], on_shift: true,
+    lat: 43.5453, lng: -79.5697, specialties: %w[lashes], on_shift: true,
     fsas: %w[L5N L5W L5T L5M L5L L5K L5J L5H L5V L5R L5B L5G L5A L5E L5Y L5X L5P L4V L4T L5S L6M L6L L6J L6H L6K] },
   { first: "Vanessa", email: "vanessa@baydspa.ca", title: "Nail Tech and Medical Pedicurist for Brampton", yrs: nil,
     bio: "Vanessa, a Certified Nail Technician & Medical Pedicurist proudly serving the Brampton area only. Vanessa is a certified nail technician and specialized medical pedicurist dedicated to helping clients feel confident and comfortable from the toes up. With advanced training in foot care and nail health, she offers more than just beauty, she provides relief for common foot concerns like calluses, ingrown nails, thickened nails, and dry, cracked heels. Trust your feet to a specialist who puts health, safety, and comfort first—Vanessa, Brampton's go-to for expert nail and foot care.",
-    lat: 43.7315, lng: -79.7624, areas: %w[brampton], specialties: %w[nails], on_shift: true,
+    lat: 43.7315, lng: -79.7624, specialties: %w[nails], on_shift: true,
     fsas: %w[L7A L6X L6Y L6W L6V L6Z L6R L6S] },
   { first: "Dana", email: "dana@baydspa.ca", title: "Nail Care Specialist for Mississauga and Etobicoke", yrs: 20,
     bio: "Dana is an experienced nail technician with 20 years in the beauty industry. Originally from Europe, she has honed expert skills in nail art, manicure, pedicure, and nail care techniques. With a passion for creativity and a commitment to client satisfaction, Dana stays updated on the latest trends and products, offering personalized services that enhance the beauty and confidence of her clients.",
-    lat: 43.6532, lng: -79.3832, areas: %w[mississauga toronto], specialties: %w[nails], on_shift: true,
+    lat: 43.6532, lng: -79.3832, specialties: %w[nails], on_shift: true,
     fsas: %w[L5N L5W L5T L5M L5L L5K L5J L5H L5V L5R L5B L5G L5A L5E L5Y L5X L5P L4V L4T L5S] }
 ]
 
@@ -352,10 +342,6 @@ employees = employee_data.map do |e|
     active: true, dispatchable: true
   )
   profile.save!
-
-  # Service-area zones.
-  EmployeeServiceArea.where(employee_profile: profile).delete_all
-  e[:areas].each { |slug| EmployeeServiceArea.find_or_create_by!(employee_profile: profile, service_area: areas[slug]) }
 
   # Assign services matching the technician's specialty categories.
   profile.employee_services.destroy_all

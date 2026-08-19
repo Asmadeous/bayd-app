@@ -85,8 +85,20 @@ export function useAuth() {
     mutationFn: (data: {
       first_name?: string; last_name?: string; phone?: string; marketing_opt_in?: boolean; avatar_url?: string
       street_address?: string; city?: string; country?: string; postal_code?: string; special_needs?: boolean
-    }) =>
-      api.patch<AuthUser>("/auth/me", { user: data }).then((r) => r.data),
+      avatar?: File | null
+    }) => {
+      const { avatar, ...fields } = data
+      if (!avatar) return api.patch<AuthUser>("/auth/me", { user: fields }).then((r) => r.data)
+
+      const payload = new FormData()
+      Object.entries(fields).forEach(([key, value]) => {
+        if (value !== undefined) payload.append(`user[${key}]`, String(value))
+      })
+      payload.append("avatar", avatar)
+      return api
+        .patch<AuthUser>("/auth/me", payload, { headers: { "Content-Type": "multipart/form-data" } })
+        .then((r) => r.data)
+    },
     onSuccess: (updatedUser) => {
       if (token) setAuth(updatedUser, token)
     },

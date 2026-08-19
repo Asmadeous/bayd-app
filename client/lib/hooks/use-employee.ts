@@ -53,8 +53,19 @@ export function useToggleShift() {
 export function useUpdateProfile() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: { title?: string; bio?: string; photo_url?: string }) =>
-      api.patch<EmployeeProfile>("/employee/profile", { employee: data }).then((r) => r.data),
+    mutationFn: (data: { title?: string; bio?: string; photo_url?: string; photo?: File | null }) => {
+      const { photo, ...fields } = data
+      if (!photo) return api.patch<EmployeeProfile>("/employee/profile", { employee: fields }).then((r) => r.data)
+
+      const payload = new FormData()
+      Object.entries(fields).forEach(([key, value]) => {
+        if (value !== undefined) payload.append(`employee[${key}]`, String(value))
+      })
+      payload.append("photo", photo)
+      return api
+        .patch<EmployeeProfile>("/employee/profile", payload, { headers: { "Content-Type": "multipart/form-data" } })
+        .then((r) => r.data)
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["employee-profile"] }),
   })
 }

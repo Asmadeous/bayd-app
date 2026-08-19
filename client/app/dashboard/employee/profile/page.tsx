@@ -70,13 +70,9 @@ export default function EmployeeProfilePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
-      await updateMutation.mutateAsync({ title, bio, photo_url: photoUrl })
+      await updateMutation.mutateAsync({ title, bio, photo: selectedPhotoFile })
       setSaved(true)
-      toast({
-        title: "Profile saved",
-        description: selectedPhotoFile ? "Title and bio were saved. Photo upload is not connected yet." : undefined,
-        variant: "success",
-      })
+      toast({ title: "Profile saved", variant: "success" })
       setTimeout(() => setSaved(false), 2500)
     } catch (error) {
       toast({
@@ -184,7 +180,7 @@ export default function EmployeeProfilePage() {
                 ) : null}
                 {selectedPhotoFile ? (
                   <p className="mt-2 max-w-xl text-xs font-semibold text-[#8a8d93]">
-                    Preview only. Photo upload is not connected yet.
+                    This photo will be uploaded when you save your profile.
                   </p>
                 ) : null}
               </div>

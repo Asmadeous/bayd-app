@@ -9,6 +9,10 @@ on:
         description: "First-time bootstrap (kamal setup instead of kamal deploy)"
         type: boolean
         default: false
+      wipe_database:
+        description: "DANGER: wipe the production database (drop/recreate/migrate/reseed) instead of the normal seed upsert. Deletes ALL bookings/orders/customers permanently. Manual dispatch only — never runs on an automatic push deploy."
+        type: boolean
+        default: false
   workflow_run:
     workflows: ["CI"]
     types: [completed]
@@ -110,7 +114,12 @@ jobs:
             kamal deploy
           fi
 
-      - name: Seed production database (one-time)
+      - name: Wipe + reseed production database (manual dispatch only)
+        if: github.event_name == 'workflow_dispatch' && inputs.wipe_database == true
+        run: kamal app exec --interactive "bin/rails db:reset"
+
+      - name: Seed production database
+        if: "!(github.event_name == 'workflow_dispatch' && inputs.wipe_database == true)"
         run: kamal app exec "bin/rails db:seed"
 
   # ── Frontend: build image on the runner → push to GHCR → run it on the box ─

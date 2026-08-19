@@ -76,6 +76,11 @@ Rails.application.configure do
 
   # Active Storage — local disk (files in storage/; ensure the path persists).
   config.active_storage.service = :local
+  # Needed for rails_blob_url (used by serializers to return real file URLs for
+  # uploaded avatars/photos/covers/gallery images) — without this it raises
+  # "Missing host" outside an actual request (e.g. console, background jobs).
+  Rails.application.routes.default_url_options[:host] = ENV.fetch("APP_HOST", "baydspa.ca")
+  Rails.application.routes.default_url_options[:protocol] = "https"
 
   # Mailer — SMTP via ENV. Delivery failures are logged, not raised, so a
   # transient mail outage never breaks the request/job that triggered it.
@@ -86,12 +91,17 @@ Rails.application.configure do
     host: ENV.fetch("APP_HOST", "baydspa.ca"),
     protocol: "https"
   }
+  smtp_port = ENV.fetch("SMTP_PORT", 587).to_i
   config.action_mailer.smtp_settings = {
     address:        ENV["SMTP_ADDRESS"],
-    port:           ENV.fetch("SMTP_PORT", 587).to_i,
+    port:           smtp_port,
     user_name:      ENV["SMTP_USERNAME"],
     password:       ENV["SMTP_PASSWORD"],
     authentication: :plain,
-    enable_starttls_auto: true
+    # Port 465 = implicit TLS (connection is encrypted from the start, no
+    # STARTTLS handshake). Port 587/25 = STARTTLS (plain connection upgraded
+    # to TLS). Using the wrong mode for the port fails the handshake.
+    tls: smtp_port == 465,
+    enable_starttls_auto: smtp_port != 465
   }
 end

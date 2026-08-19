@@ -251,6 +251,23 @@ export function useUpdateServiceArea() {
   })
 }
 
+// Real coverage map — derived from each tech's service_fsas (what booking
+// eligibility actually checks), not the ServiceArea zones above.
+export interface CoverageTech {
+  employee_profile_id: number
+  name: string | null
+}
+
+export function useServiceAreaCoverage() {
+  return useQuery({
+    queryKey: ["admin-service-area-coverage"],
+    queryFn: () =>
+      api
+        .get<{ fsas: Record<string, CoverageTech[]>; configured: boolean }>("/admin/service_areas/coverage")
+        .then((r) => r.data),
+  })
+}
+
 // ── Careers: job postings + applications ──────────────────────────────────────
 
 export interface AdminJobPosting {

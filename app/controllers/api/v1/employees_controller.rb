@@ -1,6 +1,8 @@
 module Api
   module V1
     class EmployeesController < ApplicationController
+      include ImageUploadValidation
+
       before_action :require_employee!
 
       def show
@@ -8,7 +10,12 @@ module Api
       end
 
       def update
-        profile.update!(profile_params)
+        if params[:photo].present? && !valid_image?(params[:photo])
+          return render json: { error: "Photo must be a real JPEG, PNG, WEBP, or GIF image." }, status: :unprocessable_entity
+        end
+
+        profile.update!(profile_params) if params[:employee].present?
+        profile.photo.attach(params[:photo]) if params[:photo].present?
         render json: EmployeeProfileSerializer.render_as_hash(profile)
       end
 

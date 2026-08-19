@@ -10,6 +10,12 @@ module Api
     # Needs GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI (the exact
     # callback URL registered in Google Console), and APP_URL (frontend to return to).
     class GoogleAuthController < ApplicationController
+      # api_only controllers (ActionController::API) don't include the cookies
+      # helper, so `cookies.encrypted[...]` for the OAuth anti-CSRF state raises
+      # NoMethodError and 500s the flow. Mix it in here (the middleware is added
+      # back in config/application.rb). This is the only controller using cookies.
+      include ActionController::Cookies
+
       skip_before_action :authenticate_user!
 
       AUTH_URL  = "https://accounts.google.com/o/oauth2/v2/auth".freeze

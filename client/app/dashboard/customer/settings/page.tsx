@@ -61,13 +61,15 @@ export default function CustomerSettingsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     try {
-      await updateMe.mutateAsync(form)
-      setSaved(true)
-      toast({
-        title: "Settings saved",
-        description: selectedAvatarFile ? "Profile details were saved. Photo upload is not connected yet." : undefined,
-        variant: "success",
+      await updateMe.mutateAsync({
+        first_name: form.first_name,
+        last_name: form.last_name,
+        phone: form.phone,
+        marketing_opt_in: form.marketing_opt_in,
+        avatar: selectedAvatarFile,
       })
+      setSaved(true)
+      toast({ title: "Settings saved", variant: "success" })
       setTimeout(() => setSaved(false), 2500)
     } catch (error) {
       toast({
@@ -130,7 +132,7 @@ export default function CustomerSettingsPage() {
                 ) : null}
                 {selectedAvatarFile ? (
                   <p className="mt-2 max-w-xl text-xs font-semibold text-[#8a8d93]">
-                    Preview only. Photo upload is not connected yet.
+                    This photo will be uploaded when you save your settings.
                   </p>
                 ) : null}
               </div>

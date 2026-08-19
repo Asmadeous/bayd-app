@@ -26,7 +26,7 @@ const CATEGORY_META: Record<
 > = {
   Nails: {
     id: "nails",
-    summary: "Gel, shellac, refills, polish changes, and hand care.",
+    summary: "Manicures, pedicures, gel, shellac, refills, polish changes, and nail care.",
     accent: "bg-white/80",
     order: 1,
   },
