@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { MapPin, Clock } from "lucide-react"
+import { useToast } from "@/components/bayd-toast-provider"
 import { Button } from "@/components/ui/button"
 import { useCurrentShift, useClockIn, useClockOut } from "@/lib/hooks/use-time-clock"
 
 function elapsed(fromISO: string): string {
-  const secs = Math.max(0, Math.floor((Date.now() - new Date(fromISO).getTime()) / 1000))
+  const from = new Date(fromISO).getTime()
+  if (Number.isNaN(from)) return "-"
+
+  const secs = Math.max(0, Math.floor((Date.now() - from) / 1000))
   const h = Math.floor(secs / 3600)
   const m = Math.floor((secs % 3600) / 60)
   const s = secs % 60
@@ -14,7 +18,8 @@ function elapsed(fromISO: string): string {
 }
 
 export function TimeClock() {
-  const { data: shift, isLoading } = useCurrentShift()
+  const { toast } = useToast()
+  const { data: shift, isError, isLoading } = useCurrentShift()
   const clockIn = useClockIn()
   const clockOut = useClockOut()
   const [, setTick] = useState(0)
@@ -27,13 +32,36 @@ export function TimeClock() {
     return () => clearInterval(id)
   }, [shift])
 
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Shift status not loaded",
+        description: "Could not check your current shift.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
+
   const busy = clockIn.isPending || clockOut.isPending
   const active = !!shift
 
   function handle(action: "in" | "out") {
     setError(null)
     const mut = action === "in" ? clockIn : clockOut
-    mut.mutate(undefined, { onError: (e: unknown) => setError(e instanceof Error ? e.message : "Something went wrong") })
+    mut.mutate(undefined, {
+      onSuccess: () => {
+        toast({ title: action === "in" ? "Clocked in" : "Clocked out", variant: "success" })
+      },
+      onError: (error: unknown) => {
+        const message = getApiErrorMessage(error, error instanceof Error ? error.message : "Something went wrong")
+        setError(message)
+        toast({
+          title: action === "in" ? "Could not clock in" : "Could not clock out",
+          description: message,
+          variant: "error",
+        })
+      },
+    })
   }
 
   return (
@@ -55,7 +83,7 @@ export function TimeClock() {
             </p>
             <p className="text-xs text-[#5f6268]">
               {active && shift
-                ? `Clocked in ${new Date(shift.clock_in_at).toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit" })} · ${elapsed(shift.clock_in_at)}`
+                ? `Clocked in ${formatTime(shift.clock_in_at)} · ${elapsed(shift.clock_in_at)}`
                 : "Clock in to start tracking your shift and travel"}
             </p>
           </div>
@@ -83,4 +111,16 @@ export function TimeClock() {
       </p>
     </div>
   )
+}
+
+function formatTime(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime())
+    ? "-"
+    : date.toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit" })
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

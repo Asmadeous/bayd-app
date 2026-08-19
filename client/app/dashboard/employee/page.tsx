@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { CalendarDays, CheckCircle2, Clock3, List, MapPin, Plus, ToggleLeft, ToggleRight } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { StaffBookingActions } from "@/components/dashboard/staff-booking-actions"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import { useToast } from "@/components/bayd-toast-provider"
 import { Button } from "@/components/ui/button"
 import { useEmployeeProfile, useEmployeeSchedule, useToggleShift } from "@/lib/hooks/use-employee"
 import { employeeDashboardSteps } from "@/lib/tours/employee-tour"
@@ -28,10 +29,11 @@ import type { Booking } from "@/lib/hooks/use-bookings"
 type ScheduleView = "list" | "calendar"
 
 export default function EmployeeDashboardPage() {
+  const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data: profile } = useEmployeeProfile()
-  const { data, isLoading } = useEmployeeSchedule(1)
+  const { data: profile, isError: isProfileError } = useEmployeeProfile()
+  const { data, isError: isScheduleError, isLoading } = useEmployeeSchedule(1)
   const toggleShift = useToggleShift()
   const [view, setView] = useState<ScheduleView>(
     searchParams.get("view") === "calendar" ? "calendar" : "list",
@@ -41,13 +43,33 @@ export default function EmployeeDashboardPage() {
   const bookings = data?.data ?? []
   const upcoming = bookings
     .filter((b) => b.status === "confirmed" || b.status === "pending")
-    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+    .sort((a, b) => getTime(a.starts_at) - getTime(b.starts_at))
   const inProgress = bookings.filter((b) => b.status === "in_progress")
   const nextBooking = upcoming[0]
   const visibleBookings = selectedDay ? selectedDay.bookings : upcoming.slice(0, 5)
   const listBookings = bookings
     .slice()
-    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+    .sort((a, b) => getTime(a.starts_at) - getTime(b.starts_at))
+
+  useEffect(() => {
+    if (isProfileError) {
+      toast({
+        title: "Profile not loaded",
+        description: "Could not load your employee profile.",
+        variant: "error",
+      })
+    }
+  }, [isProfileError, toast])
+
+  useEffect(() => {
+    if (isScheduleError) {
+      toast({
+        title: "Schedule not loaded",
+        description: "Could not load your assigned appointments.",
+        variant: "error",
+      })
+    }
+  }, [isScheduleError, toast])
 
   function selectView(nextView: ScheduleView) {
     setView(nextView)
@@ -77,7 +99,23 @@ export default function EmployeeDashboardPage() {
               data-tour="employee-shift-toggle"
               className="h-10 px-4 font-bold text-white"
               disabled={toggleShift.isPending}
-              onClick={() => toggleShift.mutate()}
+              onClick={() =>
+                toggleShift.mutate(undefined, {
+                  onSuccess: (data) => {
+                    toast({
+                      title: data.on_shift ? "Shift started" : "Shift ended",
+                      variant: "success",
+                    })
+                  },
+                  onError: (error) => {
+                    toast({
+                      title: "Shift status not changed",
+                      description: getApiErrorMessage(error, "Could not update your shift status."),
+                      variant: "error",
+                    })
+                  },
+                })
+              }
               style={
                 profile?.on_shift
                   ? { background: "#5a9e5a", border: "none" }
@@ -243,6 +281,7 @@ function SchedulePanel({
 
 function formatBookingDate(value: string) {
   const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
 
   return date.toLocaleDateString("en-CA", {
     weekday: "long",
@@ -251,4 +290,14 @@ function formatBookingDate(value: string) {
     hour: "numeric",
     minute: "2-digit",
   })
+}
+
+function getTime(value: string) {
+  const time = new Date(value).getTime()
+  return Number.isNaN(time) ? Number.MAX_SAFE_INTEGER : time
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

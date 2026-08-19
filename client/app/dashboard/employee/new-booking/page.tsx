@@ -1,15 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
 import { CheckCircle2, ChevronLeft } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import api from "@/lib/api"
 import { useCreateStaffBooking, type StaffBookingInput } from "@/lib/hooks/use-employee"
 import { employeeNewBookingSteps } from "@/lib/tours/employee-tour"
@@ -26,10 +35,13 @@ const PROVINCES = ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "
 const CLIENT_TYPES = ["adult", "kids", "elderly", "group"]
 const inputClass =
   "h-10 w-full border border-black/15 bg-white px-3 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const errorInputClass = "border-[#b75c68] focus:border-[#b75c68] focus:ring-[#b75c68]/20"
 const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
+type FormErrors = Partial<Record<"serviceId" | "name" | "email" | "date" | "time" | "line1" | "city" | "postal", string>>
 
 export default function StaffNewBookingPage() {
-  const { data: services = [] } = useQuery<ApiService[]>({
+  const { toast } = useToast()
+  const { data: services = [], isError: isServicesError } = useQuery<ApiService[]>({
     queryKey: ["public-services"],
     queryFn: () => api.get<ApiService[]>("/services").then((r) => r.data),
   })
@@ -49,14 +61,44 @@ export default function StaffNewBookingPage() {
   const [postal, setPostal] = useState("")
   const [notes, setNotes] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<FormErrors>({})
   const [done, setDone] = useState(false)
+  const today = getTodayInputDate()
 
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-  const canSubmit =
-    !!serviceId && emailValid && !!name.trim() && !!date && !!time && !!line1.trim() && !!city.trim() && !!postal.trim()
+  useEffect(() => {
+    if (isServicesError) {
+      toast({
+        title: "Services not loaded",
+        description: "Could not load services for manual booking.",
+        variant: "error",
+      })
+    }
+  }, [isServicesError, toast])
 
   function submit() {
     setError(null)
+    const nextErrors = validateForm({
+      city,
+      date,
+      email,
+      line1,
+      name,
+      postal,
+      serviceId,
+      time,
+    })
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
+      toast({
+        title: "Booking needs attention",
+        description: "Check the highlighted fields and try again.",
+        variant: "error",
+      })
+      return
+    }
+
+    setErrors({})
     const input: StaffBookingInput = {
       service_id: Number(serviceId),
       starts_at: `${date}T${time}:00`,
@@ -72,12 +114,44 @@ export default function StaffNewBookingPage() {
       notes: notes.trim() || undefined,
     }
     createBooking.mutate(input, {
-      onSuccess: () => setDone(true),
+      onSuccess: () => {
+        setDone(true)
+        toast({ title: "Booking created", variant: "success" })
+      },
       onError: (e: unknown) => {
-        const res = (e as { response?: { data?: { error?: string } } })?.response
-        setError(res?.data?.error ?? "Couldn't create the booking. Please try again.")
+        const message = getApiErrorMessage(e, "Couldn't create the booking. Please try again.")
+        setError(message)
+        toast({ title: "Booking not created", description: message, variant: "error" })
       },
     })
+  }
+
+  function clearError(field: keyof FormErrors) {
+    setErrors((current) => {
+      if (!current[field]) return current
+      const next = { ...current }
+      delete next[field]
+      return next
+    })
+  }
+
+  function resetForm() {
+    setDone(false)
+    setServiceId("")
+    setClientType("adult")
+    setPartySize(2)
+    setName("")
+    setEmail("")
+    setPhone("")
+    setDate("")
+    setTime("10:00")
+    setLine1("")
+    setCity("")
+    setProvince("ON")
+    setPostal("")
+    setNotes("")
+    setError(null)
+    setErrors({})
   }
 
   if (done) {
@@ -97,7 +171,7 @@ export default function StaffNewBookingPage() {
               </Link>
               <button
                 type="button"
-                onClick={() => { setDone(false); setServiceId(""); setName(""); setEmail(""); setPhone(""); setLine1(""); setCity(""); setPostal(""); setNotes("") }}
+                onClick={resetForm}
                 className="inline-flex h-10 items-center border border-black/15 bg-white px-4 text-sm font-bold text-[#101217]"
               >
                 Book another
@@ -127,29 +201,58 @@ export default function StaffNewBookingPage() {
         <div className="grid gap-5">
           <div>
             <label className={labelClass}>Service</label>
-            <select className={inputClass} value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
-              <option value="">Select a service…</option>
+            <Select
+              onValueChange={(value) => {
+                setServiceId(value ?? "")
+                clearError("serviceId")
+              }}
+              value={serviceId}
+            >
+              <SelectTrigger aria-invalid={Boolean(errors.serviceId)}>
+                <SelectValue placeholder="Select a service..." />
+              </SelectTrigger>
+              <SelectContent>
               {services.map((s) => (
-                <option key={s.id} value={s.id}>
+                <SelectItem key={s.id} value={String(s.id)}>
                   {s.category_name ? `${s.category_name} · ` : ""}{s.name} ({s.duration_minutes} min)
-                </option>
+                </SelectItem>
               ))}
-            </select>
+              </SelectContent>
+            </Select>
+            <FieldError message={errors.serviceId} />
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <label className={labelClass}>Client type</label>
-              <select className={inputClass} value={clientType} onChange={(e) => setClientType(e.target.value)}>
-                {CLIENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+              <Select onValueChange={(value) => setClientType(value ?? "adult")} value={clientType}>
+                <SelectTrigger className="capitalize">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CLIENT_TYPES.map((t) => (
+                    <SelectItem className="capitalize" key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             {clientType === "group" ? (
               <div>
                 <label className={labelClass}>Party size</label>
-                <select className={inputClass} value={partySize} onChange={(e) => setPartySize(Number(e.target.value))}>
-                  {[2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} people</option>)}
-                </select>
+                <Select onValueChange={(value) => setPartySize(Number(value ?? 2))} value={String(partySize)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[2, 3, 4, 5].map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n} people
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             ) : null}
           </div>
@@ -157,7 +260,17 @@ export default function StaffNewBookingPage() {
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <label className={labelClass}>Client name</label>
-              <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} placeholder="First name" />
+              <input
+                aria-invalid={Boolean(errors.name)}
+                className={fieldClass(errors.name)}
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value)
+                  clearError("name")
+                }}
+                placeholder="First name"
+              />
+              <FieldError message={errors.name} />
             </div>
             <div>
               <label className={labelClass}>Phone</label>
@@ -166,30 +279,104 @@ export default function StaffNewBookingPage() {
           </div>
           <div>
             <label className={labelClass}>Client email *</label>
-            <input className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@email.com" type="email" />
+            <input
+              aria-invalid={Boolean(errors.email)}
+              className={fieldClass(errors.email)}
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                clearError("email")
+              }}
+              placeholder="name@email.com"
+              type="email"
+            />
+            <FieldError message={errors.email} />
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <label className={labelClass}>Date</label>
-              <input type="date" className={inputClass} value={date} onChange={(e) => setDate(e.target.value)} />
+              <DatePicker
+                className={errors.date ? errorInputClass : ""}
+                min={today}
+                placeholder="Select appointment date"
+                value={date}
+                onChange={(value) => {
+                  setDate(value)
+                  clearError("date")
+                }}
+              />
+              <FieldError message={errors.date} />
             </div>
             <div>
               <label className={labelClass}>Time</label>
-              <input type="time" className={inputClass} value={time} onChange={(e) => setTime(e.target.value)} />
+              <input
+                aria-invalid={Boolean(errors.time)}
+                type="time"
+                className={fieldClass(errors.time)}
+                value={time}
+                onChange={(e) => {
+                  setTime(e.target.value)
+                  clearError("time")
+                }}
+              />
+              <FieldError message={errors.time} />
             </div>
           </div>
 
           <div>
             <label className={labelClass}>Service address</label>
-            <input className={inputClass} value={line1} onChange={(e) => setLine1(e.target.value)} placeholder="Street address *" />
+            <input
+              aria-invalid={Boolean(errors.line1)}
+              className={fieldClass(errors.line1)}
+              value={line1}
+              onChange={(e) => {
+                setLine1(e.target.value)
+                clearError("line1")
+              }}
+              placeholder="Street address *"
+            />
+            <FieldError message={errors.line1} />
           </div>
           <div className="grid gap-5 sm:grid-cols-3">
-            <input className={inputClass} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City *" />
-            <select className={inputClass} value={province} onChange={(e) => setProvince(e.target.value)}>
-              {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
-            <input className={inputClass} value={postal} onChange={(e) => setPostal(e.target.value)} placeholder="Postal code *" />
+            <div>
+              <input
+                aria-invalid={Boolean(errors.city)}
+                className={fieldClass(errors.city)}
+                value={city}
+                onChange={(e) => {
+                  setCity(e.target.value)
+                  clearError("city")
+                }}
+                placeholder="City *"
+              />
+              <FieldError message={errors.city} />
+            </div>
+            <Select onValueChange={(value) => setProvince(value ?? "ON")} value={province}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PROVINCES.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div>
+              <input
+                aria-invalid={Boolean(errors.postal)}
+                className={fieldClass(errors.postal)}
+                value={postal}
+                onChange={(e) => {
+                  setPostal(e.target.value)
+                  clearError("postal")
+                }}
+                placeholder="Postal code *"
+              />
+              <FieldError message={errors.postal} />
+            </div>
           </div>
 
           <div>
@@ -201,7 +388,7 @@ export default function StaffNewBookingPage() {
 
           <Button
             className="h-11 font-bold text-white"
-            disabled={!canSubmit || createBooking.isPending}
+            disabled={createBooking.isPending}
             onClick={submit}
             style={{ background: "#c96c83", border: "none" }}
           >
@@ -213,4 +400,66 @@ export default function StaffNewBookingPage() {
       <TutorialButton steps={employeeNewBookingSteps} pageKey="employee-new-booking" />
     </DashboardPage>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
+}
+
+function validateForm(values: {
+  city: string
+  date: string
+  email: string
+  line1: string
+  name: string
+  postal: string
+  serviceId: string
+  time: string
+}) {
+  const next: FormErrors = {}
+
+  if (!values.serviceId) next.serviceId = "Select a service."
+  if (!values.name.trim()) next.name = "Client name is required."
+  if (!values.email.trim()) {
+    next.email = "Client email is required."
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
+    next.email = "Enter a valid email address."
+  }
+  if (!values.date) {
+    next.date = "Appointment date is required."
+  } else if (isPastDate(values.date)) {
+    next.date = "Date cannot be in the past."
+  }
+  if (!values.time) next.time = "Appointment time is required."
+  if (!values.line1.trim()) next.line1 = "Street address is required."
+  if (!values.city.trim()) next.city = "City is required."
+  if (!values.postal.trim()) next.postal = "Postal code is required."
+
+  return next
+}
+
+function FieldError({ message }: { message?: string }) {
+  return message ? <p className="mt-1 text-xs font-semibold text-[#b75c68]">{message}</p> : null
+}
+
+function fieldClass(error?: string) {
+  return `${inputClass} ${error ? errorInputClass : ""}`
+}
+
+function getTodayInputDate() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, "0")
+  const day = String(today.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+function isPastDate(value: string) {
+  const [year, month, day] = value.split("-").map(Number)
+  if (!year || !month || !day) return false
+  const date = new Date(year, month - 1, day)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return date < today
 }

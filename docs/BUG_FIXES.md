@@ -318,3 +318,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Replaced user deletion and tip payout with `AlertDialog`, added BAYD toast success/error/query-failure feedback across users, tips, reviews, callbacks, orders, settings, invoices, and gift cards, added defensive date/currency formatting, and added frontend validation for group deposit and gift-card top-up amounts.
 - **Verification:** Targeted ESLint passed for all affected admin pages. `git diff --check` passed.
 - **Follow-up:** Backend validation hardening remains out of scope for this frontend-only pass.
+
+---
+
+## 2026-08-19 — Employee platform actions failed silently or accepted invalid values
+
+- **Branch:** `bugfix/employee-platform-errors`
+- **Area:** Employee frontend workflow
+- **Reported behavior:** Employee shift toggles, clock-in/out, profile saves, schedule/review/shift loads, gift-card top-ups, overtime charges, and manual bookings could fail with little or no branded feedback. Several date and amount fields assumed valid API/user input.
+- **Expected behavior:** Employee-facing actions should show clear BAYD success/error feedback, reject obvious invalid values before submission, and render partial API data safely.
+- **Root cause:** Employee pages and shared staff controls called mutations directly or used inline-only messages, while date/currency/duration rendering converted raw values without guarding invalid data.
+- **Fix:** Added toast-backed success/error/query-failure feedback across the employee dashboard, profile, shifts, reviews, gift cards, new booking, time clock, and staff booking actions; added field-level validation and shared Select/DatePicker controls to manual booking; added positive-amount validation for top-ups and overtime; rejected past manual booking dates; made employee date, duration, distance, and currency formatting defensive; and clarified that profile photo selection is currently preview-only.
+- **Verification:** Targeted ESLint passed for affected employee pages and shared controls. `git diff --check` passed.
+- **Follow-up:** Real profile photo upload still needs backend/storage support before selected files can be persisted.

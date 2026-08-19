@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
@@ -16,6 +17,7 @@ const inputCls =
   "h-10 rounded-lg border border-black/15 px-3 text-sm text-[#101217] focus:border-[#c96c83] focus:outline-none"
 
 export default function EmployeeGiftCardsPage() {
+  const { toast } = useToast()
   const [code, setCode] = useState("")
   const [card, setCard] = useState<GiftCard | null>(null)
   const [amount, setAmount] = useState("")
@@ -28,10 +30,13 @@ export default function EmployeeGiftCardsPage() {
     onSuccess: (data) => {
       setCard(data)
       setMsg(null)
+      toast({ title: "Gift card found", variant: "success" })
     },
-    onError: () => {
+    onError: (error: unknown) => {
       setCard(null)
-      setMsg({ type: "error", text: "No gift card with that code." })
+      const message = getApiErrorMessage(error, "No gift card with that code.")
+      setMsg({ type: "error", text: message })
+      toast({ title: "Gift card not found", description: message, variant: "error" })
     },
   })
 
@@ -46,10 +51,28 @@ export default function EmployeeGiftCardsPage() {
     onSuccess: (data) => {
       setCard(data)
       setAmount("")
-      setMsg({ type: "success", text: `Paid. Balance is now $${Number(data.current_balance).toFixed(2)}.` })
+      const message = `Paid. Balance is now ${formatCurrency(data.current_balance)}.`
+      setMsg({ type: "success", text: message })
+      toast({ title: "Top-up recorded", description: message, variant: "success" })
     },
-    onError: () => setMsg({ type: "error", text: "Could not add funds. Check the amount and try again." }),
+    onError: (error: unknown) => {
+      const message = getApiErrorMessage(error, "Could not add funds. Check the amount and try again.")
+      setMsg({ type: "error", text: message })
+      toast({ title: "Top-up not recorded", description: message, variant: "error" })
+    },
   })
+
+  function submitTopup() {
+    const value = Number(amount)
+    if (!Number.isFinite(value) || value <= 0) {
+      const message = "Enter a top-up amount greater than 0."
+      setMsg({ type: "error", text: message })
+      toast({ title: "Top-up needs attention", description: message, variant: "error" })
+      return
+    }
+
+    topup.mutate()
+  }
 
   return (
     <DashboardPage maxWidth="wide">
@@ -106,7 +129,7 @@ export default function EmployeeGiftCardsPage() {
               </div>
               <Button
                 disabled={topup.isPending || !amount}
-                onClick={() => topup.mutate()}
+                onClick={submitTopup}
                 style={{ background: "#c96c83", border: "none", color: "#fff" }}
               >
                 {topup.isPending ? "…" : "Mark paid"}
@@ -125,4 +148,14 @@ export default function EmployeeGiftCardsPage() {
       <TutorialButton steps={employeeGiftCardsSteps} pageKey="employee-gift-cards" />
     </DashboardPage>
   )
+}
+
+function formatCurrency(value: unknown) {
+  const amount = Number(value)
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

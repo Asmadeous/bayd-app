@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Navigation } from "lucide-react"
+import { useToast } from "@/components/bayd-toast-provider"
 import { Button } from "@/components/ui/button"
 import { MeetingButton } from "@/components/dashboard/meeting-button"
 import api from "@/lib/api"
@@ -11,6 +12,7 @@ import type { Booking } from "@/lib/hooks/use-bookings"
 // Actions a technician has on their own booking card: join the work-scope call,
 // navigate to the customer, and add an overtime charge if the service ran over.
 export function StaffBookingActions({ booking }: { booking: Booking }) {
+  const { toast } = useToast()
   const qc = useQueryClient()
   const [amount, setAmount] = useState("")
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -30,13 +32,32 @@ export function StaffBookingActions({ booking }: { booking: Booking }) {
       setAmount("")
       qc.invalidateQueries({ queryKey: ["employee-schedule"] })
       if (data.mode === "link" && data.url) {
-        setMsg({ type: "success", text: "Charge added — payment link sent to the customer." })
+        const message = "Charge added - payment link sent to the customer."
+        setMsg({ type: "success", text: message })
+        toast({ title: "Overtime charge added", description: message, variant: "success" })
       } else {
         setMsg({ type: "success", text: "Overtime charged." })
+        toast({ title: "Overtime charged", variant: "success" })
       }
     },
-    onError: () => setMsg({ type: "error", text: "Could not add the charge." }),
+    onError: (error: unknown) => {
+      const message = getApiErrorMessage(error, "Could not add the charge.")
+      setMsg({ type: "error", text: message })
+      toast({ title: "Overtime not charged", description: message, variant: "error" })
+    },
   })
+
+  function submitOvertime() {
+    const value = Number(amount)
+    if (!Number.isFinite(value) || value <= 0) {
+      const message = "Enter an overtime amount greater than 0."
+      setMsg({ type: "error", text: message })
+      toast({ title: "Overtime needs attention", description: message, variant: "error" })
+      return
+    }
+
+    overtime.mutate()
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -66,7 +87,7 @@ export function StaffBookingActions({ booking }: { booking: Booking }) {
         <Button
           size="xs" variant="outline"
           disabled={overtime.isPending || !amount}
-          onClick={() => overtime.mutate()}
+          onClick={submitOvertime}
         >
           {overtime.isPending ? "…" : "Charge"}
         </Button>
@@ -78,4 +99,9 @@ export function StaffBookingActions({ booking }: { booking: Booking }) {
       ) : null}
     </div>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }
