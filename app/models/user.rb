@@ -1,5 +1,6 @@
 class User < ApplicationRecord
   has_secure_password validations: false
+  has_one_attached :avatar
 
   enum :role, { customer: "customer", employee: "employee", admin: "admin" }
 

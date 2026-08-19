@@ -1,4 +1,5 @@
 class BlogPost < ApplicationRecord
+  has_one_attached :cover_image
   belongs_to :author, class_name: "User", optional: true
   has_many :blog_comments, dependent: :destroy
 

@@ -1,6 +1,8 @@
 module Api
   module V1
     class AuthController < ApplicationController
+      include ImageUploadValidation
+
       skip_before_action :authenticate_user!, only: %i[
         register login staff_login request_magic_link verify_magic_link
         request_password_reset reset_password
@@ -92,7 +94,12 @@ module Api
       end
 
       def update_me
-        current_user.update!(update_params)
+        if params[:avatar].present? && !valid_image?(params[:avatar])
+          return render json: { error: "Avatar must be a real JPEG, PNG, WEBP, or GIF image." }, status: :unprocessable_entity
+        end
+
+        current_user.update!(update_params) if params[:user].present?
+        current_user.avatar.attach(params[:avatar]) if params[:avatar].present?
         render json: UserSerializer.render_as_hash(current_user)
       end
 

@@ -76,6 +76,11 @@ Rails.application.configure do
 
   # Active Storage — local disk (files in storage/; ensure the path persists).
   config.active_storage.service = :local
+  # Needed for rails_blob_url (used by serializers to return real file URLs for
+  # uploaded avatars/photos/covers/gallery images) — without this it raises
+  # "Missing host" outside an actual request (e.g. console, background jobs).
+  Rails.application.routes.default_url_options[:host] = ENV.fetch("APP_HOST", "baydspa.ca")
+  Rails.application.routes.default_url_options[:protocol] = "https"
 
   # Mailer — SMTP via ENV. Delivery failures are logged, not raised, so a
   # transient mail outage never breaks the request/job that triggered it.

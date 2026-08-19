@@ -58,7 +58,8 @@ export default function CustomerSettingsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await updateMe.mutateAsync(form)
+    const { avatar_url: _avatarUrl, ...rest } = form
+    await updateMe.mutateAsync({ ...rest, avatar: selectedAvatarFile })
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
