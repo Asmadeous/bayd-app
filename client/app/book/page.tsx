@@ -138,6 +138,13 @@ export function BookingFlow({
   const [notes, setNotes] = useState("")
   const [tip, setTip] = useState("") // optional gratuity in dollars
   const [giftCard, setGiftCard] = useState("")
+  // Auto-renewal: repeat this booking on a schedule. The backend seeds a
+  // Subscription from the first booking and SubscriptionSchedulerJob books the
+  // next one automatically; auto-charge bills the card on file each time.
+  const [recurring, setRecurring] = useState(false)
+  const [recurInterval, setRecurInterval] = useState<"week" | "month">("week")
+  const [recurCount, setRecurCount] = useState("1")
+  const [autoCharge, setAutoCharge] = useState(false)
   const [bookedMsg, setBookedMsg] = useState("")
   const [view, setView] = useState<"form" | "booked" | "consultation">("form")
   const [error, setError] = useState<string | null>(null)
@@ -274,6 +281,11 @@ export function BookingFlow({
             tip: tip ? Number(tip) : undefined,
             gift_card_code: giftCard.trim() || undefined,
             notes: notes.trim() || undefined,
+            // Auto-renewal (recurring booking). Only sent when the customer opts in.
+            recurrence_active: recurring || undefined,
+            recurrence_interval_unit: recurring ? recurInterval : undefined,
+            recurrence_interval_count: recurring ? Math.max(1, Number(recurCount) || 1) : undefined,
+            auto_charge: recurring && autoCharge ? true : undefined,
           },
         })
         .then((r) => r.data),
@@ -956,6 +968,71 @@ export function BookingFlow({
             <p className="mt-3 text-sm font-semibold text-[#101217]">
               Total with tip: <span className="text-[#c96c83]">${((price ?? 0) + (Number(tip) || 0)).toFixed(2)}</span>
             </p>
+          ) : null}
+
+          {/* Auto-renewal — repeat this booking on a schedule (single bookings only). */}
+          {clientType !== "group" ? (
+            <div className="mt-5 border border-black/15 bg-white p-4">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={recurring}
+                  onChange={(e) => setRecurring(e.target.checked)}
+                  className="mt-0.5 size-4 accent-[#c96c83]"
+                />
+                <span>
+                  <span className="block text-sm font-bold text-[#101217]">Repeat this booking automatically</span>
+                  <span className="mt-0.5 block text-xs font-medium text-[#8a8d93]">
+                    We&apos;ll rebook the same service on a schedule so you never have to remember.
+                  </span>
+                </span>
+              </label>
+
+              {recurring ? (
+                <div className="mt-4 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-[#5f6268]">Every</span>
+                    <input
+                      className={cn(field, "w-16 text-center")}
+                      value={recurCount}
+                      onChange={(e) => setRecurCount(e.target.value.replace(/\D/g, "") || "")}
+                      inputMode="numeric"
+                      aria-label="Interval count"
+                    />
+                    <div className="inline-flex overflow-hidden border border-black/15">
+                      {(["week", "month"] as const).map((u) => (
+                        <button
+                          key={u}
+                          type="button"
+                          onClick={() => setRecurInterval(u)}
+                          className={cn(
+                            "px-3 py-2 text-sm font-bold transition-colors",
+                            recurInterval === u ? "bg-[#c96c83] text-white" : "bg-white text-[#5f6268] hover:bg-black/5",
+                          )}
+                        >
+                          {Number(recurCount) === 1 ? u : `${u}s`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={autoCharge}
+                      onChange={(e) => setAutoCharge(e.target.checked)}
+                      className="mt-0.5 size-4 accent-[#c96c83]"
+                    />
+                    <span>
+                      <span className="block text-sm font-bold text-[#101217]">Auto-charge my card on file</span>
+                      <span className="mt-0.5 block text-xs font-medium text-[#8a8d93]">
+                        Each repeat is charged automatically. Leave off to pay after each visit. You can pause or cancel anytime from your dashboard.
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              ) : null}
+            </div>
           ) : null}
 
           {/* Book-without-paying explainer (regular bookings only; groups must deposit). */}
