@@ -40,5 +40,12 @@ module BAYDApi
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # Google OAuth (GoogleAuthController) stores its anti-CSRF `state` in an
+    # encrypted cookie across the redirect to Google and back. api_only strips
+    # the cookie middleware, so cookies.encrypted[...] raises NoMethodError and
+    # 500s the whole flow — add the cookie jar back explicitly. This is the only
+    # place we use cookies; everything else is stateless JWT via Authorization.
+    config.middleware.use ActionDispatch::Cookies
   end
 end
