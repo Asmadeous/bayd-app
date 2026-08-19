@@ -72,6 +72,10 @@ module SimplyBook
       Booking.create!(
         simplybook_id: remote_id,
         user: user, service: service, employee_profile: employee,
+        # Stamp the provider's partner (if any) so bookings made in the
+        # SimplyBook app for a partner-provider are attributed to that partner
+        # and roll up into their payouts — same as the other booking paths.
+        partner_id: employee&.partner_id,
         starts_at: starts, ends_at: starts + service.duration_minutes.minutes,
         status: mapped_status,
         subtotal: service.price, travel_fee: 0, total: service.price,

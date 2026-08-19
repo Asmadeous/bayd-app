@@ -486,7 +486,7 @@ function fieldClass(error?: string) {
   return `${inputClass} ${error ? errorInputClass : ""}`
 }
 
-function getFieldErrors(error: z.ZodError<ProductForm>): ProductFormErrors {
+function getFieldErrors(error: z.ZodError): ProductFormErrors {
   const next: ProductFormErrors = {}
   for (const issue of error.issues) {
     const key = issue.path.at(-1)

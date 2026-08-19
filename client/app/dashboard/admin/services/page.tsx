@@ -568,7 +568,7 @@ function fieldClass(error?: string) {
   return `${inputClass} ${error ? errorInputClass : ""}`
 }
 
-function getFieldErrors(error: z.ZodError<ServiceForm>): ServiceFormErrors {
+function getFieldErrors(error: z.ZodError): ServiceFormErrors {
   const next: ServiceFormErrors = {}
   for (const issue of error.issues) {
     const key = issue.path.at(-1)

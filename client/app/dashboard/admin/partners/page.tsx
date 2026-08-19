@@ -55,11 +55,13 @@ import { adminPartnersSteps } from "@/lib/tours/admin-partners-tour"
 
 const cad = (v: string | number) => `$${Number(v).toFixed(2)}`
 const dt = (s: string | null) => (s ? new Date(s).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" }) : "—")
-const BLANK: PartnerInput = { name: "", email: "", phone: "", platform_fee_pct: "20", status: "active", payout_notes: "" }
+const BLANK: PartnerInput = { name: "", email: "", phone: "", platform_fee_pct: "20", status: "active", payout_notes: "", password: "" }
 type PartnerFormErrors = Partial<Record<keyof PartnerInput | "base", string>>
 
 const partnerSchema = z.object({
   name: z.string().trim().min(1, "Name is required."),
+  // Email is the partner-provider's login, so it's required on create (validated
+  // as such in save() where editingId is known); still shape-validated here.
   email: z
     .string()
     .trim()
@@ -74,6 +76,7 @@ const partnerSchema = z.object({
     .refine((value) => Number(value) >= 0 && Number(value) <= 100, "Platform fee must be between 0 and 100."),
   status: z.enum(["active", "inactive"]),
   payout_notes: z.string().trim().optional(),
+  password: z.string().trim().optional(),
 })
 
 export default function AdminPartnersPage() {
@@ -126,6 +129,13 @@ export default function AdminPartnersPage() {
       const nextErrors = getPartnerFieldErrors(result.error)
       setFormErrors(nextErrors)
       toast({ title: "Partner form needs attention", description: nextErrors.base, variant: "error" })
+      return
+    }
+
+    // On create, email is the partner-provider's login, so it's required.
+    if (!editingId && !form.email?.trim()) {
+      setFormErrors({ email: "Email is required — it's the partner's login." })
+      toast({ title: "Partner form needs attention", description: "Email is required.", variant: "error" })
       return
     }
 
@@ -182,6 +192,12 @@ export default function AdminPartnersPage() {
           Each partner earns their share of completed bookings after the platform fee. Settle owed
           amounts into a payout, then mark it paid once funds are sent.
         </p>
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-[#5f6268]">
+          Creating a partner also creates a provider login (they sign in with the email and
+          password below) and a bookable provider profile. That provider is <strong>dormant</strong>
+          {" "}until you set its coverage areas and services on the{" "}
+          <strong>Employees</strong> page — it won&apos;t take bookings until then.
+        </p>
       </DashboardPanel>
 
       <Dialog open={form !== null} onOpenChange={(open) => { if (!open) closeEditor() }}>
@@ -192,7 +208,9 @@ export default function AdminPartnersPage() {
             </p>
             <DialogTitle>{editingId ? "Edit Partner" : "New Partner"}</DialogTitle>
             <DialogDescription>
-              Manage partner contact details, payout notes, platform fee, and availability.
+              Creating a partner also creates a provider login (they sign in with the email and
+              password below) and a bookable provider profile — dormant until you set its coverage
+              and services on the Employees page.
             </DialogDescription>
           </DialogHeader>
           <DialogBody>
@@ -227,11 +245,12 @@ export default function AdminPartnersPage() {
                       value={form.platform_fee_pct ?? ""}
                     />
                   </Field>
-                  <Field error={formErrors.email} label="Email">
+                  <Field error={formErrors.email} label="Email (login)">
                     <input
                       aria-invalid={Boolean(formErrors.email)}
                       className={fieldClass(formErrors.email)}
                       onChange={(event) => updateForm("email", event.target.value)}
+                      placeholder="partner's own email"
                       type="email"
                       value={form.email ?? ""}
                     />
@@ -244,6 +263,18 @@ export default function AdminPartnersPage() {
                       value={form.phone ?? ""}
                     />
                   </Field>
+                  {!editingId && (
+                    <Field error={formErrors.password} label="Login password (optional)">
+                      <input
+                        aria-invalid={Boolean(formErrors.password)}
+                        className={fieldClass(formErrors.password)}
+                        onChange={(event) => updateForm("password", event.target.value)}
+                        placeholder="auto-generated if blank"
+                        type="text"
+                        value={form.password ?? ""}
+                      />
+                    </Field>
+                  )}
                   <Field error={formErrors.status} label="Status">
                     <Select
                       onValueChange={(value) => updateForm("status", value as Partner["status"])}
@@ -510,6 +541,9 @@ function normalizePartnerInput(input: PartnerInput): PartnerInput {
     platform_fee_pct: input.platform_fee_pct?.trim(),
     status: input.status,
     payout_notes: input.payout_notes?.trim() || "",
+    // Carried through so a create sets the partner-provider's login password;
+    // omitted (undefined → dropped) when blank so edits don't touch it.
+    ...(input.password?.trim() ? { password: input.password.trim() } : {}),
   }
 }
 

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Edit3, FileText, Plus, Trash2 } from "lucide-react"
+import { Pencil, FileText, Plus, Trash2 } from "lucide-react"
 
 import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
@@ -180,7 +180,7 @@ function BlogPostRow({ deleting, onDelete, onPublish, onUnpublish, post, publish
       </div>
       <div className="flex shrink-0 flex-wrap gap-1.5">
         <Link className={buttonVariants({ size: "xs", variant: "outline" })} href={`/dashboard/admin/blog/${post.id}/edit`}>
-          <Edit3 className="size-3.5" /> Edit
+          <Pencil className="size-3.5" /> Edit
         </Link>
         {post.status === "draft" ? (
           <AlertDialog>

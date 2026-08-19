@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertCircle, CheckCircle2 } from "lucide-react"
+import { X, Check } from "lucide-react"
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react"
 
 import {
@@ -43,7 +43,7 @@ export function BaydToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((item) => {
           const isError = item.variant === "error"
           const isSuccess = item.variant === "success"
-          const Icon = isError ? AlertCircle : isSuccess ? CheckCircle2 : null
+          const Icon = isError ? X : isSuccess ? Check : null
 
           return (
             <Toast key={item.id} onOpenChange={(open) => !open && dismiss(item.id)} duration={6000}>

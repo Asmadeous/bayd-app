@@ -403,7 +403,7 @@ function ManualInvoiceForm({ saving, onSave, onCancel }: {
             />
           </Field>
           <Field error={errors.payment_method} label="Payment method">
-            <Select onValueChange={(value) => set("payment_method", value)} value={f.payment_method}>
+            <Select onValueChange={(value) => set("payment_method", value ?? "")} value={f.payment_method}>
               <SelectTrigger aria-invalid={Boolean(errors.payment_method)}>
                 <SelectValue />
               </SelectTrigger>
@@ -521,7 +521,7 @@ function fieldClass(error?: string) {
   return `${inputClass} ${error ? errorInputClass : ""}`
 }
 
-function getFieldErrors(error: z.ZodError<ManualInvoiceFormState>): ManualInvoiceFormErrors {
+function getFieldErrors(error: z.ZodError): ManualInvoiceFormErrors {
   const next: ManualInvoiceFormErrors = {}
   for (const issue of error.issues) {
     const key = issue.path.at(-1)

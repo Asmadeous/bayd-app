@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { Suspense, useMemo, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User } from "lucide-react"
@@ -88,7 +88,13 @@ const card = "border border-black/10 bg-white p-5 sm:p-6"
 const STEPS = ["Details", "Service", "Staff", "Date", "Payment"] as const
 
 export default function PublicBookPage() {
-  return <BookingFlow />
+  // BookingFlow calls useSearchParams(), which requires a Suspense boundary or
+  // the static prerender of /book fails the production build.
+  return (
+    <Suspense>
+      <BookingFlow />
+    </Suspense>
+  )
 }
 
 export function BookingFlow({

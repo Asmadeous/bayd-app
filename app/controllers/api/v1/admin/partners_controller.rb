@@ -11,9 +11,18 @@ module Api
           render json: PartnerSerializer.render_as_hash(find_partner)
         end
 
+        # Create the partner org AND its bookable provider (a partner-role User +
+        # EmployeeProfile) in one transaction. The provider is dormant until an
+        # admin sets its coverage + services on the Employees page.
         def create
-          partner = Partner.create!(partner_params)
+          partner = nil
+          ActiveRecord::Base.transaction do
+            partner = Partner.create!(partner_params)
+            partner.ensure_provider!(password: params.dig(:partner, :password))
+          end
           render json: PartnerSerializer.render_as_hash(partner), status: :created
+        rescue ActiveRecord::RecordInvalid => e
+          render json: { error: partner_create_error(e) }, status: :unprocessable_entity
         end
 
         def update
@@ -22,8 +31,12 @@ module Api
           render json: PartnerSerializer.render_as_hash(partner)
         end
 
+        # Deactivate the partner's provider (keep its bookings/payout history),
+        # then remove the partner org. The provider profile + its User are kept.
         def destroy
-          find_partner.destroy!
+          partner = find_partner
+          partner.deactivate_provider!
+          partner.destroy!
           head :no_content
         end
 
@@ -45,6 +58,18 @@ module Api
         end
 
         private
+
+        # The partner's email doubles as its provider login, so a clash with an
+        # existing user (or a missing email) is the likeliest create failure —
+        # surface a readable message rather than a raw validation dump.
+        def partner_create_error(err)
+          msg = err.record&.errors&.full_messages&.to_sentence
+          if msg.to_s.match?(/email.*taken/i)
+            "That email already belongs to another account — use a different email for this partner."
+          else
+            msg.presence || "Could not create partner."
+          end
+        end
 
         def find_partner = Partner.find(params[:id])
 

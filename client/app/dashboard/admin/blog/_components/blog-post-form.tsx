@@ -237,7 +237,7 @@ function fieldClass(error?: string) {
   return `${inputClass} ${error ? errorInputClass : ""}`
 }
 
-function getFieldErrors(error: z.ZodError<BlogPostFormState>): BlogPostFormErrors {
+function getFieldErrors(error: z.ZodError): BlogPostFormErrors {
   const next: BlogPostFormErrors = {}
   for (const issue of error.issues) {
     const key = issue.path.at(-1)

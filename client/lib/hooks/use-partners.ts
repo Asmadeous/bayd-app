@@ -50,7 +50,12 @@ export interface PartnerDetail {
   payouts: PartnerPayout[]
 }
 
-export type PartnerInput = Partial<Pick<Partner, "name" | "email" | "phone" | "status" | "platform_fee_pct" | "payout_notes">>
+// `password` is write-only: it sets the partner-provider's login password at
+// create time (the partner signs in like staff with email + password). It's
+// not a Partner field, so it's added separately here.
+export type PartnerInput = Partial<Pick<Partner, "name" | "email" | "phone" | "status" | "platform_fee_pct" | "payout_notes">> & {
+  password?: string
+}
 
 export function useAdminPartners(page = 1) {
   return useQuery({

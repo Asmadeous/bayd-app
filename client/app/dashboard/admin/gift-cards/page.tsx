@@ -480,7 +480,7 @@ function fieldClass(error?: string) {
   return `${inputClass} ${error ? errorInputClass : ""}`
 }
 
-function getFieldErrors(error: z.ZodError<GiftCardFormState>): GiftCardFormErrors {
+function getFieldErrors(error: z.ZodError): GiftCardFormErrors {
   const next: GiftCardFormErrors = {}
   for (const issue of error.issues) {
     const key = issue.path.at(-1)
