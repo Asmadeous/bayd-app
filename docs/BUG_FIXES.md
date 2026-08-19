@@ -227,3 +227,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Moved partner create/edit into the shared `Dialog`, added Zod validation for name, email, platform fee, and status, added inline field errors and BAYD toast feedback, replaced partner deletion with the shared `AlertDialog`, and added confirmation/toast handling for payout creation and marking payouts paid.
 - **Verification:** Targeted ESLint passed for the partners page. `git diff --check` passed.
 - **Follow-up:** Backend zero-booking settlement hardening was intentionally left out of this frontend-only change.
+
+---
+
+## 2026-08-19 — Job posting editor and application actions lacked validation feedback
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and careers workflow
+- **Reported behavior:** Job posting create/edit used an inline placeholder-based form with minimal validation. Deleting a posting used the browser confirmation dialog. Application status updates and document downloads could fail without branded feedback.
+- **Expected behavior:** Job posting editing should use the shared dialog pattern, validate fields before submission, keep API errors visible, and use branded confirmations/toasts for destructive or failure-prone actions.
+- **Root cause:** `client/app/dashboard/admin/jobs/page.tsx` submitted raw posting form values directly to mutations, rendered the editor inline, only disabled Save for a missing title, called `confirm(...)` for deletion, and did not catch application status or document download failures.
+- **Fix:** Moved posting create/edit into the shared `Dialog`, added Zod validation for title, employment type, status, salary values, and salary range ordering, added inline field errors and BAYD toast feedback, replaced posting deletion with the shared `AlertDialog`, and added toast-backed failure handling for application status updates and secure document downloads.
+- **Verification:** Targeted ESLint passed for the jobs page. `git diff --check` passed.
+- **Follow-up:** Application deletion remains out of scope because the current page does not expose that workflow.
