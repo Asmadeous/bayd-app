@@ -25,15 +25,21 @@ class Partner < ApplicationRecord
   # linked back via partner_id), unless one already exists. The provider is
   # created active + dispatchable but stays DORMANT (no availability) until an
   # admin sets its coverage FSAs + services on the Employees page. Idempotent.
+  # Self-contained — the employee-creation flow is deliberately kept separate.
   def ensure_provider!(password: nil)
     return provider if provider.present?
 
-    ProviderFactory.create!(
-      role:          :partner,
-      password:      password,
-      user_attrs:    { email: email, first_name: name, phone: phone },
-      profile_attrs: { partner_id: id, title: "#{name} (Partner)", active: true, dispatchable: true }
-    ).profile
+    profile = nil
+    transaction do
+      user = User.new(email: email, first_name: name, phone: phone, role: :partner)
+      user.password = password.presence || SecureRandom.alphanumeric(14)
+      user.save!
+      profile = employee_profiles.create!(
+        user: user, title: "#{name} (Partner)", active: true, dispatchable: true
+      )
+    end
+    register_provider_in_simplybook(profile)
+    profile
   end
 
   # Deactivate this partner's provider so it stops taking bookings, without
@@ -81,6 +87,21 @@ class Partner < ApplicationRecord
   end
 
   private
+
+  # Best-effort: register the partner-provider in SimplyBook and store its unit
+  # id. Pure admin-API write, no email verification. Never raises — the provider
+  # exists locally regardless and an admin can set the unit id later.
+  def register_provider_in_simplybook(profile)
+    return if ENV["SIMPLYBOOK_COMPANY"].blank?
+    return if profile.simplybook_unit_id.present?
+
+    unit_id = SimplyBook::Client.new.create_provider(
+      name: name, email: email, phone: phone, service_ids: []
+    )
+    profile.update_columns(simplybook_unit_id: unit_id) if unit_id.present?
+  rescue StandardError => e
+    Rails.logger.warn("[Partner##{id}] SimplyBook provider create failed: #{e.message}")
+  end
 
   def assign_slug
     base = name.to_s.parameterize.presence || "partner"
