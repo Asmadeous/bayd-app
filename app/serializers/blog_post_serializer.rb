@@ -1,6 +1,15 @@
 class BlogPostSerializer < Blueprinter::Base
   identifier :id
-  fields :title, :slug, :excerpt, :body, :cover_image_url, :published_at, :category
+  fields :title, :slug, :excerpt, :body, :published_at, :category
+
+  # Prefers a real uploaded cover image; falls back to the plain URL string.
+  field :cover_image_url do |post|
+    if post.cover_image.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(post.cover_image)
+    else
+      post.cover_image_url
+    end
+  end
 
   field :author_name do |post, _opts|
     post.author&.then { |u| "#{u.first_name} #{u.last_name}".strip }

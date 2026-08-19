@@ -79,6 +79,12 @@ env:
     # based on this port).
     SMTP_PORT: "465"
 
+    # From address on all outbound mail. MUST match the authenticated mailbox
+    # (SMTP_USERNAME = noreply@baydspa.ca) — SpaceMail silently drops mail whose
+    # From it doesn't own, so a mismatch breaks every email even though SMTP auth
+    # succeeds and the app reports "sent". Keep this and SMTP_USERNAME aligned.
+    MAIL_FROM: "Beauty @ Your Door <noreply@baydspa.ca>"
+
     # Google OAuth callback (must exactly match a redirect URI in Google Console)
     GOOGLE_REDIRECT_URI: https://api.baydspa.ca/api/v1/auth/google/callback
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_18_095050) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_18_234919) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -185,7 +185,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_095050) do
     t.index ["status"], name: "index_bookings_on_status"
     t.index ["subscription_id"], name: "index_bookings_on_subscription_id"
     t.index ["user_id"], name: "index_bookings_on_user_id"
-    t.exclusion_constraint "employee_profile_id WITH =, tsrange(starts_at, ends_at) WITH &&", where: "(status)::text = ANY ((ARRAY['pending'::character varying, 'confirmed'::character varying, 'in_progress'::character varying])::text[])", using: :gist, deferrable: :immediate, name: "no_double_booking"
+    t.exclusion_constraint "employee_profile_id WITH =, tsrange(starts_at, ends_at) WITH &&", where: "(status)::text = ANY (ARRAY[('pending'::character varying)::text, ('confirmed'::character varying)::text, ('in_progress'::character varying)::text])", using: :gist, deferrable: :immediate, name: "no_double_booking"
   end
 
   create_table "callback_requests", force: :cascade do |t|
@@ -328,7 +328,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_095050) do
     t.bigint "employee_profile_id"
     t.boolean "featured", default: false, null: false
     t.string "image_alt"
-    t.string "image_url", null: false
+    t.string "image_url"
     t.integer "position", default: 0, null: false
     t.string "size", default: "standard"
     t.string "title", null: false

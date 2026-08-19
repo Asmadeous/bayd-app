@@ -58,6 +58,11 @@ Rails.application.configure do
 
   # Active Storage — local disk.
   config.active_storage.service = :local
+  # Needed for rails_blob_url (serializers return real file URLs for uploaded
+  # avatars/photos/covers/gallery images) — this must point at the API itself
+  # (port 3000), not the frontend dev server.
+  Rails.application.routes.default_url_options[:host] = "localhost"
+  Rails.application.routes.default_url_options[:port] = 3000
 
   # Mailer — log only in development; never raise on delivery failures.
   config.action_mailer.delivery_method = :test

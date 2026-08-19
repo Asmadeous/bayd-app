@@ -42,11 +42,14 @@ module Api
         params.permit(:name, :email, :phone, :message)
       end
 
-      # True only if the uploaded file's actual bytes are a PDF.
+      # True only if the uploaded file's actual bytes are a PDF. Omits `name:`
+      # deliberately — Marcel::MimeType.for falls back to the FILENAME
+      # extension whenever byte-detection is ambiguous, so passing `name:`
+      # would let a renamed non-PDF (e.g. a script saved as resume.pdf) pass.
       def pdf?(file)
         return false unless file.respond_to?(:tempfile)
 
-        Marcel::MimeType.for(file.tempfile, name: file.original_filename) == "application/pdf"
+        Marcel::MimeType.for(file.tempfile) == "application/pdf"
       end
     end
   end

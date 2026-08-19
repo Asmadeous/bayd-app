@@ -28,10 +28,19 @@ Rails.application.configure do
   # Disable request forgery protection in test environment.
   config.action_controller.allow_forgery_protection = false
 
+  # Needed for has_one_attached/has_many_attached (User#avatar,
+  # EmployeeProfile#photo, BlogPost#cover_image, GalleryItem#image) — without
+  # this, just loading a model class raises at boot.
+  config.active_storage.service = :test
+
   # Mailers that build links via route helpers (e.g. NewsletterMailer's
   # unsubscribe URL) need a host even in test — there's no request to infer
   # one from.
   config.action_mailer.default_url_options = { host: "localhost", port: 3003 }
+  # Same, for rails_blob_url calls in serializers (User#avatar_url etc.) when
+  # a spec runs outside a real request (e.g. calling a serializer directly).
+  Rails.application.routes.default_url_options[:host] = "localhost"
+  Rails.application.routes.default_url_options[:port] = 3003
 
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr

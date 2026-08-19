@@ -57,7 +57,7 @@ export default function EmployeeProfilePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await updateMutation.mutateAsync({ title, bio, photo_url: photoUrl })
+    await updateMutation.mutateAsync({ title, bio, photo: selectedPhotoFile })
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
