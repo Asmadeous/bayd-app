@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/dialog"
 import { useAdminBookings, useUpdateBooking } from "@/lib/hooks/use-admin"
 import { ReassignControl } from "@/components/dashboard/reassign-control"
+import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
 import { adminBookingsSteps } from "@/lib/tours/admin-bookings-tour"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
@@ -143,6 +144,9 @@ export default function AdminBookingsPage() {
           booking.status === "confirmed" ||
           booking.status === "in_progress") && (
           <ReassignControl bookingId={booking.id} />
+        )}
+        {(booking.status === "pending" || booking.status === "confirmed") && (
+          <RescheduleDialog booking={booking} admin />
         )}
         {booking.status === "confirmed" && (
           <Button

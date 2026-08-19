@@ -71,6 +71,23 @@ module Api
           render json: { error: "That technician already has an overlapping booking at this time." }, status: :unprocessable_entity
         end
 
+        # Admin reschedule: move a booking to a new time, no cutoff and no
+        # reschedule cap (unlike the customer endpoint). Optionally reassign to a
+        # different technician in the same action via employee_profile_id.
+        # Re-validates travel + double-booking and re-syncs SimplyBook.
+        def reschedule
+          booking   = Booking.find(params[:id])
+          new_start = BusinessHours.parse_local(params[:starts_at])
+          return render(json: { error: "A valid new date and time is required." }, status: :unprocessable_entity) if new_start.nil?
+
+          new_employee = EmployeeProfile.find(params[:employee_profile_id]) if params[:employee_profile_id].present?
+          booking.reschedule!(new_start: new_start, by_customer: false, new_employee: new_employee)
+          render json: BookingSerializer.render_as_hash(booking.reload)
+        rescue Booking::RescheduleError => e
+          render json: { error: e.reason.to_s.humanize, code: e.reason },
+                 status: e.reason == :slot_taken ? :conflict : :unprocessable_entity
+        end
+
         # Staff-triggered collection for an agreed amount (e.g. negotiated
         # out-of-area travel fee, or after-service balance). Auto-charges an
         # existing customer's card, or returns a payment link for a new one.

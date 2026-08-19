@@ -155,10 +155,110 @@ class Booking < ApplicationRecord
     starts_at + recurrence_interval_weeks.weeks
   end
 
+  # Raised by reschedule! with a machine-readable :reason the controller maps to
+  # an HTTP status + message. Keeps the model free of HTTP concerns.
+  class RescheduleError < StandardError
+    attr_reader :reason
+    def initialize(reason) = (@reason = reason) && super(reason.to_s)
+  end
+
+  RESCHEDULABLE_STATUSES = %w[confirmed pending].freeze
+
+  # Move this booking to new_start. Re-validates business hours, travel
+  # feasibility for the SAME tech, and the no_double_booking DB constraint, then
+  # best-effort edits the SimplyBook booking (PUT — a real edit, not
+  # cancel+recreate) so SimplyBook fires its own client SMS/email. Notifies the
+  # customer + tech in-app and by email. `by_customer:` increments the reschedule
+  # counter and is what the controller caps (admin passes false → uncapped).
+  # Raises RescheduleError(:not_reschedulable|:outside_hours|:not_reachable|:slot_taken).
+  # `new_employee` (optional): admin can move the booking to a different tech in
+  # the same action. Travel feasibility is checked against whichever tech ends up
+  # assigned.
+  def reschedule!(new_start:, by_customer: false, new_employee: nil)
+    raise RescheduleError.new(:not_reschedulable) unless RESCHEDULABLE_STATUSES.include?(status)
+
+    assigned = new_employee || employee_profile
+    new_end = new_start + (service.duration_minutes * party_size).minutes
+    raise RescheduleError.new(:outside_hours) unless within_business_hours?(new_start, new_end)
+
+    tf = TravelFeasibility.new(employee: assigned, customer_lat: service_latitude, customer_lng: service_longitude)
+    raise RescheduleError.new(:not_reachable) unless tf.feasible?(new_start, new_end)
+
+    old_simplybook_id = simplybook_id
+    begin
+      with_lock do
+        attrs = { starts_at: new_start, ends_at: new_end,
+                  reschedule_count: reschedule_count + (by_customer ? 1 : 0) }
+        attrs[:employee_profile] = new_employee if new_employee
+        update!(attrs)
+      end
+    rescue ActiveRecord::StatementInvalid => e
+      raise unless e.cause.is_a?(PG::ExclusionViolation) # only the double-booking guard
+      raise RescheduleError.new(:slot_taken)
+    end
+
+    push_reschedule_to_simplybook(old_simplybook_id)
+    notify_rescheduled
+    self
+  end
+
   private
 
   def on_completed
     BookingCompletedJob.perform_later(id)
+  end
+
+  # Both ends must fall within the business's open hours (local zone), and the
+  # whole service must finish before close.
+  def within_business_hours?(new_start, new_end)
+    zone = BusinessHours.zone
+    local_start = new_start.in_time_zone(zone)
+    local_end   = new_end.in_time_zone(zone)
+    return false unless new_end > new_start
+    return false if local_start.hour < BusinessHours::OPEN_HOUR
+    # end must be on the same day and not past close
+    local_end.to_date == local_start.to_date &&
+      (local_end.hour < BusinessHours::CLOSE_HOUR ||
+       (local_end.hour == BusinessHours::CLOSE_HOUR && local_end.min.zero? && local_end.sec.zero?))
+  end
+
+  # Best-effort SimplyBook edit to the new time (PUT /admin/bookings/{id}).
+  # Skips when unmapped/dormant. Never raises into the reschedule.
+  def push_reschedule_to_simplybook(sb_id)
+    return if sb_id.blank?
+    return if ENV["SIMPLYBOOK_COMPANY"].blank?
+    return if service.simplybook_event_id.blank? || employee_profile.simplybook_unit_id.blank?
+
+    SimplyBook::Client.new.update_booking(
+      sb_id,
+      service_id: service.simplybook_event_id,
+      unit_id:    employee_profile.simplybook_unit_id,
+      starts_at:  starts_at,
+      ends_at:    ends_at
+    )
+  rescue StandardError => e
+    Rails.logger.warn("[Booking##{id}] SimplyBook reschedule push failed: #{e.message}")
+  end
+
+  # Notify the customer (in-app + email via NotificationService) and the tech
+  # (in-app). NotificationService.deliver persists the Notification AND emails
+  # it through CustomerMailer. Best-effort — never breaks a completed reschedule.
+  def notify_rescheduled
+    when_str = starts_at.in_time_zone(BusinessHours.zone).strftime("%A, %b %-d at %-l:%M %p")
+    NotificationService.deliver(
+      user: user, kind: "booking_rescheduled",
+      title: "Your appointment was rescheduled",
+      body: "#{service.name} is now #{when_str}.", booking: self
+    )
+    if (tech = employee_profile&.user)
+      NotificationService.deliver(
+        user: tech, kind: "booking_rescheduled",
+        title: "A booking was rescheduled",
+        body: "#{service.name} for #{user.first_name} is now #{when_str}.", booking: self
+      )
+    end
+  rescue StandardError => e
+    Rails.logger.warn("[Booking##{id}] reschedule notify failed: #{e.message}")
   end
 
   def ends_after_starts

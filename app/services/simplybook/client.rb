@@ -82,6 +82,21 @@ module SimplyBook
       id
     end
 
+    # PUT /admin/bookings/{id} — edit an existing booking (AdminBookingBuildEntity).
+    # Used to reschedule to a new time without cancel+recreate. Returns true on
+    # success. Requires service_id + provider_id + new start/end (per swagger).
+    def update_booking(simplybook_id, service_id:, unit_id:, starts_at:, ends_at:)
+      body = {
+        service_id:     service_id,
+        provider_id:    unit_id,
+        start_datetime: starts_at.strftime("%Y-%m-%d %H:%M:%S"),
+        end_datetime:   ends_at.strftime("%Y-%m-%d %H:%M:%S")
+      }
+      resp = @conn.put("/admin/bookings/#{simplybook_id}", body)
+      raise "SimplyBook error #{resp.status}: #{resp.body}" unless resp.success?
+      true
+    end
+
     # Resolve a SimplyBook intake/additional field id by its name (case-insensitive).
     # Requires the Intake Forms custom feature + the field created in SimplyBook.
     # Cached per instance; nil (best-effort) when the feature/field isn't set up.

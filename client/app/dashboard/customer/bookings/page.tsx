@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { useBookings, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
+import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
 import { customerBookingsSteps } from "@/lib/tours/customer-bookings-tour"
 
 const ALL_STATUSES: Booking["status"][] = [
@@ -202,31 +203,34 @@ export default function CustomerBookingsPage() {
                   booking={b}
                   actions={
                     b.status === "pending" || b.status === "confirmed" ? (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="destructive"
-                            size="xs"
-                            disabled={cancelMutation.isPending}
-                          >
-                            Cancel
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Cancel booking?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will cancel {b.service?.name ?? "this appointment"}. You may need to book again if you change your mind.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Keep booking</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => cancelBooking(b.id)}>
-                              Cancel booking
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <RescheduleDialog booking={b} />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="xs"
+                              disabled={cancelMutation.isPending}
+                            >
+                              Cancel
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Cancel booking?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will cancel {b.service?.name ?? "this appointment"}. You may need to book again if you change your mind.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Keep booking</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => cancelBooking(b.id)}>
+                                Cancel booking
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     ) : b.status === "completed" ? (
                       b.has_review ? (
                         <StatusBadgeFor status="reviewed" />
