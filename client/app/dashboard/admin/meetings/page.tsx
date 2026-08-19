@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Trash2, Video } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -15,31 +16,59 @@ import {
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { useAdminMeetings, useDeleteMeeting } from "@/lib/hooks/use-meetings"
 import { adminMeetingsSteps } from "@/lib/tours/admin-meetings-tour"
 
 const STATUSES = ["scheduled", "completed", "cancelled"]
 const dt = (s: string | null) =>
-  s
-    ? new Date(s).toLocaleString("en-CA", {
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        month: "short",
-      })
-    : "-"
+  formatDate(s)
 
 export default function AdminMeetingsPage() {
+  const { toast } = useToast()
   const [status, setStatus] = useState("")
   const [page, setPage] = useState(1)
-  const { data, isLoading } = useAdminMeetings({ status: status || undefined, page })
+  const { data, isError, isLoading } = useAdminMeetings({ status: status || undefined, page })
   const del = useDeleteMeeting()
   const meetings = data?.data ?? []
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Work-scope calls not loaded",
+        description: "Could not load work-scope calls. Try refreshing the page.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   function selectStatus(nextStatus: string) {
     setStatus(nextStatus)
     setPage(1)
+  }
+
+  function deleteMeeting(id: number) {
+    del.mutate(id, {
+      onSuccess: () => toast({ title: "Work-scope call deleted", variant: "success" }),
+      onError: (error: unknown) => {
+        toast({
+          title: "Work-scope call not deleted",
+          description: getApiErrorMessage(error, "Could not delete this work-scope call."),
+          variant: "error",
+        })
+      },
+    })
   }
 
   return (
@@ -102,22 +131,45 @@ export default function AdminMeetingsPage() {
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
-                  <a href={meeting.url} target="_blank" rel="noopener noreferrer">
+                  {isValidUrl(meeting.url) ? (
+                    <a href={meeting.url} target="_blank" rel="noopener noreferrer">
+                      <Button size="xs" variant="outline">
+                        <Video aria-hidden="true" className="size-3.5" />
+                        Open room
+                      </Button>
+                    </a>
+                  ) : (
                     <Button size="xs" variant="outline">
                       <Video aria-hidden="true" className="size-3.5" />
-                      Open room
+                      No room
                     </Button>
-                  </a>
-                  <Button
-                    disabled={del.isPending}
-                    onClick={() => {
-                      if (confirm("Delete this call?")) del.mutate(meeting.id)
-                    }}
-                    size="xs"
-                    variant="outline"
-                  >
-                    <Trash2 aria-hidden="true" className="size-3.5 text-[#d4754a]" />
-                  </Button>
+                  )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        disabled={del.isPending}
+                        size="xs"
+                        variant="outline"
+                      >
+                        <Trash2 aria-hidden="true" className="size-3.5 text-[#d4754a]" />
+                        <span className="sr-only">Delete work-scope call</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete work-scope call?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This removes the call record for booking #{meeting.booking_id}. The linked booking remains unchanged.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteMeeting(meeting.id)}>
+                          Delete call
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </DashboardPanel>
@@ -154,4 +206,31 @@ export default function AdminMeetingsPage() {
       <TutorialButton steps={adminMeetingsSteps} pageKey="admin-meetings" />
     </DashboardPage>
   )
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+  return date.toLocaleString("en-CA", {
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "short",
+  })
+}
+
+function isValidUrl(value: string | null | undefined) {
+  if (!value) return false
+  try {
+    const url = new URL(value)
+    return url.protocol === "http:" || url.protocol === "https:"
+  } catch {
+    return false
+  }
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

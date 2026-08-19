@@ -279,3 +279,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Added BAYD toast success/error feedback for status, frequency, cancellation, and deletion updates; replaced delete with the shared `AlertDialog`; added a cancellation confirmation dialog; added inline positive-integer validation for frequency count; disabled row controls during pending mutations; and made next-run date formatting defensive.
 - **Verification:** Targeted ESLint passed for the subscriptions page. `git diff --check` passed.
 - **Follow-up:** Bulk subscription operations remain out of scope.
+
+---
+
+## 2026-08-19 — Work-scope call deletion used browser confirmation
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and meeting workflow
+- **Reported behavior:** Deleting a work-scope call used the browser confirmation dialog, delete/list failures were silent, and invalid room URLs or timestamps were not handled defensively.
+- **Expected behavior:** Deleting a call should use the shared branded confirmation pattern, API failures should show BAYD toast feedback, and room/date display should fail gracefully.
+- **Root cause:** `client/app/dashboard/admin/meetings/page.tsx` called `confirm(...)` before delete, invoked the delete mutation without local success/error handlers, and rendered room/date controls directly from raw API fields.
+- **Fix:** Replaced delete with the shared `AlertDialog`, added toast success/error feedback for deletion and query failures, made scheduled date formatting defensive, and disabled the room link when the URL is missing or invalid.
+- **Verification:** Targeted ESLint passed for the meetings page. `git diff --check` passed.
+- **Follow-up:** Admin meeting lifecycle actions such as complete/cancel remain out of scope because the admin backend currently exposes only list/show/delete.
