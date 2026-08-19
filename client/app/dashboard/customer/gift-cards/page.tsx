@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { Gift } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -17,7 +18,18 @@ import { useGiftCards, type GiftCard } from "@/lib/hooks/use-gift-cards"
 import { customerGiftCardsSteps } from "@/lib/tours/customer-gift-cards-tour"
 
 export default function CustomerGiftCardsPage() {
-  const { data: cards = [], isLoading } = useGiftCards()
+  const { toast } = useToast()
+  const { data: cards = [], isError, isLoading } = useGiftCards()
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Gift cards could not be loaded",
+        description: "Refresh the page or try again shortly.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   return (
     <DashboardPage maxWidth="wide">
@@ -49,6 +61,7 @@ export default function CustomerGiftCardsPage() {
 }
 
 function CustomerCard({ card }: { card: GiftCard }) {
+  const { toast } = useToast()
   const [amount, setAmount] = useState("")
   const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -60,24 +73,39 @@ function CustomerCard({ card }: { card: GiftCard }) {
     onSuccess: async (data) => {
       setStatus(null)
       if (!data.checkout_token) {
-        setStatus({ type: "error", text: "Could not start payment." })
+        const message = "Could not start payment."
+        setStatus({ type: "error", text: message })
+        toast({ title: "Payment could not be started", description: message, variant: "error" })
         return
       }
 
-      const result = await openHelcimPay(data.checkout_token)
+      const result = await openHelcimPay(data.checkout_token).catch(() => "error" as const)
       if (result === "success") {
         setAmount("")
-        setStatus({ type: "success", text: "Funds added. Balance updates once payment clears." })
+        const message = "Balance updates once payment clears."
+        setStatus({ type: "success", text: `Funds added. ${message}` })
+        toast({ title: "Gift card top-up started", description: message, variant: "success" })
       } else if (result === "error") {
-        setStatus({ type: "error", text: "Payment could not be completed." })
+        const message = "Payment could not be completed."
+        setStatus({ type: "error", text: message })
+        toast({ title: "Payment failed", description: message, variant: "error" })
       }
     },
-    onError: () => setStatus({ type: "error", text: "Could not start the top-up." }),
+    onError: (error) => {
+      const message = getApiErrorMessage(error, "Could not start the top-up.")
+      setStatus({ type: "error", text: message })
+      toast({ title: "Top-up failed", description: message, variant: "error" })
+    },
   })
 
   function addFunds() {
     const value = Number(amount)
-    if (!value || value <= 0) return
+    if (!Number.isFinite(value) || value <= 0) {
+      const message = "Enter an amount greater than $0."
+      setStatus({ type: "error", text: message })
+      toast({ title: "Invalid amount", description: message, variant: "error" })
+      return
+    }
     topup.mutate()
   }
 
@@ -116,4 +144,9 @@ function CustomerCard({ card }: { card: GiftCard }) {
       ) : null}
     </DashboardPanel>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

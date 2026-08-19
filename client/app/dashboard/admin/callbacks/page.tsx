@@ -1,8 +1,10 @@
 "use client"
 
+import { useEffect } from "react"
 import { Phone } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -35,8 +37,9 @@ interface CallbackRequest {
 const STATUSES = ["new", "contacted", "booked", "declined"]
 
 export default function AdminCallbacksPage() {
+  const { toast } = useToast()
   const qc = useQueryClient()
-  const { data, isLoading } = useQuery<{ data: CallbackRequest[] }>({
+  const { data, isError, isLoading } = useQuery<{ data: CallbackRequest[] }>({
     queryKey: ["admin-callbacks"],
     queryFn: () => api.get<{ data: CallbackRequest[] }>("/admin/callback_requests").then((r) => r.data),
   })
@@ -45,8 +48,28 @@ export default function AdminCallbacksPage() {
   const update = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) =>
       api.patch(`/admin/callback_requests/${id}`, { callback_request: { status } }).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-callbacks"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-callbacks"] })
+      toast({ title: "Callback status saved", variant: "success" })
+    },
+    onError: (error: unknown) => {
+      toast({
+        title: "Callback status not saved",
+        description: getApiErrorMessage(error, "Could not update this callback request."),
+        variant: "error",
+      })
+    },
   })
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Callbacks not loaded",
+        description: "Could not load callback requests.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   return (
     <DashboardPage maxWidth="wide">
@@ -131,4 +154,9 @@ export default function AdminCallbacksPage() {
       <TutorialButton steps={adminCallbacksSteps} pageKey="admin-callbacks" />
     </DashboardPage>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

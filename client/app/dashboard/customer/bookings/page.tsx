@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { CalendarDays, List } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -19,6 +20,17 @@ import { BookingCard } from "@/components/dashboard/booking-card"
 import { ReviewDialog } from "@/components/dashboard/review-dialog"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { useBookings, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
 import { customerBookingsSteps } from "@/lib/tours/customer-bookings-tour"
@@ -30,6 +42,7 @@ const ALL_STATUSES: Booking["status"][] = [
 type BookingsView = "list" | "calendar"
 
 export default function CustomerBookingsPage() {
+  const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [page, setPage] = useState(1)
@@ -40,7 +53,7 @@ export default function CustomerBookingsPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [dayBookings, setDayBookings] = useState<Booking[]>([])
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
-  const { data, isLoading } = useBookings(page)
+  const { data, isError, isLoading } = useBookings(page)
   const cancelMutation = useCancelBooking()
 
   const bookings = data?.data ?? []
@@ -72,6 +85,30 @@ export default function CustomerBookingsPage() {
     setSelectedDate(date)
     setDayBookings(selectedBookings)
   }
+
+  function cancelBooking(id: number) {
+    cancelMutation.mutate(
+      { id },
+      {
+        onSuccess: () => toast({ title: "Booking cancelled", variant: "success" }),
+        onError: (error) => toast({
+          title: "Booking not cancelled",
+          description: getApiErrorMessage(error, "Could not cancel this booking."),
+          variant: "error",
+        }),
+      },
+    )
+  }
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Bookings not loaded",
+        description: "Could not load your bookings.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   return (
     <DashboardPage maxWidth="wide">
@@ -165,14 +202,31 @@ export default function CustomerBookingsPage() {
                   booking={b}
                   actions={
                     b.status === "pending" || b.status === "confirmed" ? (
-                      <Button
-                        variant="destructive"
-                        size="xs"
-                        disabled={cancelMutation.isPending}
-                        onClick={() => cancelMutation.mutate({ id: b.id })}
-                      >
-                        Cancel
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="xs"
+                            disabled={cancelMutation.isPending}
+                          >
+                            Cancel
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancel booking?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will cancel {b.service?.name ?? "this appointment"}. You may need to book again if you change your mind.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Keep booking</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => cancelBooking(b.id)}>
+                              Cancel booking
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     ) : b.status === "completed" ? (
                       b.has_review ? (
                         <StatusBadgeFor status="reviewed" />
@@ -231,4 +285,9 @@ export default function CustomerBookingsPage() {
       <TutorialButton steps={customerBookingsSteps} pageKey="customer-bookings" />
     </DashboardPage>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

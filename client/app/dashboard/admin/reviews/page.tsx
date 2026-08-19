@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Star } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -36,15 +37,39 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function AdminReviewsPage() {
+  const { toast } = useToast()
   const [page, setPage] = useState(1)
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("pending")
-  const { data, isLoading } = useAdminReviews({
+  const { data, isError, isLoading } = useAdminReviews({
     approved: filter === "all" ? undefined : filter === "approved",
     page,
   })
   const approveMutation = useApproveReview()
   const reviews = data?.data ?? []
   const pagination = data?.pagination
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Reviews not loaded",
+        description: "Could not load customer reviews.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
+
+  function approveReview(id: number) {
+    approveMutation.mutate(id, {
+      onSuccess: () => toast({ title: "Review approved", variant: "success" }),
+      onError: (error: unknown) => {
+        toast({
+          title: "Review not approved",
+          description: getApiErrorMessage(error, "Could not approve this review."),
+          variant: "error",
+        })
+      },
+    })
+  }
 
   return (
     <DashboardPage maxWidth="wide">
@@ -95,13 +120,13 @@ export default function AdminReviewsPage() {
                       <p className="mt-3 text-sm leading-6 text-[#101217]">{review.body}</p>
                     ) : null}
                     <p className="mt-2 text-xs font-semibold text-[#5f6268]">
-                      {new Date(review.created_at).toLocaleDateString("en-CA")}
+                      {formatDate(review.created_at)}
                     </p>
                   </div>
                   {!review.approved ? (
                     <Button
                       disabled={approveMutation.isPending}
-                      onClick={() => approveMutation.mutate(review.id)}
+                      onClick={() => approveReview(review.id)}
                       size="xs"
                       style={{ background: "#5a9e5a", border: "none", color: "#fff" }}
                     >
@@ -144,4 +169,14 @@ export default function AdminReviewsPage() {
       <TutorialButton steps={adminReviewsSteps} pageKey="admin-reviews" />
     </DashboardPage>
   )
+}
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("en-CA")
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

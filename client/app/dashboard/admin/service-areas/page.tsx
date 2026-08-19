@@ -21,7 +21,7 @@ export default function AdminServiceAreasPage() {
       <div data-tour="admin-service-areas-header">
         <DashboardHeader
           title="Service Areas"
-          subtitle="Real coverage, read from each technician's postal-code (FSA) list — this is what actually decides if a booking can be accepted."
+          subtitle="Real coverage, read from each technician's postal-code (FSA) list - this is what actually decides if a booking can be accepted."
         />
       </div>
 
@@ -33,7 +33,7 @@ export default function AdminServiceAreasPage() {
         <EmptyState
           icon={MapPin}
           title="No coverage configured yet"
-          description="No technician has any FSAs set on their profile — until one does, every address is treated as covered. Set FSAs on a tech's profile (Dashboard → Employees) to restrict coverage to real zones."
+          description="No technician has any FSAs set on their profile - until one does, every address is treated as covered. Set FSAs on a tech's profile (Dashboard -> Employees) to restrict coverage to real zones."
         />
       ) : (
         <>

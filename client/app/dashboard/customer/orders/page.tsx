@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { ShoppingBag } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -37,8 +38,9 @@ interface PagedResponse<T> {
 }
 
 export default function CustomerOrdersPage() {
+  const { toast } = useToast()
   const [page, setPage] = useState(1)
-  const { data, isLoading } = useQuery<PagedResponse<Order>>({
+  const { data, isError, isLoading } = useQuery<PagedResponse<Order>>({
     queryKey: ["orders", page],
     queryFn: () =>
       api.get<PagedResponse<Order>>("/orders", { params: { page } }).then((response) => response.data),
@@ -46,6 +48,16 @@ export default function CustomerOrdersPage() {
 
   const orders = data?.data ?? []
   const pagination = data?.pagination
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Orders could not be loaded",
+        description: "Refresh the page or try again shortly.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   return (
     <DashboardPage maxWidth="wide">
@@ -74,7 +86,7 @@ export default function CustomerOrdersPage() {
                     <StatusBadgeFor status={order.status} />
                   </div>
                   <p className="mt-2 text-xs font-semibold text-[#5f6268]">
-                    {new Date(order.created_at).toLocaleDateString("en-CA")}
+                    {formatDate(order.created_at)}
                   </p>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5f6268]">
                     {order.order_items
@@ -83,7 +95,7 @@ export default function CustomerOrdersPage() {
                   </p>
                 </div>
                 <span className="font-heading text-2xl font-extrabold text-[#101217]">
-                  ${order.total}
+                  {formatCurrency(order.total)}
                 </span>
               </div>
             </DashboardPanel>
@@ -120,4 +132,16 @@ export default function CustomerOrdersPage() {
       <TutorialButton steps={customerOrdersSteps} pageKey="customer-orders" />
     </DashboardPage>
   )
+}
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+
+  return date.toLocaleDateString("en-CA")
+}
+
+function formatCurrency(value: string | number) {
+  const amount = Number(value)
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
 }

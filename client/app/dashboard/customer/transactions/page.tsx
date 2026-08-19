@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Download, FileText, ReceiptText, X } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -19,7 +20,10 @@ import { Button } from "@/components/ui/button"
 import { downloadInvoice, useInvoices, type Invoice } from "@/lib/hooks/use-invoices"
 import { customerTransactionsSteps } from "@/lib/tours/customer-transactions-tour"
 
-const cad = (value: string | number) => `$${Number(value).toFixed(2)}`
+const cad = (value: string | number) => {
+  const amount = Number(value)
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
+}
 
 const KIND_FILTERS: { value: string; label: string }[] = [
   { value: "", label: "All" },
@@ -29,11 +33,22 @@ const KIND_FILTERS: { value: string; label: string }[] = [
 ]
 
 export default function CustomerTransactionsPage() {
+  const { toast } = useToast()
   const [page, setPage] = useState(1)
   const [kind, setKind] = useState("")
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
-  const { data, isLoading } = useInvoices(page, kind)
+  const { data, isError, isLoading } = useInvoices(page, kind)
   const invoices = data?.data ?? []
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Transactions could not be loaded",
+        description: "Refresh the page or try again shortly.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   function selectKind(value: string) {
     setKind(value)
@@ -132,12 +147,20 @@ function TransactionCard({
   invoice: Invoice
   onViewReceipt: () => void
 }) {
+  const { toast } = useToast()
   const [downloading, setDownloading] = useState(false)
 
   async function handleDownload() {
     setDownloading(true)
     try {
       await downloadInvoice(invoice.id, invoice.invoice_number)
+      toast({ title: "Invoice download started", variant: "success" })
+    } catch (error) {
+      toast({
+        title: "Invoice could not be downloaded",
+        description: getApiErrorMessage(error, "Please try again."),
+        variant: "error",
+      })
     } finally {
       setDownloading(false)
     }
@@ -188,12 +211,20 @@ function TransactionCard({
 }
 
 function ReceiptDialog({ invoice, onClose }: { invoice: Invoice; onClose: () => void }) {
+  const { toast } = useToast()
   const [downloading, setDownloading] = useState(false)
 
   async function handleDownload() {
     setDownloading(true)
     try {
       await downloadInvoice(invoice.id, invoice.invoice_number)
+      toast({ title: "Invoice download started", variant: "success" })
+    } catch (error) {
+      toast({
+        title: "Invoice could not be downloaded",
+        description: getApiErrorMessage(error, "Please try again."),
+        variant: "error",
+      })
     } finally {
       setDownloading(false)
     }
@@ -271,7 +302,7 @@ function ReceiptDialog({ invoice, onClose }: { invoice: Invoice; onClose: () => 
           <div className="ml-auto w-full max-w-xs space-y-2 border-t border-black/10 pt-4 text-sm">
             <ReceiptTotal label="Subtotal" value={cad(invoice.subtotal)} />
             <ReceiptTotal
-              label={`HST (${Math.round(Number(invoice.tax_rate) * 100)}%)`}
+              label={`HST (${formatTaxRate(invoice.tax_rate)})`}
               value={cad(invoice.tax)}
             />
             <ReceiptTotal
@@ -339,7 +370,10 @@ function ReceiptTotal({
 function formatDate(value: string | null) {
   if (!value) return "Not dated"
 
-  return new Date(value).toLocaleDateString("en-CA", {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "Not dated"
+
+  return date.toLocaleDateString("en-CA", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -348,4 +382,14 @@ function formatDate(value: string | null) {
 
 function formatLabel(value: string) {
   return value.replaceAll("_", " ")
+}
+
+function formatTaxRate(value: string) {
+  const rate = Number(value)
+  return Number.isFinite(rate) ? `${Math.round(rate * 100)}%` : "-"
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

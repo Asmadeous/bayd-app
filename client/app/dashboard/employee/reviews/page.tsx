@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Star } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -45,8 +46,9 @@ function Stars({ rating }: { rating: number }) {
 }
 
 export default function EmployeeReviewsPage() {
+  const { toast } = useToast()
   const [page, setPage] = useState(1)
-  const { data, isLoading } = useQuery<PagedResponse<Review>>({
+  const { data, isError, isLoading } = useQuery<PagedResponse<Review>>({
     queryKey: ["employee-reviews", page],
     queryFn: () =>
       api
@@ -58,6 +60,16 @@ export default function EmployeeReviewsPage() {
   const average = reviews.length
     ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
     : "-"
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Reviews not loaded",
+        description: "Could not load your client reviews.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   return (
     <DashboardPage maxWidth="wide">
@@ -95,7 +107,7 @@ export default function EmployeeReviewsPage() {
                     </span>
                   </div>
                   <span className="text-xs font-semibold text-[#5f6268]">
-                    {new Date(review.created_at).toLocaleDateString("en-CA")}
+                    {formatDate(review.created_at)}
                   </span>
                 </div>
                 {review.body ? (
@@ -136,4 +148,9 @@ export default function EmployeeReviewsPage() {
       <TutorialButton steps={employeeReviewsSteps} pageKey="employee-reviews" />
     </DashboardPage>
   )
+}
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("en-CA")
 }

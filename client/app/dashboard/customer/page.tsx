@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { CalendarDays, CheckCircle2, Clock3, Gift, Sparkles } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { AppCalendar } from "@/components/dashboard/app-calendar"
 import { BookingCard } from "@/components/dashboard/booking-card"
 import { DashboardHero } from "@/components/dashboard/dashboard-hero"
@@ -19,20 +20,31 @@ import type { Booking } from "@/lib/hooks/use-bookings"
 import { customerDashboardSteps } from "@/lib/tours/customer-tour"
 
 export default function CustomerDashboardPage() {
-  const { data, isLoading } = useBookings(1)
+  const { toast } = useToast()
+  const { data, isError, isLoading } = useBookings(1)
   const bookings = useMemo(() => data?.data ?? [], [data?.data])
   const [selectedDate, setSelectedDate] = useState(() => new Date())
   const selectedDateKey = formatDateKey(selectedDate)
-  const bookServiceHref = `/book?date=${selectedDateKey}`
+  const bookServiceHref = `/dashboard/customer/book?date=${selectedDateKey}`
   const selectedDayBookings = useMemo(
-    () => bookings.filter((booking) => booking.starts_at.slice(0, 10) === selectedDateKey),
+    () => bookings.filter((booking) => getDateKeyFromIso(booking.starts_at) === selectedDateKey),
     [bookings, selectedDateKey]
   )
   const upcoming = bookings
     .filter((b) => b.status === "confirmed" || b.status === "pending")
-    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+    .sort((a, b) => getSortableTime(a.starts_at) - getSortableTime(b.starts_at))
   const completed = bookings.filter((b) => b.status === "completed")
   const nextBooking = upcoming[0]
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Bookings could not be loaded",
+        description: "Refresh the page or try again shortly.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   return (
     <DashboardPage maxWidth="wide">
@@ -233,7 +245,10 @@ function formatDateKey(date: Date) {
 }
 
 function formatBookingTime(value: string) {
-  return new Date(value).toLocaleTimeString("en-CA", {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+
+  return date.toLocaleTimeString("en-CA", {
     hour: "numeric",
     minute: "2-digit",
   })
@@ -241,6 +256,7 @@ function formatBookingTime(value: string) {
 
 function formatBookingDate(value: string) {
   const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "Date not available"
 
   return date.toLocaleDateString("en-CA", {
     weekday: "long",
@@ -249,4 +265,15 @@ function formatBookingDate(value: string) {
     hour: "numeric",
     minute: "2-digit",
   })
+}
+
+function getDateKeyFromIso(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+  return value.slice(0, 10)
+}
+
+function getSortableTime(value: string) {
+  const timestamp = new Date(value).getTime()
+  return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp
 }

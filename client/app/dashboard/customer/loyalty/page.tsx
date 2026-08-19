@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Check, Copy, Gift, Star } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -14,8 +15,9 @@ import { useLoyalty, useReferral } from "@/lib/hooks/use-account"
 import { customerLoyaltySteps } from "@/lib/tours/customer-loyalty-tour"
 
 export default function CustomerLoyaltyPage() {
-  const { data: loyalty, isLoading } = useLoyalty()
-  const { data: referral } = useReferral()
+  const { toast } = useToast()
+  const { data: loyalty, isError: loyaltyError, isLoading } = useLoyalty()
+  const { data: referral, isError: referralError } = useReferral()
   const [copied, setCopied] = useState(false)
 
   const transactions = loyalty?.loyalty_transactions ?? []
@@ -26,11 +28,48 @@ export default function CustomerLoyaltyPage() {
     .filter((transaction) => transaction.points < 0)
     .reduce((sum, transaction) => sum + Math.abs(transaction.points), 0)
 
-  function copyReferral() {
-    if (!referral?.url) return
-    navigator.clipboard.writeText(referral.url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  useEffect(() => {
+    if (loyaltyError) {
+      toast({
+        title: "Loyalty details could not be loaded",
+        description: "Refresh the page or try again shortly.",
+        variant: "error",
+      })
+    }
+  }, [loyaltyError, toast])
+
+  useEffect(() => {
+    if (referralError) {
+      toast({
+        title: "Referral link could not be loaded",
+        description: "Refresh the page or try again shortly.",
+        variant: "error",
+      })
+    }
+  }, [referralError, toast])
+
+  async function copyReferral() {
+    if (!referral?.url) {
+      toast({
+        title: "Referral link unavailable",
+        description: "Refresh the page and try again.",
+        variant: "error",
+      })
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(referral.url)
+      setCopied(true)
+      toast({ title: "Referral link copied", variant: "success" })
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast({
+        title: "Referral link could not be copied",
+        description: "Your browser blocked clipboard access.",
+        variant: "error",
+      })
+    }
   }
 
   return (
@@ -107,7 +146,7 @@ export default function CustomerLoyaltyPage() {
                     {transaction.description || transaction.kind}
                   </p>
                   <p className="mt-1 text-xs font-semibold text-[#5f6268]">
-                    {new Date(transaction.created_at).toLocaleDateString("en-CA")}
+                    {formatDate(transaction.created_at)}
                   </p>
                 </div>
                 <span
@@ -126,4 +165,11 @@ export default function CustomerLoyaltyPage() {
       <TutorialButton steps={customerLoyaltySteps} pageKey="customer-loyalty" />
     </DashboardPage>
   )
+}
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+
+  return date.toLocaleDateString("en-CA")
 }

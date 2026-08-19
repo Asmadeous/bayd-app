@@ -27,8 +27,10 @@ module Api
         private
 
         def permitted_params
-          params.permit(:name, :description, :price, :stock_qty, :image_url,
-                        :active, :product_category_id)
+          permitted = params.permit(:name, :description, :price, :stock_quantity, :stock_qty,
+                                    :image_url, :active, :product_category_id)
+          permitted[:stock_quantity] = permitted.delete(:stock_qty) if permitted.key?(:stock_qty)
+          permitted
         end
       end
     end

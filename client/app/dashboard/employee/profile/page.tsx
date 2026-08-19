@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { CheckCircle2, ImagePlus, Mail, Sparkles, UserRound } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -19,7 +20,8 @@ const fieldClass =
 const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 export default function EmployeeProfilePage() {
-  const { data: profile, isLoading } = useEmployeeProfile()
+  const { toast } = useToast()
+  const { data: profile, isError, isLoading } = useEmployeeProfile()
   const updateMutation = useUpdateProfile()
   const photoInputRef = useRef<HTMLInputElement>(null)
   const photoPreviewObjectUrlRef = useRef<string | null>(null)
@@ -42,6 +44,16 @@ export default function EmployeeProfilePage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Profile not loaded",
+        description: "Could not load your employee profile.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
+
   function handlePhotoChange(file: File | undefined) {
     if (!file) return
 
@@ -57,9 +69,18 @@ export default function EmployeeProfilePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await updateMutation.mutateAsync({ title, bio, photo: selectedPhotoFile })
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    try {
+      await updateMutation.mutateAsync({ title, bio, photo: selectedPhotoFile })
+      setSaved(true)
+      toast({ title: "Profile saved", variant: "success" })
+      setTimeout(() => setSaved(false), 2500)
+    } catch (error) {
+      toast({
+        title: "Profile not saved",
+        description: getApiErrorMessage(error, "Could not save your profile."),
+        variant: "error",
+      })
+    }
   }
 
   if (isLoading) {
@@ -157,6 +178,11 @@ export default function EmployeeProfilePage() {
                     {selectedPhotoFile.name}
                   </p>
                 ) : null}
+                {selectedPhotoFile ? (
+                  <p className="mt-2 max-w-xl text-xs font-semibold text-[#8a8d93]">
+                    This photo will be uploaded when you save your profile.
+                  </p>
+                ) : null}
               </div>
 
               <input
@@ -214,4 +240,9 @@ export default function EmployeeProfilePage() {
       />
     </DashboardPage>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

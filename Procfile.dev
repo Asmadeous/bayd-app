@@ -1,2 +1,2 @@
 web: bin/rails server -p 3000
-client: NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1 npm --prefix client run dev -- -p 3001
+client: cd client && NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1 exec ./node_modules/.bin/next dev -p 3003

@@ -19,6 +19,17 @@ import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboa
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -29,6 +40,7 @@ import {
 } from "@/components/ui/select"
 import api from "@/lib/api"
 import { adminUsersSteps } from "@/lib/tours/admin-users-tour"
+import { useToast } from "@/components/bayd-toast-provider"
 
 interface User {
   id: number
@@ -55,6 +67,7 @@ const ROLES = ["customer", "employee", "admin"]
 
 export default function AdminUsersPage() {
   const qc = useQueryClient()
+  const { toast } = useToast()
   const [page, setPage] = useState(1)
   // Defaults to customers only — Employees have their own dedicated tab.
   // Switch the dropdown to "All roles" (or "employee"/"admin") to see others.
@@ -62,6 +75,7 @@ export default function AdminUsersPage() {
   const [q, setQ] = useState("")
   const [editId, setEditId] = useState<number | null>(null)
   const [editRole, setEditRole] = useState("")
+  const [updateError, setUpdateError] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery<PagedResponse<User>>({
     queryKey: ["admin-users", page, roleFilter, q],
@@ -79,12 +93,26 @@ export default function AdminUsersPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-users"] })
       setEditId(null)
+      setUpdateError(null)
+    },
+    onError: (error: unknown) => {
+      const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+      const message = data?.error ?? data?.errors?.join(", ") ?? "Could not update this user's role."
+      setUpdateError(message)
+      toast({ title: "Role update unsuccessful", description: message, variant: "error" })
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/admin/users/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-users"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-users"] })
+      toast({ title: "User deleted", variant: "success" })
+    },
+    onError: (error: unknown) => {
+      const message = getApiErrorMessage(error, "Could not delete this user.")
+      toast({ title: "User not deleted", description: message, variant: "error" })
+    },
   })
 
   const users = data?.data ?? []
@@ -197,13 +225,24 @@ export default function AdminUsersPage() {
                           </SelectContent>
                         </Select>
                         <Button
-                          onClick={() => updateMutation.mutate({ id: user.id, role: editRole })}
+                          disabled={updateMutation.isPending}
+                          onClick={() => {
+                            setUpdateError(null)
+                            updateMutation.mutate({ id: user.id, role: editRole })
+                          }}
                           size="xs"
                           style={{ background: "#c96c83", border: "none", color: "#fff" }}
                         >
-                          Save
+                          {updateMutation.isPending ? "Saving..." : "Save"}
                         </Button>
-                        <Button onClick={() => setEditId(null)} size="xs" variant="ghost">
+                        <Button
+                          onClick={() => {
+                            setEditId(null)
+                            setUpdateError(null)
+                          }}
+                          size="xs"
+                          variant="ghost"
+                        >
                           Cancel
                         </Button>
                       </div>
@@ -226,16 +265,31 @@ export default function AdminUsersPage() {
                       >
                         Edit Role
                       </Button>
-                      <Button
-                        disabled={deleteMutation.isPending}
-                        onClick={() => {
-                          if (confirm("Delete this user?")) deleteMutation.mutate(user.id)
-                        }}
-                        size="xs"
-                        variant="destructive"
-                      >
-                        Delete
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            disabled={deleteMutation.isPending}
+                            size="xs"
+                            variant="destructive"
+                          >
+                            Delete
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete user?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This permanently removes {user.email}. Related records may also be affected by account ownership rules.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteMutation.mutate(user.id)}>
+                              Delete user
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </DataTableCell>
                 </DataTableRow>
@@ -244,6 +298,15 @@ export default function AdminUsersPage() {
           </DataTable>
         </div>
       )}
+
+      {updateError ? (
+        <div
+          aria-live="polite"
+          className="mt-4 border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
+        >
+          {updateError}
+        </div>
+      ) : null}
 
       {pagination && pagination.total_pages > 1 ? (
         <DashboardToolbar className="justify-end">
@@ -280,4 +343,9 @@ function RoleBadge({ role }: { role: string }) {
   const tone = role === "admin" ? "dark" : role === "employee" ? "rose" : "gray"
 
   return <StatusBadge tone={tone}>{role}</StatusBadge>
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

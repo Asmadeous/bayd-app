@@ -1,13 +1,25 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Repeat, CreditCard, CalendarClock, ChevronDown } from "lucide-react"
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -29,11 +41,32 @@ import {
 } from "@/lib/hooks/use-subscriptions"
 import { customerSubscriptionsSteps } from "@/lib/tours/customer-subscriptions-tour"
 
-const money = (v: string | number | null) => (v == null ? "—" : `$${Number(v).toFixed(2)}`)
-const dt = (s: string) => new Date(s).toLocaleString("en-CA", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+const money = (v: string | number | null) => {
+  if (v == null) return "-"
+  const amount = Number(v)
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
+}
+const dt = (s: string | null) => {
+  if (!s) return "-"
+  const date = new Date(s)
+  return Number.isNaN(date.getTime())
+    ? "-"
+    : date.toLocaleString("en-CA", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+}
 
 export default function CustomerSubscriptionsPage() {
-  const { data: subs = [], isLoading } = useSubscriptions()
+  const { toast } = useToast()
+  const { data: subs = [], isError, isLoading } = useSubscriptions()
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Subscriptions not loaded",
+        description: "Could not load your subscriptions.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   return (
     <DashboardPage maxWidth="wide">
@@ -63,6 +96,7 @@ export default function CustomerSubscriptionsPage() {
 }
 
 function SubscriptionCard({ subscription: s }: { subscription: Subscription }) {
+  const { toast } = useToast()
   const pause = usePauseSubscription()
   const resume = useResumeSubscription()
   const cancel = useCancelSubscription()
@@ -73,6 +107,33 @@ function SubscriptionCard({ subscription: s }: { subscription: Subscription }) {
 
   const busy = pause.isPending || resume.isPending || cancel.isPending || skip.isPending || changeFreq.isPending
   const currentPreset = FREQUENCY_PRESETS.find((p) => p.unit === s.interval_unit && p.count === s.interval_count)
+
+  function mutateAction(
+    mutation: typeof pause,
+    id: number,
+    successTitle: string,
+    errorTitle: string,
+    fallback: string,
+  ) {
+    mutation.mutate(id, {
+      onSuccess: () => toast({ title: successTitle, variant: "success" }),
+      onError: (error) => toast({
+        title: errorTitle,
+        description: getApiErrorMessage(error, fallback),
+        variant: "error",
+      }),
+    })
+  }
+
+  useEffect(() => {
+    if (detail.isError) {
+      toast({
+        title: "Subscription history not loaded",
+        description: "Could not load billing history for this subscription.",
+        variant: "error",
+      })
+    }
+  }, [detail.isError, toast])
 
   return (
     <DashboardPanel>
@@ -101,15 +162,35 @@ function SubscriptionCard({ subscription: s }: { subscription: Subscription }) {
         <div className="mt-4 flex flex-wrap gap-2">
           {s.status === "active" ? (
             <>
-              <Button size="xs" variant="outline" disabled={busy} onClick={() => skip.mutate(s.id)}>Skip next</Button>
-              <Button size="xs" variant="outline" disabled={busy} onClick={() => pause.mutate(s.id)}>Pause</Button>
+              <Button size="xs" variant="outline" disabled={busy} onClick={() => mutateAction(skip, s.id, "Next visit skipped", "Visit not skipped", "Could not skip the next visit.")}>Skip next</Button>
+              <Button size="xs" variant="outline" disabled={busy} onClick={() => mutateAction(pause, s.id, "Subscription paused", "Subscription not paused", "Could not pause this subscription.")}>Pause</Button>
             </>
           ) : (
-            <Button size="xs" disabled={busy} onClick={() => resume.mutate(s.id)} style={{ background: "#5a9e5a", border: "none", color: "#fff" }}>Resume</Button>
+            <Button size="xs" disabled={busy} onClick={() => mutateAction(resume, s.id, "Subscription resumed", "Subscription not resumed", "Could not resume this subscription.")} style={{ background: "#5a9e5a", border: "none", color: "#fff" }}>Resume</Button>
           )}
-          <Button size="xs" variant="outline" disabled={busy} onClick={() => { if (confirm("Cancel this subscription?")) cancel.mutate(s.id) }}>
-            <span className="text-[#d4754a]">Cancel</span>
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="xs" variant="outline" disabled={busy}>
+                <span className="text-[#d4754a]">Cancel</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel subscription?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This stops future recurring visits for {s.service_name ?? "this service"}.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep subscription</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => mutateAction(cancel, s.id, "Subscription cancelled", "Subscription not cancelled", "Could not cancel this subscription.")}
+                >
+                  Cancel subscription
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
 
@@ -122,7 +203,17 @@ function SubscriptionCard({ subscription: s }: { subscription: Subscription }) {
             onValueChange={(value) => {
               const preset = FREQUENCY_PRESETS.find((frequency) => frequency.label === value)
               if (preset) {
-                changeFreq.mutate({ id: s.id, unit: preset.unit, count: preset.count })
+                changeFreq.mutate(
+                  { id: s.id, unit: preset.unit, count: preset.count },
+                  {
+                    onSuccess: () => toast({ title: "Frequency updated", variant: "success" }),
+                    onError: (error) => toast({
+                      title: "Frequency not updated",
+                      description: getApiErrorMessage(error, "Could not update this subscription frequency."),
+                      variant: "error",
+                    }),
+                  },
+                )
               }
             }}
           >
@@ -155,7 +246,7 @@ function SubscriptionCard({ subscription: s }: { subscription: Subscription }) {
             <div className="divide-y divide-black/5">
               {detail.data.history.map((h) => (
                 <div key={h.booking_id} className="flex items-center justify-between py-1.5 text-xs">
-                  <span className="text-[#5f6268]">{new Date(h.date).toLocaleDateString("en-CA")}</span>
+                  <span className="text-[#5f6268]">{dt(h.date)}</span>
                   <span className="text-[#101217]">{money(h.amount)}</span>
                   <span style={{ color: h.paid ? "#5a9e5a" : "#8a8d93" }}>{h.paid ? "Paid" : h.status}</span>
                 </div>
@@ -168,4 +259,9 @@ function SubscriptionCard({ subscription: s }: { subscription: Subscription }) {
       )}
     </DashboardPanel>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

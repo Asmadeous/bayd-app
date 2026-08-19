@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Trash2 } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import {
   DataTable,
   DataTableBody,
@@ -19,7 +20,19 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import {
   Select,
   SelectContent,
@@ -32,34 +45,62 @@ import { useAdminShifts, useDeleteShift, type AdminShiftFilters, type Shift } fr
 import { adminShiftsSteps } from "@/lib/tours/admin-shifts-tour"
 
 const dt = (s: string | null) =>
-  s
-    ? new Date(s).toLocaleString("en-CA", {
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        month: "short",
-      })
-    : "-"
+  formatDate(s)
 
 const name = (u?: { first_name: string | null; last_name: string | null; email: string }) =>
   u ? [u.first_name, u.last_name].filter(Boolean).join(" ") || u.email : "-"
 
 function duration(secs: number): string {
+  if (!Number.isFinite(Number(secs)) || Number(secs) < 0) return "-"
   const h = Math.floor(secs / 3600)
   const m = Math.floor((secs % 3600) / 60)
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
 export default function AdminShiftsPage() {
+  const { toast } = useToast()
   const [filters, setFilters] = useState<AdminShiftFilters>({ page: 1 })
-  const { data, isLoading } = useAdminShifts(filters)
+  const [dateError, setDateError] = useState<string | null>(null)
+  const { data, isError, isLoading } = useAdminShifts(filters)
   const { data: employees } = useAdminEmployees(1)
   const del = useDeleteShift()
   const shifts = data?.data ?? []
   const totals = data?.totals
 
-  const set = (patch: Partial<AdminShiftFilters>) =>
-    setFilters((current) => ({ ...current, ...patch, page: 1 }))
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Shifts not loaded",
+        description: "Could not load fuel compensation records. Try refreshing the page.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
+
+  function set(patch: Partial<AdminShiftFilters>) {
+    const next = { ...filters, ...patch, page: 1 }
+    const nextError = validateDateRange(next.from, next.to)
+    setDateError(nextError)
+    if (!nextError) setFilters(next)
+  }
+
+  function clearFilters() {
+    setDateError(null)
+    setFilters({ page: 1 })
+  }
+
+  function deleteShift(shift: Shift) {
+    del.mutate(shift.id, {
+      onSuccess: () => toast({ title: "Shift deleted", variant: "success" }),
+      onError: (error: unknown) => {
+        toast({
+          title: "Shift not deleted",
+          description: getApiErrorMessage(error, "Could not delete this shift record."),
+          variant: "error",
+        })
+      },
+    })
+  }
 
   return (
     <DashboardPage maxWidth="wide">
@@ -106,30 +147,36 @@ export default function AdminShiftsPage() {
             </Select>
           </Field>
           <Field label="From">
-            <input
-              className="h-10 border border-black/15 bg-white px-2 text-sm outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
-              onChange={(event) => set({ from: event.target.value || undefined })}
-              type="date"
+            <DatePicker
+              className="h-10 w-40"
+              onChange={(value) => set({ from: value || undefined })}
+              placeholder="From date"
               value={filters.from ?? ""}
             />
           </Field>
           <Field label="To">
-            <input
-              className="h-10 border border-black/15 bg-white px-2 text-sm outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
-              onChange={(event) => set({ to: event.target.value || undefined })}
-              type="date"
+            <DatePicker
+              className="h-10 w-40"
+              min={filters.from}
+              onChange={(value) => set({ to: value || undefined })}
+              placeholder="To date"
               value={filters.to ?? ""}
             />
           </Field>
         </ToolbarSection>
         {(filters.employee_profile_id || filters.status || filters.from || filters.to) ? (
           <ToolbarSection>
-            <Button onClick={() => setFilters({ page: 1 })} size="sm" variant="outline">
+            <Button onClick={clearFilters} size="sm" variant="outline">
               Clear
             </Button>
           </ToolbarSection>
         ) : null}
       </DashboardToolbar>
+      {dateError ? (
+        <DashboardPanel className="border-[#b75c68]/25 bg-[#fff5f6]">
+          <p className="text-sm font-semibold text-[#8f3f4b]">{dateError}</p>
+        </DashboardPanel>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-3" data-tour="admin-shifts-stats">
         <StatCard label="Shifts" value={totals?.shifts ?? 0} />
@@ -177,23 +224,41 @@ export default function AdminShiftsPage() {
                 </DataTableCell>
                 <DataTableCell>{duration(shift.duration_seconds)}</DataTableCell>
                 <DataTableCell className="text-right font-semibold text-[#101217]">
-                  {Number(shift.distance_km).toFixed(1)} km
+                  {formatKm(shift.distance_km)}
                 </DataTableCell>
                 <DataTableCell className="text-right font-bold text-[#c96c83]">
-                  ${Number(shift.fuel_reimbursement).toFixed(2)}
+                  {formatCurrency(shift.fuel_reimbursement)}
                 </DataTableCell>
                 <DataTableCell>
                   <div className="flex justify-end">
-                    <Button
-                      disabled={del.isPending}
-                      onClick={() => {
-                        if (confirm("Delete this shift record?")) del.mutate(shift.id)
-                      }}
-                      size="xs"
-                      variant="outline"
-                    >
-                      <Trash2 aria-hidden="true" className="size-3.5 text-[#d4754a]" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          disabled={del.isPending}
+                          size="xs"
+                          variant="outline"
+                        >
+                          <Trash2 aria-hidden="true" className="size-3.5 text-[#d4754a]" />
+                          <span className="sr-only">Delete shift record</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete shift record?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {shift.status === "open"
+                              ? "This shift is still open. Deleting it removes the active clock-in record and any tracked fuel compensation."
+                              : "This permanently removes the shift and its fuel compensation totals from this report."}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteShift(shift)}>
+                            Delete shift
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </DataTableCell>
               </DataTableRow>
@@ -243,4 +308,39 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   )
+}
+
+function validateDateRange(from?: string, to?: string) {
+  if (!from || !to) return null
+  const fromDate = new Date(from)
+  const toDate = new Date(to)
+  if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) return "Use valid dates for the fuel compensation range."
+  return toDate < fromDate ? "To date must be on or after the From date." : null
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+  return date.toLocaleString("en-CA", {
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "short",
+  })
+}
+
+function formatKm(value: unknown) {
+  const km = Number(value)
+  return Number.isFinite(km) ? `${km.toFixed(1)} km` : "-"
+}
+
+function formatCurrency(value: unknown) {
+  const amount = Number(value)
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

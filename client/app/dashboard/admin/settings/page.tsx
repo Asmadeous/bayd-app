@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { CheckCircle2 } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -23,6 +24,7 @@ const fieldClass =
 const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 function AdminProfilePanel() {
+  const { toast } = useToast()
   const { user } = useAuthStore()
   const { updateMe } = useAuth()
   const [form, setForm] = useState({
@@ -34,9 +36,18 @@ function AdminProfilePanel() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await updateMe.mutateAsync(form)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    try {
+      await updateMe.mutateAsync(form)
+      setSaved(true)
+      toast({ title: "Profile saved", variant: "success" })
+      setTimeout(() => setSaved(false), 2500)
+    } catch (error) {
+      toast({
+        title: "Profile not saved",
+        description: getApiErrorMessage(error, "Could not save your profile."),
+        variant: "error",
+      })
+    }
   }
 
   return (
@@ -104,22 +115,63 @@ function AdminProfilePanel() {
 }
 
 export default function AdminSettingsPage() {
+  const { toast } = useToast()
   const qc = useQueryClient()
-  const { data } = useQuery<Settings>({
+  const { data, isError, isLoading } = useQuery<Settings>({
     queryKey: ["admin-settings"],
     queryFn: () => api.get<Settings>("/admin/settings").then((r) => r.data),
   })
 
   const [edited, setEdited] = useState<string | null>(null)
   const depositPct = edited ?? (data?.group_deposit_pct != null ? String(data.group_deposit_pct) : "")
+  const depositNumber = Number(depositPct)
+  const depositError =
+    depositPct.trim() === ""
+      ? "Deposit percentage is required."
+      : !Number.isFinite(depositNumber)
+        ? "Deposit percentage must be a number."
+        : depositNumber < 0 || depositNumber > 100
+          ? "Deposit percentage must be between 0 and 100."
+          : null
 
   const save = useMutation({
-    mutationFn: () => api.patch("/admin/settings", { group_deposit_pct: depositPct }).then((r) => r.data),
+    mutationFn: () => api.patch("/admin/settings", { group_deposit_pct: depositNumber }).then((r) => r.data),
     onSuccess: () => {
       setEdited(null)
       qc.invalidateQueries({ queryKey: ["admin-settings"] })
+      toast({ title: "Settings saved", variant: "success" })
+    },
+    onError: (error: unknown) => {
+      toast({
+        title: "Settings not saved",
+        description: getApiErrorMessage(error, "Could not save admin settings."),
+        variant: "error",
+      })
     },
   })
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Settings not loaded",
+        description: "Could not load admin settings.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
+
+  function saveDeposit() {
+    if (depositError) {
+      toast({
+        title: "Deposit needs attention",
+        description: depositError,
+        variant: "error",
+      })
+      return
+    }
+
+    save.mutate()
+  }
 
   return (
     <DashboardPage maxWidth="narrow">
@@ -140,7 +192,12 @@ export default function AdminSettingsPage() {
             Deposit percentage
           </label>
           <input
-            className="h-10 w-full border border-black/15 bg-white px-3 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+            aria-invalid={Boolean(depositError)}
+            className={`h-10 w-full border bg-white px-3 text-sm text-[#101217] outline-none transition focus:ring-3 ${
+              depositError
+                ? "border-[#b75c68] focus:border-[#b75c68] focus:ring-[#b75c68]/20"
+                : "border-black/15 focus:border-[#c96c83] focus:ring-[#c96c83]/20"
+            }`}
             max="100"
             min="0"
             onChange={(event) => setEdited(event.target.value)}
@@ -148,6 +205,9 @@ export default function AdminSettingsPage() {
             type="number"
             value={depositPct}
           />
+          {depositError ? (
+            <p className="mt-2 text-xs font-semibold text-[#b75c68]">{depositError}</p>
+          ) : null}
           <p className="mt-2 text-xs leading-5 text-[#5f6268]">
             Percentage of the total collected upfront when a customer books a group service.
           </p>
@@ -155,8 +215,8 @@ export default function AdminSettingsPage() {
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button
-            disabled={save.isPending}
-            onClick={() => save.mutate()}
+            disabled={isLoading || save.isPending}
+            onClick={saveDeposit}
             style={{ background: "#c96c83", border: "none", color: "#fff" }}
           >
             {save.isPending ? "Saving..." : "Save"}
@@ -168,4 +228,9 @@ export default function AdminSettingsPage() {
       <TutorialButton steps={adminSettingsSteps} pageKey="admin-settings" />
     </DashboardPage>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

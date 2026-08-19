@@ -1,15 +1,17 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { Suspense, useMemo, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import api from "@/lib/api"
 import { useCoverage } from "@/lib/hooks/use-coverage"
 import { siteConfig } from "@/lib/site"
+import { useAuthStore } from "@/lib/stores/auth-store"
 
 // Same company number as the footer; used for the out-of-area call / WhatsApp options.
 const WHATSAPP_HREF = `https://wa.me/${siteConfig.phoneHref.replace(/\D/g, "")}?text=${encodeURIComponent(
@@ -62,6 +64,19 @@ interface BookingRequestResponse {
   code?: string
   error?: string
 }
+export interface SavedAddress {
+  id: number
+  label: string | null
+  line1: string
+  line2: string | null
+  city: string
+  province: string
+  postal_code: string
+  default?: boolean
+  is_default?: boolean
+  is_apartment?: boolean
+  buzz_code?: string | null
+}
 
 const GROUP_MAX = 5
 
@@ -73,6 +88,24 @@ const card = "border border-black/10 bg-white p-5 sm:p-6"
 const STEPS = ["Details", "Service", "Staff", "Date", "Payment"] as const
 
 export default function PublicBookPage() {
+  // BookingFlow calls useSearchParams(), which requires a Suspense boundary or
+  // the static prerender of /book fails the production build.
+  return (
+    <Suspense>
+      <BookingFlow />
+    </Suspense>
+  )
+}
+
+export function BookingFlow({
+  dashboardMode = false,
+  initialAddress = null,
+}: {
+  dashboardMode?: boolean
+  initialAddress?: SavedAddress | null
+}) {
+  const searchParams = useSearchParams()
+  const { user } = useAuthStore()
   const geo = useQuery<GeoResult>({
     queryKey: ["geo"],
     queryFn: () => api.get<GeoResult>("/geo").then((r) => r.data),
@@ -88,20 +121,20 @@ export default function PublicBookPage() {
   const [clientType, setClientType] = useState<ClientType>("adult")
   const [partySize, setPartySize] = useState(2)
   const [categoryFilter, setCategoryFilter] = useState<string>("all") // "all" | category_name
-  const [serviceId, setServiceId] = useState("")
+  const [serviceId, setServiceId] = useState(searchParams.get("service") ?? "")
   const [staff, setStaff] = useState<string>("any") // "any" | providerId
-  const [date, setDate] = useState("")
+  const [date, setDate] = useState(searchParams.get("date") ?? "")
   const [time, setTime] = useState("10:00")
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
-  const [line1, setLine1] = useState("")
-  const [unit, setUnit] = useState("")
-  const [city, setCity] = useState("")
-  const [province, setProvince] = useState("ON")
-  const [postal, setPostal] = useState("")
-  const [isApartment, setIsApartment] = useState(false)
-  const [buzzCode, setBuzzCode] = useState("")
+  const [name, setName] = useState(dashboardMode ? user?.first_name ?? "" : "")
+  const [email, setEmail] = useState(dashboardMode ? user?.email ?? "" : "")
+  const [phone, setPhone] = useState(dashboardMode ? user?.phone ?? "" : "")
+  const [line1, setLine1] = useState(dashboardMode ? initialAddress?.line1 ?? user?.street_address ?? "" : "")
+  const [unit, setUnit] = useState(dashboardMode ? initialAddress?.line2 ?? "" : "")
+  const [city, setCity] = useState(dashboardMode ? initialAddress?.city ?? user?.city ?? "" : "")
+  const [province, setProvince] = useState(dashboardMode ? initialAddress?.province ?? "ON" : "ON")
+  const [postal, setPostal] = useState(dashboardMode ? initialAddress?.postal_code ?? user?.postal_code ?? "" : "")
+  const [isApartment, setIsApartment] = useState(dashboardMode ? Boolean(initialAddress?.is_apartment) : false)
+  const [buzzCode, setBuzzCode] = useState(dashboardMode ? initialAddress?.buzz_code ?? "" : "")
   const [notes, setNotes] = useState("")
   const [tip, setTip] = useState("") // optional gratuity in dollars
   const [giftCard, setGiftCard] = useState("")
@@ -389,7 +422,7 @@ export default function PublicBookPage() {
   // ── Non-Canada block ────────────────────────────────────────────────────────
   if (geo.data && !geo.data.allowed) {
     return (
-      <Shell>
+      <Shell dashboardMode={dashboardMode}>
         <div className={cn(card, "text-center")}>
           <MapPin className="mx-auto mb-3 size-8 text-[#c96c83]" />
           <h1 className="text-xl font-black tracking-tight">We serve Canada only</h1>
@@ -404,7 +437,7 @@ export default function PublicBookPage() {
 
   if (view === "booked") {
     return (
-      <Shell>
+      <Shell dashboardMode={dashboardMode}>
         <div className={cn(card, "text-center")}>
           <CheckCircle2 className="mx-auto mb-3 size-9 text-emerald-600" />
           <h1 className="text-xl font-black tracking-tight">You&apos;re booked!</h1>
@@ -417,8 +450,8 @@ export default function PublicBookPage() {
               </>
             ) : null}
           </p>
-          <Link href="/" className="mt-5 inline-block bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
-            Back to home
+          <Link href={dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
+            {dashboardMode ? "Back to dashboard" : "Back to home"}
           </Link>
         </div>
       </Shell>
@@ -427,7 +460,7 @@ export default function PublicBookPage() {
 
   if (view === "consultation") {
     return (
-      <Shell>
+      <Shell dashboardMode={dashboardMode}>
         <div className={cn(card, "text-center")}>
           <Phone className="mx-auto mb-3 size-9 text-[#c96c83]" />
           <h1 className="text-xl font-black tracking-tight">We&apos;ll call you</h1>
@@ -454,8 +487,8 @@ export default function PublicBookPage() {
               <Send className="size-4" /> WhatsApp
             </a>
           </div>
-          <Link href="/" className="mt-5 inline-block bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
-            Back to home
+          <Link href={dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
+            {dashboardMode ? "Back to dashboard" : "Back to home"}
           </Link>
         </div>
       </Shell>
@@ -464,15 +497,17 @@ export default function PublicBookPage() {
 
   return (
     <>
-      <SiteHeader />
-      <Shell>
+      {dashboardMode ? null : <SiteHeader />}
+      <Shell dashboardMode={dashboardMode}>
         <div className="mb-5">
           <span className="inline-flex items-center gap-1.5 bg-[#c96c83]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#c96c83]">
             <Sparkles className="size-3.5" /> Book a service
           </span>
           <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Beauty, at your door</h1>
           <p className="mt-1 text-sm font-medium text-[#5f6268]">
-            No account needed — just your email or phone number. You can book without paying now and settle up after your service.
+            {dashboardMode
+              ? "Your details are prefilled from your account. Review them, choose a service, and confirm your appointment."
+              : "No account needed — just your email or phone number. You can book without paying now and settle up after your service."}
           </p>
         </div>
 
@@ -1016,11 +1051,11 @@ export default function PublicBookPage() {
         )}
       </div>
 
-        <p className="mt-4 text-center text-xs font-medium text-[#8a8d93]">
+        {dashboardMode ? null : <p className="mt-4 text-center text-xs font-medium text-[#8a8d93]">
           Already have an account? <Link href="/signin" className="font-bold text-[#c96c83]">Sign in</Link>
-        </p>
+        </p>}
       </Shell>
-      <SiteFooter />
+      {dashboardMode ? null : <SiteFooter />}
     </>
   )
 }
@@ -1099,10 +1134,10 @@ function StaffOption({
   )
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, dashboardMode = false }: { children: React.ReactNode; dashboardMode?: boolean }) {
   return (
-    <main className="min-h-screen bg-[#f4f1eb] text-[#101217]">
-      <div className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-14">{children}</div>
+    <main className={dashboardMode ? "text-[#101217]" : "min-h-screen bg-[#f4f1eb] text-[#101217]"}>
+      <div className={dashboardMode ? "mx-auto w-full max-w-2xl" : "mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-14"}>{children}</div>
     </main>
   )
 }

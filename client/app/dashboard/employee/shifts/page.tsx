@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Fuel } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -15,27 +16,45 @@ import { Button } from "@/components/ui/button"
 import { useShifts, type Shift } from "@/lib/hooks/use-time-clock"
 import { employeeShiftsSteps } from "@/lib/tours/employee-tour"
 
-const dt = (s: string | null) =>
-  s
-    ? new Date(s).toLocaleString("en-CA", {
+function dt(s: string | null) {
+  if (!s) return "-"
+  const date = new Date(s)
+  return Number.isNaN(date.getTime())
+    ? "-"
+    : date.toLocaleString("en-CA", {
         day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
         month: "short",
       })
-    : "-"
+}
 
-function duration(secs: number): string {
-  const h = Math.floor(secs / 3600)
-  const m = Math.floor((secs % 3600) / 60)
+function duration(secs: unknown): string {
+  const value = Number(secs)
+  if (!Number.isFinite(value) || value < 0) return "-"
+
+  const safeSecs = Math.floor(value)
+  const h = Math.floor(safeSecs / 3600)
+  const m = Math.floor((safeSecs % 3600) / 60)
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
 export default function EmployeeShiftsPage() {
+  const { toast } = useToast()
   const [page, setPage] = useState(1)
-  const { data, isLoading } = useShifts(page)
+  const { data, isError, isLoading } = useShifts(page)
   const shifts = data?.data ?? []
   const totals = data?.totals
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Shifts not loaded",
+        description: "Could not load your shift history.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   return (
     <DashboardPage maxWidth="wide">
@@ -48,8 +67,8 @@ export default function EmployeeShiftsPage() {
 
       <div data-tour="shifts-stats" className="grid gap-4 md:grid-cols-3">
         <StatCard label="Total Shifts" value={data?.pagination.total_count ?? 0} />
-        <StatCard label="Distance Travelled" value={`${(totals?.distance_km ?? 0).toFixed(1)} km`} />
-        <StatCard label="Fuel Reimbursement" value={`$${(totals?.fuel_reimbursement ?? 0).toFixed(2)}`} accent />
+        <StatCard label="Distance Travelled" value={formatDistance(totals?.distance_km)} />
+        <StatCard label="Fuel Reimbursement" value={formatCurrency(totals?.fuel_reimbursement)} accent />
       </div>
 
       <div data-tour="shifts-list">
@@ -128,7 +147,7 @@ function ShiftRow({ shift }: { shift: Shift }) {
               Distance
             </p>
             <p className="mt-1 text-sm font-bold text-[#101217]">
-              {Number(shift.distance_km).toFixed(1)} km
+              {formatDistance(shift.distance_km)}
             </p>
           </div>
           <div>
@@ -136,11 +155,21 @@ function ShiftRow({ shift }: { shift: Shift }) {
               Fuel
             </p>
             <p className="mt-1 text-sm font-bold text-[#c96c83]">
-              ${Number(shift.fuel_reimbursement).toFixed(2)}
+              {formatCurrency(shift.fuel_reimbursement)}
             </p>
           </div>
         </div>
       </div>
     </DashboardPanel>
   )
+}
+
+function formatDistance(value: unknown) {
+  const distance = Number(value ?? 0)
+  return Number.isFinite(distance) ? `${distance.toFixed(1)} km` : "-"
+}
+
+function formatCurrency(value: unknown) {
+  const amount = Number(value ?? 0)
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
 }

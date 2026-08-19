@@ -2,6 +2,18 @@
 
 import { useEffect, useRef, useState } from "react"
 import { CreditCard, Trash2 } from "lucide-react"
+import { useToast } from "@/components/bayd-toast-provider"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { usePaymentMethod, useRemoveCard, useSaveCard } from "@/lib/hooks/use-account"
 
@@ -43,7 +55,8 @@ function loadSquareSdk(): Promise<void> {
 // Card on file for booking/subscription auto-charge, via the Square Web Payments
 // SDK: it tokenizes the card in-browser and we only ever send the one-time token.
 export function CardOnFile() {
-  const { data: method, isLoading } = usePaymentMethod()
+  const { toast } = useToast()
+  const { data: method, isError, isLoading } = usePaymentMethod()
   const removeCard = useRemoveCard()
   const saveCard = useSaveCard()
   const [adding, setAdding] = useState(false)
@@ -77,6 +90,16 @@ export function CardOnFile() {
     }
   }, [adding])
 
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Card not loaded",
+        description: "Could not check your saved payment method.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
+
   async function submit() {
     setError(null)
     if (!cardRef.current) return
@@ -87,10 +110,23 @@ export function CardOnFile() {
       }
       await saveCard.mutateAsync(result.token)
       setAdding(false)
+      toast({ title: "Card saved", variant: "success" })
     } catch (e) {
-      const apiMsg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
-      setError(apiMsg ?? (e instanceof Error ? e.message : "Couldn't save the card."))
+      const message = getApiErrorMessage(e, e instanceof Error ? e.message : "Couldn't save the card.")
+      setError(message)
+      toast({ title: "Card not saved", description: message, variant: "error" })
     }
+  }
+
+  function removeSavedCard() {
+    removeCard.mutate(undefined, {
+      onSuccess: () => toast({ title: "Card removed", variant: "success" }),
+      onError: (error) => toast({
+        title: "Card not removed",
+        description: getApiErrorMessage(error, "Could not remove your saved card."),
+        variant: "error",
+      }),
+    })
   }
 
   return (
@@ -111,13 +147,28 @@ export function CardOnFile() {
           <span className="text-sm font-medium text-[#101217]">
             {method.brand} •••• {method.last4}
           </span>
-          <button
-            onClick={() => removeCard.mutate()}
-            disabled={removeCard.isPending}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#d4754a] hover:underline"
-          >
-            <Trash2 className="size-3.5" /> Remove
-          </button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                disabled={removeCard.isPending}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#d4754a] hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Trash2 className="size-3.5" /> Remove
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remove saved card?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You will need to add a card again before using automatic payments.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep card</AlertDialogCancel>
+                <AlertDialogAction onClick={removeSavedCard}>Remove card</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       ) : adding ? (
         <div className="space-y-3">
@@ -147,4 +198,9 @@ export function CardOnFile() {
       )}
     </div>
   )
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }
