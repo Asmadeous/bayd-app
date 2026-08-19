@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Download, FileText, Mail, Plus, Trash2 } from "lucide-react"
 import { z } from "zod"
 
@@ -109,14 +109,25 @@ const errorInputClass =
 const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 export default function AdminInvoicesPage() {
+  const { toast } = useToast()
   const [status, setStatus] = useState("")
   const [kind, setKind] = useState("")
   const [creating, setCreating] = useState(false)
-  const { data, isLoading } = useAdminInvoices({ status: status || undefined, kind: kind || undefined })
+  const { data, isError, isLoading } = useAdminInvoices({ status: status || undefined, kind: kind || undefined })
   const save = useSaveInvoice()
   const del = useDeleteInvoice()
   const resend = useResendInvoice()
   const invoices = data?.data ?? []
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Invoices not loaded",
+        description: "Could not load invoices.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   return (
     <DashboardPage maxWidth="wide">
@@ -151,7 +162,11 @@ export default function AdminInvoicesPage() {
           <ManualInvoiceForm
             saving={save.isPending}
             onCancel={() => setCreating(false)}
-            onSave={async (d) => { await save.mutateAsync(d); setCreating(false) }}
+            onSave={async (d) => {
+              await save.mutateAsync(d)
+              toast({ title: "Invoice created", variant: "success" })
+              setCreating(false)
+            }}
           />
         </DialogContent>
       </Dialog>
@@ -170,10 +185,36 @@ export default function AdminInvoicesPage() {
         <div className="space-y-3" data-tour="admin-invoices-list">
           {invoices.map((inv) => (
             <Row key={inv.id} invoice={inv}
-              onStatus={(s) => save.mutate({ id: inv.id, status: s })}
+              saving={save.isPending}
+              onStatus={(s) => save.mutate(
+                { id: inv.id, status: s },
+                {
+                  onSuccess: () => toast({ title: "Invoice status saved", variant: "success" }),
+                  onError: (error) => toast({
+                    title: "Invoice status not saved",
+                    description: getApiErrorMessage(error, "Could not update this invoice."),
+                    variant: "error",
+                  }),
+                },
+              )}
               deleting={del.isPending}
-              onDelete={() => del.mutate(inv.id)}
-              onResend={() => resend.mutate(inv.id)}
+              onDelete={() => del.mutate(inv.id, {
+                onSuccess: () => toast({ title: "Invoice deleted", variant: "success" }),
+                onError: (error) => toast({
+                  title: "Invoice not deleted",
+                  description: getApiErrorMessage(error, "Could not delete this invoice."),
+                  variant: "error",
+                }),
+              })}
+              onResend={() => resend.mutate(inv.id, {
+                onSuccess: () => toast({ title: "Invoice email sent", variant: "success" }),
+                onError: (error) => toast({
+                  title: "Invoice email not sent",
+                  description: getApiErrorMessage(error, "Could not resend this invoice."),
+                  variant: "error",
+                }),
+              })}
+              resending={resend.isPending}
             />
           ))}
         </div>
@@ -184,12 +225,14 @@ export default function AdminInvoicesPage() {
   )
 }
 
-function Row({ deleting, invoice, onStatus, onDelete, onResend }: {
+function Row({ deleting, invoice, onStatus, onDelete, onResend, resending, saving }: {
   invoice: Invoice
   deleting: boolean
   onStatus: (s: string) => void
   onDelete: () => void
   onResend: () => void
+  resending: boolean
+  saving: boolean
 }) {
   return (
     <DashboardPanel className="flex flex-wrap items-start justify-between gap-3">
@@ -205,7 +248,7 @@ function Row({ deleting, invoice, onStatus, onDelete, onResend }: {
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <Select onValueChange={(value) => onStatus(value ?? invoice.status)} value={invoice.status}>
+        <Select disabled={saving} onValueChange={(value) => onStatus(value ?? invoice.status)} value={invoice.status}>
           <SelectTrigger className="h-8 w-28 text-xs capitalize">
             <SelectValue />
           </SelectTrigger>
@@ -222,7 +265,7 @@ function Row({ deleting, invoice, onStatus, onDelete, onResend }: {
             <Download className="size-3.5" />
           </Button>
         )}
-        <Button size="xs" variant="outline" onClick={onResend} title="Re-email to customer"><Mail className="size-3.5" /></Button>
+        <Button disabled={resending} size="xs" variant="outline" onClick={onResend} title="Re-email to customer"><Mail className="size-3.5" /></Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button disabled={deleting} size="xs" variant="outline">

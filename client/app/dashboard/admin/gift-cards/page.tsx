@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Gift, Plus, Send, Trash2 } from "lucide-react"
 import { z } from "zod"
 
@@ -92,14 +92,25 @@ const errorInputClass =
 const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
 export default function AdminGiftCardsPage() {
+  const { toast } = useToast()
   const [page, setPage] = useState(1)
   const [active, setActive] = useState("")
   const [creating, setCreating] = useState(false)
-  const { data, isLoading } = useAdminGiftCards({ active: active || undefined, page })
+  const { data, isError, isLoading } = useAdminGiftCards({ active: active || undefined, page })
   const save = useSaveGiftCard()
   const del = useDeleteGiftCard()
   const deliver = useDeliverGiftCard()
   const cards = data?.data ?? []
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Gift cards not loaded",
+        description: "Could not load gift cards.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   return (
     <DashboardPage maxWidth="wide">
@@ -141,7 +152,11 @@ export default function AdminGiftCardsPage() {
           <CreateForm
             saving={save.isPending}
             onCancel={() => setCreating(false)}
-            onSave={async (d) => { await save.mutateAsync(d); setCreating(false) }}
+            onSave={async (d) => {
+              await save.mutateAsync(d)
+              toast({ title: "Gift card issued", variant: "success" })
+              setCreating(false)
+            }}
           />
         </DialogContent>
       </Dialog>
@@ -160,10 +175,35 @@ export default function AdminGiftCardsPage() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" data-tour="admin-giftcards-grid">
           {cards.map((c) => (
             <AdminCard key={c.id} card={c}
-              onToggle={() => save.mutate({ id: c.id, active: !c.active })}
+              onToggle={() => save.mutate(
+                { id: c.id, active: !c.active },
+                {
+                  onSuccess: () => toast({ title: c.active ? "Gift card disabled" : "Gift card enabled", variant: "success" }),
+                  onError: (error) => toast({
+                    title: "Gift card not updated",
+                    description: getApiErrorMessage(error, "Could not update this gift card."),
+                    variant: "error",
+                  }),
+                },
+              )}
+              toggling={save.isPending}
               deleting={del.isPending}
-              onDelete={() => del.mutate(c.id)}
-              onSend={() => deliver.mutate(c.id)}
+              onDelete={() => del.mutate(c.id, {
+                onSuccess: () => toast({ title: "Gift card deleted", variant: "success" }),
+                onError: (error) => toast({
+                  title: "Gift card not deleted",
+                  description: getApiErrorMessage(error, "Could not delete this gift card."),
+                  variant: "error",
+                }),
+              })}
+              onSend={() => deliver.mutate(c.id, {
+                onSuccess: () => toast({ title: "Gift card sent", variant: "success" }),
+                onError: (error) => toast({
+                  title: "Gift card not sent",
+                  description: getApiErrorMessage(error, "Could not send this gift card."),
+                  variant: "error",
+                }),
+              })}
               sending={deliver.isPending}
             />
           ))}
@@ -185,14 +225,16 @@ export default function AdminGiftCardsPage() {
   )
 }
 
-function AdminCard({ card, deleting, onToggle, onDelete, onSend, sending }: {
+function AdminCard({ card, deleting, onToggle, onDelete, onSend, sending, toggling }: {
   card: GiftCard
   deleting: boolean
   onToggle: () => void
   onDelete: () => void
   onSend: () => void
   sending: boolean
+  toggling: boolean
 }) {
+  const { toast } = useToast()
   const to = card.recipient_email || card.purchaser?.email
   const topup = useTopupGiftCard()
   const [amount, setAmount] = useState("")
@@ -200,8 +242,29 @@ function AdminCard({ card, deleting, onToggle, onDelete, onSend, sending }: {
 
   function markPaid() {
     const value = Number(amount)
-    if (!value || value <= 0) return
-    topup.mutate({ id: card.id, amount: value, method }, { onSuccess: () => setAmount("") })
+    if (!Number.isFinite(value) || value <= 0) {
+      toast({
+        title: "Top-up needs attention",
+        description: "Enter a top-up amount greater than 0.",
+        variant: "error",
+      })
+      return
+    }
+
+    topup.mutate(
+      { id: card.id, amount: value, method },
+      {
+        onSuccess: () => {
+          setAmount("")
+          toast({ title: "Gift card top-up recorded", variant: "success" })
+        },
+        onError: (error) => toast({
+          title: "Top-up not recorded",
+          description: getApiErrorMessage(error, "Could not record this gift card top-up."),
+          variant: "error",
+        }),
+      },
+    )
   }
 
   return (
@@ -213,7 +276,7 @@ function AdminCard({ card, deleting, onToggle, onDelete, onSend, sending }: {
           <Button size="xs" variant="outline" disabled={!to || sending} onClick={onSend} title={to ? "Send to recipient" : "Add a recipient email first"}>
             <Send className="size-3.5" />
           </Button>
-          <Button size="xs" variant="outline" onClick={onToggle}>{card.active ? "Disable" : "Enable"}</Button>
+          <Button size="xs" variant="outline" disabled={toggling} onClick={onToggle}>{card.active ? "Disable" : "Enable"}</Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button disabled={deleting} size="xs" variant="outline">

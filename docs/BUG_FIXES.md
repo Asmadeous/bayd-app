@@ -305,3 +305,16 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Replaced delete with the shared `AlertDialog`, added a stronger warning for deleting open shifts, added toast success/error feedback for deletion and query failures, added frontend date-range validation, and made date/duration/distance/currency formatting defensive.
 - **Verification:** Targeted ESLint passed for the shifts page. `git diff --check` passed.
 - **Follow-up:** Backend hardening for invalid date query params remains out of scope for this frontend-only change.
+
+---
+
+## 2026-08-19 — Remaining admin direct actions lacked consistent feedback
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend cross-page workflow
+- **Reported behavior:** User deletion still used the browser confirmation dialog. Tip payouts, review approvals, callback status changes, order status changes, invoice actions, gift-card actions, and settings saves had inconsistent or missing branded feedback.
+- **Expected behavior:** Admin direct actions should use shared confirmation/toast patterns, surface API failures clearly, and reject obviously invalid values before submission.
+- **Root cause:** Several lower-volume admin pages still called mutations directly or used native browser confirmation while the main admin workflows had already been migrated.
+- **Fix:** Replaced user deletion and tip payout with `AlertDialog`, added BAYD toast success/error/query-failure feedback across users, tips, reviews, callbacks, orders, settings, invoices, and gift cards, added defensive date/currency formatting, and added frontend validation for group deposit and gift-card top-up amounts.
+- **Verification:** Targeted ESLint passed for all affected admin pages. `git diff --check` passed.
+- **Follow-up:** Backend validation hardening remains out of scope for this frontend-only pass.

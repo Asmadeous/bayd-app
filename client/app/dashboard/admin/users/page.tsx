@@ -19,6 +19,17 @@ import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboa
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -94,7 +105,14 @@ export default function AdminUsersPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/admin/users/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-users"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-users"] })
+      toast({ title: "User deleted", variant: "success" })
+    },
+    onError: (error: unknown) => {
+      const message = getApiErrorMessage(error, "Could not delete this user.")
+      toast({ title: "User not deleted", description: message, variant: "error" })
+    },
   })
 
   const users = data?.data ?? []
@@ -247,16 +265,31 @@ export default function AdminUsersPage() {
                       >
                         Edit Role
                       </Button>
-                      <Button
-                        disabled={deleteMutation.isPending}
-                        onClick={() => {
-                          if (confirm("Delete this user?")) deleteMutation.mutate(user.id)
-                        }}
-                        size="xs"
-                        variant="destructive"
-                      >
-                        Delete
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            disabled={deleteMutation.isPending}
+                            size="xs"
+                            variant="destructive"
+                          >
+                            Delete
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete user?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This permanently removes {user.email}. Related records may also be affected by account ownership rules.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteMutation.mutate(user.id)}>
+                              Delete user
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </DataTableCell>
                 </DataTableRow>
@@ -310,4 +343,9 @@ function RoleBadge({ role }: { role: string }) {
   const tone = role === "admin" ? "dark" : role === "employee" ? "rose" : "gray"
 
   return <StatusBadge tone={tone}>{role}</StatusBadge>
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

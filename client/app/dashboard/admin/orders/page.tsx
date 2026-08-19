@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ShoppingBag } from "lucide-react"
 
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -46,11 +47,12 @@ interface PagedResponse<T> {
 const ORDER_STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"]
 
 export default function AdminOrdersPage() {
+  const { toast } = useToast()
   const qc = useQueryClient()
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState("")
 
-  const { data, isLoading } = useQuery<PagedResponse<Order>>({
+  const { data, isError, isLoading } = useQuery<PagedResponse<Order>>({
     queryKey: ["admin-orders", page, status],
     queryFn: () =>
       api
@@ -63,7 +65,17 @@ export default function AdminOrdersPage() {
   const updateMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) =>
       api.patch(`/admin/orders/${id}`, { status }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-orders"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-orders"] })
+      toast({ title: "Order status saved", variant: "success" })
+    },
+    onError: (error: unknown) => {
+      toast({
+        title: "Order status not saved",
+        description: getApiErrorMessage(error, "Could not update this order."),
+        variant: "error",
+      })
+    },
   })
 
   const orders = data?.data ?? []
@@ -72,6 +84,16 @@ export default function AdminOrdersPage() {
     setStatus(nextStatus)
     setPage(1)
   }
+
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Orders not loaded",
+        description: "Could not load shop orders.",
+        variant: "error",
+      })
+    }
+  }, [isError, toast])
 
   return (
     <DashboardPage maxWidth="wide">
@@ -124,7 +146,7 @@ export default function AdminOrdersPage() {
                       <StatusBadgeFor status={order.status} />
                     </div>
                     <p className="mt-2 text-xs leading-5 text-[#5f6268]">
-                      {name} / {new Date(order.created_at).toLocaleDateString("en-CA")}
+                      {name} / {formatDate(order.created_at)}
                     </p>
                     <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5f6268]">
                       {order.order_items
@@ -135,7 +157,7 @@ export default function AdminOrdersPage() {
 
                   <div className="flex shrink-0 flex-wrap items-center gap-3 lg:justify-end">
                     <span className="font-heading text-2xl font-extrabold text-[#101217]">
-                      ${order.total}
+                      {formatCurrency(order.total)}
                     </span>
                     <Select
                       disabled={updateMutation.isPending}
@@ -192,4 +214,19 @@ export default function AdminOrdersPage() {
       <TutorialButton steps={adminOrdersSteps} pageKey="admin-orders" />
     </DashboardPage>
   )
+}
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("en-CA")
+}
+
+function formatCurrency(value: unknown) {
+  const amount = Number(value)
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }
