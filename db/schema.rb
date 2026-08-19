@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_18_234919) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_19_184521) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -159,6 +159,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_234919) do
     t.jsonb "raw", default: {}, null: false
     t.boolean "recurrence_active", default: false, null: false
     t.integer "recurrence_interval_weeks"
+    t.integer "reschedule_count", default: 0, null: false
     t.bigint "service_id", null: false
     t.decimal "service_latitude", precision: 10, scale: 6
     t.decimal "service_longitude", precision: 10, scale: 6

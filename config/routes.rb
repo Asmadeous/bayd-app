@@ -30,6 +30,7 @@ Rails.application.routes.draw do
         member do
           post :cancel
           post :pay
+          post :reschedule
         end
       end
 
@@ -195,6 +196,7 @@ Rails.application.routes.draw do
             post  :payment_link
             get   :candidates      # eligible staff ranked by proximity
             patch :assign          # (re)assign to a technician
+            post  :reschedule      # move to a new time (no cutoff, optional tech move)
           end
         end
         resources :booking_requests,    only: %i[index show]

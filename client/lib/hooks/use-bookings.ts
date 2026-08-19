@@ -24,6 +24,7 @@ export interface Booking {
   recurrence_active: boolean
   recurrence_interval_weeks: number | null
   auto_charge: boolean
+  reschedule_count: number
   overtime_amount: string
   service_latitude: string | null
   service_longitude: string | null
@@ -63,6 +64,18 @@ export function useCancelBooking() {
   return useMutation({
     mutationFn: ({ id, reason }: { id: number; reason?: string }) =>
       api.post<Booking>(`/bookings/${id}/cancel`, { reason }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
+  })
+}
+
+// Customer self-reschedule: POST /bookings/:id/reschedule with the new local
+// wall-clock start ("YYYY-MM-DDTHH:MM:SS"). The backend enforces the 24h cutoff
+// and the 2-reschedule cap and returns a typed `code` on failure.
+export function useRescheduleBooking() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, starts_at }: { id: number; starts_at: string }) =>
+      api.post<Booking>(`/bookings/${id}/reschedule`, { starts_at }).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
   })
 }
