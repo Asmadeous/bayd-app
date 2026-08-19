@@ -58,9 +58,13 @@ interface AnyAvailabilityResult {
   next_available_date?: string | null
 }
 interface BookingRequestResponse {
-  booking_request: { id: number; status: string }
+  booking_request?: { id: number; status: string }
   booking?: { id: number }
   payment?: { mode: string; url?: string; error?: string }
+  // "follow_up" → guest booked without an email; we captured a callback request
+  // and the team will phone them to confirm and book manually.
+  status?: string
+  callback_request_id?: number
   code?: string
   error?: string
 }
@@ -146,7 +150,7 @@ export function BookingFlow({
   const [recurCount, setRecurCount] = useState("1")
   const [autoCharge, setAutoCharge] = useState(false)
   const [bookedMsg, setBookedMsg] = useState("")
-  const [view, setView] = useState<"form" | "booked" | "consultation">("form")
+  const [view, setView] = useState<"form" | "booked" | "consultation" | "follow_up">("form")
   const [error, setError] = useState<string | null>(null)
   const [addressError, setAddressError] = useState<string | null>(null)
   const [verifyingAddress, setVerifyingAddress] = useState(false)
@@ -390,6 +394,12 @@ export function BookingFlow({
           : { timing: "pay_after", groupCharge: intent } // group deposit/full
     try {
       const data = await createBooking.mutateAsync(pay)
+      // Guest booked without an email → captured as an admin follow-up (can't be
+      // auto-synced to SimplyBook). The team will phone them to confirm + book.
+      if (data.status === "follow_up") {
+        setView("follow_up")
+        return
+      }
       // Pay-now / group deposit-or-full with a balance → Square hosted checkout.
       if (data.payment?.mode === "link" && data.payment.url) {
         window.location.href = data.payment.url
@@ -464,6 +474,34 @@ export function BookingFlow({
           </p>
           <Link href={dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
             {dashboardMode ? "Back to dashboard" : "Back to home"}
+          </Link>
+        </div>
+      </Shell>
+    )
+  }
+
+  if (view === "follow_up") {
+    return (
+      <Shell dashboardMode={dashboardMode}>
+        <div className={cn(card, "text-center")}>
+          <Phone className="mx-auto mb-3 size-9 text-[#c96c83]" />
+          <h1 className="text-xl font-black tracking-tight">Request received — we&apos;ll call to confirm</h1>
+          <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#5f6268]">
+            Thanks! Since you booked without an email, our team will call you
+            {phone.trim() ? <> at <span className="font-bold text-[#101217]">{phone.trim()}</span></> : null}{" "}
+            to confirm your appointment and finish booking. Add an email next time to confirm instantly.
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <a
+              href={`tel:${siteConfig.phoneHref}`}
+              className="inline-flex h-10 items-center gap-1.5 px-4 text-sm font-bold text-white"
+              style={{ background: "#c96c83" }}
+            >
+              <Phone className="size-4" /> Call us: {siteConfig.phone}
+            </a>
+          </div>
+          <Link href={dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
+            Done
           </Link>
         </div>
       </Shell>
@@ -857,6 +895,11 @@ export function BookingFlow({
             <p className="-mt-2 text-xs font-medium text-[#8a8d93]">
               Enter an email or a phone number — at least one is required so we can reach you.
             </p>
+            {phone.trim() && !email.trim() ? (
+              <p className="-mt-1 text-xs font-semibold text-[#c96c83]">
+                Add an email to confirm your booking instantly — without one, we&apos;ll call you to confirm.
+              </p>
+            ) : null}
 
             <label className={cn(lbl, "mt-1")}><MapPin className="mr-1 inline size-3.5" /> Service address</label>
             <input className={field} value={line1} onChange={(e) => setLine1(e.target.value)} placeholder="Street address *" />

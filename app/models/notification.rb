@@ -11,7 +11,8 @@ class Notification < ApplicationRecord
     charge_failed:   "charge_failed",
     loyalty_earned:  "loyalty_earned",
     booking_redirected: "booking_redirected",
-    meeting_scheduled: "meeting_scheduled"
+    meeting_scheduled: "meeting_scheduled",
+    booking_follow_up: "booking_follow_up"
   }, prefix: true
 
   validates :kind, :title, presence: true
