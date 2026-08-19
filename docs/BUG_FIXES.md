@@ -201,3 +201,29 @@ The project now uses shadcn’s Radix toast primitive via `@radix-ui/react-toast
 - **Fix:** Moved service area editing into the shared `Dialog`, added Zod validation for name, travel fee, latitude, longitude, and radius, added inline field errors and BAYD toast feedback, and updated helper/list copy to describe radius as map metadata while showing postal-code coverage count.
 - **Verification:** Targeted ESLint passed for the service areas page. `git diff --check` passed.
 - **Follow-up:** Create/delete service area workflows remain intentionally out of scope because they need slug handling and coverage/employee-assignment decisions.
+
+---
+
+## 2026-08-19 — Employee editor was inline and staff actions lacked branded errors
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and employee workflow
+- **Reported behavior:** Adding or editing staff used a large inline panel with minimal validation. Deleting staff used the browser confirmation dialog and API failures were shown with `alert()`. Partner, shift, and coverage updates could fail without consistent visible feedback.
+- **Expected behavior:** Staff editing should use the shared dialog pattern, validate fields before submission, keep backend errors visible, and use branded confirmation/toast feedback for staff actions.
+- **Root cause:** `client/app/dashboard/admin/employees/page.tsx` submitted raw staff form values directly to the API, rendered the form inline, used native `confirm()`/`alert()` for deletion, and silently discarded invalid FSA coverage entries.
+- **Fix:** Moved staff create/edit into the shared `Dialog`, added a Zod staff schema with company-domain email, optional password, and coordinate validation, added inline field errors and BAYD toast feedback, replaced staff deletion with the shared `AlertDialog`, surfaced partner/shift/FSA mutation failures through toasts, and made FSA editing reject invalid entries instead of silently dropping them.
+- **Verification:** Targeted ESLint passed for the employees page and shared admin hook types. `git diff --check` passed.
+- **Follow-up:** Staff service assignment remains separate from FSA coverage; add a dedicated service picker if admins need to manage provider-service eligibility from this page.
+
+---
+
+## 2026-08-19 — Partner editor and payout actions lacked validation and confirmations
+
+- **Branch:** `bugfix/admin-user-role-errors`
+- **Area:** Admin frontend and partner workflow
+- **Reported behavior:** Partner create/edit used an inline form with only a disabled Save button for missing names. Deleting partners used the browser confirmation dialog. Creating payouts and marking payouts paid happened immediately, and API failures were not surfaced consistently.
+- **Expected behavior:** Partner editing should use the shared dialog pattern with field-level validation and visible API errors. Partner deletion and payout status changes should use branded confirmations and toast feedback.
+- **Root cause:** `client/app/dashboard/admin/partners/page.tsx` submitted raw partner form values directly to mutations, rendered the editor inline, used native `confirm(...)` for deletion, and called payout mutations directly from buttons.
+- **Fix:** Moved partner create/edit into the shared `Dialog`, added Zod validation for name, email, platform fee, and status, added inline field errors and BAYD toast feedback, replaced partner deletion with the shared `AlertDialog`, and added confirmation/toast handling for payout creation and marking payouts paid.
+- **Verification:** Targeted ESLint passed for the partners page. `git diff --check` passed.
+- **Follow-up:** Backend zero-booking settlement hardening was intentionally left out of this frontend-only change.

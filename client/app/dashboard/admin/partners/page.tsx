@@ -1,14 +1,38 @@
 "use client"
 
 import { useState } from "react"
+import type { ReactNode } from "react"
 import { Handshake, Plus, Trash2 } from "lucide-react"
+import { z } from "zod"
+
+import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Select,
   SelectContent,
@@ -32,29 +56,108 @@ import { adminPartnersSteps } from "@/lib/tours/admin-partners-tour"
 const cad = (v: string | number) => `$${Number(v).toFixed(2)}`
 const dt = (s: string | null) => (s ? new Date(s).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" }) : "—")
 const BLANK: PartnerInput = { name: "", email: "", phone: "", platform_fee_pct: "20", status: "active", payout_notes: "" }
+type PartnerFormErrors = Partial<Record<keyof PartnerInput | "base", string>>
+
+const partnerSchema = z.object({
+  name: z.string().trim().min(1, "Name is required."),
+  email: z
+    .string()
+    .trim()
+    .optional()
+    .refine((value) => !value || z.email().safeParse(value).success, "Enter a valid email address."),
+  phone: z.string().trim().optional(),
+  platform_fee_pct: z
+    .string()
+    .trim()
+    .min(1, "Platform fee is required.")
+    .refine((value) => Number.isFinite(Number(value)), "Platform fee must be a number.")
+    .refine((value) => Number(value) >= 0 && Number(value) <= 100, "Platform fee must be between 0 and 100."),
+  status: z.enum(["active", "inactive"]),
+  payout_notes: z.string().trim().optional(),
+})
 
 export default function AdminPartnersPage() {
+  const { toast } = useToast()
   const { data, isLoading } = useAdminPartners()
   const create = useCreatePartner()
   const update = useUpdatePartner()
   const del = useDeletePartner()
 
   const [form, setForm] = useState<PartnerInput | null>(null)
+  const [formErrors, setFormErrors] = useState<PartnerFormErrors>({})
   const [editingId, setEditingId] = useState<number | null>(null)
   const [openId, setOpenId] = useState<number | null>(null)
 
   const partners = data?.data ?? []
 
-  function startCreate() { setForm(BLANK); setEditingId(null) }
+  function startCreate() {
+    setForm(BLANK)
+    setFormErrors({})
+    setEditingId(null)
+  }
+
   function startEdit(p: Partner) {
     setForm({ name: p.name, email: p.email ?? "", phone: p.phone ?? "", platform_fee_pct: p.platform_fee_pct, status: p.status, payout_notes: p.payout_notes ?? "" })
+    setFormErrors({})
     setEditingId(p.id)
   }
-  async function save() {
+
+  function closeEditor() {
+    setForm(null)
+    setFormErrors({})
+    setEditingId(null)
+  }
+
+  function updateForm<K extends keyof PartnerInput>(key: K, value: PartnerInput[K]) {
+    setForm((current) => ({ ...current!, [key]: value }))
+    setFormErrors((current) => {
+      if (!current[key] && !current.base) return current
+      const next = { ...current }
+      delete next[key]
+      delete next.base
+      return next
+    })
+  }
+
+  function save() {
     if (!form) return
-    if (editingId) await update.mutateAsync({ id: editingId, ...form })
-    else await create.mutateAsync(form)
-    setForm(null); setEditingId(null)
+    const result = partnerSchema.safeParse(form)
+    if (!result.success) {
+      const nextErrors = getPartnerFieldErrors(result.error)
+      setFormErrors(nextErrors)
+      toast({ title: "Partner form needs attention", description: nextErrors.base, variant: "error" })
+      return
+    }
+
+    const payload = normalizePartnerInput(form)
+    const opts = {
+      onSuccess: () => {
+        toast({ title: editingId ? "Partner saved" : "Partner created", variant: "success" })
+        closeEditor()
+      },
+      onError: (error: unknown) => {
+        const message = getApiErrorMessage(error, editingId ? "Could not update this partner." : "Could not create this partner.")
+        setFormErrors({ base: message })
+        toast({ title: editingId ? "Partner not saved" : "Partner not created", description: message, variant: "error" })
+      },
+    }
+    if (editingId) update.mutate({ id: editingId, ...payload }, opts)
+    else create.mutate(payload, opts)
+  }
+
+  function deletePartner(partner: Partner) {
+    del.mutate(partner.id, {
+      onSuccess: () => {
+        toast({ title: "Partner deleted", description: `${partner.name} was removed.`, variant: "success" })
+      },
+      onError: (error: unknown) => {
+        toast({
+          title: "Partner not deleted",
+          description: getApiErrorMessage(error, "Could not delete this partner."),
+          variant: "error",
+        })
+      },
+    })
   }
 
   return (
@@ -81,45 +184,103 @@ export default function AdminPartnersPage() {
         </p>
       </DashboardPanel>
 
-      {form && (
-        <DashboardPanel data-tour="admin-partners-form">
-          <div className="mb-5">
+      <Dialog open={form !== null} onOpenChange={(open) => { if (!open) closeEditor() }}>
+        <DialogContent data-tour="admin-partners-form" className="max-w-4xl">
+          <DialogHeader className="pr-14">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
               Partner editor
             </p>
-            <h3 className="mt-1 text-lg font-extrabold text-[#101217]">
-              {editingId ? "Edit Partner" : "New Partner"}
-            </h3>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Field label="Name"><input value={form.name ?? ""} onChange={(e) => setForm((f) => ({ ...f!, name: e.target.value }))} className={inputCls} /></Field>
-            <Field label="Platform fee (%)"><input type="number" min="0" max="100" step="0.5" value={form.platform_fee_pct ?? ""} onChange={(e) => setForm((f) => ({ ...f!, platform_fee_pct: e.target.value }))} className={inputCls} /></Field>
-            <Field label="Email"><input type="email" value={form.email ?? ""} onChange={(e) => setForm((f) => ({ ...f!, email: e.target.value }))} className={inputCls} /></Field>
-            <Field label="Phone"><input value={form.phone ?? ""} onChange={(e) => setForm((f) => ({ ...f!, phone: e.target.value }))} className={inputCls} /></Field>
-            <Field label="Status">
-              <Select
-                onValueChange={(value) => setForm((f) => ({ ...f!, status: value as Partner["status"] }))}
-                value={form.status ?? "active"}
+            <DialogTitle>{editingId ? "Edit Partner" : "New Partner"}</DialogTitle>
+            <DialogDescription>
+              Manage partner contact details, payout notes, platform fee, and availability.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            {formErrors.base ? (
+              <div
+                aria-live="polite"
+                className="mb-4 border border-[#b75c68]/25 bg-[#fff5f6] px-4 py-3 text-sm font-semibold text-[#8f3f4b]"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-          <div className="mt-4">
-            <Field label="Payout notes"><input value={form.payout_notes ?? ""} onChange={(e) => setForm((f) => ({ ...f!, payout_notes: e.target.value }))} placeholder="e-transfer email, bank ref..." className={inputCls} /></Field>
-          </div>
-          <div className="mt-5 flex gap-2">
-            <Button size="sm" disabled={!form.name || create.isPending || update.isPending} onClick={save} style={{ background: "#c96c83", border: "none", color: "#fff" }}>Save</Button>
-            <Button size="sm" variant="ghost" onClick={() => { setForm(null); setEditingId(null) }}>Cancel</Button>
-          </div>
-        </DashboardPanel>
-      )}
+                {formErrors.base}
+              </div>
+            ) : null}
+            {form ? (
+              <>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <Field error={formErrors.name} label="Name">
+                    <input
+                      aria-invalid={Boolean(formErrors.name)}
+                      className={fieldClass(formErrors.name)}
+                      onChange={(event) => updateForm("name", event.target.value)}
+                      value={form.name ?? ""}
+                    />
+                  </Field>
+                  <Field error={formErrors.platform_fee_pct} label="Platform fee (%)">
+                    <input
+                      aria-invalid={Boolean(formErrors.platform_fee_pct)}
+                      className={fieldClass(formErrors.platform_fee_pct)}
+                      max="100"
+                      min="0"
+                      onChange={(event) => updateForm("platform_fee_pct", event.target.value)}
+                      step="0.5"
+                      type="number"
+                      value={form.platform_fee_pct ?? ""}
+                    />
+                  </Field>
+                  <Field error={formErrors.email} label="Email">
+                    <input
+                      aria-invalid={Boolean(formErrors.email)}
+                      className={fieldClass(formErrors.email)}
+                      onChange={(event) => updateForm("email", event.target.value)}
+                      type="email"
+                      value={form.email ?? ""}
+                    />
+                  </Field>
+                  <Field error={formErrors.phone} label="Phone">
+                    <input
+                      aria-invalid={Boolean(formErrors.phone)}
+                      className={fieldClass(formErrors.phone)}
+                      onChange={(event) => updateForm("phone", event.target.value)}
+                      value={form.phone ?? ""}
+                    />
+                  </Field>
+                  <Field error={formErrors.status} label="Status">
+                    <Select
+                      onValueChange={(value) => updateForm("status", value as Partner["status"])}
+                      value={form.status ?? "active"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+                <div className="mt-4">
+                  <Field error={formErrors.payout_notes} label="Payout notes">
+                    <input
+                      aria-invalid={Boolean(formErrors.payout_notes)}
+                      className={fieldClass(formErrors.payout_notes)}
+                      onChange={(event) => updateForm("payout_notes", event.target.value)}
+                      placeholder="e-transfer email, bank ref..."
+                      value={form.payout_notes ?? ""}
+                    />
+                  </Field>
+                </div>
+              </>
+            ) : null}
+          </DialogBody>
+          <DialogFooter>
+            <Button size="sm" disabled={create.isPending || update.isPending} onClick={save} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+              {create.isPending || update.isPending ? "Saving..." : "Save"}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={closeEditor}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {isLoading ? (
         <DashboardPanel>
@@ -160,9 +321,28 @@ export default function AdminPartnersPage() {
                 <div className="flex items-center gap-2 shrink-0">
                   <Button size="xs" variant="outline" onClick={() => setOpenId(openId === p.id ? null : p.id)}>{openId === p.id ? "Hide" : "Details"}</Button>
                   <Button size="xs" variant="outline" onClick={() => startEdit(p)}>Edit</Button>
-                  <Button size="xs" variant="outline" onClick={() => { if (confirm(`Delete ${p.name}? Their providers stay, just unlinked.`)) del.mutate(p.id) }}>
-                    <Trash2 className="size-3.5 text-[#d4754a]" />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="xs" variant="outline" disabled={del.isPending}>
+                        <Trash2 className="size-3.5 text-[#d4754a]" />
+                        <span className="sr-only">Delete {p.name}</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete partner?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This removes {p.name}. Assigned providers and bookings stay in the system, but they will be unlinked from this partner.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deletePartner(p)}>
+                          Delete partner
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
 
@@ -179,6 +359,7 @@ export default function AdminPartnersPage() {
 }
 
 function PartnerDetail({ partnerId, owed, pendingCount }: { partnerId: number; owed: string; pendingCount: number }) {
+  const { toast } = useToast()
   const { data, isLoading } = usePartnerDetail(partnerId)
   const settle = useSettlePartner()
   const markPaid = useMarkPayoutPaid()
@@ -206,10 +387,39 @@ function PartnerDetail({ partnerId, owed, pendingCount }: { partnerId: number; o
       {/* Settle */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-xs text-[#5f6268]">Owed now: <span className="font-semibold text-[#c96c83]">{cad(owed)}</span></p>
-        <Button size="xs" disabled={pendingCount === 0 || settle.isPending} onClick={() => settle.mutate(partnerId)}
-          style={{ background: pendingCount === 0 ? "#e5e5e5" : "#101217", border: "none", color: "#fff" }}>
-          {settle.isPending ? "Settling…" : `Create payout${pendingCount ? ` (${cad(owed)})` : ""}`}
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button size="xs" disabled={pendingCount === 0 || settle.isPending}
+              style={{ background: pendingCount === 0 ? "#e5e5e5" : "#101217", border: "none", color: "#fff" }}>
+              {settle.isPending ? "Settling..." : `Create payout${pendingCount ? ` (${cad(owed)})` : ""}`}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Create partner payout?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will settle {pendingCount} completed booking{pendingCount === 1 ? "" : "s"} into a pending payout for {cad(owed)}.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => settle.mutate(partnerId, {
+                  onSuccess: () => toast({ title: "Payout created", description: `${cad(owed)} is ready for payment.`, variant: "success" }),
+                  onError: (error: unknown) => {
+                    toast({
+                      title: "Payout not created",
+                      description: getApiErrorMessage(error, "Could not create this partner payout."),
+                      variant: "error",
+                    })
+                  },
+                })}
+              >
+                Create payout
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Payout history */}
@@ -230,7 +440,39 @@ function PartnerDetail({ partnerId, owed, pendingCount }: { partnerId: number; o
                     Paid {dt(po.paid_at)}
                   </span>
                 ) : (
-                  <Button size="xs" variant="outline" disabled={markPaid.isPending} onClick={() => markPaid.mutate({ id: po.id })}>Mark paid</Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="xs" variant="outline" disabled={markPaid.isPending}>Mark paid</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Mark payout paid?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This records payout {cad(po.amount)} as paid and sets its paid date.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => markPaid.mutate(
+                            { id: po.id },
+                            {
+                              onSuccess: () => toast({ title: "Payout marked paid", description: `${cad(po.amount)} was recorded as paid.`, variant: "success" }),
+                              onError: (error: unknown) => {
+                                toast({
+                                  title: "Payout not updated",
+                                  description: getApiErrorMessage(error, "Could not mark this payout paid."),
+                                  variant: "error",
+                                })
+                              },
+                            }
+                          )}
+                        >
+                          Mark paid
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </div>
             ))}
@@ -243,12 +485,47 @@ function PartnerDetail({ partnerId, owed, pendingCount }: { partnerId: number; o
 
 const inputCls =
   "h-10 w-full border border-black/15 bg-white px-3 text-sm text-[#101217] outline-none transition focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+const errorInputCls =
+  "border-[#b75c68] focus:border-[#b75c68] focus:ring-[#b75c68]/20"
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, error }: { label: string; children: ReactNode; error?: string }) {
   return (
-    <div>
-      <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">{label}</label>
+    <label>
+      <span className="mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">{label}</span>
       {children}
-    </div>
+      {error ? <span className="mt-1 block text-xs font-semibold text-[#b75c68]">{error}</span> : null}
+    </label>
   )
+}
+
+function fieldClass(error?: string) {
+  return `${inputCls} ${error ? errorInputCls : ""}`
+}
+
+function normalizePartnerInput(input: PartnerInput): PartnerInput {
+  return {
+    name: input.name?.trim(),
+    email: input.email?.trim() || "",
+    phone: input.phone?.trim() || "",
+    platform_fee_pct: input.platform_fee_pct?.trim(),
+    status: input.status,
+    payout_notes: input.payout_notes?.trim() || "",
+  }
+}
+
+function getPartnerFieldErrors(error: z.ZodError<PartnerInput>): PartnerFormErrors {
+  const next: PartnerFormErrors = {}
+  for (const issue of error.issues) {
+    const key = issue.path[0]
+    if (typeof key === "string" && !next[key as keyof PartnerFormErrors]) {
+      next[key as keyof PartnerFormErrors] = issue.message
+    }
+  }
+  next.base = "Check the highlighted fields and try again."
+  return next
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }
