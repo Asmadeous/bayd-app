@@ -71,8 +71,11 @@ class ApplicationController < ActionController::API
     forbidden unless current_user&.admin?
   end
 
+  # Partners are external providers that behave like employees: they reach the
+  # same self-scoped employee endpoints (their own schedule/shifts/bookings).
+  # They are NOT admins — require_admin! deliberately excludes them.
   def require_employee!
-    forbidden unless current_user&.employee? || current_user&.admin?
+    forbidden unless current_user&.employee? || current_user&.admin? || current_user&.partner?
   end
 
   def paginate(scope, per: 25)

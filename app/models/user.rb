@@ -2,7 +2,11 @@ class User < ApplicationRecord
   has_secure_password validations: false
   has_one_attached :avatar
 
-  enum :role, { customer: "customer", employee: "employee", admin: "admin" }
+  # `partner` is an external business acting as a bookable provider: it behaves
+  # like `employee` for login (password via staff_login) and access, but is
+  # exempt from the company-domain email rule below (partners use their own
+  # email). See EMPLOYEE_EMAIL_DOMAIN / employee_email_on_company_domain.
+  enum :role, { customer: "customer", employee: "employee", admin: "admin", partner: "partner" }
 
   # Staff accounts are provisioned by an admin, never self-registered — locking
   # employee logins to the company domain closes off a phishing/impersonation
