@@ -1,0 +1,13 @@
+<h2 style="margin:0 0 12px;font-family:Arial,sans-serif;color:#101217;">Phone booking — needs a callback</h2>
+<p style="margin:0 0 16px;font-family:Arial,sans-serif;color:#5f6268;font-size:14px;line-height:1.5;">
+  A customer tried to book without an email, so it couldn't be synced to SimplyBook automatically.
+  Please call them to confirm and book from your end.
+</p>
+<table style="font-family:Arial,sans-serif;font-size:14px;color:#101217;border-collapse:collapse;margin-bottom:16px;">
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Name</td><td style="padding:4px 0;"><%= @cr.contact_name.presence || "(not given)" %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Phone</td><td style="padding:4px 0;"><%= @cr.contact_phone.presence || "(not given)" %></td></tr>
+</table>
+<pre style="font-family:Arial,sans-serif;font-size:13px;color:#101217;background:#f7f5f2;padding:12px;white-space:pre-wrap;border:1px solid #e5e2dc;"><%= @cr.notes %></pre>
+<p style="margin:16px 0 0;font-family:Arial,sans-serif;color:#8a8d93;font-size:12px;">
+  Find it in the dashboard under <strong>Callbacks</strong> to mark it contacted or booked.
+</p>
