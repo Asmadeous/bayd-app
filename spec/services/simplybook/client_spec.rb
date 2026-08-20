@@ -107,4 +107,37 @@ RSpec.describe SimplyBook::Client do
       )
     end
   end
+
+  describe "#create_booking_result — batch + sequential" do
+    let(:starts_at) { Time.zone.parse("2026-08-20 10:00:00") }
+    let(:ends_at)   { Time.zone.parse("2026-08-20 11:00:00") }
+
+    before do
+      allow(conn).to receive(:post).with("/admin/bookings", anything)
+        .and_return(resp(200, { "bookings" => [ { "id" => "900" } ], "batch" => { "id" => 42 } }))
+      allow(conn).to receive(:put).and_return(resp(200, {}))
+    end
+
+    it "returns both the booking id and the batch id" do
+      result = described_class.new.create_booking_result(service_id: "2", unit_id: "3", starts_at: starts_at, ends_at: ends_at)
+      expect(result).to eq(id: "900", batch_id: 42)
+    end
+
+    it "sends batch_id and is_sequential when given (service add-ons)" do
+      described_class.new.create_booking_result(
+        service_id: "2", unit_id: "3", starts_at: starts_at, ends_at: ends_at,
+        batch_id: 42, is_sequential: true
+      )
+      expect(conn).to have_received(:post).with(
+        "/admin/bookings", hash_including(batch_id: 42, is_sequential: true)
+      )
+    end
+
+    it "omits batch_id and is_sequential when not given" do
+      described_class.new.create_booking_result(service_id: "2", unit_id: "3", starts_at: starts_at, ends_at: ends_at)
+      expect(conn).to have_received(:post).with(
+        "/admin/bookings", hash_excluding(:batch_id, :is_sequential)
+      )
+    end
+  end
 end

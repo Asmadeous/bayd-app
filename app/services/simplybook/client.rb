@@ -63,7 +63,7 @@ module SimplyBook
     # BookingResultEntity. Used to group a party into ONE SimplyBook "multiple"
     # booking: the first call creates a batch (batch_id nil → SB returns one),
     # each subsequent call passes that batch_id to join the same batch.
-    def create_booking_result(service_id:, unit_id:, starts_at:, ends_at:, client: nil, count: nil, comment: nil, tier: nil, batch_id: nil)
+    def create_booking_result(service_id:, unit_id:, starts_at:, ends_at:, client: nil, count: nil, comment: nil, tier: nil, batch_id: nil, is_sequential: nil)
       body = {
         service_id:     service_id,
         provider_id:    unit_id,
@@ -71,8 +71,11 @@ module SimplyBook
         start_datetime: starts_at.strftime("%Y-%m-%d %H:%M:%S"),
         end_datetime:   ends_at.strftime("%Y-%m-%d %H:%M:%S")
       }
-      body[:count]    = count if count.to_i > 1
-      body[:batch_id] = batch_id if batch_id
+      body[:count]         = count if count.to_i > 1
+      body[:batch_id]      = batch_id if batch_id
+      # is_sequential marks a batch as consecutive services in one visit (service
+      # add-ons), vs a plain "multiple" batch — see AddonBooker.
+      body[:is_sequential] = true if is_sequential
       if client.present? && (cid = resolve_client_id(**client.slice(:name, :email, :phone)))
         body[:client_id] = cid
       end

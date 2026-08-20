@@ -5,7 +5,7 @@ class BookingSerializer < Blueprinter::Base
          :recurrence_active, :recurrence_interval_weeks, :auto_charge,
          :payment_timing, :payment_status, :deposit_amount,
          :booked_for_name, :booked_for_phone, :overtime_amount,
-         :service_latitude, :service_longitude
+         :service_latitude, :service_longitude, :reschedule_count, :parent_booking_id
 
   field :outstanding_balance do |booking|
     booking.outstanding_balance

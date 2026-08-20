@@ -26,7 +26,7 @@ module Api
         booker = current_user || find_or_create_customer(params.require(:customer))
         # These are Booking-level concerns (read from raw params by
         # apply_payment_choice / collect_initial_payment), not BookingRequest columns.
-        attrs = booking_request_params.except(:payment_timing, :booked_for_name, :booked_for_phone, :tip, :gift_card_code)
+        attrs = booking_request_params.except(:payment_timing, :booked_for_name, :booked_for_phone, :tip, :gift_card_code, :addon_service_ids)
         # The customer picks a wall-clock time in the business's timezone (Toronto);
         # the app runs in UTC. Interpret the naive "YYYY-MM-DDTHH:MM:SS" string as
         # Toronto time so the stored instant is correct (no 4-hour UTC skew).
@@ -40,11 +40,17 @@ module Api
         if result.success?
           booking = result.booking_request.booking
           apply_payment_choice(booking)
+          # Add-ons: extra services the same tech performs, booked back-to-back
+          # after the primary. Their price is folded into the one combined charge.
+          addon_result = AddonBooker.new(booking, params.dig(:booking_request, :addon_service_ids)).call
+          addon_total  = addon_result.addons.sum(&:total)
           subscription = maybe_start_subscription(booking)
-          payment = collect_initial_payment(booking)
+          payment = collect_initial_payment(booking, extra_amount: addon_total)
           render json: {
             booking_request: BookingRequestSerializer.render_as_hash(result.booking_request),
             booking:         BookingSerializer.render_as_hash(booking),
+            addons:          BookingSerializer.render_as_hash(addon_result.addons),
+            addon_failures:  addon_result.failures,
             subscription_id: subscription&.id,
             payment:         payment
           }, status: :created
@@ -143,12 +149,15 @@ module Api
       #   • pay_upfront    → collect the full total
       #   • pay_after      → collect nothing now
       # Returns a hash the client uses to open a link or confirm the charge.
-      def collect_initial_payment(booking)
+      # extra_amount folds add-on service prices into the one combined charge so
+      # the customer pays once for the whole visit.
+      def collect_initial_payment(booking, extra_amount: 0)
         amount =
           if booking.client_type_group? then (group_charge_full? ? booking.total : booking.required_deposit)
           elsif booking.timing_pay_upfront? then booking.total
           else 0
           end
+        amount = amount.to_d + extra_amount.to_d if amount.to_d.positive? # only add when actually charging now
         return { mode: "none" } if amount.to_d <= 0
 
         tip = (params.dig(:booking_request, :tip) || params[:tip]).to_d
@@ -219,7 +228,8 @@ module Api
           :requested_start, :requested_window_end,
           :customer_latitude, :customer_longitude,
           :recurrence_interval_weeks, :recurrence_active, :auto_charge,
-          :payment_timing, :booked_for_name, :booked_for_phone, :tip, :gift_card_code
+          :payment_timing, :booked_for_name, :booked_for_phone, :tip, :gift_card_code,
+          addon_service_ids: []
         )
       end
     end
