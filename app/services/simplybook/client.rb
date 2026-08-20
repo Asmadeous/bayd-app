@@ -67,9 +67,10 @@ module SimplyBook
       body = {
         service_id:     service_id,
         provider_id:    unit_id,
-        # SimplyBook v2 requires both start and end as "YYYY-MM-DD HH:MM:SS" strings.
-        start_datetime: starts_at.strftime("%Y-%m-%d %H:%M:%S"),
-        end_datetime:   ends_at.strftime("%Y-%m-%d %H:%M:%S")
+        # SimplyBook v2 requires both start and end as "YYYY-MM-DD HH:MM:SS" strings
+        # in the company's local zone — convert from stored UTC (see helper).
+        start_datetime: simplybook_datetime(starts_at),
+        end_datetime:   simplybook_datetime(ends_at)
       }
       body[:count]         = count if count.to_i > 1
       body[:batch_id]      = batch_id if batch_id
@@ -104,8 +105,8 @@ module SimplyBook
       body = {
         service_id:     service_id,
         provider_id:    unit_id,
-        start_datetime: starts_at.strftime("%Y-%m-%d %H:%M:%S"),
-        end_datetime:   ends_at.strftime("%Y-%m-%d %H:%M:%S")
+        start_datetime: simplybook_datetime(starts_at),
+        end_datetime:   simplybook_datetime(ends_at)
       }
       resp = @conn.put("/admin/bookings/#{simplybook_id}", body)
       raise "SimplyBook error #{resp.status}: #{resp.body}" unless resp.success?
@@ -431,6 +432,16 @@ module SimplyBook
       resp = @conn.get(path, params)
       raise "SimplyBook error #{resp.status}" unless resp.success?
       list_data(resp.body)
+    end
+
+    # SimplyBook v2 wants "YYYY-MM-DD HH:MM:SS" wall-clock strings in the COMPANY's
+    # local timezone (no offset marker). Our bookings are stored UTC (Rails default
+    # zone is UTC), so we MUST convert to the booking zone before formatting —
+    # otherwise a 3 PM Toronto booking is sent to SimplyBook as its UTC wall-clock
+    # (7 PM), which SimplyBook reads as 7 PM local and rejects as "Selected time
+    # not available". DST-safe via ActiveSupport::TimeZone.
+    def simplybook_datetime(time)
+      time.in_time_zone(BusinessHours.zone).strftime("%Y-%m-%d %H:%M:%S")
     end
   end
 end

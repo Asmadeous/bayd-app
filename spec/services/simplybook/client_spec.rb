@@ -140,4 +140,35 @@ RSpec.describe SimplyBook::Client do
       )
     end
   end
+
+  # SimplyBook wants company-local wall-clock strings. Bookings are stored UTC
+  # (Rails zone is UTC), so a 3 PM Toronto booking (19:00 UTC in summer/DST) must
+  # be sent as "15:00:00", NOT "19:00:00" — otherwise SimplyBook reads it as 7 PM
+  # local and rejects it ("Selected time not available"), which was leaving
+  # bookings unsynced and their slots falsely showing as free.
+  describe "#create_booking_result — timezone conversion (UTC → America/Toronto)" do
+    before do
+      allow(conn).to receive(:post).with("/admin/bookings", anything)
+        .and_return(resp(200, { "bookings" => [ { "id" => "1" } ] }))
+      allow(conn).to receive(:put).and_return(resp(200, {}))
+    end
+
+    it "sends the Toronto local wall-clock, not the stored UTC time" do
+      # 19:00 UTC on 2026-08-24 == 15:00 America/Toronto (UTC-4, DST).
+      starts_utc = Time.utc(2026, 8, 24, 19, 0, 0)
+      ends_utc   = Time.utc(2026, 8, 24, 21, 0, 0)
+
+      described_class.new.create_booking_result(
+        service_id: "2", unit_id: "3", starts_at: starts_utc, ends_at: ends_utc
+      )
+
+      expect(conn).to have_received(:post).with(
+        "/admin/bookings",
+        hash_including(
+          start_datetime: "2026-08-24 15:00:00",
+          end_datetime:   "2026-08-24 17:00:00"
+        )
+      )
+    end
+  end
 end
