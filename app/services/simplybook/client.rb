@@ -251,10 +251,15 @@ module SimplyBook
     # POST /admin/providers (ProviderWritableEntity). `service_ids` are SimplyBook
     # service ids this provider can perform (nil = leave untouched, [] = clears).
     # Raises with the SimplyBook error body on failure so the caller can report it.
+    # SimplyBook provider capacity = how many clients a provider can serve in one
+    # slot. Group bookings need count>1 to return available slots, and SimplyBook
+    # only offers count-N slots when qty >= N. So we set capacity to the group
+    # max; otherwise a group booking finds zero availability. (This was the bug:
+    # qty was hardcoded to 1, so count=2 always returned no slots.)
+    GROUP_CAPACITY = Service::GROUP_SIZE # 5
+
     def create_provider(name:, email: nil, phone: nil, service_ids: nil)
-      # qty = provider capacity (how many simultaneous bookings). Required by
-      # SimplyBook, must be 1..99; a mobile tech serves one client at a time → 1.
-      body = { name: name, qty: 1, email: email, phone: phone, is_visible: true, services: service_ids }.compact
+      body = { name: name, qty: GROUP_CAPACITY, email: email, phone: phone, is_visible: true, services: service_ids }.compact
       resp = @conn.post("/admin/providers", body)
       raise "SimplyBook #{resp.status}: #{simplybook_error(resp)}" unless resp.success?
       resp.body["id"]&.to_s
@@ -269,7 +274,9 @@ module SimplyBook
       current = get_provider(provider_id) || {}
       body = {
         name: current["name"].presence || "Provider #{provider_id}",
-        qty:  (current["qty"] || 1),
+        # Keep the provider's existing capacity, but never drop below the group
+        # max — a qty of 1 would silently break group bookings on the next sync.
+        qty:  [ current["qty"].to_i, GROUP_CAPACITY ].max,
         is_visible: current.fetch("is_visible", true),
         services: Array(service_ids)
       }
