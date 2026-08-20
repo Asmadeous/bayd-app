@@ -253,25 +253,53 @@ class AssignmentService
     # the service/provider are mapped.
     return if booking.service.simplybook_event_id.blank? || booking.employee_profile.simplybook_unit_id.blank?
 
-    simplybook_id = SimplyBook::Client.new.create_booking(
+    if booking.client_type_group?
+      push_group_as_batch(booking)
+    else
+      result = create_simplybook_booking(booking)
+      booking.update_columns(simplybook_id: result[:id], synced_at: Time.current) if result[:id].present?
+    end
+  rescue StandardError => e
+    Rails.logger.warn("[AssignmentService] SimplyBook push failed for booking #{booking&.id}: #{e.message}")
+  end
+
+  # A group of N is pushed as N individual SimplyBook bookings grouped under one
+  # SimplyBook "multiple" batch (native Multiple Bookings feature) — rather than
+  # a single count=N slot. The first booking creates the batch; the returned
+  # batch_id chains the rest into it. We store the first SB booking id + the
+  # batch id on our (single) local Booking, which represents the whole party.
+  def push_group_as_batch(booking)
+    party    = booking.party_size.to_i.clamp(1, Service::GROUP_SIZE)
+    batch_id = nil
+    first_id = nil
+
+    party.times do
+      result   = create_simplybook_booking(booking, batch_id: batch_id)
+      batch_id ||= result[:batch_id]
+      first_id ||= result[:id]
+      break if result[:id].blank? # SB rejected — stop, keep what we have
+    end
+
+    booking.update_columns(
+      simplybook_id: first_id, simplybook_batch_id: batch_id, synced_at: Time.current
+    ) if first_id.present?
+  end
+
+  # One SimplyBook booking for this local booking; joins `batch_id` when given.
+  # Returns { id:, batch_id: }.
+  def create_simplybook_booking(booking, batch_id: nil)
+    SimplyBook::Client.new.create_booking_result(
       service_id:  booking.service.simplybook_event_id,
       unit_id:     booking.employee_profile.simplybook_unit_id,
       starts_at:   booking.starts_at,
       ends_at:     booking.ends_at,
-      # Tag the tier onto the NAME sent for THIS booking only (shows directly on
-      # the SimplyBook calendar grid, next to the client name — the structured
-      # additional_fields tag is disabled, see simplybook/client.rb). This does
-      # NOT rename the customer's SimplyBook client record on repeat bookings:
-      # resolve_client_id matches an existing client by email and never renames
-      # it, so the tag only ever appears here, not on their permanent profile.
+      # Tag the tier onto the NAME sent for THIS booking only (shows on the
+      # SimplyBook calendar grid next to the client name). Does NOT rename the
+      # customer's permanent SimplyBook client record (matched by email).
       client:      simplybook_client_payload.merge(name: tagged_client_name(booking)),
-      # Group bookings carry the party size so SimplyBook books that many slots.
-      count:       (booking.party_size.to_i if booking.client_type_group?),
+      batch_id:    batch_id,
       comment:     "Client type: #{booking.client_type}#{" (party of #{booking.party_size})" if booking.client_type_group?}"
     )
-    booking.update_columns(simplybook_id: simplybook_id, synced_at: Time.current) if simplybook_id.present?
-  rescue StandardError => e
-    Rails.logger.warn("[AssignmentService] SimplyBook push failed for booking #{booking&.id}: #{e.message}")
   end
 
   def tagged_client_name(booking)

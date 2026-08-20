@@ -52,7 +52,18 @@ module SimplyBook
     # `tier` (adult/kids/elderly/group) is written to the "Client type" intake
     # field so it shows on the provider's SimplyBook booking — a comment alone
     # doesn't surface on the calendar. Sent only when that intake field exists.
-    def create_booking(service_id:, unit_id:, starts_at:, ends_at:, client: nil, count: nil, comment: nil, tier: nil)
+    def create_booking(service_id:, unit_id:, starts_at:, ends_at:, client: nil, count: nil, comment: nil, tier: nil, batch_id: nil)
+      create_booking_result(
+        service_id: service_id, unit_id: unit_id, starts_at: starts_at, ends_at: ends_at,
+        client: client, count: count, comment: comment, tier: tier, batch_id: batch_id
+      )[:id]
+    end
+
+    # Same as create_booking but returns { id:, batch_id: } from the
+    # BookingResultEntity. Used to group a party into ONE SimplyBook "multiple"
+    # booking: the first call creates a batch (batch_id nil → SB returns one),
+    # each subsequent call passes that batch_id to join the same batch.
+    def create_booking_result(service_id:, unit_id:, starts_at:, ends_at:, client: nil, count: nil, comment: nil, tier: nil, batch_id: nil, is_sequential: nil)
       body = {
         service_id:     service_id,
         provider_id:    unit_id,
@@ -60,7 +71,11 @@ module SimplyBook
         start_datetime: starts_at.strftime("%Y-%m-%d %H:%M:%S"),
         end_datetime:   ends_at.strftime("%Y-%m-%d %H:%M:%S")
       }
-      body[:count] = count if count.to_i > 1
+      body[:count]         = count if count.to_i > 1
+      body[:batch_id]      = batch_id if batch_id
+      # is_sequential marks a batch as consecutive services in one visit (service
+      # add-ons), vs a plain "multiple" batch — see AddonBooker.
+      body[:is_sequential] = true if is_sequential
       if client.present? && (cid = resolve_client_id(**client.slice(:name, :email, :phone)))
         body[:client_id] = cid
       end
@@ -76,10 +91,10 @@ module SimplyBook
       resp = @conn.post("/admin/bookings", body)
       raise "SimplyBook error #{resp.status}: #{resp.body}" unless resp.success?
 
-      # BookingResultEntity: { bookings: [ { id, ... } ], batch: ... }
+      # BookingResultEntity: { bookings: [ { id, ... } ], batch: { id, type, ... } }
       id = resp.body.dig("bookings", 0, "id")&.to_s
       set_booking_comment(id, comment) if id && comment.present?
-      id
+      { id: id, batch_id: resp.body.dig("batch", "id") }
     end
 
     # PUT /admin/bookings/{id} — edit an existing booking (AdminBookingBuildEntity).

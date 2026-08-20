@@ -149,6 +149,9 @@ export function BookingFlow({
   const [recurInterval, setRecurInterval] = useState<"week" | "month">("week")
   const [recurCount, setRecurCount] = useState("1")
   const [autoCharge, setAutoCharge] = useState(false)
+  // Service add-ons: extra services the CHOSEN tech also performs, done back-to-
+  // back in the same visit and folded into one combined charge.
+  const [addonIds, setAddonIds] = useState<number[]>([])
   const [bookedMsg, setBookedMsg] = useState("")
   const [view, setView] = useState<"form" | "booked" | "consultation" | "follow_up">("form")
   const [error, setError] = useState<string | null>(null)
@@ -187,6 +190,18 @@ export function BookingFlow({
 
   const selected = services.find((s) => String(s.id) === serviceId)
   const providers = selected?.providers ?? []
+
+  // Add-ons: the chosen tech's OTHER services (available only once a concrete
+  // tech is picked). Fetched from /team/:id, which returns their service list.
+  const techServices = useQuery<{ services: { id: number; name: string; duration_minutes: number; price: string }[] }>({
+    queryKey: ["tech-services", staff],
+    queryFn: () => api.get<{ services: { id: number; name: string; duration_minutes: number; price: string }[] }>(`/team/${staff}`).then((r) => r.data),
+    enabled: staff !== "any" && !!serviceId && clientType !== "group",
+    staleTime: 5 * 60 * 1000,
+  })
+  const addonOptions = (techServices.data?.services ?? []).filter((s) => String(s.id) !== serviceId)
+  const addonTotal = addonOptions.filter((s) => addonIds.includes(s.id)).reduce((sum, s) => sum + Number(s.price), 0)
+
   const perPerson = (s: ApiService) => Number(s.prices?.[clientType] ?? s.price)
   // Group total = per-person price × number of people.
   const totalFor = (s: ApiService) => (clientType === "group" ? perPerson(s) * partySize : perPerson(s))
@@ -260,7 +275,10 @@ export function BookingFlow({
       api
         .post<BookingRequestResponse>("/booking_requests", {
           customer: {
-            first_name: name.trim() || undefined,
+            // The form collects one "Full name" field; split it so the backend
+            // gets first_name + last_name (first word = first name, rest = last).
+            first_name: name.trim().split(/\s+/)[0] || undefined,
+            last_name: name.trim().split(/\s+/).slice(1).join(" ") || undefined,
             email: email.trim() || undefined,
             phone: phone.trim() || undefined,
           },
@@ -290,6 +308,8 @@ export function BookingFlow({
             recurrence_interval_unit: recurring ? recurInterval : undefined,
             recurrence_interval_count: recurring ? Math.max(1, Number(recurCount) || 1) : undefined,
             auto_charge: recurring && autoCharge ? true : undefined,
+            // Service add-ons: extra services the same tech performs, this visit.
+            addon_service_ids: addonIds.length ? addonIds : undefined,
           },
         })
         .then((r) => r.data),
@@ -876,7 +896,7 @@ export function BookingFlow({
           <label className={lbl}><User className="mr-1 inline size-3.5" /> Your details</label>
           <div className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder="First name" />
+              <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
               <input
                 className={field}
                 value={phone}
@@ -968,8 +988,8 @@ export function BookingFlow({
               {clientType === "group" ? ` · ${partySize} people` : ""}
             </p>
             <p className="mt-2 text-lg font-black text-[#101217]">
-              {price != null ? `$${price.toFixed(2)}` : "Quote"}
-              <span className="ml-1 text-xs font-medium text-[#8a8d93]">total</span>
+              {price != null ? `$${((price ?? 0) + addonTotal).toFixed(2)}` : "Quote"}
+              <span className="ml-1 text-xs font-medium text-[#8a8d93]">total{addonTotal > 0 ? " (incl. add-ons)" : ""}</span>
             </p>
             {clientType === "group" ? (
               <p className="mt-1 text-sm font-semibold text-[#c96c83]">
@@ -977,6 +997,40 @@ export function BookingFlow({
               </p>
             ) : null}
           </div>
+
+          {/* Service add-ons — other services THIS tech performs, added to the
+              same visit (back-to-back), one combined charge. Single bookings only. */}
+          {addonOptions.length > 0 ? (
+            <div className="mb-4">
+              <label className={lbl}>Add another service (optional)</label>
+              <p className="-mt-1 mb-2 text-xs font-medium text-[#8a8d93]">
+                {staffLabel} can also do these in the same visit.
+              </p>
+              <div className="flex flex-col gap-2">
+                {addonOptions.map((a) => {
+                  const on = addonIds.includes(a.id)
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setAddonIds((ids) => (on ? ids.filter((x) => x !== a.id) : [...ids, a.id]))}
+                      className={cn(
+                        "flex items-center justify-between border px-3 py-2 text-left text-sm transition-colors",
+                        on ? "border-[#c96c83] bg-[#c96c83]/10" : "border-black/15 bg-white hover:border-black/30",
+                      )}
+                    >
+                      <span className="font-bold text-[#101217]">
+                        <span className={cn("mr-2 inline-block size-3.5 rounded-sm border align-middle", on ? "border-[#c96c83] bg-[#c96c83]" : "border-black/30")} />
+                        {a.name}
+                        <span className="ml-2 font-medium text-[#8a8d93]">+{a.duration_minutes} min</span>
+                      </span>
+                      <span className="font-bold text-[#c96c83]">+${Number(a.price).toFixed(2)}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
 
           <label className={lbl}>Add a tip (optional)</label>
           <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -1009,7 +1063,7 @@ export function BookingFlow({
 
           {tip && Number(tip) > 0 ? (
             <p className="mt-3 text-sm font-semibold text-[#101217]">
-              Total with tip: <span className="text-[#c96c83]">${((price ?? 0) + (Number(tip) || 0)).toFixed(2)}</span>
+              Total with tip: <span className="text-[#c96c83]">${((price ?? 0) + addonTotal + (Number(tip) || 0)).toFixed(2)}</span>
             </p>
           ) : null}
 
