@@ -114,13 +114,14 @@ jobs:
             kamal deploy
           fi
 
+      # DB seeding does NOT run automatically on deploy — seeds.rb contains
+      # destructive catalog-cleanup (deletes/deactivates products not in the seed
+      # set) and running it every deploy has wiped live shop data. Seeding only
+      # happens on an explicit manual wipe dispatch (db:reset reseeds itself), or
+      # by running `bin/rails db:seed` by hand when you actually intend to.
       - name: Wipe + reseed production database (manual dispatch only)
         if: github.event_name == 'workflow_dispatch' && inputs.wipe_database == true
         run: kamal app exec --interactive "bin/rails db:reset"
-
-      - name: Seed production database
-        if: "!(github.event_name == 'workflow_dispatch' && inputs.wipe_database == true)"
-        run: kamal app exec "bin/rails db:seed"
 
   # ── Frontend: build image on the runner → push to GHCR → run it on the box ─
   # No git/npm/build on the server — same image pipeline as the API.

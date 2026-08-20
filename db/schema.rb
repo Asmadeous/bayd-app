@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_19_184521) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -163,6 +163,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_184521) do
     t.bigint "service_id", null: false
     t.decimal "service_latitude", precision: 10, scale: 6
     t.decimal "service_longitude", precision: 10, scale: 6
+    t.string "simplybook_batch_id"
     t.string "simplybook_id"
     t.datetime "starts_at", null: false
     t.string "status", default: "confirmed", null: false
@@ -182,6 +183,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_184521) do
     t.index ["partner_payout_id"], name: "index_bookings_on_partner_payout_id"
     t.index ["payment_status"], name: "index_bookings_on_payment_status"
     t.index ["service_id"], name: "index_bookings_on_service_id"
+    t.index ["simplybook_batch_id"], name: "index_bookings_on_simplybook_batch_id"
     t.index ["simplybook_id"], name: "index_bookings_on_simplybook_id", unique: true, where: "(simplybook_id IS NOT NULL)"
     t.index ["status"], name: "index_bookings_on_status"
     t.index ["subscription_id"], name: "index_bookings_on_subscription_id"
