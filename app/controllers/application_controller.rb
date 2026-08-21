@@ -4,6 +4,11 @@ class ApplicationController < ActionController::API
   rescue_from ActiveRecord::RecordNotFound,       with: :not_found
   rescue_from ActiveRecord::RecordInvalid,        with: :unprocessable
   rescue_from ActionController::ParameterMissing, with: :bad_request
+  # A no_double_booking exclusion violation means the slot was taken between the
+  # availability check and the write — a clean "slot unavailable" (422), never a
+  # 500. Any OTHER StatementInvalid is a real DB error: re-raise so it 500s and
+  # reaches Sentry.
+  rescue_from ActiveRecord::StatementInvalid,     with: :handle_statement_invalid
 
   # Surface the request id in the (lograge) request log for correlation.
   def append_info_to_payload(payload)
@@ -101,4 +106,14 @@ class ApplicationController < ActionController::API
   def bad_request(e)   = render json: { error: e.message }, status: :bad_request
   def unauthorized     = render json: { error: "Unauthorized" }, status: :unauthorized
   def forbidden        = render json: { error: "Forbidden" }, status: :forbidden
+
+  def handle_statement_invalid(e)
+    raise e unless e.cause.is_a?(PG::ExclusionViolation) &&
+                   e.cause.message.include?("no_double_booking")
+
+    render json: {
+      code:  "slot_taken",
+      error: "That time was just booked. Please choose another slot."
+    }, status: :unprocessable_entity
+  end
 end
