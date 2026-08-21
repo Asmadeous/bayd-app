@@ -28,7 +28,7 @@ module Api
           service_id:  service.simplybook_event_id,
           provider_id: employee.simplybook_unit_id,
           date:        date,
-          count:       party_count
+          count:       slot_count
         ) || []
         # Drop slots the tech can't reach given travel between adjacent jobs (only
         # when we know the customer's location — sent once the address is entered).
@@ -63,7 +63,7 @@ module Api
             service_id:  service.simplybook_event_id,
             provider_id: ep.simplybook_unit_id,
             date:        date,
-            count:       party_count
+            count:       slot_count
           )
           slots = filter_by_travel(ep, service, date, slots)
           { employee_id: ep.id, name: ep.user&.first_name, title: ep.title, photo_url: ep.photo_url, slots: slots }
@@ -98,30 +98,37 @@ module Api
             service_id:  service.simplybook_event_id,
             provider_id: ep.simplybook_unit_id,
             date:        date,
-            count:       party_count
+            count:       slot_count
           )
         end
         dates.min
       end
 
-      # Party size for group bookings (the number of consecutive slots that must be
-      # free). Adult/kids/elderly are always 1 — the tier only affects price, not
-      # slot capacity — so a missing/zero count safely defaults to 1.
-      def party_count
+      # How many people are in the party (2..N for a group; 1 for everyone else).
+      # A group is ONE technician doing the whole party in a single, longer visit —
+      # it does NOT consume N parallel capacity seats. So party size affects the
+      # visit's DURATION (below) and price, never SimplyBook's native `count`.
+      def party_size
         [ params[:count].to_i, 1 ].max
       end
+
+      # SimplyBook's native group-capacity `count`. We do NOT use native groups (a
+      # group is one long booking on a qty=1 provider, not N concurrent seats), so
+      # this is always 1 — availability is checked as an ordinary single booking.
+      def slot_count = 1
 
       # Keep only slots this tech can physically reach given travel between their
       # adjacent jobs. Applied only when the customer's coordinates are known
       # (sent once the address is entered) — otherwise all SimplyBook slots pass.
       # Uses the SAME TravelFeasibility logic as the booking gate, so an offered
-      # slot won't be rejected at booking time.
+      # slot won't be rejected at booking time. A group occupies the tech for the
+      # full party-extended duration, so travel is checked against that window.
       def filter_by_travel(employee, service, date, slots)
         lat, lng = customer_coords
         return slots if lat.nil? || lng.nil?
 
         tf = TravelFeasibility.new(employee: employee, customer_lat: lat, customer_lng: lng)
-        duration = service.duration_minutes * party_count
+        duration = service.duration_minutes * party_size
         slots.select do |hhmm|
           # SimplyBook returns slot times in the company's local zone; parse them
           # there so the travel comparison lines up with the stored (UTC) bookings.

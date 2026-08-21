@@ -36,9 +36,12 @@ class AssignmentService
     end
 
     # 4. Assign the nearest; if a concurrent booking grabbed the slot (the DB
-    #    double-booking constraint trips), fall back to the next-nearest.
+    #    double-booking constraint trips), fall back to the next-nearest. When
+    #    EVERY candidate's slot was taken, that's a clean "slot unavailable" —
+    #    the tech(s) are genuinely booked at that time — not a server error.
     booking = assign(ranked)
-    return failure(:no_availability, :no_availability, "all_candidates_taken") unless booking
+    return failure(:no_availability, :slot_taken, "all_candidates_taken") if booking == :slot_taken
+    return failure(:no_availability, :no_availability, "no_candidates") if booking.nil?
 
     register_simplybook_client(booking) # book-by-email → SimplyBook PWA account
     push_to_simplybook(booking)
@@ -162,14 +165,19 @@ class AssignmentService
   end
 
   # ── Assignment (with race fallback) ───────────────────────────────────────
+  # Returns the created Booking, or :slot_taken when every candidate's slot was
+  # grabbed by a concurrent booking (the no_double_booking guard tripped for all
+  # of them), or nil when there were simply no candidates to try.
   def assign(ranked)
+    tripped = false
     ranked.each do |candidate|
       return create_booking_for(candidate, ranked)
     rescue ActiveRecord::StatementInvalid => e
       raise unless e.cause.is_a?(PG::ExclusionViolation) # double-booking guard tripped
+      tripped = true
       next # slot taken concurrently — try the next-nearest tech
     end
-    nil
+    tripped ? :slot_taken : nil
   end
 
   # Group bookings bill per person: clamp to 2..GROUP_SIZE. Everyone else is 1.
@@ -265,8 +273,17 @@ class AssignmentService
     Rails.logger.warn("[AssignmentService] SimplyBook push failed for booking #{booking&.id}: #{e.message}")
   end
 
-  # One SimplyBook booking for this local booking. Group bookings pass count=N so
-  # SimplyBook books that many slots at the service price. Returns { id:, batch_id: }.
+  # One SimplyBook booking for this local booking.
+  #
+  # A GROUP is one technician serving the whole party in a single visit — it is
+  # NOT N independent clients in parallel. So we push it as ONE ordinary booking
+  # with a LONGER duration (starts_at..ends_at already spans duration × party_size,
+  # see create_booking_for) and a party-of-N price, on a qty=1 provider. We do NOT
+  # send SimplyBook's native group `count`: that reserves N concurrent capacity
+  # seats (needs provider qty >= N), which would leave the tech's slot bookable by
+  # others and overbook a person who's actually occupied with the party. The party
+  # size is recorded on the name tag + comment so it shows on the calendar.
+  # Returns { id:, batch_id: }.
   def create_simplybook_booking(booking)
     SimplyBook::Client.new.create_booking_result(
       service_id:  booking.service.simplybook_event_id,
@@ -277,7 +294,6 @@ class AssignmentService
       # SimplyBook calendar grid next to the client name). Does NOT rename the
       # customer's permanent SimplyBook client record (matched by email).
       client:      simplybook_client_payload.merge(name: tagged_client_name(booking)),
-      count:       (booking.party_size.to_i if booking.client_type_group?),
       comment:     "Client type: #{booking.client_type}#{" (party of #{booking.party_size})" if booking.client_type_group?}"
     )
   end
@@ -334,8 +350,22 @@ class AssignmentService
   end
 
   def failure(request_status, error_code, reason)
-    @booking_request.update!(status: request_status)
+    # Record the outcome on the request, but never let a bookkeeping write turn a
+    # handled failure into a 500. If the surrounding transaction is already
+    # aborted (e.g. a no_double_booking violation just fired), update_column on a
+    # fresh connection state still records the status; if even that can't run we
+    # fall back to setting the attribute in memory so the caller still gets a
+    # clean Result instead of an exception.
+    begin
+      @booking_request.update!(status: request_status)
+    rescue ActiveRecord::StatementInvalid
+      @booking_request.status = request_status
+    end
     log_attempt(candidates: [], chosen: nil, reason: reason)
+    Result.new(success: false, booking_request: @booking_request, error: error_code)
+  rescue ActiveRecord::StatementInvalid
+    # log_attempt (AssignmentAttempt.create!) can also hit an aborted transaction;
+    # swallow it — the failure Result is what matters to the caller.
     Result.new(success: false, booking_request: @booking_request, error: error_code)
   end
 
