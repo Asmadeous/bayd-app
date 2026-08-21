@@ -26,15 +26,17 @@ RSpec.describe "GET /api/v1/availability", type: :request do
     )
   end
 
-  it "passes the group party size as count so slots fit the whole group" do
+  it "always requests count:1 (a group is one long booking, not N native seats)" do
     allow(ENV).to receive(:[]).and_call_original
     allow(ENV).to receive(:[]).with("SIMPLYBOOK_COMPANY").and_return("baydspa")
     client = instance_double(SimplyBook::Client, available_slots: [ "10:00" ])
     allow(SimplyBook::Client).to receive(:new).and_return(client)
 
+    # Even a party of 4: we don't reserve 4 native capacity seats — the group is
+    # one tech serving the whole party in a single longer visit on a qty=1 seat.
     get_availability(service_id: service.id, employee_id: employee.id, date: date, count: 4)
 
-    expect(client).to have_received(:available_slots).with(hash_including(count: 4))
+    expect(client).to have_received(:available_slots).with(hash_including(count: 1))
   end
 
   it "reports mapped:false (empty slots) when the tech has no SimplyBook id" do

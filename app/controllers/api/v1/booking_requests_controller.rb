@@ -212,6 +212,7 @@ module Api
       ERROR_MESSAGES = {
         no_coverage:     "Sorry, that address is outside our service area.",
         no_availability: "No technician is available for that time. Please try another slot.",
+        slot_taken:      "That time was just booked. Please choose another slot.",
         outside_hours:   "Please choose a time within our hours (9:00 AM–7:00 PM ET) that allows the full service to finish before close.",
         failed:          "We couldn't complete your booking. Please try again."
       }.freeze
