@@ -77,7 +77,7 @@ module SimplyBook
       # is_sequential marks a batch as consecutive services in one visit (service
       # add-ons), vs a plain "multiple" batch — see AddonBooker.
       body[:is_sequential] = true if is_sequential
-      if client.present? && (cid = resolve_client_id(**client.slice(:name, :email, :phone)))
+      if client.present? && (cid = resolve_client_id(**client.slice(:name, :email, :phone, :address1, :address2, :city, :zip, :state_id)))
         body[:client_id] = cid
       end
       # DISABLED: additional_fields (the "Client type" intake tag) has been tied to
@@ -392,9 +392,10 @@ module SimplyBook
     # Find a SimplyBook client by email, or create one. Returns the id or nil.
     # Accepts name:/email:/phone: keywords. Searching by email first is what
     # prevents duplicate client records for the same person.
-    def resolve_client_id(name: nil, email: nil, phone: nil)
+    def resolve_client_id(name: nil, email: nil, phone: nil, address1: nil, address2: nil, city: nil, zip: nil, state_id: nil)
       email = email.to_s.strip
-      data  = { name: name, email: email, phone: phone }.compact
+      data  = { name: name, email: email, phone: phone,
+                address1: address1, address2: address2, city: city, zip: zip, state_id: state_id }.compact
       return create_client(data) if email.blank?
 
       resp = @conn.get("/admin/clients", "filter[search]" => email)
@@ -405,8 +406,11 @@ module SimplyBook
       nil
     end
 
+    # Create a SimplyBook client. Sends the full address (ClientEntity supports
+    # address1/address2/city/zip/state_id) so a mobile tech has the location.
     def create_client(data)
-      resp = @conn.post("/admin/clients", { name: data[:name], email: data[:email], phone: data[:phone] }.compact)
+      body = data.slice(:name, :email, :phone, :address1, :address2, :city, :zip, :state_id).compact
+      resp = @conn.post("/admin/clients", body)
       resp.success? ? resp.body["id"] : nil
     end
 

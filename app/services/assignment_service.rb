@@ -12,12 +12,13 @@ class AssignmentService
   ON_DEMAND_NEXT_BUFFER_MIN = 20
   ON_DEMAND_PROTECT_WINDOW  = 3.hours
 
-  Result = Struct.new(:success, :booking_request, :error, keyword_init: true) do
+  Result = Struct.new(:success, :booking_request, :error, :addons, keyword_init: true) do
     def success? = success
   end
 
-  def initialize(booking_request)
-    @booking_request = booking_request
+  def initialize(booking_request, addon_service_ids: nil)
+    @booking_request   = booking_request
+    @addon_service_ids = addon_service_ids
   end
 
   def call
@@ -43,9 +44,14 @@ class AssignmentService
     return failure(:no_availability, :slot_taken, "all_candidates_taken") if booking == :slot_taken
     return failure(:no_availability, :no_availability, "no_candidates") if booking.nil?
 
+    # Resolve any add-ons BEFORE the SimplyBook push so they land in the booking
+    # comment (they're note-only — not their own booking; the tech factors the
+    # extra work in on the day). Stamps raw["addons"] on the booking too.
+    @addon_result = AddonBooker.new(booking, @addon_service_ids).call
+
     register_simplybook_client(booking) # book-by-email → SimplyBook PWA account
     push_to_simplybook(booking)
-    Result.new(success: true, booking_request: @booking_request)
+    Result.new(success: true, booking_request: @booking_request, addons: @addon_result)
   rescue StandardError => e
     @booking_request.update!(status: :failed)
     log_attempt(candidates: [], chosen: nil, reason: "error: #{e.message}")
@@ -294,8 +300,24 @@ class AssignmentService
       # SimplyBook calendar grid next to the client name). Does NOT rename the
       # customer's permanent SimplyBook client record (matched by email).
       client:      simplybook_client_payload.merge(name: tagged_client_name(booking)),
-      comment:     "Client type: #{booking.client_type}#{" (party of #{booking.party_size})" if booking.client_type_group?}"
+      # We're a MOBILE service — the tech needs to know WHERE to go. The service
+      # address goes both onto the client record (client payload) and here in the
+      # booking comment, so it's always visible on the SimplyBook booking itself.
+      comment:     booking_comment(booking)
     )
+  end
+
+  def booking_comment(booking)
+    parts = [ "Client type: #{booking.client_type}#{" (party of #{booking.party_size})" if booking.client_type_group?}" ]
+    parts << "Address: #{formatted_address}" if formatted_address.present?
+    # Add-ons are note-only (no separate booking) — surface them here so the tech
+    # sees the extra work on the SimplyBook calendar and factors in time/charge.
+    addons = booking.raw["addons"]
+    if addons.present?
+      list = addons.map { |a| "#{a['name']} (+$#{a['price']})" }.join(", ")
+      parts << "Add-ons: #{list}"
+    end
+    parts.join(" | ")
   end
 
   def tagged_client_name(booking)
@@ -304,12 +326,33 @@ class AssignmentService
     )
   end
 
+  # Full service address as a single line: "line1, line2 (apt), city, province, postal".
+  def formatted_address
+    return @formatted_address if defined?(@formatted_address)
+
+    a = @booking_request.address
+    @formatted_address =
+      if a
+        line2 = a.line2.presence
+        line2 = "#{line2} (apt)" if a.is_apartment && line2
+        [ a.line1, line2, a.city, a.province, a.postal_code ].compact_blank.join(", ").presence
+      end
+  end
+
   def simplybook_client_payload
     user = @booking_request.user
+    a    = @booking_request.address
     {
       name:  [ user.first_name, user.last_name ].compact.join(" ").strip.presence || user.email,
       email: user.email,
-      phone: user.phone
+      phone: user.phone,
+      # Full location so the mobile tech knows where to go (SimplyBook ClientEntity
+      # supports these fields). nil/blank ones are dropped by the client.
+      address1: a&.line1,
+      address2: a&.line2,
+      city:     a&.city,
+      zip:      a&.postal_code,
+      state_id: a&.province
     }
   end
 

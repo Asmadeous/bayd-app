@@ -193,13 +193,25 @@ export function BookingFlow({
 
   // Add-ons: the chosen tech's OTHER services (available only once a concrete
   // tech is picked). Fetched from /team/:id, which returns their service list.
-  const techServices = useQuery<{ services: { id: number; name: string; duration_minutes: number; price: string }[] }>({
+  type TechService = { id: number; name: string; duration_minutes: number; price: string; category_name: string | null }
+  const techServices = useQuery<{ services: TechService[] }>({
     queryKey: ["tech-services", staff],
-    queryFn: () => api.get<{ services: { id: number; name: string; duration_minutes: number; price: string }[] }>(`/team/${staff}`).then((r) => r.data),
+    queryFn: () => api.get<{ services: TechService[] }>(`/team/${staff}`).then((r) => r.data),
     enabled: staff !== "any" && !!serviceId && clientType !== "group",
     staleTime: 5 * 60 * 1000,
   })
-  const addonOptions = (techServices.data?.services ?? []).filter((s) => String(s.id) !== serviceId)
+  // Lashes is a siloed category — the lash tech does only lashes and no other tech
+  // does lashes, so a lash service and a non-lash service have no common provider
+  // and can't share a visit. So only offer add-ons on the SAME side of the lash
+  // line: lashes-with-lashes, everything-else-with-everything-else (mirrors the
+  // AddonBooker#compatible_category? backend guard).
+  const isLashes = (name: string | null) => (name ?? "").toLowerCase() === "lashes"
+  const primaryIsLashes = isLashes(selected?.category_name ?? null)
+  const addonOptions = (techServices.data?.services ?? [])
+    .filter((s) => String(s.id) !== serviceId)
+    .filter((s) => isLashes(s.category_name) === primaryIsLashes)
+  // Selected add-ons that are still valid options for the current primary + tech.
+  const validAddonIds = addonOptions.filter((s) => addonIds.includes(s.id)).map((s) => s.id)
   const addonTotal = addonOptions.filter((s) => addonIds.includes(s.id)).reduce((sum, s) => sum + Number(s.price), 0)
 
   const perPerson = (s: ApiService) => Number(s.prices?.[clientType] ?? s.price)
@@ -309,7 +321,9 @@ export function BookingFlow({
             recurrence_interval_count: recurring ? Math.max(1, Number(recurCount) || 1) : undefined,
             auto_charge: recurring && autoCharge ? true : undefined,
             // Service add-ons: extra services the same tech performs, this visit.
-            addon_service_ids: addonIds.length ? addonIds : undefined,
+            // Only send IDs that are still valid options (a primary/tech change can
+            // leave a stale, now-incompatible pick selected — don't submit it).
+            addon_service_ids: validAddonIds.length ? validAddonIds : undefined,
           },
         })
         .then((r) => r.data),
@@ -666,6 +680,13 @@ export function BookingFlow({
               ))}
             </div>
           ) : null}
+
+          {/* Let customers know add-ons exist before they pick, so it's not a
+              surprise later — the add-on picker appears after choosing a tech. */}
+          <p className="mb-3 flex items-center gap-1.5 border-l-2 border-[#c96c83] bg-[#c96c83]/[0.06] px-3 py-2 text-xs font-medium text-[#5f6268]">
+            <span aria-hidden>💡</span>
+            Pick your main service now — you can add extra services (like a paraffin or French finish) to the same visit after choosing your technician.
+          </p>
 
           <div className="grid max-h-[30rem] gap-4 overflow-y-auto pr-1">
             {Array.from(grouped.entries()).map(([category, list]) => {

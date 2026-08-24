@@ -1,0 +1,33 @@
+<h2 style="margin:0 0 12px;font-family:Arial,sans-serif;color:#101217;">Booking add-ons — factor these in</h2>
+<p style="margin:0 0 16px;font-family:Arial,sans-serif;color:#5f6268;font-size:14px;line-height:1.5;">
+  <%= @booking.user.first_name %> requested extra service(s) for this visit. These are <strong>not</strong> separate
+  bookings — the same technician does them back-to-back with the main service. Please allow for the extra time
+  and add the charge on the day.
+</p>
+<table style="font-family:Arial,sans-serif;font-size:14px;color:#101217;border-collapse:collapse;margin-bottom:16px;">
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Booking</td><td style="padding:4px 0;">#<%= @booking.id %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Main service</td><td style="padding:4px 0;"><%= @booking.service.name %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Technician</td><td style="padding:4px 0;"><%= @technician_name %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">When</td><td style="padding:4px 0;"><%= @booking.starts_at&.in_time_zone(BusinessHours.zone)&.strftime("%b %-d, %Y at %-l:%M %p %Z") %></td></tr>
+</table>
+<table style="font-family:Arial,sans-serif;font-size:14px;color:#101217;border-collapse:collapse;margin-bottom:16px;min-width:320px;">
+  <tr style="background:#f7f5f2;">
+    <th style="text-align:left;padding:6px 12px;border:1px solid #e5e2dc;">Add-on</th>
+    <th style="text-align:right;padding:6px 12px;border:1px solid #e5e2dc;">Time</th>
+    <th style="text-align:right;padding:6px 12px;border:1px solid #e5e2dc;">Price</th>
+  </tr>
+  <% @addons.each do |a| %>
+    <tr>
+      <td style="padding:6px 12px;border:1px solid #e5e2dc;"><%= a[:name] %></td>
+      <td style="padding:6px 12px;border:1px solid #e5e2dc;text-align:right;"><%= a[:duration] %> min</td>
+      <td style="padding:6px 12px;border:1px solid #e5e2dc;text-align:right;">$<%= a[:price] %></td>
+    </tr>
+  <% end %>
+  <tr>
+    <td style="padding:6px 12px;border:1px solid #e5e2dc;font-weight:bold;" colspan="2">Add-ons total</td>
+    <td style="padding:6px 12px;border:1px solid #e5e2dc;text-align:right;font-weight:bold;">$<%= @total %></td>
+  </tr>
+</table>
+<p style="margin:16px 0 0;font-family:Arial,sans-serif;color:#8a8d93;font-size:12px;">
+  The add-on total is already folded into the customer's charge for this visit.
+</p>

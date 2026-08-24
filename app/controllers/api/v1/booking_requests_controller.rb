@@ -35,22 +35,24 @@ module Api
         attrs[:address_id] = build_address!(booker).id if attrs[:address_id].blank? && params[:address].present?
 
         request_record = booker.booking_requests.create!(attrs)
-        result = AssignmentService.new(request_record).call
+        # Add-ons are resolved inside AssignmentService (before the SimplyBook
+        # push, so they land in the booking comment). They are NOT a separate
+        # booking — just extra services noted for the tech to factor in on the
+        # day; their price folds into the one combined charge.
+        result = AssignmentService.new(request_record, addon_service_ids: params.dig(:booking_request, :addon_service_ids)).call
 
         if result.success?
           booking = result.booking_request.booking
           apply_payment_choice(booking)
-          # Add-ons: extra services the same tech performs, booked back-to-back
-          # after the primary. Their price is folded into the one combined charge.
-          addon_result = AddonBooker.new(booking, params.dig(:booking_request, :addon_service_ids)).call
-          addon_total  = addon_result.addons.sum(&:total)
+          addon_result = result.addons
+          notify_admin_addons(booking, addon_result) if addon_result&.any?
           subscription = maybe_start_subscription(booking)
-          payment = collect_initial_payment(booking, extra_amount: addon_total)
+          payment = collect_initial_payment(booking, extra_amount: addon_result&.total || 0)
           render json: {
             booking_request: BookingRequestSerializer.render_as_hash(result.booking_request),
             booking:         BookingSerializer.render_as_hash(booking),
-            addons:          BookingSerializer.render_as_hash(addon_result.addons),
-            addon_failures:  addon_result.failures,
+            addons:          addon_result&.addons || [],
+            addon_failures:  addon_result&.failures || [],
             subscription_id: subscription&.id,
             payment:         payment
           }, status: :created
@@ -176,6 +178,16 @@ module Api
       # "full" → charge the whole group total now; otherwise just the deposit.
       def group_charge_full?
         (params.dig(:booking_request, :group_charge) || params[:group_charge]).to_s == "full"
+      end
+
+      # Email the team the add-ons the customer requested for this visit, so they
+      # factor in the extra time/charge. Add-ons are note-only (no separate
+      # SimplyBook booking) — this email + the SimplyBook comment are how the team
+      # learns about them. Best-effort: never breaks the customer's booking.
+      def notify_admin_addons(booking, addon_result)
+        AdminMailer.booking_addons(booking, addon_result.addons).deliver_later
+      rescue StandardError => e
+        Rails.logger.warn("[BookingRequests] admin add-on notice failed: #{e.message}")
       end
 
       def notify_admin_pending_payment(booking)
