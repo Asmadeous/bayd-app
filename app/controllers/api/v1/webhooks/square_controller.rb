@@ -12,7 +12,11 @@ module Api
           verified = SquareService.verify_webhook(raw, request.headers["x-square-hmacsha256-signature"], notification_url)
           return head :unauthorized if signature_configured? && !verified
 
-          body = request.parsed_body || {}
+          # Parse the raw JSON body directly. request.parsed_body is NOT available
+          # on ActionDispatch::Request in these API controllers (raises
+          # NoMethodError → 500s the webhook), so parse the raw_post we already
+          # read for signature verification.
+          body = parse_json(raw)
           ext  = body["event_id"]&.to_s
 
           event = SyncEvent.find_or_initialize_by(provider: "square", external_id: ext)
@@ -24,6 +28,10 @@ module Api
         end
 
         private
+
+        def parse_json(raw)
+          raw.present? ? (JSON.parse(raw) rescue {}) : {}
+        end
 
         def signature_configured?
           ENV["SQUARE_WEBHOOK_SIGNATURE_KEY"].present?
