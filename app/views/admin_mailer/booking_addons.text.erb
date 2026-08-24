@@ -1,0 +1,18 @@
+Booking add-ons — factor these in
+
+<%= @booking.user.first_name %> requested extra service(s) for this visit. These are
+NOT separate bookings — the same technician does them back-to-back with the main
+service. Please allow for the extra time and add the charge on the day.
+
+Booking:      #<%= @booking.id %>
+Main service: <%= @booking.service.name %>
+Technician:   <%= @technician_name %>
+When:         <%= @booking.starts_at&.in_time_zone(BusinessHours.zone)&.strftime("%b %-d, %Y at %-l:%M %p %Z") %>
+
+Add-ons:
+<% @addons.each do |a| -%>
+  - <%= a[:name] %> (<%= a[:duration] %> min) — $<%= a[:price] %>
+<% end -%>
+Add-ons total: $<%= @total %>
+
+The add-on total is already folded into the customer's charge for this visit.

@@ -11,6 +11,13 @@ class BookingSerializer < Blueprinter::Base
     booking.outstanding_balance
   end
 
+  # Extra services the customer added to this visit. They are note-only (the same
+  # tech does them back-to-back — NOT a separate booking), stored on raw["addons"]
+  # as [{ id, name, price, duration }]. Empty when none.
+  field :addons do |booking|
+    booking.raw["addons"] || []
+  end
+
   field :has_review do |booking|
     booking.review.present?
   end

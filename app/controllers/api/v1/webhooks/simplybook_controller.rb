@@ -6,7 +6,7 @@ module Api
         before_action :verify_secret
 
         def receive
-          body   = request.parsed_body || {}
+          body   = webhook_body
           ext_id = body["notification_id"]&.to_s
 
           event = SyncEvent.find_or_initialize_by(provider: "simplybook", external_id: ext_id)
@@ -32,10 +32,21 @@ module Api
         def verify_secret
           return unless secret_configured?
 
-          body     = request.parsed_body || {}
+          body     = webhook_body
           expected = Digest::MD5.hexdigest("#{body['booking_id']}#{body['booking_hash']}#{webhook_secret}")
           provided = (body["sign"] || body["signature"]).to_s
           head :unauthorized unless ActiveSupport::SecurityUtils.secure_compare(expected, provided)
+        end
+
+        # The parsed JSON callback body. `request.parsed_body` is NOT available on
+        # ActionDispatch::Request in an API controller (it raised NoMethodError and
+        # 500'd every webhook), so read + parse the raw body once and memoize it.
+        def webhook_body
+          @webhook_body ||= begin
+            raw = request.body.read
+            request.body.rewind
+            raw.present? ? (JSON.parse(raw) rescue {}) : {}
+          end
         end
 
         def secret_configured?

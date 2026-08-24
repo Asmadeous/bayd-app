@@ -32,7 +32,9 @@ RSpec.describe "Group booking → SimplyBook (one long booking, no count)", type
 
   def push(booking)
     svc = AssignmentService.allocate
-    svc.instance_variable_set(:@booking_request, double(user: booking.user))
+    # @booking_request carries the user + the service address (pushed to SimplyBook
+    # so the mobile tech knows where to go). nil address is fine (fields drop out).
+    svc.instance_variable_set(:@booking_request, double(user: booking.user, address: nil))
     svc.send(:push_to_simplybook, booking)
   end
 
@@ -62,5 +64,22 @@ RSpec.describe "Group booking → SimplyBook (one long booking, no count)", type
     push(booking)
 
     expect(sb).to have_received(:create_booking_result).with(hash_excluding(:count))
+  end
+
+  # A mobile service must send the address to SimplyBook so the tech knows where
+  # to go — both in the booking comment and on the client record.
+  it "sends the full service address in the comment and the client payload" do
+    addr = double(line1: "300 City Centre Dr", line2: nil, is_apartment: false,
+                  city: "Mississauga", province: "ON", postal_code: "L5B 3C1")
+    svc = AssignmentService.allocate
+    svc.instance_variable_set(:@booking_request, double(user: user, address: addr))
+    svc.send(:push_to_simplybook, group_booking(party: 2))
+
+    expect(sb).to have_received(:create_booking_result).with(
+      hash_including(
+        comment: a_string_including("300 City Centre Dr", "Mississauga", "ON", "L5B 3C1"),
+        client:  hash_including(address1: "300 City Centre Dr", city: "Mississauga", zip: "L5B 3C1", state_id: "ON"),
+      )
+    )
   end
 end

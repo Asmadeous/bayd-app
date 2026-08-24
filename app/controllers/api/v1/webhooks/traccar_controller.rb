@@ -12,7 +12,7 @@ module Api
           )
           event.assign_attributes(
             event_type:         "position",
-            payload:            request.parsed_body || {},
+            payload:            parsed_payload,
             signature_verified: true
           )
           event.save!
@@ -22,6 +22,14 @@ module Api
         end
 
         private
+
+        # Parse the raw JSON body directly. request.parsed_body is NOT available
+        # on ActionDispatch::Request in these API controllers (raises
+        # NoMethodError → 500s the webhook), so read + parse the raw body.
+        def parsed_payload
+          raw = request.raw_post
+          raw.present? ? (JSON.parse(raw) rescue {}) : {}
+        end
 
         def verify_secret
           expected = ENV.fetch("TRACCAR_WEBHOOK_SECRET", "")
