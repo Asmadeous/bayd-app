@@ -22,16 +22,6 @@ class BookingSerializer < Blueprinter::Base
     booking.review.present?
   end
 
-  # True when this booking SHOULD have a SimplyBook counterpart (service +
-  # tech are both mapped) but the push never landed — flags it for staff so
-  # a failed push isn't silently invisible (it only shows on the reconcile
-  # job's warn log otherwise). nil when SimplyBook mapping doesn't apply.
-  field :simplybook_sync_pending do |booking|
-    next nil if booking.service&.simplybook_event_id.blank? || booking.employee_profile&.simplybook_unit_id.blank?
-
-    booking.simplybook_id.blank?
-  end
-
   # Whether to surface the work-scope video call (special-needs / first-timers).
   field :meeting_recommended do |booking|
     booking.meeting_recommended?

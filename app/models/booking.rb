@@ -51,7 +51,6 @@ class Booking < ApplicationRecord
 
   validates :starts_at, :ends_at, presence: true
   validates :subtotal, :travel_fee, :total, numericality: { greater_than_or_equal_to: 0 }
-  validates :simplybook_id, uniqueness: true, allow_nil: true
   validate  :ends_after_starts
 
   # Kick off the post-service flow (loyalty, review request, auto-rebook) the
@@ -61,11 +60,6 @@ class Booking < ApplicationRecord
 
   scope :upcoming,  -> { where(status: %w[confirmed]).where("starts_at > ?", Time.current) }
   scope :active,    -> { where(status: %w[confirmed in_progress]) }
-  # Local bookings not yet pushed to SimplyBook (e.g. created while SimplyBook
-  # was unreachable) — the reconcile job retries these.
-  scope :needs_simplybook_sync, lambda {
-    where(simplybook_id: nil, status: %w[pending confirmed in_progress])
-  }
 
   # Recurring bookings due to be re-created: active recurrence, completed,
   # and no follow-up booking spawned yet.
@@ -166,10 +160,9 @@ class Booking < ApplicationRecord
 
   # Move this booking to new_start. Re-validates business hours, travel
   # feasibility for the SAME tech, and the no_double_booking DB constraint, then
-  # best-effort edits the SimplyBook booking (PUT — a real edit, not
-  # cancel+recreate) so SimplyBook fires its own client SMS/email. Notifies the
-  # customer + tech in-app and by email. `by_customer:` increments the reschedule
-  # counter and is what the controller caps (admin passes false → uncapped).
+  # notifies the customer + tech in-app and by email. `by_customer:` increments
+  # the reschedule counter and is what the controller caps (admin passes false →
+  # uncapped).
   # Raises RescheduleError(:not_reschedulable|:outside_hours|:not_reachable|:slot_taken).
   # `new_employee` (optional): admin can move the booking to a different tech in
   # the same action. Travel feasibility is checked against whichever tech ends up
@@ -184,7 +177,6 @@ class Booking < ApplicationRecord
     tf = TravelFeasibility.new(employee: assigned, customer_lat: service_latitude, customer_lng: service_longitude)
     raise RescheduleError.new(:not_reachable) unless tf.feasible?(new_start, new_end)
 
-    old_simplybook_id = simplybook_id
     begin
       with_lock do
         attrs = { starts_at: new_start, ends_at: new_end,
@@ -197,7 +189,6 @@ class Booking < ApplicationRecord
       raise RescheduleError.new(:slot_taken)
     end
 
-    push_reschedule_to_simplybook(old_simplybook_id)
     notify_rescheduled
     self
   end
@@ -220,24 +211,6 @@ class Booking < ApplicationRecord
     local_end.to_date == local_start.to_date &&
       (local_end.hour < BusinessHours::CLOSE_HOUR ||
        (local_end.hour == BusinessHours::CLOSE_HOUR && local_end.min.zero? && local_end.sec.zero?))
-  end
-
-  # Best-effort SimplyBook edit to the new time (PUT /admin/bookings/{id}).
-  # Skips when unmapped/dormant. Never raises into the reschedule.
-  def push_reschedule_to_simplybook(sb_id)
-    return if sb_id.blank?
-    return if ENV["SIMPLYBOOK_COMPANY"].blank?
-    return if service.simplybook_event_id.blank? || employee_profile.simplybook_unit_id.blank?
-
-    SimplyBook::Client.new.update_booking(
-      sb_id,
-      service_id: service.simplybook_event_id,
-      unit_id:    employee_profile.simplybook_unit_id,
-      starts_at:  starts_at,
-      ends_at:    ends_at
-    )
-  rescue StandardError => e
-    Rails.logger.warn("[Booking##{id}] SimplyBook reschedule push failed: #{e.message}")
   end
 
   # Notify the customer (in-app + email via NotificationService) and the tech

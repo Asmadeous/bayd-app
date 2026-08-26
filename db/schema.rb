@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_26_153837) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -73,6 +73,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.datetime "updated_at", null: false
     t.index ["booking_request_id"], name: "index_assignment_attempts_on_booking_request_id"
     t.index ["chosen_employee_id"], name: "index_assignment_attempts_on_chosen_employee_id"
+  end
+
+  create_table "availability_overrides", force: :cascade do |t|
+    t.boolean "available", default: true, null: false
+    t.datetime "created_at", null: false
+    t.date "date", null: false
+    t.bigint "employee_profile_id", null: false
+    t.time "end_time"
+    t.time "start_time"
+    t.datetime "updated_at", null: false
+    t.index ["employee_profile_id", "date"], name: "index_availability_overrides_on_employee_profile_id_and_date", unique: true
+    t.index ["employee_profile_id"], name: "index_availability_overrides_on_employee_profile_id"
+  end
+
+  create_table "availability_schedules", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "day_of_week", null: false
+    t.bigint "employee_profile_id", null: false
+    t.time "end_time", null: false
+    t.time "start_time", null: false
+    t.datetime "updated_at", null: false
+    t.index ["employee_profile_id", "day_of_week"], name: "idx_on_employee_profile_id_day_of_week_590b01117e"
+    t.index ["employee_profile_id"], name: "index_availability_schedules_on_employee_profile_id"
   end
 
   create_table "blog_comments", force: :cascade do |t|
@@ -163,13 +186,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.bigint "service_id", null: false
     t.decimal "service_latitude", precision: 10, scale: 6
     t.decimal "service_longitude", precision: 10, scale: 6
-    t.string "simplybook_batch_id"
-    t.string "simplybook_id"
     t.datetime "starts_at", null: false
     t.string "status", default: "confirmed", null: false
     t.bigint "subscription_id"
     t.decimal "subtotal", precision: 10, scale: 2, default: "0.0", null: false
-    t.datetime "synced_at"
     t.decimal "total", precision: 10, scale: 2, default: "0.0", null: false
     t.decimal "travel_fee", precision: 10, scale: 2, default: "0.0", null: false
     t.datetime "updated_at", null: false
@@ -183,8 +203,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.index ["partner_payout_id"], name: "index_bookings_on_partner_payout_id"
     t.index ["payment_status"], name: "index_bookings_on_payment_status"
     t.index ["service_id"], name: "index_bookings_on_service_id"
-    t.index ["simplybook_batch_id"], name: "index_bookings_on_simplybook_batch_id"
-    t.index ["simplybook_id"], name: "index_bookings_on_simplybook_id", unique: true, where: "(simplybook_id IS NOT NULL)"
     t.index ["status"], name: "index_bookings_on_status"
     t.index ["subscription_id"], name: "index_bookings_on_subscription_id"
     t.index ["user_id"], name: "index_bookings_on_user_id"
@@ -238,7 +256,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.bigint "partner_id"
     t.string "photo_url"
     t.text "service_fsas", default: [], null: false, array: true
-    t.string "simplybook_unit_id"
     t.string "title"
     t.string "traccar_device_id"
     t.datetime "updated_at", null: false
@@ -247,7 +264,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.index "((st_setsrid(st_makepoint((base_longitude)::double precision, (base_latitude)::double precision), 4326))::geography)", name: "index_employee_profiles_on_base_location", using: :gist
     t.index ["partner_id"], name: "index_employee_profiles_on_partner_id"
     t.index ["service_fsas"], name: "index_employee_profiles_on_service_fsas", using: :gin
-    t.index ["simplybook_unit_id"], name: "index_employee_profiles_on_simplybook_unit_id", unique: true, where: "(simplybook_unit_id IS NOT NULL)"
     t.index ["traccar_device_id"], name: "index_employee_profiles_on_traccar_device_id", unique: true, where: "(traccar_device_id IS NOT NULL)"
     t.index ["user_id"], name: "index_employee_profiles_on_user_id", unique: true
   end
@@ -696,11 +712,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.decimal "price", precision: 10, scale: 2, default: "0.0", null: false
     t.boolean "requires_consultation", default: false, null: false
     t.bigint "service_category_id", null: false
-    t.string "simplybook_event_id"
     t.jsonb "tier_prices", default: {}, null: false
     t.datetime "updated_at", null: false
     t.index ["service_category_id"], name: "index_services_on_service_category_id"
-    t.index ["simplybook_event_id"], name: "index_services_on_simplybook_event_id", unique: true, where: "(simplybook_event_id IS NOT NULL)"
   end
 
   create_table "settings", force: :cascade do |t|
@@ -801,7 +815,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.string "referral_code"
     t.bigint "referred_by_id"
     t.string "role", default: "customer", null: false
-    t.string "simplybook_client_id"
     t.boolean "special_needs", default: false, null: false
     t.string "square_card_id"
     t.string "square_customer_id"
@@ -813,7 +826,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.index ["referral_code"], name: "index_users_on_referral_code", unique: true, where: "(referral_code IS NOT NULL)"
     t.index ["referred_by_id"], name: "index_users_on_referred_by_id"
     t.index ["role"], name: "index_users_on_role"
-    t.index ["simplybook_client_id"], name: "index_users_on_simplybook_client_id", unique: true, where: "(simplybook_client_id IS NOT NULL)"
     t.index ["square_customer_id"], name: "index_users_on_square_customer_id", unique: true, where: "(square_customer_id IS NOT NULL)"
   end
 
@@ -822,6 +834,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
   add_foreign_key "addresses", "users"
   add_foreign_key "assignment_attempts", "booking_requests"
   add_foreign_key "assignment_attempts", "employee_profiles", column: "chosen_employee_id"
+  add_foreign_key "availability_overrides", "employee_profiles"
+  add_foreign_key "availability_schedules", "employee_profiles"
   add_foreign_key "blog_comments", "blog_posts"
   add_foreign_key "blog_comments", "users"
   add_foreign_key "blog_posts", "users", column: "author_id"

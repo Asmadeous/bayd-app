@@ -14,7 +14,6 @@ class Service < ApplicationRecord
   validates :name, presence: true
   validates :duration_minutes, numericality: { greater_than: 0 }
   validates :price, numericality: { greater_than_or_equal_to: 0 }
-  validates :simplybook_event_id, uniqueness: true, allow_nil: true
 
   scope :active, -> { where(active: true) }
 

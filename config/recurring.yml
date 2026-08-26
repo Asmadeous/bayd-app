@@ -17,10 +17,3 @@ production:
     class: SubscriptionSchedulerJob
     queue: low
     schedule: every day at 6am
-  simplybook_reconcile:
-    class: SimplyBookReconcileJob
-    queue: low
-    # Same-day mobile bookings can be made hours (or less) before the
-    # appointment — a 6h retry window risked the tech's SimplyBook calendar
-    # never getting the booking before they were already on the road.
-    schedule: every 15 minutes

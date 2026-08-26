@@ -39,7 +39,7 @@ module Api
 
         def permitted_params
           params.permit(:name, :description, :duration_minutes, :price, :active,
-                        :service_category_id, :image_url, :simplybook_event_id)
+                        :service_category_id, :image_url)
         end
 
         # Plain hash of client_type => price; the model whitelists the keys.

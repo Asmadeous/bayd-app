@@ -1,15 +1,9 @@
 require "rails_helper"
 
 # Booking#reschedule! moves a booking to a new time, re-validating business
-# hours, travel feasibility, and the no_double_booking DB constraint, then best-
-# effort re-syncs SimplyBook and notifies. Guards the core.
+# hours, travel feasibility, and the no_double_booking DB constraint, then
+# notifies. Guards the core.
 RSpec.describe Booking, "#reschedule!", type: :model do
-  before do
-    # Never hit SimplyBook from specs.
-    allow(SimplyBook::Client).to receive(:new)
-      .and_return(instance_double(SimplyBook::Client, update_booking: true))
-  end
-
   let(:zone)    { BusinessHours.zone }
   let(:user)    { create(:user) }
   let(:service) { create(:service, duration_minutes: 60) }

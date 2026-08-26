@@ -30,10 +30,21 @@ number to spec the next unchecked item.
 
 ## Roadmap — Phase 1: Custom scheduling (replace SimplyBook)
 
-- [ ] Custom availability engine + drop SimplyBook — weekly bookable-hours schedule
-      per tech (+ date overrides), an `AvailabilityEngine` that computes free slots
-      (schedule − bookings − travel time, 15-min floor), rewire booking/reschedule/
-      cancel + availability endpoints onto it, then remove all SimplyBook code/columns
+- [x] 1. Custom availability engine + drop SimplyBook
+  - [x] 1a. Bookable-hours schedule model — `AvailabilitySchedule` (weekly
+        template) + `AvailabilityOverride` (date-specific) models, migrations,
+        associations, and CRUD endpoints (tech self-serve + admin). Pure addition,
+        nothing removed.
+  - [x] 1b. AvailabilityEngine — a service that computes a tech's free slots for a
+        date (schedule/overrides − existing bookings − travel time − turnaround,
+        15-min floor). Standalone + unit-tested; not wired into endpoints yet.
+  - [x] 1c. Cutover — rewire `AvailabilityController` (`#show`, `#any`,
+        `next_available_date`) and the `AssignmentService` booking path onto
+        `AvailabilityEngine`, preserving the exact JSON contracts. SimplyBook no
+        longer the source of slots.
+  - [x] 1d. Remove SimplyBook — delete `services/simplybook/*`, webhook, reconcile
+        job, mapping tasks; strip SB branches from models/serializers/controllers;
+        drop `simplybook_*` columns.
 
 ## Roadmap — Phase 2: Realtime + push
 

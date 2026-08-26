@@ -1,10 +1,8 @@
 # Resolves "service add-ons": extra services the customer wants done in the SAME
 # visit, by the SAME technician, on top of the primary booking. We do NOT create
-# a second booking for them and we do NOT push them to SimplyBook as their own
-# appointment — the admin/tech factors the extra work in on the day. Instead we:
+# a second booking for them — the admin/tech factors the extra work in on the
+# day. Instead we:
 #   • record the add-ons as a note on the primary booking (raw["addons"]),
-#   • list them in the SimplyBook booking comment (so the tech sees them on the
-#     calendar — see AssignmentService#booking_comment),
 #   • email the team the details (BookingRequestsController), and
 #   • fold their price into the one combined charge (controller).
 #
@@ -64,9 +62,9 @@ class AddonBooker
 
   # Lashes is a siloed category: the only tech who does lashes does ONLY lashes,
   # and no other tech does lashes. So a lash service and a non-lash service have
-  # NO common provider — pairing them would leave SimplyBook unable to find a
-  # provider for the visit. Rule: lashes only combines with lashes, and non-lashes
-  # never combines with lashes. (All other categories share a tech, so they mix.)
+  # NO common tech — pairing them would leave the visit with no one who can do
+  # both. Rule: lashes only combines with lashes, and non-lashes never combines
+  # with lashes. (All other categories share a tech, so they mix.)
   # Belt-and-suspenders with tech_performs?, but explicit so the intent can't
   # silently regress if staffing changes.
   LASHES_SLUG = "lashes".freeze

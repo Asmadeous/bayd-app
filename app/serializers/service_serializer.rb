@@ -1,7 +1,7 @@
 class ServiceSerializer < Blueprinter::Base
   identifier :id
   fields :name, :description, :duration_minutes, :price, :image_url,
-         :requires_consultation, :active, :service_category_id, :simplybook_event_id, :kids_only
+         :requires_consultation, :active, :service_category_id, :kids_only
 
   field :category_name do |service, _opts|
     service.service_category&.name

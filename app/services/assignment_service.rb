@@ -44,13 +44,10 @@ class AssignmentService
     return failure(:no_availability, :slot_taken, "all_candidates_taken") if booking == :slot_taken
     return failure(:no_availability, :no_availability, "no_candidates") if booking.nil?
 
-    # Resolve any add-ons BEFORE the SimplyBook push so they land in the booking
-    # comment (they're note-only — not their own booking; the tech factors the
+    # Resolve any add-ons (note-only — not their own booking; the tech factors the
     # extra work in on the day). Stamps raw["addons"] on the booking too.
     @addon_result = AddonBooker.new(booking, @addon_service_ids).call
 
-    register_simplybook_client(booking) # book-by-email → SimplyBook PWA account
-    push_to_simplybook(booking)
     Result.new(success: true, booking_request: @booking_request, addons: @addon_result)
   rescue StandardError => e
     @booking_request.update!(status: :failed)
@@ -233,127 +230,6 @@ class AssignmentService
       log_attempt(candidates: ranked, chosen: candidate[:employee], reason: "nearest_eligible")
     end
     booking
-  end
-
-  # ── SimplyBook client onboarding (best-effort) ────────────────────────────
-  # A booking customer's account lives in SimplyBook (they use the SimplyBook
-  # client PWA, not our dashboard). On their first booking, register them as a
-  # SimplyBook client and let SimplyBook email them a set-password link. We store
-  # the returned client id on the user so we NEVER register the same person twice
-  # — if it's already set, skip entirely. Unlike push_to_simplybook, this does
-  # NOT need the service/provider mapping (it only registers the client), so it
-  # runs even while booking-event sync is dormant.
-  def register_simplybook_client(booking)
-    user = booking&.user
-    return unless user
-    return if user.simplybook_client_id.present? # already registered — no double-create
-    return if ENV["SIMPLYBOOK_COMPANY"].blank?   # SimplyBook not configured
-
-    cid = SimplyBook::Client.new.register_client(
-      name:  simplybook_client_payload[:name],
-      email: user.email,
-      phone: user.phone
-    )
-    user.update_columns(simplybook_client_id: cid) if cid.present?
-  rescue StandardError => e
-    Rails.logger.warn("[AssignmentService] SimplyBook client onboarding failed for booking #{booking&.id}: #{e.message}")
-  end
-
-  # ── SimplyBook outbound (best-effort) ─────────────────────────────────────
-  def push_to_simplybook(booking)
-    return unless booking
-    # Skip while SimplyBook mapping is dormant — without a mapped service event id
-    # and provider unit id the push can only 400. It resumes automatically once
-    # the service/provider are mapped.
-    return if booking.service.simplybook_event_id.blank? || booking.employee_profile.simplybook_unit_id.blank?
-
-    # Group bookings use SimplyBook's NATIVE `count` param — ONE booking with
-    # count=N; SimplyBook reserves the N slots itself. (An earlier attempt to
-    # split a group into N separate batch_id bookings was wrong: it sent N
-    # identical provider/time bookings, which SimplyBook rejects as double-
-    # bookings. Per the AdminBookingBuildEntity swagger, `count` is the group
-    # mechanism — see simplybook-rest-v2-contract.)
-    result = create_simplybook_booking(booking)
-    booking.update_columns(simplybook_id: result[:id], synced_at: Time.current) if result[:id].present?
-  rescue StandardError => e
-    Rails.logger.warn("[AssignmentService] SimplyBook push failed for booking #{booking&.id}: #{e.message}")
-  end
-
-  # One SimplyBook booking for this local booking.
-  #
-  # A GROUP is one technician serving the whole party in a single visit — it is
-  # NOT N independent clients in parallel. So we push it as ONE ordinary booking
-  # with a LONGER duration (starts_at..ends_at already spans duration × party_size,
-  # see create_booking_for) and a party-of-N price, on a qty=1 provider. We do NOT
-  # send SimplyBook's native group `count`: that reserves N concurrent capacity
-  # seats (needs provider qty >= N), which would leave the tech's slot bookable by
-  # others and overbook a person who's actually occupied with the party. The party
-  # size is recorded on the name tag + comment so it shows on the calendar.
-  # Returns { id:, batch_id: }.
-  def create_simplybook_booking(booking)
-    SimplyBook::Client.new.create_booking_result(
-      service_id:  booking.service.simplybook_event_id,
-      unit_id:     booking.employee_profile.simplybook_unit_id,
-      starts_at:   booking.starts_at,
-      ends_at:     booking.ends_at,
-      # Tag the tier onto the NAME sent for THIS booking only (shows on the
-      # SimplyBook calendar grid next to the client name). Does NOT rename the
-      # customer's permanent SimplyBook client record (matched by email).
-      client:      simplybook_client_payload.merge(name: tagged_client_name(booking)),
-      # We're a MOBILE service — the tech needs to know WHERE to go. The service
-      # address goes both onto the client record (client payload) and here in the
-      # booking comment, so it's always visible on the SimplyBook booking itself.
-      comment:     booking_comment(booking)
-    )
-  end
-
-  def booking_comment(booking)
-    parts = [ "Client type: #{booking.client_type}#{" (party of #{booking.party_size})" if booking.client_type_group?}" ]
-    parts << "Address: #{formatted_address}" if formatted_address.present?
-    # Add-ons are note-only (no separate booking) — surface them here so the tech
-    # sees the extra work on the SimplyBook calendar and factors in time/charge.
-    addons = booking.raw["addons"]
-    if addons.present?
-      list = addons.map { |a| "#{a['name']} (+$#{a['price']})" }.join(", ")
-      parts << "Add-ons: #{list}"
-    end
-    parts.join(" | ")
-  end
-
-  def tagged_client_name(booking)
-    SimplyBook::Client.tag_client_name(
-      simplybook_client_payload[:name], client_type: booking.client_type, party_size: booking.party_size
-    )
-  end
-
-  # Full service address as a single line: "line1, line2 (apt), city, province, postal".
-  def formatted_address
-    return @formatted_address if defined?(@formatted_address)
-
-    a = @booking_request.address
-    @formatted_address =
-      if a
-        line2 = a.line2.presence
-        line2 = "#{line2} (apt)" if a.is_apartment && line2
-        [ a.line1, line2, a.city, a.province, a.postal_code ].compact_blank.join(", ").presence
-      end
-  end
-
-  def simplybook_client_payload
-    user = @booking_request.user
-    a    = @booking_request.address
-    {
-      name:  [ user.first_name, user.last_name ].compact.join(" ").strip.presence || user.email,
-      email: user.email,
-      phone: user.phone,
-      # Full location so the mobile tech knows where to go (SimplyBook ClientEntity
-      # supports these fields). nil/blank ones are dropped by the client.
-      address1: a&.line1,
-      address2: a&.line2,
-      city:     a&.city,
-      zip:      a&.postal_code,
-      state_id: a&.province
-    }
   end
 
   # ── Geo helpers ───────────────────────────────────────────────────────────

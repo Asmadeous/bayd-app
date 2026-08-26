@@ -16,10 +16,10 @@ module Api
       end
 
       def create
-        # Email is required for the automated path: SimplyBook is email-keyed
-        # (client registration + booking push need an email), so a phone-only
-        # guest can't be fully synced. Instead of a half-synced booking, capture
-        # a follow-up request and let an admin call + book manually. Logged-in
+        # Email is required for the automated path: a booking is email-keyed
+        # (the customer's account + notifications need an email), so a phone-only
+        # guest can't be fully booked online. Instead, capture a follow-up
+        # request and let an admin call + book manually. Logged-in
         # users always have an email, so this only affects guests.
         return create_follow_up_request if guest_without_email?
 
@@ -35,8 +35,7 @@ module Api
         attrs[:address_id] = build_address!(booker).id if attrs[:address_id].blank? && params[:address].present?
 
         request_record = booker.booking_requests.create!(attrs)
-        # Add-ons are resolved inside AssignmentService (before the SimplyBook
-        # push, so they land in the booking comment). They are NOT a separate
+        # Add-ons are resolved inside AssignmentService. They are NOT a separate
         # booking — just extra services noted for the tech to factor in on the
         # day; their price folds into the one combined charge.
         result = AssignmentService.new(request_record, addon_service_ids: params.dig(:booking_request, :addon_service_ids)).call
@@ -68,7 +67,7 @@ module Api
       private
 
       # A guest (not logged in) who supplied no email. Their booking can't be
-      # auto-synced to SimplyBook, so it becomes an admin follow-up instead.
+      # booked online (it's email-keyed), so it becomes an admin follow-up instead.
       def guest_without_email?
         return false if current_user
 
@@ -182,8 +181,8 @@ module Api
 
       # Email the team the add-ons the customer requested for this visit, so they
       # factor in the extra time/charge. Add-ons are note-only (no separate
-      # SimplyBook booking) — this email + the SimplyBook comment are how the team
-      # learns about them. Best-effort: never breaks the customer's booking.
+      # booking) — this email is how the team learns about them. Best-effort:
+      # never breaks the customer's booking.
       def notify_admin_addons(booking, addon_result)
         AdminMailer.booking_addons(booking, addon_result.addons).deliver_later
       rescue StandardError => e

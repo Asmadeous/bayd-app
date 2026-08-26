@@ -95,7 +95,7 @@ module Api
       # on-shift / travel) — staff know what they're doing — but the DB
       # no_double_booking exclusion constraint still prevents a real time clash.
       # Defaults to the acting tech; an admin/tech may target another tech via
-      # employee_id. Best-effort SimplyBook push after.
+      # employee_id.
       def create_booking
         svc = Service.active.find(params.require(:service_id))
         target = booking_target_employee
@@ -128,7 +128,6 @@ module Api
           notes:            [ "Booked by #{current_user.first_name || 'staff'}", params[:notes].presence ].compact.join(" — ")
         )
 
-        push_manual_booking_to_simplybook(booking)
         render json: BookingSerializer.render_as_hash(booking), status: :created
       rescue ActiveRecord::RecordNotUnique, ActiveRecord::StatementInvalid => e
         raise unless e.is_a?(ActiveRecord::RecordNotUnique) || e.cause.is_a?(PG::ExclusionViolation)
@@ -180,28 +179,6 @@ module Api
           :latitude, :longitude, :is_apartment, :buzz_code
         )
         client.addresses.create!(ap.merge(default: client.addresses.none?))
-      end
-
-      # Best-effort mirror into SimplyBook (only when both service + provider are
-      # mapped). Never breaks the booking if SimplyBook is down/unmapped.
-      def push_manual_booking_to_simplybook(booking)
-        return if ENV["SIMPLYBOOK_COMPANY"].blank?
-        return if booking.service.simplybook_event_id.blank? || booking.employee_profile.simplybook_unit_id.blank?
-
-        name = SimplyBook::Client.tag_client_name(
-          booking.user.first_name.presence || booking.user.email, client_type: booking.client_type, party_size: booking.party_size
-        )
-
-        SimplyBook::Client.new.create_booking(
-          service_id: booking.service.simplybook_event_id,
-          unit_id:    booking.employee_profile.simplybook_unit_id,
-          starts_at:  booking.starts_at,
-          ends_at:    booking.ends_at,
-          client:     { name: name, email: booking.user.email, phone: booking.user.phone },
-          comment:    "Client type: #{booking.client_type}#{" (party of #{booking.party_size})" if booking.client_type_group?}"
-        )
-      rescue StandardError => e
-        Rails.logger.warn("[EmployeesController] SimplyBook push failed for booking #{booking.id}: #{e.message}")
       end
 
       def location_params

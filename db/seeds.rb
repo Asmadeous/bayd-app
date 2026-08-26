@@ -351,6 +351,18 @@ employees = employee_data.map do |e|
   EmployeeCurrentLocation.find_or_initialize_by(employee_profile: profile).update!(
     latitude: e[:lat], longitude: e[:lng], recorded_at: Time.current
   )
+
+  # Default bookable hours: Mon–Sat 9:00–19:00 (matches the historical operating
+  # window). Availability now drives what customers can book (replacing SimplyBook),
+  # so every dispatchable tech needs a schedule or they'd be unbookable. Idempotent;
+  # techs adjust their own hours via the availability endpoints.
+  (1..6).each do |dow| # 1=Mon .. 6=Sat (closed Sundays by default)
+    AvailabilitySchedule.find_or_create_by!(employee_profile: profile, day_of_week: dow) do |s|
+      s.start_time = "09:00"
+      s.end_time   = "19:00"
+    end
+  end
+
   profile
 end
 puts "  #{employees.size} employee profiles"

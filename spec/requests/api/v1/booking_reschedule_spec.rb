@@ -1,11 +1,6 @@
 require "rails_helper"
 
 RSpec.describe "Booking reschedule endpoints", type: :request do
-  before do
-    allow(SimplyBook::Client).to receive(:new)
-      .and_return(instance_double(SimplyBook::Client, update_booking: true, cancel_booking: true))
-  end
-
   let(:zone)    { BusinessHours.zone }
   let(:user)    { create(:user, email: "cust@example.com") }
   let(:admin)   { create(:user, email: "owner@baydspa.ca", role: :admin) }

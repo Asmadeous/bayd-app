@@ -93,7 +93,7 @@ Rails.application.routes.draw do
       get "coverage", to: "coverage#show"
 
       # Technician availability (public — "what times are open?"): free slots for a
-      # service+tech+date, sourced from SimplyBook's provider schedule.
+      # service+tech+date, computed by our own AvailabilityEngine.
       get "availability", to: "availability#show"
       # Every eligible tech's open times for a service+date, so the booking form
       # can auto-shift to another available tech when the chosen one is full.
@@ -143,6 +143,9 @@ Rails.application.routes.draw do
         post   "bookings/:id/overtime",  to: "employees#booking_overtime"
         # Staff-initiated manual booking (force-book, skips eligibility gates)
         post   "bookings",               to: "employees#create_booking"
+        # Bookable-hours: the tech's own weekly template + date overrides.
+        resources :availability_schedules, only: %i[index create update destroy]
+        resources :availability_overrides, only: %i[index create update destroy]
       end
 
       # Work-scope video calls (customer ↔ staff)
@@ -159,7 +162,6 @@ Rails.application.routes.draw do
       # Webhooks
       namespace :webhooks do
         post "traccar",    to: "traccar#positions"
-        post "simplybook", to: "simplybook#receive"
         # Path must NOT contain "helcim" — Helcim rejects such webhook URLs (400).
         post "hpay",       to: "helcim#receive"
         post "square",     to: "square#receive"
@@ -177,6 +179,9 @@ Rails.application.routes.draw do
             post :toggle_dispatch
             get  :analytics
           end
+          # Any tech's bookable-hours, managed by an admin.
+          resources :availability_schedules, only: %i[index create update destroy]
+          resources :availability_overrides, only: %i[index create update destroy]
         end
         resources :users, only: %i[index show update destroy]
 
