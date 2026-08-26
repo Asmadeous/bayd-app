@@ -60,7 +60,7 @@ number to spec the next unchecked item.
         messages), and a `ChatChannel` that broadcasts new messages live.
   - [ ] 2c. Presence + receipts — online/away presence, typing indicators, and
         read receipts over ActionCable.
-  - [ ] 2d. FCM push — `device_tokens` (user, platform, token) registered from the
+  - [x] 2d. FCM push — `device_tokens` (user, platform, token) registered from the
         apps, a `PushService`, and wire `NotificationService.deliver` to also send
         a push (iOS via APNs through FCM). Notify on new booking, reschedule/
         cancel, new chat message, payment events.

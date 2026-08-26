@@ -15,9 +15,11 @@ gem "devise-jwt"
 gem "activerecord-postgis-adapter"
 gem "rgeo-geojson"
 
-# HTTP clients (Traccar + SimplyBook wrappers)
+# HTTP clients (Traccar wrapper, FCM push)
 gem "faraday"
 gem "faraday-retry"
+# OAuth2 access tokens for FCM HTTP v1 (service-account auth)
+gem "googleauth"
 
 # Serialization
 gem "blueprinter"

@@ -157,6 +157,10 @@ Rails.application.routes.draw do
         resources :messages, only: %i[index create]
       end
 
+      # Push: the apps register/unregister their FCM device token.
+      post   "device_tokens", to: "device_tokens#create"
+      delete "device_tokens", to: "device_tokens#destroy"
+
       # Work-scope video calls (customer ↔ staff)
       resources :meetings, only: %i[show] do
         member do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_26_171957) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_26_181039) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -242,6 +242,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_171957) do
     t.index ["participant_one_id", "participant_two_id"], name: "idx_on_participant_one_id_participant_two_id_34e343b89f", unique: true
     t.index ["participant_one_id"], name: "index_conversations_on_participant_one_id"
     t.index ["participant_two_id"], name: "index_conversations_on_participant_two_id"
+  end
+
+  create_table "device_tokens", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "platform", default: "android", null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["token"], name: "index_device_tokens_on_token", unique: true
+    t.index ["user_id"], name: "index_device_tokens_on_user_id"
   end
 
   create_table "employee_current_locations", force: :cascade do |t|
@@ -880,6 +890,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_171957) do
   add_foreign_key "callback_requests", "users"
   add_foreign_key "conversations", "users", column: "participant_one_id"
   add_foreign_key "conversations", "users", column: "participant_two_id"
+  add_foreign_key "device_tokens", "users"
   add_foreign_key "employee_current_locations", "employee_profiles"
   add_foreign_key "employee_profiles", "partners"
   add_foreign_key "employee_profiles", "users"

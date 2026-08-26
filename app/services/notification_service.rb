@@ -14,6 +14,10 @@ class NotificationService
     # Email — queued so a slow SMTP server never blocks the caller.
     CustomerMailer.notify(notification).deliver_later
 
+    # Push — lock-screen notification to the user's devices (best-effort; no-op
+    # when FCM isn't configured). Never breaks the in-app + email path.
+    PushService.push(user: user, title: title, body: body.to_s, data: { kind: kind, booking_id: booking&.id }.compact)
+
     notification
   rescue => e
     Rails.logger.error("[NotificationService] #{kind} failed for user #{user.id}: #{e.message}")
