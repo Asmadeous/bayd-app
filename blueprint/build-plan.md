@@ -48,9 +48,22 @@ number to spec the next unchecked item.
 
 ## Roadmap — Phase 2: Realtime + push
 
-- [ ] Chat + push backend — conversations/messages model, ActionCable over Solid
-      Cable (Postgres, no Redis) for live chat/presence, FCM push (device tokens,
-      wire existing Notifications to push)
+- [ ] 2. Chat + push backend
+  - [x] 2a. Solid Cable + ActionCable foundation — install `solid_cable`,
+        configure `config/cable.yml` (Postgres, no Redis) + the cable DB, mount
+        ActionCable, and an authenticated `Connection` (reuse the JWT auth) that
+        identifies the current user. No features yet — just the live pipe, proven
+        by a trivial channel.
+  - [x] 2b. Chat — `Conversation` + `Message` models (participants:
+        customer↔staff, staff↔admin), authorization (you only see your own
+        conversations; admin sees all), REST endpoints (list convos, list/post
+        messages), and a `ChatChannel` that broadcasts new messages live.
+  - [ ] 2c. Presence + receipts — online/away presence, typing indicators, and
+        read receipts over ActionCable.
+  - [ ] 2d. FCM push — `device_tokens` (user, platform, token) registered from the
+        apps, a `PushService`, and wire `NotificationService.deliver` to also send
+        a push (iOS via APNs through FCM). Notify on new booking, reschedule/
+        cancel, new chat message, payment events.
 
 ## Roadmap — Phase 3: Customer mobile app
 

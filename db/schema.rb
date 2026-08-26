@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_26_153837) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_26_171957) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -231,6 +231,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_153837) do
     t.string "name"
     t.string "status", default: "new", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "conversations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "last_message_at"
+    t.bigint "participant_one_id", null: false
+    t.bigint "participant_two_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["participant_one_id", "participant_two_id"], name: "idx_on_participant_one_id_participant_two_id_34e343b89f", unique: true
+    t.index ["participant_one_id"], name: "index_conversations_on_participant_one_id"
+    t.index ["participant_two_id"], name: "index_conversations_on_participant_two_id"
   end
 
   create_table "employee_current_locations", force: :cascade do |t|
@@ -508,6 +519,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_153837) do
     t.index ["booking_id"], name: "index_meetings_on_booking_id"
     t.index ["booking_id"], name: "index_meetings_one_per_booking", unique: true
     t.index ["room_name"], name: "index_meetings_on_room_name", unique: true
+  end
+
+  create_table "messages", force: :cascade do |t|
+    t.text "body", null: false
+    t.bigint "conversation_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "read_at"
+    t.bigint "sender_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id", "created_at"], name: "index_messages_on_conversation_id_and_created_at"
+    t.index ["conversation_id"], name: "index_messages_on_conversation_id"
+    t.index ["sender_id"], name: "index_messages_on_sender_id"
   end
 
   create_table "newsletter_subscribers", force: :cascade do |t|
@@ -855,6 +878,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_153837) do
   add_foreign_key "bookings", "users"
   add_foreign_key "callback_requests", "services"
   add_foreign_key "callback_requests", "users"
+  add_foreign_key "conversations", "users", column: "participant_one_id"
+  add_foreign_key "conversations", "users", column: "participant_two_id"
   add_foreign_key "employee_current_locations", "employee_profiles"
   add_foreign_key "employee_profiles", "partners"
   add_foreign_key "employee_profiles", "users"
@@ -878,6 +903,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_153837) do
   add_foreign_key "loyalty_transactions", "loyalty_accounts"
   add_foreign_key "magic_link_tokens", "users"
   add_foreign_key "meetings", "bookings"
+  add_foreign_key "messages", "conversations"
+  add_foreign_key "messages", "users", column: "sender_id"
   add_foreign_key "newsletter_subscribers", "users"
   add_foreign_key "notifications", "bookings"
   add_foreign_key "notifications", "users"

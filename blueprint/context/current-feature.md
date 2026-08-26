@@ -1,140 +1,115 @@
-# Feature: 1a - Bookable-hours schedule model
+# Feature: 2b - Chat (conversations + messages + live broadcast)
 
-**From build-plan:** feature 1a (under 1. Custom availability engine + drop SimplyBook)
+**From build-plan:** feature 2b (under 2. Chat + push backend)
 **Status:** not started
 
 ## Goal
 
-Give each technician an owned, in-house definition of *when a customer can book
-them* — a weekly recurring template plus date-specific overrides — so we can stop
-asking SimplyBook for a provider's working schedule. This is the data foundation
-the `AvailabilityEngine` (1b) computes free slots from. This feature is a **pure
-addition**: it creates models + endpoints and removes nothing. No availability
-logic and no SimplyBook removal happen here.
+Direct messaging between a customer and staff, and between staff and admin:
+persistent `Conversation` + `Message` models, REST endpoints to list conversations
+and read/post messages, and a `ChatChannel` that broadcasts new messages live over
+the 2a ActionCable pipe. Authorization is strict — you only see conversations
+you're a participant in; admins see all.
 
 ## In scope
 
-- Two new models: `AvailabilitySchedule` (weekly template) and
-  `AvailabilityOverride` (date-specific), both `belongs_to :employee_profile`.
-- Migrations + `db/schema.rb` update.
-- Associations on `EmployeeProfile`.
-- Validations (valid day/time ranges, start < end, no absurd rows).
-- CRUD endpoints so a tech manages their own schedule and an admin manages anyone's.
-- Serializers for both.
-- Specs for models (validations) and requests (auth scoping + CRUD contract).
+- `Conversation` (two participants) + `Message` (sender, body, read state).
+- REST: list my conversations; open/create a conversation with another user; list
+  a conversation's messages (paginated); post a message.
+- `ChatChannel` — subscribe to a conversation you're a participant in; a new
+  message broadcasts to both participants live.
+- Authorization: participant-only access; admin can see any conversation.
+- Serializers + specs (models, requests, channel).
 
 ## Out of scope (deferred)
 
-- **1b** — computing free slots from these models (the `AvailabilityEngine`).
-- **1c** — wiring anything into `AvailabilityController` / `AssignmentService`.
-- **1d** — removing SimplyBook.
-- A schedule-editing UI in the web/mobile client (endpoints only here; mobile
-  availability editing is Phase 4).
-- Seeding real schedules for the 4 live techs (do once 1b/1c make it meaningful).
+- **2c** — presence, typing indicators, read receipts over the wire.
+- **2d** — FCM push (a push on a new message while offline).
+- Group chats (only 1:1 for now).
+- Attachments/images (text only).
+- Client/mobile UI (Phases 3-4).
 
 ## Build loop
 
-Build one step at a time. Show the diff, explain it, get approval, optional
-checkpoint commit, move on. Never a step whose diff is too big to read.
+One step at a time: diff, explain, verify, optional checkpoint, next.
 
 ## Build steps
 
-- [ ] **Step 1 - AvailabilitySchedule model + migration** — create
-      `availability_schedules` (`employee_profile_id`, `day_of_week` int 0-6,
-      `start_time` time, `end_time` time, timestamps; index on
-      `[employee_profile_id, day_of_week]`). Model with `belongs_to`, validations
-      (`day_of_week` 0..6; `start_time`/`end_time` present; `end_time` after
-      `start_time`), `has_many` on `EmployeeProfile`. *Done when:* migration runs,
-      `bin/rails runner` can create a valid row and validation rejects a bad one;
-      model spec green.
-- [ ] **Step 2 - AvailabilityOverride model + migration** — create
-      `availability_overrides` (`employee_profile_id`, `date` date, `available`
-      bool default true, `start_time` time null, `end_time` time null, timestamps;
-      unique index on `[employee_profile_id, date]` — one override row per tech per
-      day). Model with `belongs_to`, validations (when `available` and times given,
-      `end_time` after `start_time`; a blackout may omit times), `has_many` on
-      `EmployeeProfile`. *Done when:* migration runs; a blackout override and a
-      partial-day override both save; duplicate (tech,date) rejected; model spec green.
-- [ ] **Step 3 - Serializers** — `AvailabilityScheduleSerializer` and
-      `AvailabilityOverrideSerializer` (Blueprinter), exposing the fields above.
-      *Done when:* serializers render the expected hash shape (covered via the
-      request specs in step 4/5).
-- [ ] **Step 4 - Tech self-serve endpoints** — nested under the current staff
-      user's own profile: list / create / update / destroy their
-      `availability_schedules` and `availability_overrides`. Scope strictly to the
-      authenticated employee's own profile (never a client-supplied
-      `employee_profile_id`). *Done when:* a staff user CRUDs their own rows; a
-      staff user cannot touch another tech's rows (403/404); request spec green.
-- [ ] **Step 5 - Admin endpoints** — admin can list/create/update/destroy any
-      tech's schedules + overrides (namespaced under `admin`, admin-authorized).
-      *Done when:* an admin manages another tech's rows; a non-admin is rejected;
-      request spec green.
+- [ ] **Step 1 - Conversation + Message models + migrations** — `conversations`
+      (participant_one_id, participant_two_id → users; last_message_at for
+      ordering; unique on the participant pair) and `messages` (conversation,
+      sender → user, body text, read_at). Associations, validations (body
+      present; sender must be a participant), a `between(a, b)` finder/creator
+      that normalizes participant order. *Done when:* migrations run; creating a
+      message from a participant works, from a non-participant is rejected; model
+      specs green.
+- [ ] **Step 2 - Serializers** — `ConversationSerializer` (other participant,
+      last_message_at, unread count for the viewer) + `MessageSerializer`.
+      *Done when:* covered by the request specs below.
+- [ ] **Step 3 - REST endpoints** — `GET /conversations` (mine, newest first),
+      `POST /conversations` (find-or-create with a given user), `GET
+      /conversations/:id/messages` (paginated, participant-only), `POST
+      /conversations/:id/messages` (post; participant-only). Scope every action to
+      the authenticated user (admin may access any). *Done when:* a participant
+      CRUDs; a non-participant is 403/404; request specs green.
+- [ ] **Step 4 - ChatChannel (live)** — subscribe to a conversation you're a
+      participant in (reject otherwise); posting a message (via the endpoint or
+      the channel) broadcasts it to the conversation stream so both clients get it
+      live. Broadcast on message create. *Done when:* a channel spec subscribes as
+      a participant, rejects a non-participant, and receives a broadcast on a new
+      message.
 
 ## Files / areas
 
-- `db/migrate/*_create_availability_schedules.rb`, `*_create_availability_overrides.rb`
-- `app/models/availability_schedule.rb`, `app/models/availability_override.rb`
-- `app/models/employee_profile.rb` (add two `has_many`)
-- `app/serializers/availability_schedule_serializer.rb`,
-  `app/serializers/availability_override_serializer.rb`
-- Controllers: staff-facing (e.g. `app/controllers/api/v1/availabilities_controller.rb`
-  or under the existing staff/profile namespace — match how staff endpoints are
-  organized today) + `app/controllers/api/v1/admin/…`
+- `db/migrate/*_create_conversations.rb`, `*_create_messages.rb`
+- `app/models/conversation.rb`, `app/models/message.rb`, assoc on `User`
+- `app/serializers/conversation_serializer.rb`, `message_serializer.rb`
+- `app/controllers/api/v1/conversations_controller.rb`,
+  `app/controllers/api/v1/messages_controller.rb`
+- `app/channels/chat_channel.rb`
 - `config/routes.rb`
-- Specs: `spec/models/…`, `spec/requests/api/v1/…`
+- Specs: `spec/models/`, `spec/requests/api/v1/`, `spec/channels/`
 
 ## Data / contracts
 
-**AvailabilitySchedule** (LOAD-BEARING — 1b/1c and mobile editing depend on it):
-- `employee_profile_id` (bigint, fk)
-- `day_of_week` (integer, 0=Sunday … 6=Saturday)
-- `start_time` / `end_time` (time-of-day, interpreted in `BusinessHours.zone`)
-- multiple rows per (tech, day) allowed → split shifts
-- index `[employee_profile_id, day_of_week]`
+**Conversation** (LOAD-BEARING — mobile chat depends on it):
+- `participant_one_id`, `participant_two_id` (bigint → users; store the lower id
+  first so a pair maps to exactly one row)
+- `last_message_at` (datetime, for newest-first ordering)
+- unique index on `[participant_one_id, participant_two_id]`
 
-**AvailabilityOverride** (LOAD-BEARING):
-- `employee_profile_id` (bigint, fk)
-- `date` (date)
-- `available` (boolean, default true) — true = extra hours that date; false = blackout
-- `start_time` / `end_time` (time, nullable) — partial-day; null on a full blackout
-- **unique** `[employee_profile_id, date]` — one override per tech per day; it wins
-  over the weekly template for that date (the *winning logic* lives in 1b, but the
-  one-row-per-day shape is locked here)
+**Message** (LOAD-BEARING):
+- `conversation_id` (fk), `sender_id` (fk → users)
+- `body` (text, present)
+- `read_at` (datetime, null until the OTHER participant reads it)
+- index `[conversation_id, created_at]`
 
-> Times are stored as time-of-day and always interpreted in `BusinessHours.zone`
-> (company timezone), consistent with how bookings use `BusinessHours`. Do NOT
-> store these as UTC instants.
+**Broadcast shape:** `MessageSerializer` hash, broadcast to a per-conversation
+stream (e.g. `"conversation:#{id}"`).
 
 ## Testing
 
-`bundle exec rspec` is the gate (declared in AGENTS.md), so logic-bearing steps
-ship a spec in the same diff.
+`bundle exec rspec` is the gate.
 
-- **Model specs (in-scope logic):** `day_of_week` range; `end_time` after
-  `start_time`; override uniqueness per (tech, date); blackout-with-no-times valid;
-  partial override with bad times invalid.
-- **Request specs (contract + auth scoping):** staff CRUD their own rows; staff
-  blocked from another tech's rows; admin CRUD any tech's rows; non-admin blocked
-  from admin routes. This is the load-bearing part — auth scoping must be proven.
-- Keep `bin/rubocop` and `bin/brakeman` clean.
+- **Model specs:** body required; sender must be a participant; `between(a,b)`
+  normalizes order and is idempotent (same pair → same conversation); message
+  bumps `last_message_at`.
+- **Request specs (auth scoping — load-bearing):** list returns only my
+  conversations; a non-participant gets 403/404 on messages; posting appends;
+  admin can access any conversation.
+- **Channel spec:** participant subscribes/streams; non-participant rejected;
+  new message broadcasts to the stream.
+- `bin/rubocop` + `bin/brakeman` clean.
 
 ## Notes for the AI
 
-- **Match existing conventions (verified):**
-  - Staff endpoints gate with `before_action :require_employee!` (defined in
-    `ApplicationController`) and resolve the profile as
-    `current_user.employee_profile` — mirror
-    `app/controllers/api/v1/employees_controller.rb` (see its `@profile ||=
-    current_user.employee_profile || raise(ActiveRecord::RecordNotFound)` at ~:225).
-  - Admin endpoints inherit from `Api::V1::Admin::BaseController` (which already
-    runs `before_action :require_admin!`) — put admin routes under `app/controllers/
-    api/v1/admin/` like the other admin controllers.
-  - Blueprinter serializers, `rescue_from` status mapping, rubocop-rails-omakase.
-- **Auth scoping is the main risk:** a staff endpoint must derive the profile from
-  `current_user.employee_profile`, never from a params `employee_profile_id`.
-  Prove it in specs (staff A cannot read/write staff B's rows).
-- **No availability computation here.** If tempted to add "is this tech free at
-  X" logic, stop — that's 1b. This feature only stores and serves the schedule.
-- **Times, not datetimes.** `start_time`/`end_time` are time-of-day; the zone is
-  applied by the engine later via `BusinessHours`.
-- Don't touch SimplyBook code or the `simplybook_*` columns — that's 1d.
+- Reuse the JWT/`current_user` auth. Staff endpoints already use
+  `require_employee!`; chat is available to any authenticated user (customer,
+  staff, admin), so gate on authentication, then participant membership.
+- **Normalize the participant pair** (min id, max id) so (A,B) and (B,A) are one
+  conversation. Enforce with the unique index + a `between` builder.
+- Broadcast the SAME serialized shape the REST endpoint returns, so the client
+  renders a live message identically to a fetched one.
+- Don't build presence/typing/receipts (2c) or push (2d) here.
+- Match existing conventions: Blueprinter serializers, `rescue_from` status
+  mapping, thin controllers, `paginate` helper (already in ApplicationController).

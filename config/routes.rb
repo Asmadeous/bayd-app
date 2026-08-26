@@ -1,6 +1,10 @@
 Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # Real-time WebSocket endpoint (ActionCable over Solid Cable). Auth happens in
+  # ApplicationCable::Connection via a JWT passed as ?token= on the handshake.
+  mount ActionCable.server => "/cable"
+
   namespace :api do
     namespace :v1 do
       # Auth
@@ -146,6 +150,11 @@ Rails.application.routes.draw do
         # Bookable-hours: the tech's own weekly template + date overrides.
         resources :availability_schedules, only: %i[index create update destroy]
         resources :availability_overrides, only: %i[index create update destroy]
+      end
+
+      # Direct messaging (customer↔staff, staff↔admin). Any authenticated user.
+      resources :conversations, only: %i[index create] do
+        resources :messages, only: %i[index create]
       end
 
       # Work-scope video calls (customer ↔ staff)

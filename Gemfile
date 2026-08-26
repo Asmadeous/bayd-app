@@ -50,7 +50,8 @@ gem "geocoder"
 # Windows does not include zoneinfo files
 gem "tzinfo-data", platforms: %i[windows jruby]
 
-# DB-backed cache and queue
+# DB-backed cache, queue, and websockets (ActionCable) — Postgres, no Redis
+gem "solid_cable"
 gem "solid_cache"
 gem "solid_queue"
 
