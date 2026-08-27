@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/dashboard/sidebar"
+import { EmployeeLocationSharing } from "@/components/dashboard/employee-location-sharing"
 import { TourOverlay } from "@/components/dashboard/tour-overlay"
 import { DashboardTourProvider } from "@/lib/tours/tour-provider"
 import { useAuthStore } from "@/lib/stores/auth-store"
@@ -35,6 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <DashboardTourProvider>
+      <EmployeeLocationSharing />
       <div className="min-h-screen bg-[#f4f1eb] text-[#101217] lg:flex">
         <Sidebar />
         <main className="min-w-0 flex-1">

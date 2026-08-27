@@ -28,10 +28,11 @@ interface PagedResponse<T> {
   pagination: { current_page: number; per_page: number; total_count: number; total_pages: number; next_page: number | null }
 }
 
-export function useEmployeeProfile() {
+export function useEmployeeProfile(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["employee-profile"],
     queryFn: () => api.get<EmployeeProfile>("/employee/profile").then((r) => r.data),
+    enabled: options?.enabled ?? true,
   })
 }
 
