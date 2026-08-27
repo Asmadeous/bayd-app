@@ -1,14 +1,19 @@
 "use client"
 
-import Image from "next/image"
+import { useMemo } from "react"
+import dynamic from "next/dynamic"
 import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
-import { StaffMap } from "@/components/dashboard/staff-map"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import { useFleet, type FleetPosition } from "@/lib/cable/use-fleet"
 import { adminStaffLocationsSteps } from "@/lib/tours/admin-staff-locations-tour"
 
-const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? ""
+// Leaflet touches window; load the map client-only.
+const FleetMap = dynamic(() => import("@/components/dashboard/fleet-map").then((m) => m.FleetMap), {
+  ssr: false,
+  loading: () => <div className="h-[70vh] w-full animate-pulse rounded-xl bg-black/5" />,
+})
 
 interface StaffLocation {
   employee_profile_id: number
@@ -33,8 +38,25 @@ export default function AdminStaffLocationsPage() {
     refetchInterval: 30_000, // refresh locations every 30s
   })
 
-  const rows = data?.data ?? []
+  const rows = useMemo(() => data?.data ?? [], [data])
   const fuelTotal = rows.reduce((sum, r) => sum + Number(r.fuel_reimbursement), 0)
+
+  // Seed the live fleet map from the poll (techs with a known position).
+  const seed: FleetPosition[] = useMemo(
+    () =>
+      rows
+        .filter((r) => r.latitude != null && r.longitude != null)
+        .map((r) => ({
+          employee_profile_id: r.employee_profile_id,
+          name: r.name,
+          latitude: Number(r.latitude),
+          longitude: Number(r.longitude),
+          on_shift: r.on_shift,
+          recorded_at: r.recorded_at ?? "",
+        })),
+    [rows]
+  )
+  const fleet = useFleet(seed)
 
   return (
     <div className="space-y-6">
@@ -43,15 +65,11 @@ export default function AdminStaffLocationsPage() {
       </div>
 
       <div data-tour="admin-staff-locations-map">
-        {MAPS_KEY ? (
-          // Interactive Google map (browser key). Pins update on each refresh.
+        {fleet.length > 0 ? (
+          // Live map (Leaflet/OpenStreetMap, no API key). Every tech with a known
+          // position; pins move in real time via AdminFleetChannel + the 30s poll.
           <div className="overflow-hidden rounded-xl border border-black/8 bg-white">
-            <StaffMap staff={rows} />
-          </div>
-        ) : data?.map_image ? (
-          // Fallback: server-rendered static map (no browser key configured).
-          <div className="overflow-hidden rounded-xl border border-black/8 bg-white">
-            <Image src={data.map_image} alt="Staff locations map" width={1280} height={800} unoptimized className="h-auto w-full" />
+            <FleetMap techs={fleet} />
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-black/15 bg-[#f4f1eb] px-5 py-10 text-center text-sm text-[#5f6268]">
