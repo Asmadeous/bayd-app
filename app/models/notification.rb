@@ -13,7 +13,11 @@ class Notification < ApplicationRecord
     booking_redirected: "booking_redirected",
     meeting_scheduled: "meeting_scheduled",
     booking_follow_up: "booking_follow_up",
-    booking_rescheduled: "booking_rescheduled"
+    booking_rescheduled: "booking_rescheduled",
+    booking_confirmed: "booking_confirmed",
+    booking_reminder_day_before: "booking_reminder_day_before",
+    booking_reminder_day_of: "booking_reminder_day_of",
+    booking_dispatch: "booking_dispatch"
   }, prefix: true
 
   validates :kind, :title, presence: true

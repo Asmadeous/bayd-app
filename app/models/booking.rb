@@ -190,10 +190,21 @@ class Booking < ApplicationRecord
     end
 
     notify_rescheduled
+    reschedule_reminders
     self
   end
 
   private
+
+  # Re-schedule the timed reminders for the new time. Old scheduled jobs still
+  # fire at their original moments, but the job re-checks the booking's CURRENT
+  # window (see BookingReminderJob), so a reminder for a time that no longer
+  # matches simply no-ops. Best-effort.
+  def reschedule_reminders
+    BookingReminders.schedule(self)
+  rescue StandardError => e
+    Rails.logger.warn("[Booking##{id}] reminder reschedule failed: #{e.message}")
+  end
 
   def on_completed
     BookingCompletedJob.perform_later(id)

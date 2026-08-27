@@ -48,6 +48,10 @@ class AssignmentService
     # extra work in on the day). Stamps raw["addons"] on the booking too.
     @addon_result = AddonBooker.new(booking, @addon_service_ids).call
 
+    # Confirmation now + timed reminders (day-before / day-of / dispatch) on Solid
+    # Queue. Best-effort — a scheduling hiccup must not fail the booking.
+    schedule_reminders(booking)
+
     Result.new(success: true, booking_request: @booking_request, addons: @addon_result)
   rescue StandardError => e
     @booking_request.update!(status: :failed)
@@ -230,6 +234,14 @@ class AssignmentService
       log_attempt(candidates: ranked, chosen: candidate[:employee], reason: "nearest_eligible")
     end
     booking
+  end
+
+  # Booking reminders (confirmation + timed) via Solid Queue. Best-effort so a
+  # scheduling failure never breaks a completed booking.
+  def schedule_reminders(booking)
+    BookingReminders.schedule(booking)
+  rescue StandardError => e
+    Rails.logger.warn("[AssignmentService] reminder scheduling failed for booking #{booking&.id}: #{e.message}")
   end
 
   # ── Geo helpers ───────────────────────────────────────────────────────────

@@ -99,3 +99,26 @@ role-conditional for staff vs admin. NOT a wrapped website.
 
 - [ ] Staff/admin Capacitor app — role-conditional UI, Square Tap to Pay NFC POS,
       background live location, clock-in/out, jobs, availability editing, chat, push
+
+## Roadmap — Phase 5: Auth, reminders, group booking hardening
+
+- [ ] 5. Auth + reminders + group verify
+  - [ ] 5a. Phone OTP login (Infobip) — customers log in by phone number + a
+        one-time code sent via Infobip SMS, as an ALTERNATIVE to the email
+        magic-link. Request-code / verify-code endpoints, rate-limited, code
+        hashed + short-TTL. Infobip call isolated behind an adapter (like
+        Fcm::Client); inert without creds; specs stub the SMS. Staff keep passwords.
+  - [ ] 5b. Booking reminders (Solid Queue) — four reminders per booking, each via
+        NotificationService (in-app + email + push): (1) on-book confirmation,
+        (2) 1 day before, (3) on booking day, (4) day-of dispatch reminder (staff).
+        To customer AND assigned staff. Scheduled jobs (perform_at on create,
+        rescheduled on reschedule, cancelled on cancel), idempotent so a reminder
+        is NEVER missed or double-sent.
+  - [ ] 5c. Group booking wiring audit — group is already built (client_type
+        group, party_size, duration scaling, deposit). VERIFY it flows correctly
+        through new bookings + every new feature (reminders, OTP login, push,
+        chat, ETA). Fix gaps found; no group-logic redesign unless a gap needs it.
+  - [ ] 5d. Passkeys / biometric MFA (WebAuthn) — any user can OPTIONALLY register
+        a passkey (Face ID / fingerprint / device biometric) for stronger login.
+        Server-side WebAuthn (registration + assertion) + credential storage;
+        Capacitor/web client integration. Opt-in, additive to existing auth.
