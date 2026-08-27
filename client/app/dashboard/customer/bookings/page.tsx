@@ -45,6 +45,12 @@ function isToday(iso: string): boolean {
   return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
 }
 
+// The service address coords for the map's destination pin, or null if unknown.
+function destinationOf(b: Booking): { lat: number; lng: number } | null {
+  if (!b.service_latitude || !b.service_longitude) return null
+  return { lat: Number(b.service_latitude), lng: Number(b.service_longitude) }
+}
+
 const ALL_STATUSES: Booking["status"][] = [
   "pending", "confirmed", "in_progress", "completed", "cancelled", "no_show",
 ]
@@ -257,7 +263,11 @@ export default function CustomerBookingsPage() {
                   }
                 />
                 {b.status === "confirmed" && (
-                  <TechEta bookingId={b.id} enabled={isToday(b.starts_at)} />
+                  <TechEta
+                    bookingId={b.id}
+                    enabled={isToday(b.starts_at)}
+                    destination={destinationOf(b)}
+                  />
                 )}
                 </div>
               ))}
