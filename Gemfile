@@ -10,6 +10,8 @@ gem "bcrypt", "~> 3.1.7"
 # Auth
 gem "devise"
 gem "devise-jwt"
+# Passkeys / WebAuthn (optional MFA) — server-side relying-party crypto
+gem "webauthn", "~> 3.0"
 
 # PostGIS spatial queries
 gem "activerecord-postgis-adapter"

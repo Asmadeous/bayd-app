@@ -101,6 +101,12 @@ class ApplicationController < ActionController::API
     ENV["SECRET_KEY_BASE"].presence || Rails.application.secret_key_base
   end
 
+  # Issue the app's login JWT for a user (shared by the auth + passkey logins).
+  def generate_token(user)
+    payload = { sub: user.id, role: user.role, exp: 30.days.from_now.to_i }
+    JWT.encode(payload, jwt_secret, "HS256")
+  end
+
   def not_found(e)     = render json: { error: e.message }, status: :not_found
   def unprocessable(e) = render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
   def bad_request(e)   = render json: { error: e.message }, status: :bad_request

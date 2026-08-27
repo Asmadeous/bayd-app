@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_27_195148) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_27_200604) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -864,6 +864,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_27_195148) do
     t.string "square_customer_id"
     t.string "street_address"
     t.datetime "updated_at", null: false
+    t.string "webauthn_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["google_uid"], name: "index_users_on_google_uid", unique: true, where: "(google_uid IS NOT NULL)"
     t.index ["phone"], name: "index_users_on_phone"
@@ -871,6 +872,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_27_195148) do
     t.index ["referred_by_id"], name: "index_users_on_referred_by_id"
     t.index ["role"], name: "index_users_on_role"
     t.index ["square_customer_id"], name: "index_users_on_square_customer_id", unique: true, where: "(square_customer_id IS NOT NULL)"
+    t.index ["webauthn_id"], name: "index_users_on_webauthn_id", unique: true
+  end
+
+  create_table "webauthn_challenges", force: :cascade do |t|
+    t.string "challenge", null: false
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "purpose", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_webauthn_challenges_on_user_id"
+  end
+
+  create_table "webauthn_credentials", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "nickname"
+    t.string "public_key", null: false
+    t.integer "sign_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.string "webauthn_id", null: false
+    t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
+    t.index ["webauthn_id"], name: "index_webauthn_credentials_on_webauthn_id", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -950,4 +974,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_27_195148) do
   add_foreign_key "tips", "bookings"
   add_foreign_key "tips", "employee_profiles"
   add_foreign_key "users", "users", column: "referred_by_id"
+  add_foreign_key "webauthn_challenges", "users"
+  add_foreign_key "webauthn_credentials", "users"
 end
