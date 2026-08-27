@@ -81,6 +81,22 @@ export function useAuth() {
       api.post<{ message: string }>("/auth/password_reset/confirm", data).then((r) => r.data),
   })
 
+  // Phone-number OTP login (customers). Step 1: text a code. Step 2: verify it
+  // and receive a token, same as the other login paths.
+  const requestPhoneCodeMutation = useMutation({
+    mutationFn: (phone: string) =>
+      api.post<{ status: string }>("/auth/phone_code", { phone }).then((r) => r.data),
+  })
+
+  const verifyPhoneCodeMutation = useMutation({
+    mutationFn: (data: { phone: string; code: string }) =>
+      api.post<{ token: string; user: AuthUser }>("/auth/phone_code/verify", data).then((r) => r.data),
+    onSuccess: ({ token, user }) => {
+      setAuth(user, token)
+      router.push(roleDashboard(user.role))
+    },
+  })
+
   const updateMeMutation = useMutation({
     mutationFn: (data: {
       first_name?: string; last_name?: string; phone?: string; marketing_opt_in?: boolean; avatar_url?: string
@@ -121,6 +137,8 @@ export function useAuth() {
     requestMagicLink: requestMagicLinkMutation,
     requestPasswordReset: requestPasswordResetMutation,
     resetPassword: resetPasswordMutation,
+    requestPhoneCode: requestPhoneCodeMutation,
+    verifyPhoneCode: verifyPhoneCodeMutation,
     updateMe: updateMeMutation,
   }
 }
