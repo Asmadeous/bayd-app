@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { GoogleSignIn } from "@/features/auth/components/google-sign-in"
 import { PhoneLogin } from "@/features/auth/components/phone-login"
+import { PasskeySignIn } from "@/features/auth/components/passkey-sign-in"
 import type { AuthPageContent } from "@/features/auth/types"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/hooks/use-auth"
@@ -401,13 +402,16 @@ export function AuthPage({ content }: AuthPageProps) {
             {content.mode !== "forgot" && !magicLinkSent && !phoneMode && <GoogleSignIn />}
 
             {content.mode === "signin" && !magicLinkSent && !phoneMode && (
-              <button
-                type="button"
-                onClick={() => setPhoneMode(true)}
-                className="mt-4 w-full text-center text-sm font-semibold text-[#5f6268] transition-colors hover:text-[#c96c83]"
-              >
-                Sign in with your phone number instead
-              </button>
+              <>
+                <PasskeySignIn email={values.email} />
+                <button
+                  type="button"
+                  onClick={() => setPhoneMode(true)}
+                  className="mt-4 w-full text-center text-sm font-semibold text-[#5f6268] transition-colors hover:text-[#c96c83]"
+                >
+                  Sign in with your phone number instead
+                </button>
+              </>
             )}
 
             <div className="mt-7 border-t border-black/10 pt-6">

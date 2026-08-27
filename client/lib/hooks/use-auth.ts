@@ -97,6 +97,34 @@ export function useAuth() {
     },
   })
 
+  // Passkeys (WebAuthn). Register: needs an authed session; runs the browser
+  // create() ceremony against the server's options. @github/webauthn-json maps
+  // the server JSON to navigator.credentials and back, handling base64url/buffers.
+  const registerPasskeyMutation = useMutation({
+    mutationFn: async (nickname?: string) => {
+      const { create } = await import("@github/webauthn-json")
+      const options = await api.post("/auth/passkeys/registration_options").then((r) => r.data)
+      const credential = await create({ publicKey: options })
+      return api.post("/auth/passkeys/register", { credential, nickname }).then((r) => r.data)
+    },
+  })
+
+  // Authenticate with a passkey: public, returns a token like the other logins.
+  const passkeySignInMutation = useMutation({
+    mutationFn: async (identifier: { email?: string; phone?: string }) => {
+      const { get } = await import("@github/webauthn-json")
+      const options = await api.post("/auth/passkeys/authentication_options", identifier).then((r) => r.data)
+      const credential = await get({ publicKey: options })
+      return api
+        .post<{ token: string; user: AuthUser }>("/auth/passkeys/authenticate", { ...identifier, credential })
+        .then((r) => r.data)
+    },
+    onSuccess: ({ token, user }) => {
+      setAuth(user, token)
+      router.push(roleDashboard(user.role))
+    },
+  })
+
   const updateMeMutation = useMutation({
     mutationFn: (data: {
       first_name?: string; last_name?: string; phone?: string; marketing_opt_in?: boolean; avatar_url?: string
@@ -139,6 +167,8 @@ export function useAuth() {
     resetPassword: resetPasswordMutation,
     requestPhoneCode: requestPhoneCodeMutation,
     verifyPhoneCode: verifyPhoneCodeMutation,
+    registerPasskey: registerPasskeyMutation,
+    passkeySignIn: passkeySignInMutation,
     updateMe: updateMeMutation,
   }
 }
