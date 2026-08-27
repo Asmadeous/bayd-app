@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Builds the CUSTOMER mobile app: a static export of just the customer-facing
-// routes. The website has marketing/admin/employee routes (some SSR) that can't
-// static-export and don't belong in the customer app, so we temporarily move
-// them aside, run `MOBILE_BUILD=1 next build` (output: "export" -> out/), then
-// restore everything. Nothing is permanently changed.
+// Builds a mobile app: a static export of just that app's routes. The website has
+// marketing/admin/other-role routes (some SSR) that can't static-export and don't
+// belong in a given app, so we temporarily move the excluded routes aside, run
+// `MOBILE_BUILD=1 next build` (output: "export" -> out/), then restore everything.
+// Nothing is permanently changed.
 //
-// Usage: node scripts/build-mobile.mjs
+// Usage: node scripts/build-mobile.mjs [customer|employee]   (default: customer)
 import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, renameSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -13,18 +13,28 @@ import { join, dirname } from "node:path";
 const APP = "app";
 const STASH = ".mobile-stash"; // temp home for excluded routes during the build
 
-// Routes NOT in the customer app (marketing, admin, employee, SEO files).
-const EXCLUDE = [
+const which = process.argv[2] || "customer";
+
+// Marketing / SEO routes: never in any app.
+const MARKETING = [
   "about", "blog", "careers", "gallery", "prices", "services", "shop", "team",
-  "dashboard/employee", "dashboard/admin",
   "robots.ts", "sitemap.ts", "manifest.ts",
 ];
 
-const moved = [];
+// Per-app: which dashboards to EXCLUDE (keep only this app's role).
+const EXCLUDE_BY_APP = {
+  customer: [...MARKETING, "dashboard/employee", "dashboard/admin"],
+  employee: [...MARKETING, "dashboard/customer", "dashboard/admin"],
+};
 
-function stashPath(p) {
-  return join(STASH, p);
+const EXCLUDE = EXCLUDE_BY_APP[which];
+if (!EXCLUDE) {
+  console.error(`[build-mobile] unknown app "${which}" (expected customer|employee)`);
+  process.exit(1);
 }
+
+const moved = [];
+const stashPath = (p) => join(STASH, p);
 
 function moveOut(p) {
   const src = join(APP, p);
@@ -48,12 +58,12 @@ function restoreAll() {
 }
 
 try {
-  console.log("[build-mobile] excluding non-customer routes...");
+  console.log(`[build-mobile] app: ${which} — excluding non-${which} routes...`);
   for (const p of EXCLUDE) moveOut(p);
 
-  // A phone can't reach localhost:3000 — the mobile bundle must bake in the real
-  // API URL. Default to production; override with MOBILE_API_URL for a device
-  // pointing at a dev machine (e.g. http://192.168.x.x:3000/api/v1).
+  // A phone can't reach localhost:3000 — the mobile bundle bakes in the real API
+  // URL. Default to production; override with MOBILE_API_URL for a device pointing
+  // at a dev machine (e.g. http://192.168.x.x:3000/api/v1).
   const apiUrl = process.env.MOBILE_API_URL || "https://api.baydspa.ca/api/v1";
   console.log(`[build-mobile] API base: ${apiUrl}`);
 

@@ -7,8 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "build:mobile": "node scripts/build-mobile.mjs",
-    "sync:mobile": "npm run build:mobile && npx cap sync"
+    "build:mobile": "node scripts/build-mobile.mjs customer",
+    "sync:mobile": "npm run build:mobile && npx cap sync",
+    "build:mobile:employee": "node scripts/build-mobile.mjs employee",
+    "sync:mobile:employee": "CAP_APP=employee npm run build:mobile:employee && CAP_APP=employee npx cap sync"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

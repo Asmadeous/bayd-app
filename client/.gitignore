@@ -44,3 +44,5 @@ next-env.d.ts
 android/app/src/main/assets/public
 ios/App/App/public
 capacitor.config.json
+android-employee/app/src/main/assets/public
+ios-employee/App/App/public
