@@ -13,6 +13,8 @@ Rails.application.routes.draw do
       post  "auth/staff_login", to: "auth#staff_login"
       post  "auth/magic_link",        to: "auth#request_magic_link"
       get   "auth/magic_link/verify", to: "auth#verify_magic_link"
+      post  "auth/phone_code",        to: "auth#request_phone_code"
+      post  "auth/phone_code/verify", to: "auth#verify_phone_code"
       post  "auth/password_reset",         to: "auth#request_password_reset"
       post  "auth/password_reset/confirm", to: "auth#reset_password"
       get   "auth/me",       to: "auth#me"

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_26_181039) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_27_195148) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -641,6 +641,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_26_181039) do
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
     t.index ["payable_type", "payable_id"], name: "index_payments_on_payable"
+  end
+
+  create_table "phone_verifications", force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.string "code_digest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "phone", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "verified_at"
+    t.index ["phone", "created_at"], name: "index_phone_verifications_on_phone_and_created_at"
   end
 
   create_table "product_categories", force: :cascade do |t|

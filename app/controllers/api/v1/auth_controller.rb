@@ -5,12 +5,37 @@ module Api
 
       skip_before_action :authenticate_user!, only: %i[
         register login staff_login request_magic_link verify_magic_link
-        request_password_reset reset_password
+        request_password_reset reset_password request_phone_code verify_phone_code
       ]
 
       # Customers: passwordless, email-keyed. register == login (find-or-create).
       def register
         provision_customer(created: true)
+      end
+
+      # Phone login (customers): text a one-time code. Always responds success
+      # (even when SMS is unconfigured or rate-limited) so it can't be used to
+      # probe which numbers exist or whether SMS is set up. A too-soon resend is
+      # the one signal surfaced, so the app can show "please wait".
+      def request_phone_code
+        phone = params[:phone].to_s.strip
+        return render(json: { error: "Phone number is required" }, status: :unprocessable_entity) if phone.blank?
+
+        case PhoneOtp.request_code(phone)
+        when :too_soon
+          render json: { error: "Please wait a moment before requesting another code." }, status: :too_many_requests
+        else
+          render json: { status: "sent" }
+        end
+      end
+
+      # Verify the code and log the customer in (find-or-create by phone). Returns
+      # the same { token, user } shape as the other login paths.
+      def verify_phone_code
+        user = PhoneOtp.verify(params[:phone].to_s, params[:code].to_s)
+        return render(json: { error: "That code is invalid or has expired." }, status: :unauthorized) unless user
+
+        render json: { token: generate_token(user), user: UserSerializer.render_as_hash(user) }
       end
 
       def login
