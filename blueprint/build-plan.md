@@ -67,10 +67,35 @@ number to spec the next unchecked item.
 
 ## Roadmap — Phase 3: Customer mobile app
 
-- [ ] Customer Capacitor app — static-export build of the Next.js client wrapped
-      in Capacitor (iOS + Android), push registration, live chat, day-of tech ETA
+A PURPOSE-BUILT Capacitor app with an app-first UI (native navigation + app
+screens) — NOT the marketing website wrapped in a shell. It reuses `client/`'s
+API layer, TypeScript types, and primitive components (buttons/inputs/design
+tokens), but has its own app screens. Same Rails API. The website stays a
+separate website. Customer first; staff/admin is Phase 4.
+
+- [ ] 3. Customer Capacitor app
+  - [ ] 3a. App project + shared package — a new Capacitor app (its own SPA, e.g.
+        `apps/customer/`), plus a shared package that exposes `client/`'s API
+        client + types + primitive components so the app and website define the
+        API contract once. App boots (blank authed shell) against the Rails API.
+  - [ ] 3b. Capacitor shell + native setup — iOS + Android projects, icon/splash,
+        `NEXT_PUBLIC_API_URL`, status bar / safe areas / back button, secure token
+        storage. App installs + boots on a simulator.
+  - [ ] 3c. Auth + core screens — app-first login (passwordless email), and the
+        core customer screens built for the app: book (service → tech → available
+        time → add-ons → pay), my bookings (reschedule/cancel), profile.
+  - [ ] 3d. Push registration — on login, request notification permission, get the
+        FCM token via a Capacitor push plugin, register it with the 2d
+        `POST /device_tokens` endpoint; unregister on logout.
+  - [ ] 3e. Live chat in-app — ActionCable client (2a-2c): conversation list,
+        thread, live messages, typing, presence, read receipts.
+  - [ ] 3f. Day-of tech ETA — on the booking day, show the assigned tech's live
+        location + ETA (consumes staff location; needs the live-tracking channel).
 
 ## Roadmap — Phase 4: Staff/admin mobile app
+
+A purpose-built Capacitor app (app-first UI, same sharing model as Phase 3),
+role-conditional for staff vs admin. NOT a wrapped website.
 
 - [ ] Staff/admin Capacitor app — role-conditional UI, Square Tap to Pay NFC POS,
       background live location, clock-in/out, jobs, availability editing, chat, push

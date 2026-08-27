@@ -45,10 +45,12 @@ the SimplyBook.me integration (being removed).
 2. **Realtime + push** - conversations/messages, ActionCable over Solid Cable
    (Postgres, no Redis) for live chat/presence, FCM push (device tokens; wire
    existing Notifications to push).
-3. **Customer mobile app** - Capacitor wrap of the Next.js client (iOS +
-   Android), push registration, live chat, day-of tech ETA.
-4. **Staff/admin mobile app** - Capacitor, role-conditional UI, Square Tap to Pay
-   NFC POS, background live location, clock-in/out, jobs, availability editing.
+3. **Customer mobile app** - a PURPOSE-BUILT Capacitor app (app-first UI, its own
+   screens/navigation), NOT the website wrapped. Reuses `client/`'s API layer +
+   types + primitive components; own app screens. Push, live chat, day-of ETA.
+4. **Staff/admin mobile app** - purpose-built Capacitor app, role-conditional,
+   Square Tap to Pay NFC POS, background live location, clock-in/out, jobs,
+   availability editing. Same sharing model. NOT a wrapped website.
 
 ## Data model
 
