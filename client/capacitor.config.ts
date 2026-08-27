@@ -4,12 +4,13 @@ import type { CapacitorConfig } from "@capacitor/cli"
 // which one the Capacitor CLI targets (app id, name, and native-project folder).
 // Each app builds its own static bundle to out/ (see scripts/build-mobile.mjs)
 // and has its own android/ios projects under android-<app>/ios-<app>.
-type CapApp = "customer" | "employee"
+type CapApp = "customer" | "employee" | "admin"
 const app = (process.env.CAP_APP as CapApp) || "customer"
 
 const apps: Record<CapApp, { appId: string; appName: string; dir: string }> = {
   customer: { appId: "ca.baydspa.customer", appName: "BAYD", dir: "" },
   employee: { appId: "ca.baydspa.staff", appName: "BAYD Staff", dir: "-employee" },
+  admin: { appId: "ca.baydspa.admin", appName: "BAYD Admin", dir: "-admin" },
 }
 
 const { appId, appName, dir } = apps[app]

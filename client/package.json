@@ -10,7 +10,9 @@
     "build:mobile": "node scripts/build-mobile.mjs customer",
     "sync:mobile": "npm run build:mobile && npx cap sync",
     "build:mobile:employee": "node scripts/build-mobile.mjs employee",
-    "sync:mobile:employee": "CAP_APP=employee npm run build:mobile:employee && CAP_APP=employee npx cap sync"
+    "sync:mobile:employee": "CAP_APP=employee npm run build:mobile:employee && CAP_APP=employee npx cap sync",
+    "build:mobile:admin": "node scripts/build-mobile.mjs admin",
+    "sync:mobile:admin": "CAP_APP=admin npm run build:mobile:admin && CAP_APP=admin npx cap sync"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

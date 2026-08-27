@@ -15,6 +15,12 @@ const STASH = ".mobile-stash"; // temp home for excluded routes during the build
 
 const which = process.argv[2] || "customer";
 
+// Dynamic [id]/[slug] routes can't static-export cleanly under Turbopack (its
+// export analysis doesn't accept an injected generateStaticParams), so instead of
+// shimming them we EXCLUDE those detail/drilldown routes from the app build (see
+// EXCLUDE_BY_APP). They remain available on the web dashboard. A phone app rarely
+// needs a deep-linked [id] detail page anyway.
+
 // Marketing / SEO routes: never in any app.
 const MARKETING = [
   "about", "blog", "careers", "gallery", "prices", "services", "shop", "team",
@@ -25,11 +31,17 @@ const MARKETING = [
 const EXCLUDE_BY_APP = {
   customer: [...MARKETING, "dashboard/employee", "dashboard/admin"],
   employee: [...MARKETING, "dashboard/customer", "dashboard/admin"],
+  // Dynamic [id] detail routes (blog editor, per-employee KPI) can't
+  // static-export under Turbopack, so they stay web-admin only.
+  admin: [
+    ...MARKETING, "dashboard/customer", "dashboard/employee",
+    "dashboard/admin/blog", "dashboard/admin/employees/[id]",
+  ],
 };
 
 const EXCLUDE = EXCLUDE_BY_APP[which];
 if (!EXCLUDE) {
-  console.error(`[build-mobile] unknown app "${which}" (expected customer|employee)`);
+  console.error(`[build-mobile] unknown app "${which}" (expected customer|employee|admin)`);
   process.exit(1);
 }
 
