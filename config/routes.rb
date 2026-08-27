@@ -150,6 +150,8 @@ Rails.application.routes.draw do
         # Bookable-hours: the tech's own weekly template + date overrides.
         resources :availability_schedules, only: %i[index create update destroy]
         resources :availability_overrides, only: %i[index create update destroy]
+        # Live GPS while on the road (day-of tracking → customer ETA).
+        post "location", to: "employee/locations#create"
       end
 
       # Direct messaging (customer↔staff, staff↔admin). Any authenticated user.
