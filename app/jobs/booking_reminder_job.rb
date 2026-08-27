@@ -19,7 +19,9 @@ class BookingReminderJob < ApplicationJob
   def perform(booking_id, reminder)
     booking = Booking.find_by(id: booking_id)
     return unless booking
-    return unless booking.status.in?(%w[pending confirmed in_progress]) # not cancelled/completed
+    # Only confirmed/in-progress. A pending (unpaid group) booking gets no reminder
+    # until its deposit confirms it — reminders are (re)scheduled at that point.
+    return unless booking.status.in?(%w[confirmed in_progress])
 
     spec = REMINDERS.fetch(reminder)
     return unless still_relevant?(booking, reminder) # reschedule may have moved the time

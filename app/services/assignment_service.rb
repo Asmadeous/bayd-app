@@ -237,8 +237,13 @@ class AssignmentService
   end
 
   # Booking reminders (confirmation + timed) via Solid Queue. Best-effort so a
-  # scheduling failure never breaks a completed booking.
+  # scheduling failure never breaks a completed booking. A GROUP booking is created
+  # `pending` (awaiting deposit) — its reminders are scheduled when the payment
+  # confirms it (Booking#refresh_payment_status!), not now, so we never send a
+  # "confirmed" reminder for an unpaid booking.
   def schedule_reminders(booking)
+    return if booking.status == "pending"
+
     BookingReminders.schedule(booking)
   rescue StandardError => e
     Rails.logger.warn("[AssignmentService] reminder scheduling failed for booking #{booking&.id}: #{e.message}")

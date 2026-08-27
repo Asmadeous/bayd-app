@@ -141,6 +141,11 @@ class Booking < ApplicationRecord
       self.class.connection.execute("SET CONSTRAINTS no_double_booking DEFERRED")
       update!(status: "confirmed")
     end
+
+    # Now that it's confirmed (e.g. a group booking whose deposit just landed),
+    # schedule its reminders — deferred from create time so we never confirm an
+    # unpaid booking.
+    schedule_reminders_on_confirm
   end
 
   # When the next appointment in this series should start.
@@ -204,6 +209,13 @@ class Booking < ApplicationRecord
     BookingReminders.schedule(self)
   rescue StandardError => e
     Rails.logger.warn("[Booking##{id}] reminder reschedule failed: #{e.message}")
+  end
+
+  # Schedule reminders when a held (group) booking confirms on payment. Best-effort.
+  def schedule_reminders_on_confirm
+    BookingReminders.schedule(self)
+  rescue StandardError => e
+    Rails.logger.warn("[Booking##{id}] reminder scheduling on confirm failed: #{e.message}")
   end
 
   def on_completed
