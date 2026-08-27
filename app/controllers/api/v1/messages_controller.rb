@@ -17,6 +17,15 @@ module Api
         render json: MessageSerializer.render_as_hash(message), status: :created
       end
 
+      # Mark the other participant's messages read (opening the thread), and tell
+      # the sender live so their "read" ticks update.
+      def read
+        at = Time.current
+        count = @conversation.mark_read_by!(current_user, at: at)
+        ChatChannel.broadcast_read(@conversation, current_user, at) if count.positive?
+        render json: { read: count }
+      end
+
       private
 
       # Load the conversation and enforce access: a participant, or an admin.

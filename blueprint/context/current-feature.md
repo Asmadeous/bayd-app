@@ -1,35 +1,30 @@
-# Feature: 2d - FCM push notifications
+# Feature: 2c - Presence, typing indicators, read receipts
 
-**From build-plan:** feature 2d (under 2. Chat + push backend)
+**From build-plan:** feature 2c (under 2. Chat + push backend)
 **Status:** not started
 
 ## Goal
 
-Deliver lock-screen push to the mobile apps for the events users care about.
-Rails owns everything except the final hop: waking a closed phone requires the OS
-vendors' gateways (APNs/FCM) — no server can bypass that. So we store device
-tokens, build a `PushService`, isolate the one FCM HTTP call behind an adapter,
-and wire it into the existing `NotificationService.deliver` so every in-app
-notification also pushes. Uses the **FCM HTTP v1 API**.
+Round out live chat with the three signals users expect: who's online
+(presence), who's typing right now, and whether their message was read. All pure
+Rails/ActionCable over the 2a pipe — no external services.
 
 ## In scope
 
-- `device_tokens` table (user, platform ios/android/web, token) + registration
-  endpoints (register/unregister from the apps).
-- `Fcm::Client` adapter — mints an OAuth2 token from the service-account JSON
-  (via `googleauth`) and POSTs to `https://fcm.googleapis.com/v1/projects/{id}/messages:send`.
-- `PushService.push(user:, title:, body:, data:)` — sends to all the user's
-  device tokens, prunes tokens FCM reports as unregistered.
-- Wire `NotificationService.deliver` to also push (best-effort, never breaks the
-  in-app + email path).
-- Credential + project id from ENV; inert (no-op) until configured. Specs stub the
-  HTTP call — no real FCM traffic.
+- **Read receipts:** mark the OTHER participant's messages read when you open a
+  conversation; `read_at` stamped; broadcast a `read` event so the sender's UI
+  updates live. `POST /conversations/:id/read`.
+- **Typing indicators:** a client sends `typing`/`stopped_typing` on `ChatChannel`;
+  it's relayed to the other participant (not persisted).
+- **Presence:** track which users are currently connected; broadcast
+  online/offline transitions to their conversation partners. Presence is
+  in-memory/cache (Solid Cache), not a DB table — it's ephemeral connection state.
 
 ## Out of scope (deferred)
 
-- **2c** — presence/typing/receipts (separate, pure-Rails).
-- Native app token registration UI (Phase 3/4 call the endpoints).
-- Rich pushes (images/actions), topic/multicast sends, APNs-direct.
+- Per-message delivery receipts (only read + typing here).
+- Presence history / "last seen" timestamps persisted to the DB.
+- Group presence (1:1 only, matching 2b).
 
 ## Build loop
 
@@ -37,74 +32,68 @@ One step at a time: diff, explain, verify, optional checkpoint, next.
 
 ## Build steps
 
-- [ ] **Step 1 - DeviceToken model + migration + endpoints** — `device_tokens`
-      (user, platform, token unique). Model + `has_many` on User. Staff/customer
-      endpoints: `POST /device_tokens` (register/upsert for current_user),
-      `DELETE /device_tokens/:token` (unregister). Scoped to current_user.
-      *Done when:* migration runs; register upserts, unregister removes; a user
-      can't see another's tokens; specs green.
-- [ ] **Step 2 - Fcm::Client adapter** — add `googleauth` + `faraday` (already
-      present). `Fcm::Client#send_to(token:, title:, body:, data:)` builds the v1
-      body and POSTs with an OAuth2 bearer minted from
-      `ENV["FCM_CREDENTIALS_JSON"]` for project `ENV["FCM_PROJECT_ID"]`, scope
-      `https://www.googleapis.com/auth/firebase.messaging`. Returns a small result
-      (ok / unregistered / error). No-op when unconfigured. *Done when:* a spec
-      stubs the token mint + HTTP POST and asserts the request URL + body shape;
-      unconfigured returns a no-op without calling out.
-- [ ] **Step 3 - PushService + wire into NotificationService** — `PushService.push`
-      sends to each of the user's device tokens via `Fcm::Client`, deletes tokens
-      that come back `unregistered`. `NotificationService.deliver` calls it
-      best-effort after persisting the in-app record. *Done when:* delivering a
-      notification triggers a push per token (stubbed); a failing push never
-      breaks the in-app/email path; unregistered tokens are pruned; specs green.
+- [ ] **Step 1 - Read receipts** — `Conversation#mark_read_by!(user)` stamps
+      `read_at` on the other participant's unread messages; `POST
+      /conversations/:id/read` calls it and broadcasts a `{ type: "read",
+      conversation_id:, reader_id:, at: }` event to the conversation stream.
+      *Done when:* opening marks unread messages read; the sender gets a live read
+      event; a non-participant is forbidden; specs green.
+- [ ] **Step 2 - Typing indicators** — `ChatChannel#typing` / `#stopped_typing`
+      receive actions relay `{ type: "typing", conversation_id:, user_id:, typing:
+      bool }` to the OTHER participant's view of the stream (ephemeral, not saved).
+      *Done when:* a channel spec triggers `typing` and asserts the broadcast; not
+      persisted.
+- [ ] **Step 3 - Presence** — a `Presence` service backed by Solid Cache tracks
+      connected user ids (marked on `ChatChannel#subscribed`, cleared on
+      `#unsubscribed`); on transition, broadcast `{ type: "presence", user_id:,
+      online: bool }` to that user's conversation partners. *Done when:*
+      subscribing marks a user online and unsubscribing marks them offline; a spec
+      asserts the presence state + broadcast.
 
 ## Files / areas
 
-- `db/migrate/*_create_device_tokens.rb`
-- `app/models/device_token.rb`, assoc on `User`
-- `app/controllers/api/v1/device_tokens_controller.rb`, `config/routes.rb`
-- `app/services/fcm/client.rb` (the isolated external call)
-- `app/services/push_service.rb`
-- `app/services/notification_service.rb` (wire in the push)
-- `Gemfile` (+ `googleauth`)
-- Specs: `spec/models/`, `spec/requests/`, `spec/services/`
+- `app/models/conversation.rb` (`mark_read_by!`)
+- `app/controllers/api/v1/reads_controller.rb` or a `read` action on messages/conversations
+- `app/channels/chat_channel.rb` (typing actions, presence on sub/unsub)
+- `app/services/presence.rb` (Solid Cache-backed online set)
+- `config/routes.rb`
+- Specs: `spec/models/`, `spec/requests/`, `spec/channels/`, `spec/services/`
 
 ## Data / contracts
 
-**DeviceToken:**
-- `user_id` (fk), `platform` (enum: ios/android/web), `token` (string, unique)
-- one row per token; registering an existing token re-points it to current_user
+**Broadcast event shapes** (all on the `"conversation:#{id}"` stream, discriminated
+by `type`, matching how 2b broadcasts a raw message):
+- read:     `{ type: "read", conversation_id:, reader_id:, at: }`
+- typing:   `{ type: "typing", conversation_id:, user_id:, typing: bool }`
+- presence: `{ type: "presence", user_id:, online: bool }`
 
-**FCM HTTP v1 (verified against Google docs):**
-- `POST https://fcm.googleapis.com/v1/projects/{FCM_PROJECT_ID}/messages:send`
-- body: `{ "message": { "token": "...", "notification": { "title": "...", "body": "..." }, "data": { ...string values... } } }`
-- auth: `Authorization: Bearer <oauth2>`, scope `.../auth/firebase.messaging`
-- a 404/`UNREGISTERED` response → delete that device token
+> Note: 2b broadcasts a bare `MessageSerializer` hash (no `type`). Keep that as-is
+> for new messages; the client treats a payload with no `type` as a new message
+> and one with a `type` as an event. (Documented here so the client contract is
+> explicit.)
 
-**ENV (names only):** `FCM_PROJECT_ID`, `FCM_CREDENTIALS_JSON` (the
-service-account key JSON). Absent → PushService is a no-op.
+**Presence store:** Solid Cache key per online user (e.g. `presence:user:<id>`)
+with a short TTL refreshed on activity; no DB table.
 
 ## Testing
 
 `bundle exec rspec` is the gate.
 
-- **Model:** token uniqueness; registering an existing token moves it to the new
-  user; platform enum.
-- **Request:** register upserts for current_user; unregister removes; auth
-  required; can't touch another user's tokens.
-- **Fcm::Client:** stub the OAuth2 mint + Faraday POST; assert endpoint URL +
-  message body; unconfigured → no HTTP call.
-- **PushService / NotificationService:** push sent per token (stubbed);
-  best-effort (a raise doesn't break deliver); unregistered token pruned.
-- `bin/rubocop` + `bin/brakeman` clean. No real network in specs.
+- **Read:** `mark_read_by!` stamps only the other person's unread messages;
+  endpoint forbids non-participants; broadcasts a read event.
+- **Typing:** channel `typing` action broadcasts the typing event; nothing
+  persisted.
+- **Presence:** subscribe marks online, unsubscribe marks offline; `Presence.online?`
+  reflects it; transition broadcasts.
+- `bin/rubocop` + `bin/brakeman` clean.
 
 ## Notes for the AI
 
-- **Rails owns all of this except the one FCM HTTP call** — keep that call behind
-  `Fcm::Client` so the rest is plain Rails and fully testable with stubs.
-- **Never read the real credential in a spec.** Stub `Fcm::Client`. The service is
-  a no-op when `FCM_PROJECT_ID`/`FCM_CREDENTIALS_JSON` are absent.
-- Best-effort everywhere: a push failure must never break the in-app Notification
-  or the email (mirror the existing rescue in NotificationService).
-- Reuse `current_user` auth; scope tokens to the authenticated user.
-- Do NOT read `.env` or print secrets. Credentials come from ENV at runtime only.
+- Reuse the 2b `"conversation:#{id}"` stream + `ChatChannel`. Presence/typing are
+  relayed, read is persisted (`read_at`) AND broadcast.
+- Presence is ephemeral — Solid Cache, not a DB table. Don't add a migration for it.
+- Broadcasts carry a `type` to disambiguate from a new-message payload (which has
+  none). Keep 2b's message broadcast unchanged.
+- Best-effort broadcasts: a presence/typing failure must never break a message
+  send or the connection.
+- Scope everything to conversation participants; reuse the existing auth.

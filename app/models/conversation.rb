@@ -34,6 +34,13 @@ class Conversation < ApplicationRecord
     messages.where.not(sender_id: user.id).where(read_at: nil).count
   end
 
+  # Mark the OTHER participant's unread messages as read by `user` (opening the
+  # thread). Returns the number of messages marked, so the caller can skip the
+  # read-receipt broadcast when nothing changed.
+  def mark_read_by!(user, at: Time.current)
+    messages.where.not(sender_id: user.id).where(read_at: nil).update_all(read_at: at)
+  end
+
   private
 
   def distinct_participants

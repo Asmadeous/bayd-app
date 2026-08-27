@@ -91,4 +91,24 @@ RSpec.describe "Conversations + messages", type: :request do
       expect(response).to have_http_status(:ok)
     end
   end
+
+  describe "POST .../messages/read" do
+    let(:convo) { Conversation.between(alice, bob) }
+
+    it "marks the other participant's messages read and broadcasts" do
+      convo.messages.create!(sender: bob, body: "unread")
+      expect(ChatChannel).to receive(:broadcast_read).with(convo, an_object_having_attributes(id: alice.id), anything)
+
+      post "/api/v1/conversations/#{convo.id}/messages/read", headers: auth_header(alice), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["read"]).to eq(1)
+      expect(convo.unread_count_for(alice)).to eq(0)
+    end
+
+    it "forbids a non-participant" do
+      stranger = create(:user, email: "x@example.com")
+      post "/api/v1/conversations/#{convo.id}/messages/read", headers: auth_header(stranger), as: :json
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
 end

@@ -154,7 +154,9 @@ Rails.application.routes.draw do
 
       # Direct messaging (customer↔staff, staff↔admin). Any authenticated user.
       resources :conversations, only: %i[index create] do
-        resources :messages, only: %i[index create]
+        resources :messages, only: %i[index create] do
+          post :read, on: :collection
+        end
       end
 
       # Push: the apps register/unregister their FCM device token.

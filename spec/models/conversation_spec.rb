@@ -49,4 +49,23 @@ RSpec.describe Conversation, type: :model do
       expect(convo.unread_count_for(alice)).to eq(2)
     end
   end
+
+  describe "#mark_read_by!" do
+    let(:convo) { described_class.between(alice, bob) }
+
+    it "marks only the other person's unread messages read" do
+      convo.messages.create!(sender: bob, body: "one")
+      convo.messages.create!(sender: bob, body: "two")
+      own = convo.messages.create!(sender: alice, body: "mine")
+
+      count = convo.mark_read_by!(alice)
+      expect(count).to eq(2)
+      expect(convo.unread_count_for(alice)).to eq(0)
+      expect(own.reload.read_at).to be_nil # own message isn't a "read" target
+    end
+
+    it "returns 0 when there is nothing unread" do
+      expect(convo.mark_read_by!(alice)).to eq(0)
+    end
+  end
 end

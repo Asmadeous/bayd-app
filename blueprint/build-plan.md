@@ -48,7 +48,7 @@ number to spec the next unchecked item.
 
 ## Roadmap — Phase 2: Realtime + push
 
-- [ ] 2. Chat + push backend
+- [x] 2. Chat + push backend
   - [x] 2a. Solid Cable + ActionCable foundation — install `solid_cable`,
         configure `config/cable.yml` (Postgres, no Redis) + the cable DB, mount
         ActionCable, and an authenticated `Connection` (reuse the JWT auth) that
@@ -58,7 +58,7 @@ number to spec the next unchecked item.
         customer↔staff, staff↔admin), authorization (you only see your own
         conversations; admin sees all), REST endpoints (list convos, list/post
         messages), and a `ChatChannel` that broadcasts new messages live.
-  - [ ] 2c. Presence + receipts — online/away presence, typing indicators, and
+  - [x] 2c. Presence + receipts — online/away presence, typing indicators, and
         read receipts over ActionCable.
   - [x] 2d. FCM push — `device_tokens` (user, platform, token) registered from the
         apps, a `PushService`, and wire `NotificationService.deliver` to also send
