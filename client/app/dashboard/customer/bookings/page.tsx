@@ -34,6 +34,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useBookings, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
 import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
+import { MessageTechButton } from "@/components/dashboard/message-tech-button"
 import { customerBookingsSteps } from "@/lib/tours/customer-bookings-tour"
 
 const ALL_STATUSES: Booking["status"][] = [
@@ -204,6 +205,7 @@ export default function CustomerBookingsPage() {
                   actions={
                     b.status === "pending" || b.status === "confirmed" ? (
                       <div className="flex flex-wrap items-center gap-2">
+                        <MessageTechButton techUserId={b.employee_profile?.user?.id} />
                         <RescheduleDialog booking={b} />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>

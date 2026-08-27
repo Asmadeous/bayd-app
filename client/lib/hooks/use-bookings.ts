@@ -34,7 +34,7 @@ export interface Booking {
     id: number
     title: string | null
     photo_url: string | null
-    user: { first_name: string | null; last_name: string | null }
+    user: { id: number; first_name: string | null; last_name: string | null }
   }
   meeting: Meeting | null
 }
