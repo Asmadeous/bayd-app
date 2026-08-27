@@ -18,6 +18,7 @@ module Api
                                  .update!(latitude: lat, longitude: lng, recorded_at: Time.current)
 
           broadcast_trip(lat, lng)
+          broadcast_fleet(lat, lng)
           head :no_content
         end
 
@@ -27,6 +28,13 @@ module Api
           TripBroadcaster.call(employee_profile: profile, latitude: lat, longitude: lng)
         rescue StandardError => e
           Rails.logger.warn("[Employee::LocationsController] trip broadcast failed: #{e.message}")
+        end
+
+        # Live fleet view for admins — every ping, not just day-of bookings.
+        def broadcast_fleet(lat, lng)
+          AdminFleetChannel.broadcast_position(profile, latitude: lat, longitude: lng, on_shift: profile.on_shift)
+        rescue StandardError => e
+          Rails.logger.warn("[Employee::LocationsController] fleet broadcast failed: #{e.message}")
         end
 
         def profile

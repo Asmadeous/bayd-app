@@ -29,6 +29,13 @@ RSpec.describe "POST /api/v1/employee/location", type: :request do
          headers: auth_header(tech_user), as: :json
   end
 
+  it "broadcasts the position to the admin fleet stream" do
+    expect(AdminFleetChannel).to receive(:broadcast_position).with(profile, hash_including(latitude: 43.70))
+    post "/api/v1/employee/location",
+         params: { latitude: 43.70, longitude: -79.42 },
+         headers: auth_header(tech_user), as: :json
+  end
+
   it "requires an employee" do
     customer = create(:user)
     post "/api/v1/employee/location", params: { latitude: 1, longitude: 1 }, headers: auth_header(customer), as: :json
