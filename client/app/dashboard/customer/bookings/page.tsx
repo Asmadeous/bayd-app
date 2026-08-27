@@ -35,7 +35,15 @@ import { Button } from "@/components/ui/button"
 import { useBookings, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
 import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
 import { MessageTechButton } from "@/components/dashboard/message-tech-button"
+import { TechEta } from "@/components/dashboard/tech-eta"
 import { customerBookingsSteps } from "@/lib/tours/customer-bookings-tour"
+
+// Only subscribe to live tracking for a booking happening today.
+function isToday(iso: string): boolean {
+  const d = new Date(iso)
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+}
 
 const ALL_STATUSES: Booking["status"][] = [
   "pending", "confirmed", "in_progress", "completed", "cancelled", "no_show",
@@ -199,8 +207,8 @@ export default function CustomerBookingsPage() {
           ) : (
             <div className="space-y-3">
               {filtered.map((b) => (
+                <div key={b.id}>
                 <BookingCard
-                  key={b.id}
                   booking={b}
                   actions={
                     b.status === "pending" || b.status === "confirmed" ? (
@@ -248,6 +256,10 @@ export default function CustomerBookingsPage() {
                     ) : null
                   }
                 />
+                {b.status === "confirmed" && (
+                  <TechEta bookingId={b.id} enabled={isToday(b.starts_at)} />
+                )}
+                </div>
               ))}
             </div>
           )}
