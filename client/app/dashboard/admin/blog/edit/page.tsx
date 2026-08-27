@@ -1,6 +1,6 @@
 "use client"
 
-import { useParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 
 import { BlogPostForm, type BlogPostFormPost } from "@/app/dashboard/admin/blog/_components/blog-post-form"
@@ -9,9 +9,10 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import api from "@/lib/api"
 
+// The post id is a query param (?id=) not a path segment, so this static page
+// works under output: export (a dynamic [id] segment can't). Read it client-side.
 export default function EditBlogPostPage() {
-  const params = useParams<{ id: string }>()
-  const id = Number(params.id)
+  const id = Number(useSearchParams().get("id"))
   const { data: post, error, isLoading } = useQuery<BlogPostFormPost>({
     enabled: Number.isInteger(id) && id > 0,
     queryKey: ["admin-blog-post", id],

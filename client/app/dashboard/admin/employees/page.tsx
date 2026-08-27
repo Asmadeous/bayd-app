@@ -470,7 +470,7 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
           <Kpi label="Cancels" value={kpi?.cancellations ?? 0} />
         </div>
         <Link
-          href={`/dashboard/admin/employees/${employee.id}`}
+          href={`/dashboard/admin/employees/detail?id=${employee.id}`}
           className="mt-3 inline-block text-xs font-semibold text-[#c96c83] hover:underline"
         >
           View detailed KPIs →
