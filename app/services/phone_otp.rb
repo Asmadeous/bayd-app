@@ -10,7 +10,13 @@ module PhoneOtp
     record, raw = PhoneVerification.issue!(phone)
 
     client = Infobip::Client.new
-    return :unconfigured unless client.configured?
+    unless client.configured?
+      # Dev convenience ONLY: with no SMS provider, log the code so a developer
+      # can complete the flow locally. Never in production — there the code is
+      # only ever delivered by SMS.
+      Rails.logger.info("[PhoneOtp] DEV code for #{record.phone}: #{raw}") if Rails.env.development?
+      return :unconfigured
+    end
 
     client.send_sms(to: record.phone, text: "Your B.A.Y.D verification code is #{raw}. It expires in 10 minutes.")
     :sent

@@ -65,10 +65,12 @@ env:
     # Behaviour
     BOOKING_TIMEZONE: America/Toronto
     CHECKOUT_GATEWAY: helcim
-    SIMPLYBOOK_WEB_ONLY: false
     JITSI_HOST: meet.jit.si
     SUPPORT_EMAIL: Bookings@baydspa.ca
     FUEL_RATE_PER_KM: "0.68"
+
+    # Passkeys (non-secret): relying-party id = the registrable domain.
+    WEBAUTHN_RP_ID: baydspa.ca
 
     # Payments (non-secret ids / URLs)
     SQUARE_BASE_URL: https://connect.squareup.com
@@ -88,8 +90,8 @@ env:
     # Google OAuth callback (must exactly match a redirect URI in Google Console)
     GOOGLE_REDIRECT_URI: https://api.baydspa.ca/api/v1/auth/google/callback
 
-    # NOTE: SIMPLYBOOK_COMPANY, SQUARE_LOCATION_ID, SMTP_ADDRESS, TRACCAR_URL,
-    # TRACCAR_USER are injected from GitHub (see env.secret) — no values here.
+    # NOTE: SQUARE_LOCATION_ID, SMTP_ADDRESS, TRACCAR_URL, TRACCAR_USER, and the
+    # FCM/Infobip secrets are injected from GitHub (see env.secret) — no values here.
 
     # Ops
     RAILS_LOG_LEVEL: info
@@ -112,12 +114,15 @@ env:
     - HELCIM_WEBHOOK_VERIFIER_TOKEN
     - SQUARE_ACCESS_TOKEN
     - SQUARE_WEBHOOK_SIGNATURE_KEY
-    - SIMPLYBOOK_LOGIN
-    - SIMPLYBOOK_API_USER_KEY
-    - SIMPLYBOOK_WEBHOOK_SECRET
-    - SIMPLYBOOK_COMPANY
     - SQUARE_LOCATION_ID
     - SMTP_ADDRESS
+    # Push (FCM) — blank keeps push inert
+    - FCM_PROJECT_ID
+    - FCM_CREDENTIALS_JSON
+    # Phone-OTP (Infobip) — blank keeps OTP send inert
+    - INFOBIP_BASE_URL
+    - INFOBIP_API_KEY
+    - INFOBIP_SENDER
     - TRACCAR_URL
     - TRACCAR_USER
     - TRACCAR_PASSWORD
