@@ -15,6 +15,8 @@ Rails.application.routes.draw do
       get   "auth/magic_link/verify", to: "auth#verify_magic_link"
       post  "auth/phone_code",        to: "auth#request_phone_code"
       post  "auth/phone_code/verify", to: "auth#verify_phone_code"
+      post  "auth/email_code",        to: "auth#request_email_code"
+      post  "auth/email_code/verify", to: "auth#verify_email_code"
       # Passkeys / WebAuthn (optional MFA). Registration is authed; auth is public.
       post  "auth/passkeys/registration_options",   to: "passkeys#registration_options"
       post  "auth/passkeys/register",               to: "passkeys#register"
@@ -141,17 +143,29 @@ Rails.application.routes.draw do
         patch  "profile",       to: "employees#update"
         post   "toggle_shift",  to: "employees#toggle_shift"
         get    "schedule",      to: "employees#schedule"
+        # A single one of the tech's own bookings (navigate / call screens).
+        get    "bookings/:id",  to: "employees#booking"
         get    "reviews",       to: "employees#reviews"
-        # Time clock (clock in/out with GPS → fuel-compensation mileage)
-        post   "clock_in",      to: "employees#clock_in"
-        post   "clock_out",     to: "employees#clock_out"
+        # Per-booking time clock (clock in/out AT the client, GPS geofence →
+        # fuel-compensation mileage + on-time tracking).
+        post   "bookings/:id/clock_in",  to: "employees#clock_in"
+        post   "bookings/:id/clock_out", to: "employees#clock_out"
+        # Mark a client no-show (client wasn't available for service). Triggers the
+        # no-show fee charge to their card on file (NoShowChargeJob).
+        post   "bookings/:id/no_show",   to: "employees#mark_no_show"
         get    "current_shift", to: "employees#current_shift"
         get    "shifts",        to: "employees#shifts"
+        # The tech's own earnings: tips owed/paid, fuel, partner payout split.
+        get    "earnings",      to: "employees#earnings"
         # Gift-card top-up at the customer (POS/cash → mark paid)
         get    "gift_cards/:code",       to: "employees#show_gift_card"
         post   "gift_cards/:code/topup", to: "employees#topup_gift_card"
         # Overtime charge when a service runs over its allocated time
         post   "bookings/:id/overtime",  to: "employees#booking_overtime"
+        # Square Tap to Pay (in-person POS): init config for the native SDK, then
+        # record a completed on-device payment against the booking.
+        get    "pos/config",              to: "employees#pos_config"
+        post   "bookings/:id/pos_payment", to: "employees#pos_payment"
         # Staff-initiated manual booking (force-book, skips eligibility gates)
         post   "bookings",               to: "employees#create_booking"
         # Bookable-hours: the tech's own weekly template + date overrides.
@@ -185,7 +199,6 @@ Rails.application.routes.draw do
 
       # Webhooks
       namespace :webhooks do
-        post "traccar",    to: "traccar#positions"
         # Path must NOT contain "helcim" — Helcim rejects such webhook URLs (400).
         post "hpay",       to: "helcim#receive"
         post "square",     to: "square#receive"

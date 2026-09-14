@@ -1,7 +1,7 @@
-# Computes a technician's free booking slots for a given service + date, from OUR
-# own data — replacing SimplyBook's available-slots call. A slot is offered only
-# when the whole visit fits the tech's bookable hours that day, doesn't overlap an
-# existing booking, and is reachable given travel between adjacent jobs.
+# Computes a technician's free booking slots for a given service + date from our
+# own scheduling data (no external service). A slot is offered only when the whole
+# visit fits the tech's bookable hours that day, doesn't overlap an existing
+# booking, and is reachable given travel between adjacent jobs.
 #
 #   free slots = the day's bookable window(s)
 #              − existing bookings (their [starts_at, ends_at) windows)
@@ -70,17 +70,23 @@ class AvailabilityEngine
     @employee.bookable_windows_for(@date)
   end
 
-  # 15-min-granularity starts from window start up to the last start whose full
-  # visit still finishes by the window end.
+  # Non-overlapping starts, each carrying the travel/turnaround floor between it
+  # and the previous slot so consecutive bookings are never packed back-to-back.
+  # A 30-min service in a window opening at 9:00 reads 9:15, 10:00, 10:45, ...:
+  # the first start is offset from the opening by SLOT_STEP_MIN (travel to the
+  # first customer), and each subsequent start steps by duration + SLOT_STEP_MIN
+  # so the tech always has turnaround between one job's end and the next's start.
+  # Runs up to the last start whose full visit still finishes by the window end.
   def candidate_starts(window_start, window_end, duration)
-    last_start = window_end - duration.minutes
-    return [] if last_start < window_start
+    first_start = window_start + SLOT_STEP_MIN.minutes
+    last_start  = window_end - duration.minutes
+    return [] if last_start < first_start
 
     starts = []
-    cursor = window_start
+    cursor = first_start
     while cursor <= last_start
       starts << cursor
-      cursor += SLOT_STEP_MIN.minutes
+      cursor += (duration + SLOT_STEP_MIN).minutes
     end
     starts
   end

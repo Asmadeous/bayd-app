@@ -4,7 +4,7 @@ module Api
       skip_before_action :authenticate_user!
 
       def index
-        roots = ProductCategory.active.roots.includes(:products, subcategories: :products)
+        roots = ProductCategory.active.roots.includes(:products, { subcategories: :products }, image_attachment: :blob)
         render json: ProductCategorySerializer.render_as_hash(roots)
       end
 

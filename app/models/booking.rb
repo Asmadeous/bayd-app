@@ -6,6 +6,7 @@ class Booking < ApplicationRecord
   belongs_to :address, optional: true
 
   has_many :payments, as: :payable, dependent: :destroy
+  has_many :shifts, dependent: :nullify
   has_many :tips, dependent: :destroy
   has_many :gift_card_transactions, dependent: :nullify
   has_many :loyalty_transactions, dependent: :nullify
@@ -58,8 +59,19 @@ class Booking < ApplicationRecord
   # (admin, employee, sync) made the change.
   after_update_commit :on_completed, if: -> { saved_change_to_status? && completed? }
 
+  # Charge the no-show fee to the customer's card on file the moment a booking is
+  # marked no_show (whichever path made the change). Best-effort in the service.
+  after_update_commit :on_no_show, if: -> { saved_change_to_status? && no_show? }
+
   scope :upcoming,  -> { where(status: %w[confirmed]).where("starts_at > ?", Time.current) }
-  scope :active,    -> { where(status: %w[confirmed in_progress]) }
+  # The tech's working list: in-progress jobs, plus confirmed jobs that haven't
+  # ended yet. A confirmed booking whose end time has passed is NOT active — it
+  # has come and gone, so it belongs in history (see :past), not upcoming.
+  scope :active,    -> { where(status: "in_progress").or(where(status: "confirmed").where("ends_at > ?", Time.current)) }
+  # A tech's job history: terminal-state bookings, plus confirmed bookings whose
+  # time has already passed (overdue / not clocked out) so they don't linger in
+  # the working list forever.
+  scope :past,      -> { where(status: %w[completed cancelled no_show]).or(where(status: "confirmed").where("ends_at <= ?", Time.current)) }
 
   # Recurring bookings due to be re-created: active recurrence, completed,
   # and no follow-up booking spawned yet.
@@ -220,6 +232,10 @@ class Booking < ApplicationRecord
 
   def on_completed
     BookingCompletedJob.perform_later(id)
+  end
+
+  def on_no_show
+    NoShowChargeJob.perform_later(id)
   end
 
   # Both ends must fall within the business's open hours (local zone), and the

@@ -2,6 +2,8 @@ module Api
   module V1
     module Admin
       class EmployeesController < BaseController
+        include ImageUploadValidation
+
         def index
           records, meta = paginate(EmployeeProfile.includes(:user, :partner, :services, :service_areas))
           render json: { data: EmployeeProfileSerializer.render_as_hash(records), pagination: meta }
@@ -13,6 +15,8 @@ module Api
 
         # Create a staff member: an employee-role User + their EmployeeProfile.
         def create
+          return invalid_photo_response if photo_param.present? && !valid_image?(photo_param)
+
           profile = nil
           ActiveRecord::Base.transaction do
             user = User.new(user_params)
@@ -20,15 +24,19 @@ module Api
             user.password = params.dig(:employee, :password).presence || SecureRandom.alphanumeric(14)
             user.save!
             profile = EmployeeProfile.create!(employee_params.merge(user: user))
+            profile.photo.attach(photo_param) if photo_param.present?
           end
           render json: EmployeeProfileSerializer.render_as_hash(profile), status: :created
         end
 
         def update
+          return invalid_photo_response if photo_param.present? && !valid_image?(photo_param)
+
           profile = find_profile
           ActiveRecord::Base.transaction do
             profile.user.update!(user_params) if user_fields_present?
             profile.update!(employee_params)
+            profile.photo.attach(photo_param) if photo_param.present?
           end
           render json: EmployeeProfileSerializer.render_as_hash(profile)
         end
@@ -66,6 +74,13 @@ module Api
 
         private
 
+        # The uploaded photo file, if any (nested under employee[photo]).
+        def photo_param = params.dig(:employee, :photo)
+
+        def invalid_photo_response
+          render json: { error: "Photo must be a real JPEG, PNG, WEBP, or GIF image." }, status: :unprocessable_entity
+        end
+
         def find_profile = EmployeeProfile.find(params[:id])
 
         def user_fields_present?
@@ -80,7 +95,6 @@ module Api
         def employee_params
           params.require(:employee).permit(
             :title, :bio, :photo_url, :years_experience,
-            :traccar_device_id,
             :base_latitude, :base_longitude,
             :on_shift, :dispatchable, :active, :partner_id,
             service_fsas: []

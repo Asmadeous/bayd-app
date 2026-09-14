@@ -13,7 +13,7 @@ module Api
 
       # One specific tech's open times. { slots:, mapped:, date: }
       # `mapped` is kept for backwards compatibility with the booking form: it now
-      # means "this tech performs the service" (there's no SimplyBook mapping left).
+      # means "this tech performs the service" (there's no external mapping).
       def show
         service = Service.active.find_by(id: params[:service_id])
         employee = EmployeeProfile.active.find_by(id: params[:employee_id])
@@ -25,6 +25,9 @@ module Api
         end
 
         return render json: { slots: [], mapped: false } unless performs?(employee, service)
+        # Mirror the booking gate: a tech who doesn't cover the customer's FSA can't
+        # take the job, so offer no slots rather than slots that fail at booking.
+        return render json: { slots: [], mapped: true, date: date.to_s } unless serves_customer_fsa?(employee)
 
         render json: { slots: slots_for(employee, service, date), mapped: true, date: date.to_s }
       rescue StandardError => e
@@ -44,7 +47,7 @@ module Api
           return render json: { error: "service_id and a valid date are required" }, status: :bad_request
         end
 
-        techs = service.employee_profiles.select(&:active?)
+        techs = service.employee_profiles.select { |ep| ep.active? && serves_customer_fsa?(ep) }
         return render json: { date: date.to_s, mapped: false, providers: [], by_time: {} } if techs.empty?
 
         providers = techs.map do |ep|
@@ -113,6 +116,18 @@ module Api
         lat = params[:latitude].presence&.to_f
         lng = params[:longitude].presence&.to_f
         [ lat, lng ]
+      end
+
+      # Does this tech cover the customer's FSA? Mirrors AssignmentService's
+      # serves_customer_postal? so offered slots match what's bookable. When the
+      # client hasn't sent a postal yet (no address entered), don't restrict —
+      # the booking gate still enforces coverage on submit.
+      def serves_customer_fsa?(employee)
+        postal = params[:postal_code].presence
+        return true if postal.blank?
+        return true unless EmployeeProfile.coverage_configured?
+
+        employee.serves_fsa?(postal)
       end
 
       def parse_date(raw)

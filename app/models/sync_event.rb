@@ -1,5 +1,5 @@
 class SyncEvent < ApplicationRecord
-  enum :provider, { traccar: "traccar", helcim: "helcim", square: "square" }
+  enum :provider, { helcim: "helcim", square: "square" }
 
   validates :provider, :event_type, :payload, presence: true
 

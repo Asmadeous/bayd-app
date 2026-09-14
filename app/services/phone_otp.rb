@@ -26,7 +26,9 @@ module PhoneOtp
 
   # Verify a code and return the matching CUSTOMER (find-or-create by phone), or
   # nil on a bad/expired code. Staff/admin are refused (they use passwords).
-  def verify(phone, code)
+  # On signup the caller passes email + first_name; they seed a NEW account only
+  # (an existing customer's details are never overwritten by a later sign-in).
+  def verify(phone, code, email: nil, first_name: nil)
     return nil unless PhoneVerification.verify(phone, code)
 
     normalized = PhoneVerification.normalize(phone)
@@ -34,6 +36,9 @@ module PhoneOtp
     return user if user&.customer?
     return nil if user # a staff/admin phone can't use passwordless login
 
-    User.create!(phone: normalized, role: :customer)
+    attrs = { phone: normalized, role: :customer }
+    attrs[:email] = email.strip.downcase if email.present?
+    attrs[:first_name] = first_name.strip if first_name.present?
+    User.create!(attrs)
   end
 end

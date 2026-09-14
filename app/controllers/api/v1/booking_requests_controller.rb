@@ -38,7 +38,11 @@ module Api
         # Add-ons are resolved inside AssignmentService. They are NOT a separate
         # booking — just extra services noted for the tech to factor in on the
         # day; their price folds into the one combined charge.
-        result = AssignmentService.new(request_record, addon_service_ids: params.dig(:booking_request, :addon_service_ids)).call
+        result = AssignmentService.new(
+          request_record,
+          addon_service_ids: params.dig(:booking_request, :addon_service_ids),
+          payment_timing: chosen_payment_timing
+        ).call
 
         if result.success?
           booking = result.booking_request.booking
@@ -135,10 +139,17 @@ module Api
       end
 
       # Persist the customer's payment choice + "booking for a loved one" details.
+      # The customer's pay-now vs pay-later choice, normalized. Read before
+      # assignment (to decide whether the booking waits for payment) AND when
+      # persisting it, so both agree on one value.
+      def chosen_payment_timing
+        rp = params[:booking_request] || params
+        rp[:payment_timing].to_s.presence_in(%w[pay_upfront pay_after]) || "pay_after"
+      end
+
       def apply_payment_choice(booking)
         rp = params[:booking_request] || params
-        timing = rp[:payment_timing].to_s.presence_in(%w[pay_upfront pay_after]) || "pay_after"
-        attrs = { payment_timing: timing,
+        attrs = { payment_timing: chosen_payment_timing,
                   booked_for_name: rp[:booked_for_name].presence,
                   booked_for_phone: rp[:booked_for_phone].presence }
         attrs[:deposit_amount] = booking.required_deposit if booking.client_type_group?

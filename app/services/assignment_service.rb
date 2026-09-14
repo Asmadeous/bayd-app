@@ -16,9 +16,10 @@ class AssignmentService
     def success? = success
   end
 
-  def initialize(booking_request, addon_service_ids: nil)
+  def initialize(booking_request, addon_service_ids: nil, payment_timing: nil)
     @booking_request   = booking_request
     @addon_service_ids = addon_service_ids
+    @payment_timing    = payment_timing.to_s
   end
 
   def call
@@ -90,9 +91,13 @@ class AssignmentService
 
   # ── Candidate selection ───────────────────────────────────────────────────
   def base_pool
+    # Availability is the tech's SCHEDULE, not a manual on/off toggle: eligible?
+    # gates on available_at? (within bookable hours + no overlapping booking), so
+    # dispatch matches whoever is actually scheduled and free. `dispatchable` is
+    # an admin kill-switch (default true); `on_shift` is derived from clock-in and
+    # is NOT a dispatch gate.
     pool = EmployeeProfile
            .active
-           .on_shift
            .dispatchable
            .joins(:employee_services).where(employee_services: { service_id: @booking_request.service_id })
            .distinct
@@ -194,6 +199,13 @@ class AssignmentService
     [ [ @booking_request.party_size.to_i, 2 ].max, Service::GROUP_SIZE ].min
   end
 
+  # True when money is due up front, so the booking must wait for payment
+  # confirmation (created pending, confirmed by the webhook). A group always owes
+  # a deposit; a non-group owes now only when the customer chose "pay upfront".
+  def involves_upfront_payment?
+    @booking_request.client_type_group? || @payment_timing == "pay_upfront"
+  end
+
   def create_booking_for(candidate, ranked)
     booking = nil
     ActiveRecord::Base.transaction do
@@ -218,9 +230,11 @@ class AssignmentService
         address:          @booking_request.address,
         client_type:      @booking_request.client_type,
         party_size:       qty,
-        # Group bookings require payment — held as pending until the deposit/full
-        # lands (confirmed by the payment webhook). Others confirm immediately.
-        status:           (@booking_request.client_type_group? ? "pending" : "confirmed"),
+        # Any booking that involves an upfront payment (group deposit, or a
+        # customer paying now) is held PENDING until the money lands — the payment
+        # webhook flips it to confirmed (Booking#refresh_payment_status!). Only a
+        # pure pay-after booking (nothing charged now) confirms immediately.
+        status:           (involves_upfront_payment? ? "pending" : "confirmed"),
         starts_at:        requested_start,
         ends_at:          requested_end,
         subtotal:         price,
@@ -237,10 +251,11 @@ class AssignmentService
   end
 
   # Booking reminders (confirmation + timed) via Solid Queue. Best-effort so a
-  # scheduling failure never breaks a completed booking. A GROUP booking is created
-  # `pending` (awaiting deposit) — its reminders are scheduled when the payment
-  # confirms it (Booking#refresh_payment_status!), not now, so we never send a
-  # "confirmed" reminder for an unpaid booking.
+  # scheduling failure never breaks a completed booking. Any booking awaiting
+  # payment is created `pending` (group deposit, or a customer paying now) — its
+  # reminders are scheduled when the payment confirms it
+  # (Booking#refresh_payment_status!), not now, so we never send a "confirmed"
+  # reminder for an unpaid booking.
   def schedule_reminders(booking)
     return if booking.status == "pending"
 

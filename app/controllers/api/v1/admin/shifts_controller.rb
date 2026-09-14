@@ -36,10 +36,15 @@ module Api
         end
 
         def totals(scope)
+          late = scope.where(arrived_late: true).count
+          on_time = scope.where(arrived_late: false).count
           {
             shifts: scope.count,
             distance_km: scope.sum(:distance_km).to_f.round(3),
-            fuel_reimbursement: scope.sum(:fuel_reimbursement).to_f.round(2)
+            fuel_reimbursement: scope.sum(:fuel_reimbursement).to_f.round(2),
+            late_arrivals: late,
+            on_time_arrivals: on_time,
+            on_time_rate: (scope.count.positive? ? (on_time.to_f / scope.count * 100).round(1) : nil)
           }
         end
       end

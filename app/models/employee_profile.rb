@@ -18,9 +18,14 @@ class EmployeeProfile < ApplicationRecord
   has_many :reviews, dependent: :nullify
 
   validates :user, presence: true
-  validates :traccar_device_id, uniqueness: true, allow_nil: true
 
   before_validation :normalize_service_fsas
+
+  # A partner provider's compensation flows through the partner payout split; a
+  # direct (solo) tech is paid individually (tips + fuel reimbursement). This
+  # governs which earnings surfaces they see - the two never mix.
+  def partner_provider? = partner_id.present?
+  def direct_staff?     = partner_id.blank?
 
   scope :active,       -> { where(active: true) }
   scope :on_shift,     -> { where(on_shift: true) }

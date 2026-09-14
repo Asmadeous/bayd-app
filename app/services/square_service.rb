@@ -231,4 +231,33 @@ class SquareService
   def self.location_id
     ENV.fetch("SQUARE_LOCATION_ID", "")
   end
+
+  # Client-safe values the native Mobile Payments SDK (Tap to Pay) needs to
+  # initialize on-device. The application id and location id are NOT secrets
+  # (they ship in mobile apps by design); the access token never leaves the
+  # server. environment drives which Square backend the SDK talks to.
+  def self.application_id
+    ENV.fetch("SQUARE_APPLICATION_ID", "")
+  end
+
+  def self.environment
+    ENV.fetch("SQUARE_ENVIRONMENT", "sandbox")
+  end
+
+  # Whether Tap to Pay can be initialized at all (needs an app id on top of the
+  # normal API config).
+  def self.pos_configured?
+    configured? && application_id.present?
+  end
+
+  def self.pos_config
+    { application_id: application_id, location_id: location_id, environment: environment, configured: pos_configured? }
+  end
+
+  # The OAuth token the device passes to MobilePaymentsSdk.authorize(). For a
+  # single-merchant app this is the account access token. If you later mint a
+  # short-lived, payments-scoped token per device, return that here instead.
+  def self.pos_access_token
+    access_token
+  end
 end

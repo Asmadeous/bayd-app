@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_27_200604) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_125252) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -254,6 +254,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_27_200604) do
     t.index ["user_id"], name: "index_device_tokens_on_user_id"
   end
 
+  create_table "email_verifications", force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.string "code_digest", null: false
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "verified_at"
+    t.index ["email", "created_at"], name: "index_email_verifications_on_email_and_created_at"
+  end
+
   create_table "employee_current_locations", force: :cascade do |t|
     t.integer "accuracy_meters"
     t.datetime "created_at", null: false
@@ -278,14 +289,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_27_200604) do
     t.string "photo_url"
     t.text "service_fsas", default: [], null: false, array: true
     t.string "title"
-    t.string "traccar_device_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.integer "years_experience"
     t.index "((st_setsrid(st_makepoint((base_longitude)::double precision, (base_latitude)::double precision), 4326))::geography)", name: "index_employee_profiles_on_base_location", using: :gist
     t.index ["partner_id"], name: "index_employee_profiles_on_partner_id"
     t.index ["service_fsas"], name: "index_employee_profiles_on_service_fsas", using: :gin
-    t.index ["traccar_device_id"], name: "index_employee_profiles_on_traccar_device_id", unique: true, where: "(traccar_device_id IS NOT NULL)"
     t.index ["user_id"], name: "index_employee_profiles_on_user_id", unique: true
   end
 
@@ -770,6 +779,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_27_200604) do
   end
 
   create_table "shifts", force: :cascade do |t|
+    t.boolean "arrived_late", default: false, null: false
+    t.bigint "booking_id"
     t.datetime "clock_in_at", null: false
     t.decimal "clock_in_latitude", precision: 10, scale: 6, null: false
     t.decimal "clock_in_longitude", precision: 10, scale: 6, null: false
@@ -784,6 +795,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_27_200604) do
     t.text "notes"
     t.string "status", default: "open", null: false
     t.datetime "updated_at", null: false
+    t.index ["booking_id"], name: "index_shifts_on_booking_id"
     t.index ["employee_profile_id", "clock_in_at"], name: "index_shifts_on_employee_profile_id_and_clock_in_at"
     t.index ["employee_profile_id"], name: "index_shifts_on_employee_profile_id"
     t.index ["employee_profile_id"], name: "index_shifts_one_open_per_employee", unique: true, where: "((status)::text = 'open'::text)"
@@ -967,6 +979,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_27_200604) do
   add_foreign_key "reviews", "employee_profiles"
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "service_categories"
+  add_foreign_key "shifts", "bookings"
   add_foreign_key "shifts", "employee_profiles"
   add_foreign_key "subscriptions", "addresses"
   add_foreign_key "subscriptions", "services"

@@ -10,6 +10,16 @@ class MagicLinkMailer < ApplicationMailer
     mail(to: user.email, subject: "Your Beauty @ Your Door sign-in link")
   end
 
+  # A 6-digit sign-in code emailed for the mobile app, where a magic link can't
+  # complete (it would open the website, not the app). Entered in the app to get
+  # a token, same result as the link.
+  def email_code(email, code)
+    @code = code
+    @expires_in_minutes = (EmailVerification::CODE_TTL / 60).to_i
+
+    mail(to: email, subject: "Your Beauty @ Your Door sign-in code")
+  end
+
   def password_reset(user, raw_token)
     @user = user
     # Points at the FRONTEND reset-password page (unlike sign_in) — the

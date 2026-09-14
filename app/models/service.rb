@@ -1,4 +1,7 @@
 class Service < ApplicationRecord
+  # Uploaded image (Active Storage), preferred over the legacy image_url string.
+  has_one_attached :image
+
   # Booking client types. "adult" is the base price; the others can override it.
   CLIENT_TYPES = %w[adult kids elderly group].freeze
   # Number of people a "group" booking covers (flat group price).
