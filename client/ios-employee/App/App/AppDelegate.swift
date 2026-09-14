@@ -1,14 +1,55 @@
 import UIKit
 import Capacitor
+import SquareMobilePaymentsSDK
+import FirebaseCore
+import FirebaseMessaging
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate {
 
     var window: UIWindow?
 
+    // The SDK has no public "is initialized?" query, so we track it ourselves —
+    // SquarePosPlugin.isReady() reads this to decide whether Tap to Pay can run.
+    static var squareSdkInitialized = false
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Firebase powers push on iOS. Capacitor's push plugin hands back the raw
+        // APNs token, but the backend (Fcm::Client) only speaks FCM - so we run
+        // Firebase Messaging, feed it the APNs token, and forward the FCM token it
+        // returns to Capacitor. Needs GoogleService-Info.plist in the target.
+        FirebaseApp.configure()
+        Messaging.messaging().delegate = self
+
+        // Initialize the Square Mobile Payments SDK (Tap to Pay) once, at launch,
+        // only when a Square application id is configured (SquareApplicationID in
+        // Info.plist, set per build from SQUARE_APPLICATION_ID). Empty -> SDK is
+        // not initialized -> SquarePosPlugin.isReady() is false -> the app falls
+        // back to a payment link. See docs/square-tap-to-pay.md.
+        if let appId = Bundle.main.object(forInfoDictionaryKey: "SquareApplicationID") as? String,
+           !appId.isEmpty {
+            MobilePaymentsSDK.initialize(squareApplicationID: appId)
+            AppDelegate.squareSdkInitialized = true
+        }
         return true
+    }
+
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        // Hand the APNs token to Firebase; it exchanges it for an FCM token,
+        // delivered via messaging(_:didReceiveRegistrationToken:) below.
+        Messaging.messaging().apnsToken = deviceToken
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+    }
+
+    // Firebase returns the FCM token here (on first launch and on rotation). Post
+    // it as the Capacitor "registration" token so the JS layer sends an FCM token
+    // (not the APNs one) to POST /device_tokens, which the FCM backend can reach.
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        guard let fcmToken else { return }
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: fcmToken)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {

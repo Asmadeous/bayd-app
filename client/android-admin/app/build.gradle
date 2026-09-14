@@ -50,5 +50,7 @@ try {
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    // logger.info is invisible at default log level, so a missing config used to
+    // ship a push-less APK with no sign anything was wrong.
+    logger.warn("WARNING: android-admin/app/google-services.json is missing. The google-services plugin was NOT applied and PUSH NOTIFICATIONS WILL NOT WORK in this build. Register ca.baydspa.admin in the Firebase console and download its google-services.json.")
 }

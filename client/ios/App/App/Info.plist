@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Work-scope video call (embedded Jitsi in the WebView). iOS requires a
+	     usage string or camera/mic access is refused and the app can crash. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is used for your work-scope video call and to take a profile photo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access lets you choose a profile photo.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is used for your work-scope video call with your technician.</string>
   <key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>

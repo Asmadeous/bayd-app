@@ -9,6 +9,10 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.13.0'
         classpath 'com.google.gms:google-services:4.4.4'
+        // Kotlin — required by the Square Mobile Payments SDK (Tap to Pay) plugin.
+        // Must be >= the version the SDK was built with (2.6.1 ships Kotlin 2.3
+        // metadata), or compileDebugKotlin can't read it.
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.21'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -21,6 +25,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // Square Mobile Payments SDK (Tap to Pay) is published to Square's Maven.
+        maven { url 'https://sdk.squareup.com/public/android/' }
     }
 }
 

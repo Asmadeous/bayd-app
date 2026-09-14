@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Required for remote push. Without it iOS refuses registerForRemoteNotifications
+	     and no APNs/FCM token is ever issued. "development" for Dev builds; Xcode's
+	     Push Notifications capability + a production provisioning profile promote it
+	     to "production" for App Store / TestFlight. The App target must reference this
+	     file via its CODE_SIGN_ENTITLEMENTS build setting (set in Xcode on a Mac). -->
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Tap to Pay on iPhone. This is a MANAGED entitlement: Apple must grant it
+	     to your developer team (developer.apple.com/tap-to-pay), and until Apple
+	     approves production distribution it only works for Development builds.
+	     The App target must reference this file via its CODE_SIGN_ENTITLEMENTS
+	     build setting (set in Xcode on a Mac). -->
+	<key>com.apple.developer.proximity-reader.payment.acceptance</key>
+	<true/>
+	<!-- Required for remote push. Without it iOS refuses registerForRemoteNotifications
+	     and no APNs/FCM token is ever issued. "development" for Dev builds; Xcode's
+	     Push Notifications capability + a production provisioning profile promote it
+	     to "production" for App Store / TestFlight. -->
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>
