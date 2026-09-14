@@ -3,12 +3,14 @@
 import { Suspense, useMemo, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User } from "lucide-react"
+import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User, X } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
 import api from "@/lib/api"
+import { openPaymentUrl } from "@/lib/native/open-external"
+import { assetUrl } from "@/lib/asset-url"
 import { useCoverage } from "@/lib/hooks/use-coverage"
 import { siteConfig } from "@/lib/site"
 import { useAuthStore } from "@/lib/stores/auth-store"
@@ -85,9 +87,9 @@ export interface SavedAddress {
 const GROUP_MAX = 5
 
 const field =
-  "h-11 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
+  "h-12 w-full rounded-xl border border-black/15 bg-white px-4 text-sm font-semibold text-[#101217] outline-none transition-colors placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
 const lbl = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
-const card = "border border-black/10 bg-white p-5 sm:p-6"
+const card = "rounded-2xl border border-black/10 bg-white p-5 sm:p-6"
 
 const STEPS = ["Details", "Service", "Staff", "Date", "Payment"] as const
 
@@ -213,6 +215,11 @@ export function BookingFlow({
   // Selected add-ons that are still valid options for the current primary + tech.
   const validAddonIds = addonOptions.filter((s) => addonIds.includes(s.id)).map((s) => s.id)
   const addonTotal = addonOptions.filter((s) => addonIds.includes(s.id)).reduce((sum, s) => sum + Number(s.price), 0)
+  // Full visit length = primary service + any selected add-ons (they extend the
+  // same back-to-back appointment). Drives the "start - end" slot labels.
+  const apptMinutes =
+    (selected?.duration_minutes ?? 0) +
+    addonOptions.filter((s) => addonIds.includes(s.id)).reduce((sum, s) => sum + s.duration_minutes, 0)
 
   const perPerson = (s: ApiService) => Number(s.prices?.[clientType] ?? s.price)
   // Group total = per-person price × number of people.
@@ -227,21 +234,22 @@ export function BookingFlow({
   const notServiced = coverage.data ? !coverage.data.covered : false
 
   // Availability: fetch the chosen tech's open slots for the chosen date. Only a
-  // SPECIFIC tech has a SimplyBook schedule to read, so we skip when "any". When
-  // the tech/service isn't mapped to SimplyBook yet (mapped:false), the UI falls
+  // SPECIFIC tech has a bookable schedule to read, so we skip when "any". When
+  // the tech/service isn't bookable yet (mapped:false), the UI falls
   // back to a free time input.
   // Slots must fit the whole party for a group booking (N consecutive slots);
   // adult/kids/elderly are single-slot, so count = 1 for them.
   const slotCount = clientType === "group" ? partySize : 1
   const canQuerySlots = !!serviceId && staff !== "any" && !!date
   const availability = useQuery<AvailabilityResult>({
-    queryKey: ["availability", serviceId, staff, date, slotCount, custLat, custLng],
+    queryKey: ["availability", serviceId, staff, date, slotCount, custLat, custLng, postal.trim()],
     queryFn: () =>
       api
         .get<AvailabilityResult>("/availability", {
           params: {
             service_id: Number(serviceId), employee_id: Number(staff), date, count: slotCount,
             latitude: custLat ?? undefined, longitude: custLng ?? undefined,
+            postal_code: postal.trim() || undefined,
           },
         })
         .then((r) => r.data),
@@ -255,13 +263,14 @@ export function BookingFlow({
   // the customer's chosen tech has no open time on the date.
   const canQueryAny = !!serviceId && !!date
   const anyAvailability = useQuery<AnyAvailabilityResult>({
-    queryKey: ["availability-any", serviceId, date, slotCount, custLat, custLng],
+    queryKey: ["availability-any", serviceId, date, slotCount, custLat, custLng, postal.trim()],
     queryFn: () =>
       api
         .get<AnyAvailabilityResult>("/availability/any", {
           params: {
             service_id: Number(serviceId), date, count: slotCount,
             latitude: custLat ?? undefined, longitude: custLng ?? undefined,
+            postal_code: postal.trim() || undefined,
           },
         })
         .then((r) => r.data),
@@ -273,7 +282,7 @@ export function BookingFlow({
   const anyTimes = Object.keys(byTime)
   const nextAvailableDate = anyAvailability.data?.next_available_date ?? null
 
-  // "Real slot mode" = SimplyBook has a schedule to pick from. True when a chosen
+  // "Real slot mode" = the tech has a bookable schedule. True when a chosen
   // tech is mapped, or when "Any available" is picked and the any-query is mapped.
   const slotMode =
     (canQuerySlots && availability.data?.mapped === true) || (staff === "any" && anyMapped)
@@ -429,14 +438,20 @@ export function BookingFlow({
     try {
       const data = await createBooking.mutateAsync(pay)
       // Guest booked without an email → captured as an admin follow-up (can't be
-      // auto-synced to SimplyBook). The team will phone them to confirm + book.
+      // auto-booked). The team will phone them to confirm + book.
       if (data.status === "follow_up") {
         setView("follow_up")
         return
       }
       // Pay-now / group deposit-or-full with a balance → Square hosted checkout.
+      // On the web this navigates the tab; in the Capacitor app it opens the
+      // system browser so the app isn't stranded (openPaymentUrl handles both).
+      // In the app, when that browser closes we land the user on their bookings
+      // screen (the backend webhook has already confirmed the booking) instead of
+      // stranding them on the form. onFinished is native-only, so the website's
+      // same-tab redirect is unaffected.
       if (data.payment?.mode === "link" && data.payment.url) {
-        window.location.href = data.payment.url
+        void openPaymentUrl(data.payment.url, dashboardMode ? () => window.location.assign("/app/bookings") : undefined)
         return
       }
       if (data.booking) {
@@ -506,7 +521,7 @@ export function BookingFlow({
               </>
             ) : null}
           </p>
-          <Link href={dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
+          <Link href={dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block rounded-xl bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
             {dashboardMode ? "Back to dashboard" : "Back to home"}
           </Link>
         </div>
@@ -534,7 +549,7 @@ export function BookingFlow({
               <Phone className="size-4" /> Call us: {siteConfig.phone}
             </a>
           </div>
-          <Link href={dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
+          <Link href={dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block rounded-xl bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
             Done
           </Link>
         </div>
@@ -571,7 +586,7 @@ export function BookingFlow({
               <Send className="size-4" /> WhatsApp
             </a>
           </div>
-          <Link href={dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
+          <Link href={dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block rounded-xl bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
             {dashboardMode ? "Back to dashboard" : "Back to home"}
           </Link>
         </div>
@@ -584,10 +599,10 @@ export function BookingFlow({
       {dashboardMode ? null : <SiteHeader />}
       <Shell dashboardMode={dashboardMode}>
         <div className="mb-5">
-          <span className="inline-flex items-center gap-1.5 bg-[#c96c83]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#c96c83]">
-            <Sparkles className="size-3.5" /> Book a service
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#c96c83]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#c96c83]">
+            <Sparkles className="size-3.5" /> Appointment
           </span>
-          <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Beauty, at your door</h1>
+          <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Book Appointment</h1>
           <p className="mt-1 text-sm font-medium text-[#5f6268]">
             {dashboardMode
               ? "Your details are prefilled from your account. Review them, choose a service, and confirm your appointment."
@@ -601,7 +616,7 @@ export function BookingFlow({
           <div key={label} className="flex flex-1 items-center gap-2">
             <div
               className={cn(
-                "grid size-7 shrink-0 place-items-center border text-xs font-black",
+                "grid size-8 shrink-0 place-items-center rounded-full border text-xs font-black",
                 i < step
                   ? "border-[#c96c83] bg-[#c96c83] text-white"
                   : i === step
@@ -634,7 +649,7 @@ export function BookingFlow({
                   setCategoryFilter("all") // reset the category filter for the new menu
                 }}
                 className={cn(
-                  "border px-3 py-2 text-sm font-bold transition-colors",
+                  "rounded-xl border px-3 py-2 text-sm font-bold transition-colors",
                   clientType === ct.key
                     ? "border-[#c96c83] bg-[#c96c83]/10 text-[#c96c83]"
                     : "border-black/15 bg-white text-[#5f6268] hover:border-black/30",
@@ -701,13 +716,13 @@ export function BookingFlow({
                           key={s.id}
                           type="button"
                           onClick={() => chooseService(s.id)}
-                          className="flex items-start gap-3 border border-black/15 bg-white p-3 text-left transition-colors hover:border-[#c96c83]"
+                          className="flex items-start gap-3 rounded-xl border border-black/15 bg-white p-3 text-left transition-colors hover:border-[#c96c83]"
                         >
                           {/* Thumbnail — real photo (all services have one); neutral fill if missing. */}
                           {s.image_url ? (
                             <span className="size-16 shrink-0 overflow-hidden rounded-lg bg-[#f0ece4]">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={s.image_url} alt={s.name} className="size-full object-cover" />
+                              <img src={assetUrl(s.image_url)} alt={s.name} className="size-full object-cover" />
                             </span>
                           ) : (
                             <span className="size-16 shrink-0 rounded-lg bg-[#f0ece4]" />
@@ -743,7 +758,7 @@ export function BookingFlow({
               {selected.name} · <span className="text-[#c96c83]">{price != null ? `$${price.toFixed(2)}` : "Quote"}</span>
             </p>
           ) : null}
-          <div className="grid gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
             {providers.length > 1 ? (
               <StaffOption label="Any available" hint="We'll match the best-fit technician" active={staff === "any"} onClick={() => setStaff("any")} />
             ) : null}
@@ -764,7 +779,7 @@ export function BookingFlow({
         </div>
       ) : null}
 
-      {/* Step 4 — Date & time. When the chosen tech has a SimplyBook schedule we
+      {/* Step 4 — Date & time. When the chosen tech has a bookable schedule we
           show their real open slots; otherwise a free date/time input. */}
       {step === 3 ? (
         <div className={card}>
@@ -805,12 +820,12 @@ export function BookingFlow({
                           type="button"
                           onClick={() => pickSlotWithTech(s)}
                           className={cn(
-                            "border px-3 py-2 text-sm font-bold transition-colors",
+                            "rounded-xl border px-3 py-2 text-sm font-bold transition-colors",
                             time === s ? "border-[#c96c83] bg-[#c96c83]/10 text-[#c96c83]"
                               : "border-black/15 bg-white text-[#5f6268] hover:border-black/30",
                           )}
                         >
-                          {s}
+                          {slotRange(s, apptMinutes)}
                         </button>
                       ))}
                     </div>
@@ -844,13 +859,13 @@ export function BookingFlow({
                               type="button"
                               onClick={() => pickSlotWithTech(s, p.employee_id)}
                               className={cn(
-                                "border px-3 py-2 text-sm font-bold transition-colors",
+                                "rounded-xl border px-3 py-2 text-sm font-bold transition-colors",
                                 time === s && String(p.employee_id) === staff
                                   ? "border-[#c96c83] bg-[#c96c83]/10 text-[#c96c83]"
                                   : "border-black/15 bg-white text-[#5f6268] hover:border-black/30",
                               )}
                             >
-                              {s}
+                              {slotRange(s, apptMinutes)}
                             </button>
                           ))}
                         </div>
@@ -889,12 +904,12 @@ export function BookingFlow({
                         type="button"
                         onClick={() => setTime(s)}
                         className={cn(
-                          "border px-3 py-2 text-sm font-bold transition-colors",
+                          "rounded-xl border px-3 py-2 text-sm font-bold transition-colors",
                           time === s ? "border-[#c96c83] bg-[#c96c83]/10 text-[#c96c83]"
                             : "border-black/15 bg-white text-[#5f6268] hover:border-black/30",
                         )}
                       >
-                        {s}
+                        {slotRange(s, apptMinutes)}
                       </button>
                     ))}
                   </div>
@@ -1027,29 +1042,47 @@ export function BookingFlow({
               <p className="-mt-1 mb-2 text-xs font-medium text-[#8a8d93]">
                 {staffLabel} can also do these in the same visit.
               </p>
-              <div className="flex flex-col gap-2">
-                {addonOptions.map((a) => {
-                  const on = addonIds.includes(a.id)
-                  return (
-                    <button
-                      key={a.id}
-                      type="button"
-                      onClick={() => setAddonIds((ids) => (on ? ids.filter((x) => x !== a.id) : [...ids, a.id]))}
-                      className={cn(
-                        "flex items-center justify-between border px-3 py-2 text-left text-sm transition-colors",
-                        on ? "border-[#c96c83] bg-[#c96c83]/10" : "border-black/15 bg-white hover:border-black/30",
-                      )}
-                    >
-                      <span className="font-bold text-[#101217]">
-                        <span className={cn("mr-2 inline-block size-3.5 rounded-sm border align-middle", on ? "border-[#c96c83] bg-[#c96c83]" : "border-black/30")} />
-                        {a.name}
-                        <span className="ml-2 font-medium text-[#8a8d93]">+{a.duration_minutes} min</span>
+              {/* Dropdown: pick one to add. Chosen ones show as removable chips
+                  below, so the list stays collapsed instead of a wall of rows. */}
+              <select
+                className={field}
+                value=""
+                onChange={(e) => {
+                  const id = Number(e.target.value)
+                  if (id) setAddonIds((ids) => (ids.includes(id) ? ids : [...ids, id]))
+                }}
+              >
+                <option value="">Add a service…</option>
+                {addonOptions
+                  .filter((a) => !addonIds.includes(a.id))
+                  .map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} — +${Number(a.price).toFixed(2)} · +{a.duration_minutes} min
+                    </option>
+                  ))}
+              </select>
+              {validAddonIds.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {addonOptions
+                    .filter((a) => addonIds.includes(a.id))
+                    .map((a) => (
+                      <span
+                        key={a.id}
+                        className="inline-flex items-center gap-2 rounded-full border border-[#c96c83] bg-[#c96c83]/10 py-1.5 pl-3 pr-1.5 text-sm font-bold text-[#c96c83]"
+                      >
+                        {a.name} +${Number(a.price).toFixed(2)}
+                        <button
+                          type="button"
+                          aria-label={`Remove ${a.name}`}
+                          onClick={() => setAddonIds((ids) => ids.filter((x) => x !== a.id))}
+                          className="grid size-5 place-items-center rounded-full bg-[#c96c83] text-white"
+                        >
+                          <X className="size-3" />
+                        </button>
                       </span>
-                      <span className="font-bold text-[#c96c83]">+${Number(a.price).toFixed(2)}</span>
-                    </button>
-                  )
-                })}
-              </div>
+                    ))}
+                </div>
+              ) : null}
             </div>
           ) : null}
 
@@ -1064,7 +1097,7 @@ export function BookingFlow({
                   type="button"
                   onClick={() => setTip(pct === 0 ? "" : amt.toFixed(2))}
                   className={cn(
-                    "border px-3 py-2 text-sm font-bold transition-colors",
+                    "rounded-xl border px-3 py-2 text-sm font-bold transition-colors",
                     active ? "border-[#c96c83] bg-[#c96c83]/10 text-[#c96c83]" : "border-black/15 bg-white text-[#5f6268] hover:border-black/30",
                   )}
                 >
@@ -1090,7 +1123,7 @@ export function BookingFlow({
 
           {/* Auto-renewal — repeat this booking on a schedule (single bookings only). */}
           {clientType !== "group" ? (
-            <div className="mt-5 border border-black/15 bg-white p-4">
+            <div className="mt-5 rounded-2xl border border-black/15 bg-white p-4">
               <label className="flex cursor-pointer items-start gap-3">
                 <input
                   type="checkbox"
@@ -1117,7 +1150,7 @@ export function BookingFlow({
                       inputMode="numeric"
                       aria-label="Interval count"
                     />
-                    <div className="inline-flex overflow-hidden border border-black/15">
+                    <div className="inline-flex overflow-hidden rounded-lg border border-black/15">
                       {(["week", "month"] as const).map((u) => (
                         <button
                           key={u}
@@ -1155,11 +1188,11 @@ export function BookingFlow({
 
           {/* Book-without-paying explainer (regular bookings only; groups must deposit). */}
           {clientType !== "group" ? (
-            <div className="mt-5 border border-[#c96c83]/30 bg-[#c96c83]/5 p-4">
+            <div className="mt-5 rounded-2xl border border-[#c96c83]/30 bg-[#c96c83]/5 p-4">
               <p className="text-sm font-bold text-[#101217]">Prefer to pay later? You don&apos;t have to pay now.</p>
               <p className="mt-1 text-sm font-medium text-[#5f6268]">
-                Tap <span className="font-bold text-[#101217]">&ldquo;Proceed to booking&rdquo;</span> to confirm —
-                no card required. Your technician arrives, and you settle up after the service
+                Tap <span className="font-bold text-[#101217]">&ldquo;Book now, pay after the visit&rdquo;</span> to
+                confirm — no card required. Your technician arrives, and you settle up after the service
                 (card, or your card on file). We send your confirmation to{" "}
                 <span className="font-bold text-[#101217]">{email.trim() || phone.trim() || "your contact info"}</span>.
               </p>
@@ -1174,12 +1207,12 @@ export function BookingFlow({
       ) : null}
 
       {/* Nav */}
-      <div className="mt-5 flex items-center gap-3">
+      <div className="mt-5 flex items-start gap-3">
         {step > 0 ? (
           <button
             type="button"
             onClick={() => setStep((s) => s - 1)}
-            className="inline-flex h-12 items-center gap-1 border border-black/15 bg-white px-4 text-sm font-bold text-[#101217]"
+            className="inline-flex h-12 items-center gap-1 rounded-xl border border-black/15 bg-white px-4 text-sm font-bold text-[#101217]"
           >
             <ChevronLeft className="size-4" /> Back
           </button>
@@ -1190,7 +1223,7 @@ export function BookingFlow({
             type="button"
             disabled={!stepValid[step] || requestCallback.isPending}
             onClick={() => requestCallback.mutate()}
-            className="h-12 flex-1 bg-[#101217] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
+            className="h-12 flex-1 rounded-xl bg-[#101217] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
           >
             {requestCallback.isPending ? "Submitting…" : "Request a consultation call"}
           </button>
@@ -1199,7 +1232,7 @@ export function BookingFlow({
             type="button"
             disabled={!stepValid[step] || (step === 0 && verifyingAddress)}
             onClick={() => (step === 0 ? verifyAddressThenAdvance() : setStep((s) => s + 1))}
-            className="h-12 flex-1 bg-[#101217] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
+            className="h-12 flex-1 rounded-xl bg-[#101217] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
           >
             {step === 0 && verifyingAddress ? "Verifying address…" : "Continue"}
           </button>
@@ -1210,7 +1243,7 @@ export function BookingFlow({
               type="button"
               disabled={createBooking.isPending}
               onClick={() => submit("deposit")}
-              className="h-12 flex-1 border border-[#101217] bg-white text-sm font-bold uppercase tracking-wide text-[#101217] disabled:opacity-40"
+              className="h-12 flex-1 rounded-xl border border-[#101217] bg-white text-sm font-bold uppercase tracking-wide text-[#101217] disabled:opacity-40"
             >
               {createBooking.isPending ? "…" : `Pay deposit $${depositEstimate.toFixed(2)}`}
             </button>
@@ -1218,29 +1251,30 @@ export function BookingFlow({
               type="button"
               disabled={createBooking.isPending}
               onClick={() => submit("full")}
-              className="h-12 flex-1 bg-[#101217] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
+              className="h-12 flex-1 rounded-xl bg-[#101217] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
             >
               {createBooking.isPending ? "…" : `Pay full $${(price ?? 0).toFixed(2)}`}
             </button>
           </div>
         ) : (
-          // Regular: pay now (→ checkout) or proceed without paying (pay after).
-          <div className="flex flex-1 flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              disabled={createBooking.isPending}
-              onClick={() => submit("proceed")}
-              className="h-12 flex-1 border border-[#101217] bg-white text-sm font-bold uppercase tracking-wide text-[#101217] disabled:opacity-40"
-            >
-              {createBooking.isPending ? "…" : "Proceed to booking"}
-            </button>
+          // Regular: pay now (→ checkout) is the primary action; booking and
+          // paying after the visit is the secondary path.
+          <div className="flex flex-1 flex-col gap-2">
             <button
               type="button"
               disabled={createBooking.isPending}
               onClick={() => submit("pay_now")}
-              className="h-12 flex-1 bg-[#101217] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
+              className="h-12 w-full rounded-xl bg-[#c96c83] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
             >
-              {createBooking.isPending ? "…" : "Pay now"}
+              {createBooking.isPending ? "…" : `Pay now $${((price ?? 0) + addonTotal + (Number(tip) || 0)).toFixed(2)}`}
+            </button>
+            <button
+              type="button"
+              disabled={createBooking.isPending}
+              onClick={() => submit("proceed")}
+              className="h-12 w-full rounded-xl border border-[#101217]/20 bg-white text-sm font-bold text-[#101217] disabled:opacity-40"
+            >
+              {createBooking.isPending ? "…" : "Book now, pay after the visit"}
             </button>
           </div>
         )}
@@ -1255,7 +1289,7 @@ export function BookingFlow({
   )
 }
 
-// Shown when a day has no openings. If SimplyBook found the next date with an
+// Shown when a day has no openings. If the engine found the next date with an
 // opening, offer a one-tap jump to it; otherwise just prompt another day.
 function NextDayPrompt({ nextDate, onJump }: { nextDate: string | null; onJump: (d: string) => void }) {
   if (!nextDate) {
@@ -1273,7 +1307,7 @@ function NextDayPrompt({ nextDate, onJump }: { nextDate: string | null; onJump: 
       <button
         type="button"
         onClick={() => onJump(nextDate)}
-        className="mt-2 inline-flex h-9 items-center bg-[#101217] px-4 text-sm font-bold text-white"
+        className="mt-2 inline-flex h-9 items-center rounded-lg bg-[#101217] px-4 text-sm font-bold text-white"
       >
         Jump to {label}
       </button>
@@ -1308,23 +1342,27 @@ function StaffOption({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 border px-4 py-3 text-left transition-colors",
-        active ? "border-[#c96c83] bg-[#c96c83]/10" : "border-black/15 bg-white hover:border-black/30",
+        "flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 text-left transition-colors",
+        active ? "border-[#c96c83] bg-[#c96c83]/10" : "border-black/10 bg-white hover:border-black/25",
       )}
     >
-      <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-full bg-[#f0ece4] text-[#c96c83]">
+      <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-[#f0ece4] text-[#c96c83]">
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt={label} className="size-full object-cover" />
+          <img src={assetUrl(photo)} alt={label} className="size-full object-cover" />
         ) : (
           <User className="size-5" />
         )}
       </span>
-      <span className="min-w-0">
+      <span className="min-w-0 flex-1">
         <span className="block text-sm font-bold text-[#101217]">{label}</span>
         {hint ? <span className="block truncate text-xs font-medium text-[#8a8d93]">{hint}</span> : null}
       </span>
-      {active ? <Check className="ml-auto size-4 text-[#c96c83]" /> : null}
+      {active ? (
+        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#c96c83] text-white">
+          <Check className="size-4" />
+        </span>
+      ) : null}
     </button>
   )
 }
@@ -1339,4 +1377,21 @@ function Shell({ children, dashboardMode = false }: { children: React.ReactNode;
 
 function cn(...classes: (string | false | null | undefined)[]) {
   return classes.filter(Boolean).join(" ")
+}
+
+// A slot label shows the whole appointment window, not just the start: a 30-min
+// service at 09:00 reads "9:00 - 9:30", a 2-hour one reads "9:00 - 11:00". Start
+// is the backend's 24h "HH:MM"; end = start + the full visit duration.
+function slotRange(start: string, minutes: number) {
+  const [h, m] = start.split(":").map(Number)
+  if (Number.isNaN(h) || Number.isNaN(m)) return start
+  const to12 = (hh: number, mm: number) => {
+    const period = hh >= 12 ? "PM" : "AM"
+    const hour12 = hh % 12 === 0 ? 12 : hh % 12
+    return `${hour12}:${String(mm).padStart(2, "0")} ${period}`
+  }
+  const total = h * 60 + m + Math.max(minutes, 0)
+  const endH = Math.floor(total / 60) % 24
+  const endM = total % 60
+  return `${to12(h, m)} – ${to12(endH, endM)}`
 }

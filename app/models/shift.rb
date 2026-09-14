@@ -1,5 +1,8 @@
 class Shift < ApplicationRecord
   belongs_to :employee_profile
+  # A shift is the clock-in/out for one booking. Optional so any legacy
+  # day-level shift rows (pre per-booking clock) remain valid.
+  belongs_to :booking, optional: true
 
   enum :status, { open: "open", closed: "closed" }, prefix: true
 

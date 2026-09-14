@@ -1,7 +1,7 @@
 class EmployeeProfileSerializer < Blueprinter::Base
   identifier :id
   fields :title, :bio, :years_experience, :on_shift, :active, :dispatchable,
-         :base_latitude, :base_longitude, :simplybook_unit_id, :traccar_device_id, :service_fsas, :partner_id
+         :base_latitude, :base_longitude, :service_fsas, :partner_id
 
   field :partner_name do |profile|
     profile.partner&.name
@@ -17,4 +17,10 @@ class EmployeeProfileSerializer < Blueprinter::Base
   end
 
   association :user, blueprint: UserSerializer
+
+  # The services this tech performs - the staff app uses these as the add-on
+  # candidates when the tech books a client (the tech's OWN other services).
+  association :services, blueprint: ServiceSerializer do |profile|
+    profile.services.where(active: true)
+  end
 end

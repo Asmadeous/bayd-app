@@ -38,7 +38,6 @@ class Partner < ApplicationRecord
         user: user, title: "#{name} (Partner)", active: true, dispatchable: true
       )
     end
-    register_provider_in_simplybook(profile)
     profile
   end
 
@@ -87,21 +86,6 @@ class Partner < ApplicationRecord
   end
 
   private
-
-  # Best-effort: register the partner-provider in SimplyBook and store its unit
-  # id. Pure admin-API write, no email verification. Never raises — the provider
-  # exists locally regardless and an admin can set the unit id later.
-  def register_provider_in_simplybook(profile)
-    return if ENV["SIMPLYBOOK_COMPANY"].blank?
-    return if profile.simplybook_unit_id.present?
-
-    unit_id = SimplyBook::Client.new.create_provider(
-      name: name, email: email, phone: phone, service_ids: []
-    )
-    profile.update_columns(simplybook_unit_id: unit_id) if unit_id.present?
-  rescue StandardError => e
-    Rails.logger.warn("[Partner##{id}] SimplyBook provider create failed: #{e.message}")
-  end
 
   def assign_slug
     base = name.to_s.parameterize.presence || "partner"

@@ -60,4 +60,65 @@ RSpec.describe "POST /api/v1/employee/bookings", type: :request do
          headers: auth_header(tech_user), as: :json
     expect(response).to have_http_status(:unprocessable_entity)
   end
+
+  it "geocodes the typed address so the booking has coordinates to navigate to" do
+    # Address auto-geocodes on save; stub the lookup Geocoder does for a fresh row.
+    allow_any_instance_of(Address).to receive(:geocode) do |addr|
+      addr.latitude = 43.65
+      addr.longitude = -79.38
+    end
+    post "/api/v1/employee/bookings", params: valid_params, headers: auth_header(tech_user), as: :json
+    expect(response).to have_http_status(:created)
+    b = Booking.last
+    expect(b.service_latitude.to_f).to eq(43.65)
+    expect(b.service_longitude.to_f).to eq(-79.38)
+  end
+
+  it "rejects the booking when the address can't be geocoded (no coordless booking)" do
+    allow_any_instance_of(Address).to receive(:geocode) # no-op → lat/lng stay nil
+    expect {
+      post "/api/v1/employee/bookings", params: valid_params, headers: auth_header(tech_user), as: :json
+    }.not_to change(Booking, :count)
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(JSON.parse(response.body)["error"]).to match(/locate that address/)
+  end
+
+  describe "add-ons (extra services the same tech performs this visit)" do
+    # The primary + the add-on share a non-lashes category so they're combinable,
+    # and the tech performs BOTH (employee_services).
+    let(:category) { service.service_category }
+    let(:addon) { create(:service, service_category: category, duration_minutes: 30, price: 40) }
+
+    before do
+      profile.services << service << addon
+    end
+
+    it "folds a performed add-on's price and duration into the one booking" do
+      post "/api/v1/employee/bookings",
+           params: valid_params(addon_service_ids: [ addon.id ]),
+           headers: auth_header(tech_user), as: :json
+      expect(response).to have_http_status(:created)
+
+      booking = Booking.last
+      expect(booking.total.to_f).to eq(120.0)                 # 80 primary + 40 add-on
+      expect(booking.ends_at - booking.starts_at).to eq(90.minutes) # 60 + 30
+      expect(booking.raw["addons"].map { |a| a["id"] }).to eq([ addon.id ])
+      expect(JSON.parse(response.body)["addons"].size).to eq(1)
+    end
+
+    it "skips (and reports) an add-on the tech doesn't perform; the visit still books" do
+      other = create(:service, service_category: category, price: 25) # tech does NOT perform this
+
+      post "/api/v1/employee/bookings",
+           params: valid_params(addon_service_ids: [ other.id ]),
+           headers: auth_header(tech_user), as: :json
+      expect(response).to have_http_status(:created)
+
+      booking = Booking.last
+      expect(booking.total.to_f).to eq(80.0)  # unchanged - add-on not applied
+      body = JSON.parse(response.body)
+      expect(body["addons"]).to be_empty
+      expect(body["addon_failures"].first["service_id"]).to eq(other.id)
+    end
+  end
 end

@@ -1,9 +1,11 @@
 # Computes the distance a tech travelled during a shift, for fuel compensation.
 #
 # Route = clock-in location → each job serviced during the shift (in order) →
-# clock-out location. Leg distances use the coordinates already recorded on each
-# booking (assignment-time service location, falling back to the address). Legs
-# with unknown coordinates are skipped rather than guessed.
+# clock-out location. Leg distances are REAL ROAD distances (Google Directions
+# via Directions.road_km) so the tech is paid for what they actually drove, not a
+# straight-line under-estimate. If routing is unavailable for a leg, Directions
+# falls back to straight-line so the leg is never dropped to zero. Legs with
+# unknown coordinates are skipped rather than guessed.
 class MileageCalculator
   SERVICED_STATUSES = %w[in_progress completed].freeze
 
@@ -15,11 +17,11 @@ class MileageCalculator
     @shift = shift
   end
 
-  # Total travelled distance in km, rounded to metres.
+  # Total travelled ROAD distance in km, rounded to metres.
   def distance_km
     route_points.each_cons(2).sum do |a, b|
-      leg = Geo.haversine_km(a[:lat], a[:lng], b[:lat], b[:lng])
-      leg.finite? ? leg : 0.0
+      leg = Directions.road_km(a[:lat], a[:lng], b[:lat], b[:lng])
+      leg || 0.0
     end.round(3)
   end
 

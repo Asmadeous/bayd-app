@@ -114,7 +114,7 @@ export function useUpdateBooking() {
 
 // Admin reschedule: no cutoff, no cap, and an optional tech move via
 // employee_profile_id. Hits the admin endpoint; re-validates travel + double-
-// booking and re-syncs SimplyBook server-side.
+// booking server-side.
 export function useAdminRescheduleBooking() {
   const qc = useQueryClient()
   return useMutation({
@@ -155,8 +155,6 @@ export interface EmployeeInput {
   base_latitude?: string | null
   base_longitude?: string | null
   service_fsas?: string[]
-  simplybook_unit_id?: string | null
-  traccar_device_id?: string | null
 }
 
 export function useUpdateEmployee(id: number) {

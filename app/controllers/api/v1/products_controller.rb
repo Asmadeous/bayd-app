@@ -9,7 +9,7 @@ module Api
       # the widget is never empty. Returns up to `limit` (default 8).
       def top_sellers
         limit = (params[:limit].presence || 8).to_i.clamp(1, 24)
-        base  = Product.active.in_stock.includes({ product_category: :parent }, :product_variants)
+        base  = Product.active.in_stock.includes({ product_category: :parent }, :product_variants, image_attachment: :blob)
 
         sold_ids = OrderItem.joins(:order)
                             .where(orders: { status: %w[paid shipped] })
@@ -32,7 +32,7 @@ module Api
       end
 
       def index
-        scope = Product.active.in_stock.includes({ product_category: :parent }, :product_variants)
+        scope = Product.active.in_stock.includes({ product_category: :parent }, :product_variants, image_attachment: :blob)
         if params[:category_id].present?
           category = ProductCategory.find_by(id: params[:category_id])
           if category
@@ -46,7 +46,7 @@ module Api
       end
 
       def show
-        product = Product.active.includes(:product_variants).find(params[:id])
+        product = Product.active.includes(:product_variants, image_attachment: :blob).find(params[:id])
         render json: ProductSerializer.render_as_hash(product)
       end
     end

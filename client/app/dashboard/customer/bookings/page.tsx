@@ -34,7 +34,23 @@ import {
 import { Button } from "@/components/ui/button"
 import { useBookings, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
 import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
+import { MessageTechButton } from "@/components/dashboard/message-tech-button"
+import { MeetingButton } from "@/components/dashboard/meeting-button"
+import { TechEta } from "@/components/dashboard/tech-eta"
 import { customerBookingsSteps } from "@/lib/tours/customer-bookings-tour"
+
+// Only subscribe to live tracking for a booking happening today.
+function isToday(iso: string): boolean {
+  const d = new Date(iso)
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+}
+
+// The service address coords for the map's destination pin, or null if unknown.
+function destinationOf(b: Booking): { lat: number; lng: number } | null {
+  if (!b.service_latitude || !b.service_longitude) return null
+  return { lat: Number(b.service_latitude), lng: Number(b.service_longitude) }
+}
 
 const ALL_STATUSES: Booking["status"][] = [
   "pending", "confirmed", "in_progress", "completed", "cancelled", "no_show",
@@ -198,12 +214,14 @@ export default function CustomerBookingsPage() {
           ) : (
             <div className="space-y-3">
               {filtered.map((b) => (
+                <div key={b.id}>
                 <BookingCard
-                  key={b.id}
                   booking={b}
                   actions={
                     b.status === "pending" || b.status === "confirmed" ? (
                       <div className="flex flex-wrap items-center gap-2">
+                        <MessageTechButton techUserId={b.employee_profile?.user?.id} />
+                        <MeetingButton booking={b} />
                         <RescheduleDialog booking={b} />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -246,6 +264,14 @@ export default function CustomerBookingsPage() {
                     ) : null
                   }
                 />
+                {b.status === "confirmed" && (
+                  <TechEta
+                    bookingId={b.id}
+                    enabled={isToday(b.starts_at)}
+                    destination={destinationOf(b)}
+                  />
+                )}
+                </div>
               ))}
             </div>
           )}

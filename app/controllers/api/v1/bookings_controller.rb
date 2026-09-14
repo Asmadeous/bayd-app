@@ -16,14 +16,13 @@ module Api
       def cancel
         booking = scoped_booking
         booking.update!(status: :cancelled, cancellation_reason: params[:reason])
-        SimplyBook::Client.new.cancel_booking(booking.simplybook_id) if booking.simplybook_id
         render json: BookingSerializer.render_as_hash(booking)
       end
 
       # Customer self-reschedule. Gated: not within RESCHEDULE_CUTOFF_HOURS of the
       # start, and at most MAX_CUSTOMER_RESCHEDULES times per booking. Admins have
       # their own uncapped endpoint. Re-validates availability + travel + double-
-      # booking and re-syncs SimplyBook via Booking#reschedule!.
+      # booking via Booking#reschedule!.
       RESCHEDULE_CUTOFF_HOURS  = 24
       MAX_CUSTOMER_RESCHEDULES = 2
 

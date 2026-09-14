@@ -44,32 +44,53 @@ export async function openHelcimPay(checkoutToken: string): Promise<HelcimResult
 
   return new Promise<HelcimResult>((resolve) => {
     const eventName = `helcim-pay-js-${checkoutToken}`
+    let settled = false
 
     function onMessage(event: MessageEvent) {
       const data = event.data as { eventName?: string; eventStatus?: string } | undefined
       if (!data || data.eventName !== eventName) return
 
       if (data.eventStatus === "SUCCESS") {
-        cleanup()
-        resolve("success")
+        finish("success")
       } else if (data.eventStatus === "ABORTED" || data.eventStatus === "HIDE") {
-        cleanup()
-        resolve("abort")
+        finish("abort")
       } else if (data.eventStatus === "ERROR") {
-        cleanup()
-        resolve("error")
+        finish("error")
       }
+    }
+
+    function finish(result: HelcimResult) {
+      if (settled) return
+      settled = true
+      cleanup()
+      resolve(result)
     }
 
     function cleanup() {
       window.removeEventListener("message", onMessage)
       // Remove the HelcimPay iframe overlay (the SDK auto-removes on HIDE but
-      // not on SUCCESS/ERROR)
-      const frame = document.getElementById("helcimPayIframe")
-      if (frame) frame.remove()
+      // not on SUCCESS/ERROR) and our own close button.
+      document.getElementById("helcimPayIframe")?.remove()
+      closeBtn?.remove()
     }
+
+    // HelcimPay's own error state ("Unable to load…") doesn't always post an
+    // event, leaving the iframe overlay stuck with no exit. Inject our OWN close
+    // button on top so the user can always dismiss it (resolves as "abort").
+    const closeBtn = document.createElement("button")
+    closeBtn.setAttribute("aria-label", "Close payment")
+    closeBtn.textContent = "✕"
+    closeBtn.style.cssText = [
+      "position:fixed", "top:calc(env(safe-area-inset-top) + 12px)", "right:16px",
+      "z-index:2147483647", "width:40px", "height:40px", "border-radius:9999px",
+      "border:none", "background:rgba(20,16,15,0.75)", "color:#fff",
+      "font-size:20px", "line-height:40px", "cursor:pointer",
+    ].join(";")
+    closeBtn.onclick = () => finish("abort")
 
     window.addEventListener("message", onMessage)
     window.appendHelcimPayIframe!(checkoutToken, true)
+    // Add the close button after the iframe is in the DOM so it stacks on top.
+    setTimeout(() => document.body.appendChild(closeBtn), 300)
   })
 }

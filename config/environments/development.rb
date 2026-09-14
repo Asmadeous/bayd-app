@@ -68,4 +68,11 @@ Rails.application.configure do
   config.action_mailer.delivery_method = :test
   config.action_mailer.raise_delivery_errors = false
   config.action_mailer.default_url_options = { host: "localhost", port: 3003 }
+
+  # Allow tunneling the dev API to a device (ngrok) for mobile-app testing. Rails
+  # 8 Host Authorization otherwise blocks the tunnel domain. Dev-only; production
+  # pins its own hosts.
+  config.hosts << /.*\.ngrok-free\.app/
+  config.hosts << /.*\.ngrok\.io/
+  config.hosts << /.*\.ngrok\.app/
 end

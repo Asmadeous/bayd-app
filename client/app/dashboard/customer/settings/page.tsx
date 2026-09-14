@@ -9,6 +9,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { CardOnFile } from "@/components/dashboard/card-on-file"
+import { PasskeyManager } from "@/components/dashboard/passkey-manager"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/hooks/use-auth"
@@ -237,6 +238,8 @@ export default function CustomerSettingsPage() {
               <span className="min-w-0 truncate">{user?.email}</span>
             </div>
           </DashboardPanel>
+
+          <PasskeyManager />
 
           <div data-tour="customer-settings-card-on-file">
             <CardOnFile />

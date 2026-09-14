@@ -29,6 +29,12 @@ class User < ApplicationRecord
   has_many :forum_posts, dependent: :destroy
   has_one  :newsletter_subscriber, dependent: :destroy
   has_many :notifications, dependent: :destroy
+  has_many :sent_messages, class_name: "Message", foreign_key: :sender_id, dependent: :destroy
+  has_many :device_tokens, dependent: :destroy
+  has_many :webauthn_credentials, dependent: :destroy
+
+  # Stable, opaque handle for WebAuthn (never the email). Set on create.
+  before_create { self.webauthn_id ||= SecureRandom.uuid }
   has_many :invoices, dependent: :destroy
   has_many :subscriptions, dependent: :destroy
   has_many :magic_link_tokens, dependent: :destroy

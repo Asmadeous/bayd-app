@@ -15,12 +15,12 @@ interface EmployeeProfile {
   dispatchable: boolean
   base_latitude: string | null
   base_longitude: string | null
-  simplybook_unit_id: string | null
-  traccar_device_id: string | null
   service_fsas: string[]
   partner_id: number | null
   partner_name: string | null
   user: { first_name: string | null; last_name: string | null; email: string; phone: string | null }
+  // The services this tech performs - the add-on candidates when they book a client.
+  services: { id: number; name: string; duration_minutes: number; price: string; category_name: string | null }[]
 }
 
 interface PagedResponse<T> {
@@ -28,17 +28,64 @@ interface PagedResponse<T> {
   pagination: { current_page: number; per_page: number; total_count: number; total_pages: number; next_page: number | null }
 }
 
-export function useEmployeeProfile() {
+// Rendered according to account type — a direct tech and a partner provider get
+// mutually-exclusive shapes (the two never mix).
+export type EmployeeEarnings =
+  | {
+      account_type: "direct"
+      tips: { owed: string; paid_out: string }
+      fuel_reimbursement: number
+    }
+  | {
+      account_type: "partner"
+      partner: {
+        name: string
+        platform_fee_pct: string
+        share_pct: string
+        owed: string
+        gross_unsettled: string
+        unsettled_count: number
+        paid_out: string
+      }
+    }
+
+// The tech's own money: card tips owed/paid, fuel reimbursement, and (partner
+// providers only) the partner payout at the platform-fee split.
+export function useEmployeeEarnings() {
   return useQuery({
-    queryKey: ["employee-profile"],
-    queryFn: () => api.get<EmployeeProfile>("/employee/profile").then((r) => r.data),
+    queryKey: ["employee-earnings"],
+    queryFn: () => api.get<EmployeeEarnings>("/employee/earnings").then((r) => r.data),
   })
 }
 
-export function useEmployeeSchedule(page = 1) {
+export function useEmployeeProfile(options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: ["employee-schedule", page],
-    queryFn: () => api.get<PagedResponse<Booking>>("/employee/schedule", { params: { page } }).then((r) => r.data),
+    queryKey: ["employee-profile"],
+    queryFn: () => api.get<EmployeeProfile>("/employee/profile").then((r) => r.data),
+    enabled: options?.enabled ?? true,
+  })
+}
+
+// filter "past" returns the tech's job history (completed/cancelled/no-show);
+// omitted returns the active working schedule.
+// A single one of the tech's OWN bookings — for the navigate / call screens.
+// The customer GET /bookings/:id is scoped to the customer and returns nothing
+// for a staff user, so staff must use this employee-scoped endpoint.
+export function useEmployeeBooking(id: number) {
+  return useQuery({
+    queryKey: ["employee-booking", id],
+    queryFn: () => api.get<Booking>(`/employee/bookings/${id}`).then((r) => r.data),
+    enabled: !!id,
+  })
+}
+
+export function useEmployeeSchedule(page = 1, filter?: "past") {
+  return useQuery({
+    queryKey: ["employee-schedule", page, filter ?? "active"],
+    queryFn: () =>
+      api
+        .get<PagedResponse<Booking>>("/employee/schedule", { params: { page, filter } })
+        .then((r) => r.data),
   })
 }
 
@@ -76,6 +123,7 @@ export interface StaffBookingInput {
   customer: { email: string; first_name?: string; phone?: string }
   client_type?: string
   party_size?: number
+  addon_service_ids?: number[]
   address?: {
     line1: string
     city: string

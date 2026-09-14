@@ -1,8 +1,14 @@
 #!/bin/bash -e
 
-# If running the rails server then create or migrate existing database
+# If running the rails server then create or migrate the database, then seed it.
+# db:prepare only seeds when it CREATES the database, so on an existing production
+# DB it migrates but never re-seeds. We run db:seed explicitly so every deploy
+# applies seed changes (new/removed technicians, catalog, settings). Safe because
+# db/seeds.rb is idempotent (find_or_create) and only ever deactivates removed
+# staff, never clobbering live passwords, shift status, or history.
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
+  ./bin/rails db:seed
 fi
 
 exec "${@}"

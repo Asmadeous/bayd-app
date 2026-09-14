@@ -9,6 +9,8 @@ import { useSearchParams } from "next/navigation"
 import { buttonVariants } from "@/components/ui/button"
 import { PasswordInput } from "@/components/ui/password-input"
 import { GoogleSignIn } from "@/features/auth/components/google-sign-in"
+import { PhoneLogin } from "@/features/auth/components/phone-login"
+import { PasskeySignIn } from "@/features/auth/components/passkey-sign-in"
 import type { AuthPageContent } from "@/features/auth/types"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/lib/hooks/use-auth"
@@ -29,6 +31,8 @@ export function AuthPage({ content }: AuthPageProps) {
   // account, requesting a magic link 403s and we reveal a password step.
   const [needsPassword, setNeedsPassword] = useState(false)
   const [magicLinkSent, setMagicLinkSent] = useState(false)
+  // Customers can sign in by phone + OTP instead of email (signin mode only).
+  const [phoneMode, setPhoneMode] = useState(false)
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -190,6 +194,17 @@ export function AuthPage({ content }: AuthPageProps) {
                   type="button"
                 >
                   Use a different email
+                </button>
+              </div>
+            ) : content.mode === "signin" && phoneMode ? (
+              <div className="mt-9 space-y-4">
+                <PhoneLogin />
+                <button
+                  type="button"
+                  onClick={() => setPhoneMode(false)}
+                  className="text-sm font-extrabold text-[#101217] transition-colors hover:text-[#c96c83]"
+                >
+                  Sign in with email instead
                 </button>
               </div>
             ) : (
@@ -384,7 +399,20 @@ export function AuthPage({ content }: AuthPageProps) {
             </form>
             )}
 
-            {content.mode !== "forgot" && !magicLinkSent && <GoogleSignIn />}
+            {content.mode !== "forgot" && !magicLinkSent && !phoneMode && <GoogleSignIn />}
+
+            {content.mode === "signin" && !magicLinkSent && !phoneMode && (
+              <>
+                <PasskeySignIn email={values.email} />
+                <button
+                  type="button"
+                  onClick={() => setPhoneMode(true)}
+                  className="mt-4 w-full text-center text-sm font-semibold text-[#5f6268] transition-colors hover:text-[#c96c83]"
+                >
+                  Sign in with your phone number instead
+                </button>
+              </>
+            )}
 
             <div className="mt-7 border-t border-black/10 pt-6">
               <p className="text-sm text-[#5f6268]">

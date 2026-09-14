@@ -39,23 +39,6 @@ RSpec.describe "Webhooks — raw JSON body parsing", type: :request do
     end
   end
 
-  describe "POST /api/v1/webhooks/simplybook" do
-    before { allow_any_instance_of(SimplyBook::WebhookProcessor).to receive(:call) }
-
-    it "parses the JSON body and records the event (no 500)" do
-      around_env("SIMPLYBOOK_WEBHOOK_SECRET", nil) do
-        expect {
-          json_post "/api/v1/webhooks/simplybook",
-                    { notification_id: "note-1", event: "create" }
-        }.to change(SyncEvent, :count).by(1)
-      end
-
-      expect(response).to have_http_status(:ok)
-      event = SyncEvent.find_by(provider: "simplybook", external_id: "note-1")
-      expect(event.payload["event"]).to eq("create")
-    end
-  end
-
   describe "POST /api/v1/webhooks/hpay (Helcim)" do
     before { allow(PaymentWebhookProcessor).to receive(:helcim) }
 
@@ -70,29 +53,6 @@ RSpec.describe "Webhooks — raw JSON body parsing", type: :request do
       event = SyncEvent.find_by(provider: "helcim", external_id: "txn_h_1")
       expect(event.payload["type"]).to eq("transaction")
       expect(PaymentWebhookProcessor).to have_received(:helcim)
-    end
-  end
-
-  describe "POST /api/v1/webhooks/traccar" do
-    before { allow_any_instance_of(Traccar::WebhookProcessor).to receive(:call) }
-
-    it "parses the JSON body and stores it as the payload (no 500)" do
-      around_env("TRACCAR_WEBHOOK_SECRET", "s3cret") do
-        json_post "/api/v1/webhooks/traccar",
-                  { positions: [ { deviceId: "dev-1", latitude: 43.6, longitude: -79.6 } ] },
-                  { "X-Traccar-Secret" => "s3cret" }
-      end
-
-      expect(response).to have_http_status(:ok)
-      event = SyncEvent.find_by(provider: "traccar")
-      expect(event.payload["positions"].first["deviceId"]).to eq("dev-1")
-    end
-
-    it "rejects a bad secret before parsing" do
-      around_env("TRACCAR_WEBHOOK_SECRET", "s3cret") do
-        json_post "/api/v1/webhooks/traccar", { positions: [] }, { "X-Traccar-Secret" => "wrong" }
-      end
-      expect(response).to have_http_status(:unauthorized)
     end
   end
 

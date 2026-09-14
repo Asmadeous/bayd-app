@@ -10,14 +10,18 @@ gem "bcrypt", "~> 3.1.7"
 # Auth
 gem "devise"
 gem "devise-jwt"
+# Passkeys / WebAuthn (optional MFA) — server-side relying-party crypto
+gem "webauthn", "~> 3.0"
 
 # PostGIS spatial queries
 gem "activerecord-postgis-adapter"
 gem "rgeo-geojson"
 
-# HTTP clients (Traccar + SimplyBook wrappers)
+# HTTP clients (Traccar wrapper, FCM push)
 gem "faraday"
 gem "faraday-retry"
+# OAuth2 access tokens for FCM HTTP v1 (service-account auth)
+gem "googleauth"
 
 # Serialization
 gem "blueprinter"
@@ -50,7 +54,8 @@ gem "geocoder"
 # Windows does not include zoneinfo files
 gem "tzinfo-data", platforms: %i[windows jruby]
 
-# DB-backed cache and queue
+# DB-backed cache, queue, and websockets (ActionCable) — Postgres, no Redis
+gem "solid_cable"
 gem "solid_cache"
 gem "solid_queue"
 

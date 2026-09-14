@@ -1,6 +1,15 @@
 class ProductSerializer < Blueprinter::Base
   identifier :id
-  fields :name, :description, :sku, :price, :stock_quantity, :image_url, :gallery_urls, :shipping_speed
+  fields :name, :description, :sku, :price, :stock_quantity, :gallery_urls, :shipping_speed
+
+  # Prefer an uploaded image; fall back to the legacy image_url string.
+  field :image_url do |product|
+    if product.image.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(product.image)
+    else
+      product.image_url
+    end
+  end
 
   field :category do |product, _opts|
     cat = product.product_category

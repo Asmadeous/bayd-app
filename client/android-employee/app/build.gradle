@@ -1,0 +1,75 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+android {
+    namespace = "ca.baydspa.staff"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "ca.baydspa.staff"
+        // Square Mobile Payments SDK (Tap to Pay) needs API 28+, above the shared 24.
+        minSdkVersion 28
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // Square Tap to Pay application id, exposed as the square_application_id
+        // string resource that SquarePosApp reads to initialize the SDK. Empty by
+        // default; set SQUARE_APPLICATION_ID in the build env to enable Tap to Pay.
+        // Empty -> SDK stays uninitialized -> app falls back to a payment link.
+        resValue "string", "square_application_id", (System.getenv("SQUARE_APPLICATION_ID") ?: "")
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    // Kotlin (Square Tap to Pay plugin) must match the Java target Capacitor
+    // uses (21), or compileDebugKotlin fails JVM-target validation.
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+    kotlinOptions {
+        jvmTarget = "21"
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    // Square Mobile Payments SDK — Tap to Pay on the phone's NFC (no reader).
+    implementation "com.squareup.sdk:mobile-payments-sdk:2.6.1"
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    // logger.info is invisible at default log level, so a missing config used to
+    // ship a push-less APK with no sign anything was wrong. Staff push is how jobs
+    // get dispatched, so this has to be loud.
+    logger.warn("WARNING: android-employee/app/google-services.json is missing. The google-services plugin was NOT applied and PUSH NOTIFICATIONS WILL NOT WORK in this build. Register ca.baydspa.staff in the Firebase console and download its google-services.json.")
+}

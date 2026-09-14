@@ -1,0 +1,25 @@
+// Square Tap to Pay — iOS build configuration (staff app)
+//
+// Xcode does NOT read .env files. Native config goes here (an .xcconfig) and is
+// wired to the target in Xcode: select the App PROJECT -> Info tab ->
+// Configurations -> set Debug and Release to use "Square" (this file). The
+// Info.plist reads SQUARE_APPLICATION_ID via $(SQUARE_APPLICATION_ID).
+//
+// FILL IN the value below with your Square Application ID from
+// developer.squareup.com -> your app -> Credentials. It must match the SAME
+// environment (sandbox/production) as the access token + location the backend
+// uses. Sandbox ids start with "sandbox-sq0idb-", production with "sq0idp-".
+// Leave it blank to keep Tap to Pay inert (the app falls back to a payment link).
+
+SQUARE_APPLICATION_ID =
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTE: these are NOT read by Xcode. They are consumed by the WEB build step
+// (`npm run sync:mobile:employee`) which bakes them into the JS bundle. To point
+// the app at a non-production API for device testing, export it in the shell
+// BEFORE running the sync (you already ran sync against production):
+//
+//   MOBILE_API_URL="https://<your-host>/api/v1" npm run sync:mobile:employee
+//
+// Default when unset: https://api.baydspa.ca/api/v1
+// ─────────────────────────────────────────────────────────────────────────────

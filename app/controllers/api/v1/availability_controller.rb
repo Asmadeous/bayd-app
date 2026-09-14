@@ -1,8 +1,8 @@
 module Api
   module V1
     # Public availability checks used by the booking form so customers pick a real
-    # open slot (from SimplyBook, which subtracts each provider's booked time from
-    # their working schedule) instead of typing any date/time.
+    # open slot (computed by our own AvailabilityEngine from each tech's bookable
+    # hours minus their bookings and travel time) instead of typing any date/time.
     #
     #   GET /availability          → one tech's open times for a service+date
     #   GET /availability/any      → every tech's open times for a service+date,
@@ -12,6 +12,8 @@ module Api
       skip_before_action :authenticate_user!
 
       # One specific tech's open times. { slots:, mapped:, date: }
+      # `mapped` is kept for backwards compatibility with the booking form: it now
+      # means "this tech performs the service" (there's no external mapping).
       def show
         service = Service.active.find_by(id: params[:service_id])
         employee = EmployeeProfile.active.find_by(id: params[:employee_id])
@@ -22,19 +24,12 @@ module Api
                         status: :bad_request
         end
 
-        return render json: { slots: [], mapped: false } unless mapped?(service, employee)
+        return render json: { slots: [], mapped: false } unless performs?(employee, service)
+        # Mirror the booking gate: a tech who doesn't cover the customer's FSA can't
+        # take the job, so offer no slots rather than slots that fail at booking.
+        return render json: { slots: [], mapped: true, date: date.to_s } unless serves_customer_fsa?(employee)
 
-        slots = client&.available_slots(
-          service_id:  service.simplybook_event_id,
-          provider_id: employee.simplybook_unit_id,
-          date:        date,
-          count:       slot_count
-        ) || []
-        # Drop slots the tech can't reach given travel between adjacent jobs (only
-        # when we know the customer's location — sent once the address is entered).
-        slots = filter_by_travel(employee, service, date, slots)
-
-        render json: { slots: slots, mapped: true, date: date.to_s }
+        render json: { slots: slots_for(employee, service, date), mapped: true, date: date.to_s }
       rescue StandardError => e
         Rails.logger.warn("[AvailabilityController#show] #{e.class}: #{e.message}")
         render json: { slots: [], mapped: false, error: "availability_unavailable" }
@@ -52,21 +47,12 @@ module Api
           return render json: { error: "service_id and a valid date are required" }, status: :bad_request
         end
 
-        # Techs who perform this service AND are mapped to SimplyBook.
-        techs = service.employee_profiles.select { |ep| ep.active? && ep.simplybook_unit_id.present? }
-        if service.simplybook_event_id.blank? || techs.empty? || client.nil?
-          return render json: { date: date.to_s, mapped: false, providers: [], by_time: {} }
-        end
+        techs = service.employee_profiles.select { |ep| ep.active? && serves_customer_fsa?(ep) }
+        return render json: { date: date.to_s, mapped: false, providers: [], by_time: {} } if techs.empty?
 
         providers = techs.map do |ep|
-          slots = client.available_slots(
-            service_id:  service.simplybook_event_id,
-            provider_id: ep.simplybook_unit_id,
-            date:        date,
-            count:       slot_count
-          )
-          slots = filter_by_travel(ep, service, date, slots)
-          { employee_id: ep.id, name: ep.user&.first_name, title: ep.title, photo_url: ep.photo_url, slots: slots }
+          { employee_id: ep.id, name: ep.user&.first_name, title: ep.title, photo_url: ep.photo_url,
+            slots: slots_for(ep, service, date) }
         end
 
         # Invert to "who is free at each time".
@@ -90,51 +76,40 @@ module Api
 
       private
 
+      # This tech's open "HH:MM" starts for the visit, from our engine. Travel is
+      # filtered when the customer's coordinates are known (sent once the address
+      # is entered) — the SAME TravelFeasibility the booking gate uses, so an
+      # offered slot won't be rejected at booking time.
+      def slots_for(employee, service, date)
+        lat, lng = customer_coords
+        AvailabilityEngine.new(
+          employee: employee, service: service, date: date,
+          party_size: party_size, customer_lat: lat, customer_lng: lng
+        ).slots
+      end
+
       # Earliest date any of the given techs has an opening for the service,
-      # searching forward from `date`. Returns "YYYY-MM-DD" or nil.
+      # searching forward from `date`. Returns a Date or nil.
       def next_available_date(service, techs, date)
+        lat, lng = customer_coords
         dates = techs.filter_map do |ep|
-          client&.first_available_date(
-            service_id:  service.simplybook_event_id,
-            provider_id: ep.simplybook_unit_id,
-            date:        date,
-            count:       slot_count
+          AvailabilityEngine.first_available_date(
+            employee: ep, service: service, from: date,
+            party_size: party_size, customer_lat: lat, customer_lng: lng
           )
         end
         dates.min
       end
 
       # How many people are in the party (2..N for a group; 1 for everyone else).
-      # A group is ONE technician doing the whole party in a single, longer visit —
-      # it does NOT consume N parallel capacity seats. So party size affects the
-      # visit's DURATION (below) and price, never SimplyBook's native `count`.
+      # A group is ONE technician doing the whole party in a single, longer visit,
+      # so party size scales the visit DURATION (in the engine), never a count.
       def party_size
         [ params[:count].to_i, 1 ].max
       end
 
-      # SimplyBook's native group-capacity `count`. We do NOT use native groups (a
-      # group is one long booking on a qty=1 provider, not N concurrent seats), so
-      # this is always 1 — availability is checked as an ordinary single booking.
-      def slot_count = 1
-
-      # Keep only slots this tech can physically reach given travel between their
-      # adjacent jobs. Applied only when the customer's coordinates are known
-      # (sent once the address is entered) — otherwise all SimplyBook slots pass.
-      # Uses the SAME TravelFeasibility logic as the booking gate, so an offered
-      # slot won't be rejected at booking time. A group occupies the tech for the
-      # full party-extended duration, so travel is checked against that window.
-      def filter_by_travel(employee, service, date, slots)
-        lat, lng = customer_coords
-        return slots if lat.nil? || lng.nil?
-
-        tf = TravelFeasibility.new(employee: employee, customer_lat: lat, customer_lng: lng)
-        duration = service.duration_minutes * party_size
-        slots.select do |hhmm|
-          # SimplyBook returns slot times in the company's local zone; parse them
-          # there so the travel comparison lines up with the stored (UTC) bookings.
-          starts_at = BusinessHours.parse_local("#{date} #{hhmm}")
-          starts_at && tf.feasible?(starts_at, starts_at + duration.minutes)
-        end
+      def performs?(employee, service)
+        employee.services.exists?(id: service.id)
       end
 
       def customer_coords
@@ -143,13 +118,16 @@ module Api
         [ lat, lng ]
       end
 
-      def client
-        return nil if ENV["SIMPLYBOOK_COMPANY"].blank?
-        @client ||= SimplyBook::Client.new
-      end
+      # Does this tech cover the customer's FSA? Mirrors AssignmentService's
+      # serves_customer_postal? so offered slots match what's bookable. When the
+      # client hasn't sent a postal yet (no address entered), don't restrict —
+      # the booking gate still enforces coverage on submit.
+      def serves_customer_fsa?(employee)
+        postal = params[:postal_code].presence
+        return true if postal.blank?
+        return true unless EmployeeProfile.coverage_configured?
 
-      def mapped?(service, employee)
-        service.simplybook_event_id.present? && employee.simplybook_unit_id.present?
+        employee.serves_fsa?(postal)
       end
 
       def parse_date(raw)

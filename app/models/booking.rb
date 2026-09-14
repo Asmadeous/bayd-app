@@ -6,6 +6,7 @@ class Booking < ApplicationRecord
   belongs_to :address, optional: true
 
   has_many :payments, as: :payable, dependent: :destroy
+  has_many :shifts, dependent: :nullify
   has_many :tips, dependent: :destroy
   has_many :gift_card_transactions, dependent: :nullify
   has_many :loyalty_transactions, dependent: :nullify
@@ -51,7 +52,6 @@ class Booking < ApplicationRecord
 
   validates :starts_at, :ends_at, presence: true
   validates :subtotal, :travel_fee, :total, numericality: { greater_than_or_equal_to: 0 }
-  validates :simplybook_id, uniqueness: true, allow_nil: true
   validate  :ends_after_starts
 
   # Kick off the post-service flow (loyalty, review request, auto-rebook) the
@@ -59,13 +59,19 @@ class Booking < ApplicationRecord
   # (admin, employee, sync) made the change.
   after_update_commit :on_completed, if: -> { saved_change_to_status? && completed? }
 
+  # Charge the no-show fee to the customer's card on file the moment a booking is
+  # marked no_show (whichever path made the change). Best-effort in the service.
+  after_update_commit :on_no_show, if: -> { saved_change_to_status? && no_show? }
+
   scope :upcoming,  -> { where(status: %w[confirmed]).where("starts_at > ?", Time.current) }
-  scope :active,    -> { where(status: %w[confirmed in_progress]) }
-  # Local bookings not yet pushed to SimplyBook (e.g. created while SimplyBook
-  # was unreachable) — the reconcile job retries these.
-  scope :needs_simplybook_sync, lambda {
-    where(simplybook_id: nil, status: %w[pending confirmed in_progress])
-  }
+  # The tech's working list: in-progress jobs, plus confirmed jobs that haven't
+  # ended yet. A confirmed booking whose end time has passed is NOT active — it
+  # has come and gone, so it belongs in history (see :past), not upcoming.
+  scope :active,    -> { where(status: "in_progress").or(where(status: "confirmed").where("ends_at > ?", Time.current)) }
+  # A tech's job history: terminal-state bookings, plus confirmed bookings whose
+  # time has already passed (overdue / not clocked out) so they don't linger in
+  # the working list forever.
+  scope :past,      -> { where(status: %w[completed cancelled no_show]).or(where(status: "confirmed").where("ends_at <= ?", Time.current)) }
 
   # Recurring bookings due to be re-created: active recurrence, completed,
   # and no follow-up booking spawned yet.
@@ -147,6 +153,11 @@ class Booking < ApplicationRecord
       self.class.connection.execute("SET CONSTRAINTS no_double_booking DEFERRED")
       update!(status: "confirmed")
     end
+
+    # Now that it's confirmed (e.g. a group booking whose deposit just landed),
+    # schedule its reminders — deferred from create time so we never confirm an
+    # unpaid booking.
+    schedule_reminders_on_confirm
   end
 
   # When the next appointment in this series should start.
@@ -166,10 +177,9 @@ class Booking < ApplicationRecord
 
   # Move this booking to new_start. Re-validates business hours, travel
   # feasibility for the SAME tech, and the no_double_booking DB constraint, then
-  # best-effort edits the SimplyBook booking (PUT — a real edit, not
-  # cancel+recreate) so SimplyBook fires its own client SMS/email. Notifies the
-  # customer + tech in-app and by email. `by_customer:` increments the reschedule
-  # counter and is what the controller caps (admin passes false → uncapped).
+  # notifies the customer + tech in-app and by email. `by_customer:` increments
+  # the reschedule counter and is what the controller caps (admin passes false →
+  # uncapped).
   # Raises RescheduleError(:not_reschedulable|:outside_hours|:not_reachable|:slot_taken).
   # `new_employee` (optional): admin can move the booking to a different tech in
   # the same action. Travel feasibility is checked against whichever tech ends up
@@ -184,7 +194,6 @@ class Booking < ApplicationRecord
     tf = TravelFeasibility.new(employee: assigned, customer_lat: service_latitude, customer_lng: service_longitude)
     raise RescheduleError.new(:not_reachable) unless tf.feasible?(new_start, new_end)
 
-    old_simplybook_id = simplybook_id
     begin
       with_lock do
         attrs = { starts_at: new_start, ends_at: new_end,
@@ -197,15 +206,36 @@ class Booking < ApplicationRecord
       raise RescheduleError.new(:slot_taken)
     end
 
-    push_reschedule_to_simplybook(old_simplybook_id)
     notify_rescheduled
+    reschedule_reminders
     self
   end
 
   private
 
+  # Re-schedule the timed reminders for the new time. Old scheduled jobs still
+  # fire at their original moments, but the job re-checks the booking's CURRENT
+  # window (see BookingReminderJob), so a reminder for a time that no longer
+  # matches simply no-ops. Best-effort.
+  def reschedule_reminders
+    BookingReminders.schedule(self)
+  rescue StandardError => e
+    Rails.logger.warn("[Booking##{id}] reminder reschedule failed: #{e.message}")
+  end
+
+  # Schedule reminders when a held (group) booking confirms on payment. Best-effort.
+  def schedule_reminders_on_confirm
+    BookingReminders.schedule(self)
+  rescue StandardError => e
+    Rails.logger.warn("[Booking##{id}] reminder scheduling on confirm failed: #{e.message}")
+  end
+
   def on_completed
     BookingCompletedJob.perform_later(id)
+  end
+
+  def on_no_show
+    NoShowChargeJob.perform_later(id)
   end
 
   # Both ends must fall within the business's open hours (local zone), and the
@@ -220,24 +250,6 @@ class Booking < ApplicationRecord
     local_end.to_date == local_start.to_date &&
       (local_end.hour < BusinessHours::CLOSE_HOUR ||
        (local_end.hour == BusinessHours::CLOSE_HOUR && local_end.min.zero? && local_end.sec.zero?))
-  end
-
-  # Best-effort SimplyBook edit to the new time (PUT /admin/bookings/{id}).
-  # Skips when unmapped/dormant. Never raises into the reschedule.
-  def push_reschedule_to_simplybook(sb_id)
-    return if sb_id.blank?
-    return if ENV["SIMPLYBOOK_COMPANY"].blank?
-    return if service.simplybook_event_id.blank? || employee_profile.simplybook_unit_id.blank?
-
-    SimplyBook::Client.new.update_booking(
-      sb_id,
-      service_id: service.simplybook_event_id,
-      unit_id:    employee_profile.simplybook_unit_id,
-      starts_at:  starts_at,
-      ends_at:    ends_at
-    )
-  rescue StandardError => e
-    Rails.logger.warn("[Booking##{id}] SimplyBook reschedule push failed: #{e.message}")
   end
 
   # Notify the customer (in-app + email via NotificationService) and the tech

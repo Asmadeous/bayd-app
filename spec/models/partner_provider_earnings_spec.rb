@@ -2,15 +2,10 @@ require "rails_helper"
 
 # A partner earns from bookings whose booking.partner_id matches. Because the
 # partner-provider's EmployeeProfile carries partner_id, bookings created for it
-# stamp booking.partner_id (assignment_service / employees_controller / the
-# now-fixed booking_mirror), and those completed bookings roll up into the
-# partner's pending earnings. This guards that end-to-end economic link.
+# stamp booking.partner_id (assignment_service / employees_controller), and those
+# completed bookings roll up into the partner's pending earnings. This guards that
+# end-to-end economic link.
 RSpec.describe Partner, "provider earnings roll-up", type: :model do
-  before do
-    allow(SimplyBook::Client).to receive(:new)
-      .and_return(instance_double(SimplyBook::Client, create_provider: nil))
-  end
-
   let(:partner)  { create(:partner, platform_fee_pct: 20) }
   let(:provider) { partner.ensure_provider! }
   let(:service)  { create(:service, price: 100) }

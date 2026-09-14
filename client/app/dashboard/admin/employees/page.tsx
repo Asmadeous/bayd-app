@@ -104,8 +104,6 @@ const STAFF_BLANK: EmployeeInput = {
   dispatchable: true,
   base_latitude: "",
   base_longitude: "",
-  simplybook_unit_id: "",
-  traccar_device_id: "",
 }
 
 type StaffFormErrors = Partial<Record<keyof EmployeeInput | "base", string>>
@@ -135,8 +133,6 @@ const staffSchema = z.object({
   dispatchable: z.boolean().optional(),
   base_latitude: optionalCoordinate("Latitude", -90, 90),
   base_longitude: optionalCoordinate("Longitude", -180, 180),
-  simplybook_unit_id: z.string().trim().optional(),
-  traccar_device_id: z.string().trim().optional(),
 })
 
 export default function AdminEmployeesPage() {
@@ -252,8 +248,6 @@ interface Employee {
   dispatchable: boolean
   base_latitude: string | null
   base_longitude: string | null
-  simplybook_unit_id: string | null
-  traccar_device_id: string | null
   service_fsas: string[]
   partner_id: number | null
   partner_name: string | null
@@ -470,7 +464,7 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
           <Kpi label="Cancels" value={kpi?.cancellations ?? 0} />
         </div>
         <Link
-          href={`/dashboard/admin/employees/${employee.id}`}
+          href={`/dashboard/admin/employees/detail?id=${employee.id}`}
           className="mt-3 inline-block text-xs font-semibold text-[#c96c83] hover:underline"
         >
           View detailed KPIs →
@@ -514,8 +508,6 @@ function StaffModal({ mode, partners, onClose }: { mode: "create" | Employee; pa
     dispatchable: emp?.dispatchable ?? STAFF_BLANK.dispatchable,
     base_latitude: emp?.base_latitude ?? STAFF_BLANK.base_latitude,
     base_longitude: emp?.base_longitude ?? STAFF_BLANK.base_longitude,
-    simplybook_unit_id: emp?.simplybook_unit_id ?? STAFF_BLANK.simplybook_unit_id,
-    traccar_device_id: emp?.traccar_device_id ?? STAFF_BLANK.traccar_device_id,
   })
 
   function set(patch: Partial<EmployeeInput>) {
@@ -552,8 +544,6 @@ function StaffModal({ mode, partners, onClose }: { mode: "create" | Employee; pa
       dispatchable: form.dispatchable,
       base_latitude: cleanString(form.base_latitude) || null,
       base_longitude: cleanString(form.base_longitude) || null,
-      simplybook_unit_id: cleanString(form.simplybook_unit_id) || null,
-      traccar_device_id: cleanString(form.traccar_device_id) || null,
     }
     if (isCreate && form.password) payload.password = form.password
     const opts = {
@@ -693,24 +683,6 @@ function StaffModal({ mode, partners, onClose }: { mode: "create" | Employee; pa
                 onChange={(e) => set({ base_longitude: e.target.value })}
                 placeholder="-79.38"
                 value={form.base_longitude ?? ""}
-              />
-            </Field>
-            <Field error={formErrors.simplybook_unit_id} label="SimplyBook Provider (unit) ID">
-              <input
-                aria-invalid={Boolean(formErrors.simplybook_unit_id)}
-                className={fieldClass(formErrors.simplybook_unit_id)}
-                onChange={(e) => set({ simplybook_unit_id: e.target.value })}
-                placeholder="e.g. 3"
-                value={form.simplybook_unit_id ?? ""}
-              />
-            </Field>
-            <Field error={formErrors.traccar_device_id} label="Traccar Device ID">
-              <input
-                aria-invalid={Boolean(formErrors.traccar_device_id)}
-                className={fieldClass(formErrors.traccar_device_id)}
-                onChange={(e) => set({ traccar_device_id: e.target.value })}
-                placeholder="matches the Traccar phone app"
-                value={form.traccar_device_id ?? ""}
               />
             </Field>
           </div>

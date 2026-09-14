@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus, Scissors } from "lucide-react"
 import { z } from "zod"
 
+import { ImagePicker } from "@/components/image-picker"
 import { useToast } from "@/components/bayd-toast-provider"
 import {
   DataTable,
@@ -60,7 +61,6 @@ interface Service {
   price: string
   active: boolean
   image_url: string | null
-  simplybook_event_id: string | null
   service_category: { id: number; name: string }
   prices?: Record<string, string>
   tier_prices?: Record<string, number>
@@ -86,7 +86,6 @@ const BLANK = {
   active: true,
   image_url: "",
   service_category_id: "",
-  simplybook_event_id: "",
   prices: { kids: "", elderly: "", group: "" } as Record<"kids" | "elderly" | "group", string>,
 }
 
@@ -120,7 +119,6 @@ const serviceSchema = z.object({
   active: z.boolean(),
   image_url: optionalUrl,
   service_category_id: z.string().trim().min(1, "Category is required."),
-  simplybook_event_id: z.string(),
   prices: z.object({
     kids: optionalMoney("Kids price"),
     elderly: optionalMoney("Elderly price"),
@@ -150,12 +148,37 @@ export default function AdminServicesPage() {
     queryFn: () => api.get<Category[]>("/admin/service_categories").then((response) => response.data),
   })
 
+  // Optional picked image. With a file, send multipart (nested prices go as
+  // prices[kids]=... bracket notation so Rails parses them into a hash).
+  const [imageFile, setImageFile] = useState<File | null>(null)
+
+  function requestBody() {
+    if (!imageFile) return { body: form, config: undefined }
+    const fd = new FormData()
+    Object.entries(form).forEach(([k, v]) => {
+      if (v === null || v === undefined || v === "") return
+      if (k === "prices" && typeof v === "object") {
+        Object.entries(v as Record<string, string>).forEach(([pk, pv]) => {
+          if (pv !== "") fd.append(`prices[${pk}]`, String(pv))
+        })
+      } else {
+        fd.append(k, String(v))
+      }
+    })
+    fd.append("image", imageFile)
+    return { body: fd, config: { headers: { "Content-Type": "multipart/form-data" } } }
+  }
+
   const createMutation = useMutation({
-    mutationFn: () => api.post("/admin/services", form),
+    mutationFn: () => {
+      const { body, config } = requestBody()
+      return api.post("/admin/services", body, config)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-services"] })
       setModal(null)
       setForm(BLANK)
+      setImageFile(null)
       setFormErrors({})
     },
     onError: (error: unknown) => {
@@ -165,10 +188,14 @@ export default function AdminServicesPage() {
     },
   })
   const updateMutation = useMutation({
-    mutationFn: (id: number) => api.patch(`/admin/services/${id}`, form),
+    mutationFn: (id: number) => {
+      const { body, config } = requestBody()
+      return api.patch(`/admin/services/${id}`, body, config)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-services"] })
       setModal(null)
+      setImageFile(null)
       setFormErrors({})
     },
     onError: (error: unknown) => {
@@ -195,7 +222,6 @@ export default function AdminServicesPage() {
       active: service.active,
       image_url: service.image_url ?? "",
       service_category_id: String(service.service_category?.id ?? ""),
-      simplybook_event_id: service.simplybook_event_id ?? "",
       prices: {
         kids: tierPrices.kids != null ? String(tierPrices.kids) : "",
         elderly: tierPrices.elderly != null ? String(tierPrices.elderly) : "",
@@ -355,21 +381,11 @@ export default function AdminServicesPage() {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field error={formErrors.image_url} label="Image URL">
-                <input
-                  aria-invalid={Boolean(formErrors.image_url)}
-                  className={fieldClass(formErrors.image_url)}
-                  onChange={(event) => updateForm("image_url", event.target.value)}
-                  type="url"
-                  value={form.image_url}
-                />
-              </Field>
-              <Field label="SimplyBook Service ID">
-                <input
-                  className={inputClass}
-                  onChange={(event) => updateForm("simplybook_event_id", event.target.value)}
-                  type="text"
-                  value={form.simplybook_event_id}
+              <Field error={formErrors.image_url} label="Service photo">
+                <ImagePicker
+                  currentUrl={form.image_url || null}
+                  onPick={setImageFile}
+                  label="Photo"
                 />
               </Field>
               <label className="flex min-h-10 items-center gap-2 border border-black/10 bg-[#fbfaf7] px-4 text-sm font-semibold text-[#101217] md:mt-6">

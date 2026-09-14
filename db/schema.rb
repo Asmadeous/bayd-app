@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_125252) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -73,6 +73,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.datetime "updated_at", null: false
     t.index ["booking_request_id"], name: "index_assignment_attempts_on_booking_request_id"
     t.index ["chosen_employee_id"], name: "index_assignment_attempts_on_chosen_employee_id"
+  end
+
+  create_table "availability_overrides", force: :cascade do |t|
+    t.boolean "available", default: true, null: false
+    t.datetime "created_at", null: false
+    t.date "date", null: false
+    t.bigint "employee_profile_id", null: false
+    t.time "end_time"
+    t.time "start_time"
+    t.datetime "updated_at", null: false
+    t.index ["employee_profile_id", "date"], name: "index_availability_overrides_on_employee_profile_id_and_date", unique: true
+    t.index ["employee_profile_id"], name: "index_availability_overrides_on_employee_profile_id"
+  end
+
+  create_table "availability_schedules", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "day_of_week", null: false
+    t.bigint "employee_profile_id", null: false
+    t.time "end_time", null: false
+    t.time "start_time", null: false
+    t.datetime "updated_at", null: false
+    t.index ["employee_profile_id", "day_of_week"], name: "idx_on_employee_profile_id_day_of_week_590b01117e"
+    t.index ["employee_profile_id"], name: "index_availability_schedules_on_employee_profile_id"
   end
 
   create_table "blog_comments", force: :cascade do |t|
@@ -163,13 +186,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.bigint "service_id", null: false
     t.decimal "service_latitude", precision: 10, scale: 6
     t.decimal "service_longitude", precision: 10, scale: 6
-    t.string "simplybook_batch_id"
-    t.string "simplybook_id"
     t.datetime "starts_at", null: false
     t.string "status", default: "confirmed", null: false
     t.bigint "subscription_id"
     t.decimal "subtotal", precision: 10, scale: 2, default: "0.0", null: false
-    t.datetime "synced_at"
     t.decimal "total", precision: 10, scale: 2, default: "0.0", null: false
     t.decimal "travel_fee", precision: 10, scale: 2, default: "0.0", null: false
     t.datetime "updated_at", null: false
@@ -183,8 +203,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.index ["partner_payout_id"], name: "index_bookings_on_partner_payout_id"
     t.index ["payment_status"], name: "index_bookings_on_payment_status"
     t.index ["service_id"], name: "index_bookings_on_service_id"
-    t.index ["simplybook_batch_id"], name: "index_bookings_on_simplybook_batch_id"
-    t.index ["simplybook_id"], name: "index_bookings_on_simplybook_id", unique: true, where: "(simplybook_id IS NOT NULL)"
     t.index ["status"], name: "index_bookings_on_status"
     t.index ["subscription_id"], name: "index_bookings_on_subscription_id"
     t.index ["user_id"], name: "index_bookings_on_user_id"
@@ -215,6 +233,38 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "conversations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "last_message_at"
+    t.bigint "participant_one_id", null: false
+    t.bigint "participant_two_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["participant_one_id", "participant_two_id"], name: "idx_on_participant_one_id_participant_two_id_34e343b89f", unique: true
+    t.index ["participant_one_id"], name: "index_conversations_on_participant_one_id"
+    t.index ["participant_two_id"], name: "index_conversations_on_participant_two_id"
+  end
+
+  create_table "device_tokens", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "platform", default: "android", null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["token"], name: "index_device_tokens_on_token", unique: true
+    t.index ["user_id"], name: "index_device_tokens_on_user_id"
+  end
+
+  create_table "email_verifications", force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.string "code_digest", null: false
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "verified_at"
+    t.index ["email", "created_at"], name: "index_email_verifications_on_email_and_created_at"
+  end
+
   create_table "employee_current_locations", force: :cascade do |t|
     t.integer "accuracy_meters"
     t.datetime "created_at", null: false
@@ -238,17 +288,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.bigint "partner_id"
     t.string "photo_url"
     t.text "service_fsas", default: [], null: false, array: true
-    t.string "simplybook_unit_id"
     t.string "title"
-    t.string "traccar_device_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.integer "years_experience"
     t.index "((st_setsrid(st_makepoint((base_longitude)::double precision, (base_latitude)::double precision), 4326))::geography)", name: "index_employee_profiles_on_base_location", using: :gist
     t.index ["partner_id"], name: "index_employee_profiles_on_partner_id"
     t.index ["service_fsas"], name: "index_employee_profiles_on_service_fsas", using: :gin
-    t.index ["simplybook_unit_id"], name: "index_employee_profiles_on_simplybook_unit_id", unique: true, where: "(simplybook_unit_id IS NOT NULL)"
-    t.index ["traccar_device_id"], name: "index_employee_profiles_on_traccar_device_id", unique: true, where: "(traccar_device_id IS NOT NULL)"
     t.index ["user_id"], name: "index_employee_profiles_on_user_id", unique: true
   end
 
@@ -494,6 +540,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.index ["room_name"], name: "index_meetings_on_room_name", unique: true
   end
 
+  create_table "messages", force: :cascade do |t|
+    t.text "body", null: false
+    t.bigint "conversation_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "read_at"
+    t.bigint "sender_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id", "created_at"], name: "index_messages_on_conversation_id_and_created_at"
+    t.index ["conversation_id"], name: "index_messages_on_conversation_id"
+    t.index ["sender_id"], name: "index_messages_on_sender_id"
+  end
+
   create_table "newsletter_subscribers", force: :cascade do |t|
     t.datetime "confirmed_at"
     t.datetime "created_at", null: false
@@ -592,6 +650,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
     t.index ["payable_type", "payable_id"], name: "index_payments_on_payable"
+  end
+
+  create_table "phone_verifications", force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.string "code_digest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "phone", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "verified_at"
+    t.index ["phone", "created_at"], name: "index_phone_verifications_on_phone_and_created_at"
   end
 
   create_table "product_categories", force: :cascade do |t|
@@ -696,11 +765,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.decimal "price", precision: 10, scale: 2, default: "0.0", null: false
     t.boolean "requires_consultation", default: false, null: false
     t.bigint "service_category_id", null: false
-    t.string "simplybook_event_id"
     t.jsonb "tier_prices", default: {}, null: false
     t.datetime "updated_at", null: false
     t.index ["service_category_id"], name: "index_services_on_service_category_id"
-    t.index ["simplybook_event_id"], name: "index_services_on_simplybook_event_id", unique: true, where: "(simplybook_event_id IS NOT NULL)"
   end
 
   create_table "settings", force: :cascade do |t|
@@ -712,6 +779,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
   end
 
   create_table "shifts", force: :cascade do |t|
+    t.boolean "arrived_late", default: false, null: false
+    t.bigint "booking_id"
     t.datetime "clock_in_at", null: false
     t.decimal "clock_in_latitude", precision: 10, scale: 6, null: false
     t.decimal "clock_in_longitude", precision: 10, scale: 6, null: false
@@ -726,6 +795,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.text "notes"
     t.string "status", default: "open", null: false
     t.datetime "updated_at", null: false
+    t.index ["booking_id"], name: "index_shifts_on_booking_id"
     t.index ["employee_profile_id", "clock_in_at"], name: "index_shifts_on_employee_profile_id_and_clock_in_at"
     t.index ["employee_profile_id"], name: "index_shifts_on_employee_profile_id"
     t.index ["employee_profile_id"], name: "index_shifts_one_open_per_employee", unique: true, where: "((status)::text = 'open'::text)"
@@ -801,20 +871,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
     t.string "referral_code"
     t.bigint "referred_by_id"
     t.string "role", default: "customer", null: false
-    t.string "simplybook_client_id"
     t.boolean "special_needs", default: false, null: false
     t.string "square_card_id"
     t.string "square_customer_id"
     t.string "street_address"
     t.datetime "updated_at", null: false
+    t.string "webauthn_id"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["google_uid"], name: "index_users_on_google_uid", unique: true, where: "(google_uid IS NOT NULL)"
     t.index ["phone"], name: "index_users_on_phone"
     t.index ["referral_code"], name: "index_users_on_referral_code", unique: true, where: "(referral_code IS NOT NULL)"
     t.index ["referred_by_id"], name: "index_users_on_referred_by_id"
     t.index ["role"], name: "index_users_on_role"
-    t.index ["simplybook_client_id"], name: "index_users_on_simplybook_client_id", unique: true, where: "(simplybook_client_id IS NOT NULL)"
     t.index ["square_customer_id"], name: "index_users_on_square_customer_id", unique: true, where: "(square_customer_id IS NOT NULL)"
+    t.index ["webauthn_id"], name: "index_users_on_webauthn_id", unique: true
+  end
+
+  create_table "webauthn_challenges", force: :cascade do |t|
+    t.string "challenge", null: false
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "purpose", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_webauthn_challenges_on_user_id"
+  end
+
+  create_table "webauthn_credentials", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "nickname"
+    t.string "public_key", null: false
+    t.integer "sign_count", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.string "webauthn_id", null: false
+    t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
+    t.index ["webauthn_id"], name: "index_webauthn_credentials_on_webauthn_id", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -822,6 +914,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
   add_foreign_key "addresses", "users"
   add_foreign_key "assignment_attempts", "booking_requests"
   add_foreign_key "assignment_attempts", "employee_profiles", column: "chosen_employee_id"
+  add_foreign_key "availability_overrides", "employee_profiles"
+  add_foreign_key "availability_schedules", "employee_profiles"
   add_foreign_key "blog_comments", "blog_posts"
   add_foreign_key "blog_comments", "users"
   add_foreign_key "blog_posts", "users", column: "author_id"
@@ -841,6 +935,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
   add_foreign_key "bookings", "users"
   add_foreign_key "callback_requests", "services"
   add_foreign_key "callback_requests", "users"
+  add_foreign_key "conversations", "users", column: "participant_one_id"
+  add_foreign_key "conversations", "users", column: "participant_two_id"
+  add_foreign_key "device_tokens", "users"
   add_foreign_key "employee_current_locations", "employee_profiles"
   add_foreign_key "employee_profiles", "partners"
   add_foreign_key "employee_profiles", "users"
@@ -864,6 +961,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
   add_foreign_key "loyalty_transactions", "loyalty_accounts"
   add_foreign_key "magic_link_tokens", "users"
   add_foreign_key "meetings", "bookings"
+  add_foreign_key "messages", "conversations"
+  add_foreign_key "messages", "users", column: "sender_id"
   add_foreign_key "newsletter_subscribers", "users"
   add_foreign_key "notifications", "bookings"
   add_foreign_key "notifications", "users"
@@ -880,6 +979,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
   add_foreign_key "reviews", "employee_profiles"
   add_foreign_key "reviews", "users"
   add_foreign_key "services", "service_categories"
+  add_foreign_key "shifts", "bookings"
   add_foreign_key "shifts", "employee_profiles"
   add_foreign_key "subscriptions", "addresses"
   add_foreign_key "subscriptions", "services"
@@ -887,4 +987,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_19_221255) do
   add_foreign_key "tips", "bookings"
   add_foreign_key "tips", "employee_profiles"
   add_foreign_key "users", "users", column: "referred_by_id"
+  add_foreign_key "webauthn_challenges", "users"
+  add_foreign_key "webauthn_credentials", "users"
 end

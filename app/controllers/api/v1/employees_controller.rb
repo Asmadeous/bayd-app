@@ -3,6 +3,10 @@ module Api
     class EmployeesController < ApplicationController
       include ImageUploadValidation
 
+      # Raised when a staff-typed booking address can't be geocoded — the booking
+      # is rejected rather than created without coordinates.
+      class ManualAddressError < StandardError; end
+
       before_action :require_employee!
 
       def show
@@ -25,10 +29,22 @@ module Api
       end
 
       def schedule
-        records, meta = paginate(
-          profile.bookings.active.order(:starts_at).includes(:user, :service)
-        )
+        # Default: the working schedule (active jobs, soonest first). filter=past
+        # returns the tech's job history (completed / cancelled / no-show), most
+        # recent first, so they can review previous bookings.
+        scope = params[:filter] == "past" ? profile.bookings.past.order(starts_at: :desc)
+                                          : profile.bookings.active.order(:starts_at)
+        records, meta = paginate(scope.includes(:user, :service, :address, :partner, :tips, :shifts))
         render json: { data: BookingSerializer.render_as_hash(records), pagination: meta }
+      end
+
+      # A single one of the tech's OWN bookings (for the navigate / call screens).
+      # Scoped to profile.bookings so a tech can only read their assigned jobs —
+      # the customer GET /bookings/:id is scoped to the customer and returns
+      # nothing for a staff user.
+      def booking
+        record = profile.bookings.includes(:user, :service, :address, :partner, :tips, :shifts).find(params[:id])
+        render json: BookingSerializer.render_as_hash(record)
       end
 
       def reviews
@@ -38,20 +54,73 @@ module Api
         render json: { data: ReviewSerializer.render_as_hash(records), pagination: meta }
       end
 
+      # ── Earnings / transactions ─────────────────────────────────────────────
+      # The tech's own money — rendered ACCORDING TO ACCOUNT TYPE, the two never
+      # mix:
+      #   • Partner provider → their compensation is the partner payout at the
+      #     platform-fee split (owed + settled). They are NOT reimbursed for fuel
+      #     and do not see individual tip/fuel lines — that all flows through the
+      #     partner. Only the partner block is returned.
+      #   • Direct (solo) staff → paid individually: card tips owed (business is
+      #     holding) + paid out, and fuel/mileage reimbursement. No partner block.
+      def earnings
+        if profile.partner_provider?
+          partner = profile.partner
+          pending = partner.pending_earnings
+          render json: {
+            account_type: "partner",
+            partner: {
+              name:             partner.name,
+              platform_fee_pct: partner.platform_fee_pct,
+              share_pct:        partner.partner_share_pct,
+              owed:             pending[:owed],
+              gross_unsettled:  pending[:gross],
+              unsettled_count:  pending[:booking_count],
+              paid_out:         partner.partner_payouts.status_paid.sum(:amount)
+            }
+          }
+        else
+          render json: {
+            account_type: "direct",
+            tips: {
+              owed:     profile.tips.owed_to_tech.sum(:amount),
+              paid_out: profile.tips.where(status: "paid_out").sum(:amount)
+            },
+            fuel_reimbursement: profile.shifts.sum(:fuel_reimbursement).to_f.round(2)
+          }
+        end
+      end
+
       # ── Time clock ──────────────────────────────────────────────────────────
 
+      # Clock in ON a specific booking: enforces the 150m geofence + 15-min grace.
       def clock_in
-        shift = TimeClock.clock_in(profile, **location_params)
+        booking = profile.bookings.find(params[:id])
+        shift = TimeClock.clock_in(profile, booking: booking, **location_params)
         render json: ShiftSerializer.render_as_hash(shift), status: :created
       rescue TimeClock::Error => e
         render json: { error: e.message }, status: :unprocessable_entity
       end
 
       def clock_out
-        shift = TimeClock.clock_out(profile, **location_params)
+        booking = profile.bookings.find(params[:id])
+        shift = TimeClock.clock_out(profile, booking: booking, **location_params)
         render json: ShiftSerializer.render_as_hash(shift)
       rescue TimeClock::Error => e
         render json: { error: e.message }, status: :unprocessable_entity
+      end
+
+      # Client didn't show / wasn't available for service. Only meaningful before
+      # the job is done, so guard against a completed booking. The status change
+      # fires NoShowChargeJob (charges the no-show fee to the card on file).
+      def mark_no_show
+        booking = profile.bookings.find(params[:id])
+        if booking.completed? || booking.cancelled?
+          return render json: { error: "This booking is already #{booking.status}." }, status: :unprocessable_entity
+        end
+
+        booking.update!(status: :no_show)
+        render json: BookingSerializer.render_as_hash(booking.reload)
       end
 
       def current_shift
@@ -73,6 +142,11 @@ module Api
         booking = profile.bookings.find(params[:id])
         amount  = params[:amount].to_d
         return render json: { error: "Enter a valid amount." }, status: :unprocessable_entity unless amount.positive?
+        # Charging is gated behind the clock: a tech can't charge a client before
+        # they've actually started (clocked into) the job.
+        unless booking.in_progress? || booking.completed?
+          return render json: { error: "Clock in to this appointment before charging." }, status: :unprocessable_entity
+        end
 
         reason = params[:reason].to_s.strip
         booking.update!(
@@ -89,13 +163,52 @@ module Api
         end
       end
 
+      # ── In-person POS payment (Square Tap to Pay) ───────────────────────────
+      # The native Square Mobile Payments SDK takes the tap ON THE DEVICE and
+      # returns a completed Square payment id. This endpoint RECORDS that payment
+      # against the booking — it does NOT charge (the SDK already did). We verify
+      # the payment id with Square (real, approved, right amount) so a client
+      # can't spoof one, then settle the booking. Gated behind clock-in, like any
+      # other charge.
+      # Init params for the native Square Tap to Pay SDK. The app id, location id,
+      # and environment are not secrets. The SDK's authorize() also needs an OAuth
+      # access token; Square's mobile model has the SERVER hand it to the device at
+      # authorize time (it is not stored in the app bundle). This endpoint is
+      # staff-authenticated and TLS-only. If/when a dedicated, short-lived,
+      # payments-scoped OAuth token is minted per device, return THAT here instead
+      # of the account token — see docs/square-tap-to-pay.md.
+      def pos_config
+        render json: SquareService.pos_config.merge(access_token: SquareService.pos_access_token)
+      end
+
+      def pos_payment
+        booking = profile.bookings.find(params[:id])
+        payment_id = params[:square_payment_id].to_s.strip
+        amount = params[:amount].to_d
+
+        return render json: { error: "A completed payment id is required." }, status: :unprocessable_entity if payment_id.blank?
+        return render json: { error: "Enter a valid amount." }, status: :unprocessable_entity unless amount.positive?
+        unless booking.in_progress? || booking.completed?
+          return render json: { error: "Clock in to this appointment before charging." }, status: :unprocessable_entity
+        end
+
+        # Confirm the tap actually happened and cleared, for the amount claimed.
+        payment = SquareService.get_payment(payment_id)
+        unless pos_payment_valid?(payment, amount)
+          return render json: { error: "That payment couldn't be verified with Square." }, status: :unprocessable_entity
+        end
+
+        booking.mark_paid!(processor: "square_pos", reference: payment_id, amount: amount)
+        render json: BookingSerializer.render_as_hash(booking.reload)
+      end
+
       # ── Staff-initiated manual booking (force-book) ─────────────────────────
       # A service provider books a client directly from their dashboard. This
       # skips AssignmentService's eligibility gates (coverage / operating hours /
       # on-shift / travel) — staff know what they're doing — but the DB
       # no_double_booking exclusion constraint still prevents a real time clash.
       # Defaults to the acting tech; an admin/tech may target another tech via
-      # employee_id. Best-effort SimplyBook push after.
+      # employee_id.
       def create_booking
         svc = Service.active.find(params.require(:service_id))
         target = booking_target_employee
@@ -128,8 +241,25 @@ module Api
           notes:            [ "Booked by #{current_user.first_name || 'staff'}", params[:notes].presence ].compact.join(" — ")
         )
 
-        push_manual_booking_to_simplybook(booking)
-        render json: BookingSerializer.render_as_hash(booking), status: :created
+        # Add-ons: extra services the SAME tech performs in this visit. AddonBooker
+        # validates each against employee_services + category, stamps raw["addons"],
+        # and returns priced entries. Their price + duration fold into this one
+        # booking (the tech charges the combined total on the day).
+        addons = AddonBooker.new(booking, params[:addon_service_ids]).call
+        if addons.any?
+          extra_minutes = addons.addons.sum { |a| a[:duration].to_i }
+          booking.update!(
+            subtotal: booking.subtotal + addons.total,
+            total:    booking.total + addons.total,
+            ends_at:  booking.ends_at + extra_minutes.minutes
+          )
+        end
+
+        render json: BookingSerializer.render_as_hash(booking.reload).merge(
+          addons: addons.addons, addon_failures: addons.failures
+        ), status: :created
+      rescue ManualAddressError => e
+        render json: { error: e.message }, status: :unprocessable_entity
       rescue ActiveRecord::RecordNotUnique, ActiveRecord::StatementInvalid => e
         raise unless e.is_a?(ActiveRecord::RecordNotUnique) || e.cause.is_a?(PG::ExclusionViolation)
         render json: { error: "That technician already has a booking at that time." }, status: :conflict
@@ -179,29 +309,27 @@ module Api
           :label, :line1, :line2, :city, :province, :postal_code,
           :latitude, :longitude, :is_apartment, :buzz_code
         )
-        client.addresses.create!(ap.merge(default: client.addresses.none?))
+        # Address auto-geocodes on save (geocoded_by :full_address). A booking MUST
+        # have coordinates (the tech navigates to them, travel feasibility needs
+        # them), so if the geocode couldn't resolve the address, reject the booking
+        # loudly rather than create a broken, un-navigable one.
+        address = client.addresses.create!(ap.merge(default: client.addresses.none?))
+        if address.latitude.blank? || address.longitude.blank?
+          raise ManualAddressError, "Couldn't locate that address. Check the street, city, and postal code."
+        end
+        address
       end
 
-      # Best-effort mirror into SimplyBook (only when both service + provider are
-      # mapped). Never breaks the booking if SimplyBook is down/unmapped.
-      def push_manual_booking_to_simplybook(booking)
-        return if ENV["SIMPLYBOOK_COMPANY"].blank?
-        return if booking.service.simplybook_event_id.blank? || booking.employee_profile.simplybook_unit_id.blank?
 
-        name = SimplyBook::Client.tag_client_name(
-          booking.user.first_name.presence || booking.user.email, client_type: booking.client_type, party_size: booking.party_size
-        )
+      # A Square payment is a valid POS settlement when it exists, has cleared,
+      # and its amount matches what the tech is recording (guards against a
+      # spoofed or wrong-amount payment id). Square amounts are in cents.
+      def pos_payment_valid?(payment, amount)
+        return false if payment.blank?
+        return false unless %w[COMPLETED APPROVED CAPTURED].include?(payment["status"].to_s.upcase)
 
-        SimplyBook::Client.new.create_booking(
-          service_id: booking.service.simplybook_event_id,
-          unit_id:    booking.employee_profile.simplybook_unit_id,
-          starts_at:  booking.starts_at,
-          ends_at:    booking.ends_at,
-          client:     { name: name, email: booking.user.email, phone: booking.user.phone },
-          comment:    "Client type: #{booking.client_type}#{" (party of #{booking.party_size})" if booking.client_type_group?}"
-        )
-      rescue StandardError => e
-        Rails.logger.warn("[EmployeesController] SimplyBook push failed for booking #{booking.id}: #{e.message}")
+        paid_cents = payment.dig("amount_money", "amount").to_i
+        paid_cents == (amount * 100).round
       end
 
       def location_params
@@ -215,9 +343,18 @@ module Api
       end
 
       def shift_totals(scope)
+        closed   = scope.where(status: "closed")
+        count    = closed.count
+        on_time  = closed.where(arrived_late: false).count
+        seconds  = closed.filter_map { |s| s.duration_seconds }.sum
         {
+          shifts_count: count,
+          hours_worked: (seconds / 3600.0).round(2),
           distance_km: scope.sum(:distance_km).to_f.round(3),
-          fuel_reimbursement: scope.sum(:fuel_reimbursement).to_f.round(2)
+          fuel_reimbursement: scope.sum(:fuel_reimbursement).to_f.round(2),
+          on_time_arrivals: on_time,
+          late_arrivals: count - on_time,
+          on_time_rate: count.positive? ? (on_time * 100.0 / count).round : nil
         }
       end
 

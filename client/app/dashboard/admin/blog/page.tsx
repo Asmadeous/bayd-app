@@ -179,7 +179,7 @@ function BlogPostRow({ deleting, onDelete, onPublish, onUnpublish, post, publish
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap gap-1.5">
-        <Link className={buttonVariants({ size: "xs", variant: "outline" })} href={`/dashboard/admin/blog/${post.id}/edit`}>
+        <Link className={buttonVariants({ size: "xs", variant: "outline" })} href={`/dashboard/admin/blog/edit?id=${post.id}`}>
           <Pencil className="size-3.5" /> Edit
         </Link>
         {post.status === "draft" ? (

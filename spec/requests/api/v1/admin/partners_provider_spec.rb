@@ -14,12 +14,6 @@ RSpec.describe "Admin partners → bookable provider", type: :request do
     { "Authorization" => "Bearer #{token}" }
   end
 
-  before do
-    # Never hit the real SimplyBook API from specs — stub the provider create.
-    fake = instance_double(SimplyBook::Client, create_provider: "sb-unit-1")
-    allow(SimplyBook::Client).to receive(:new).and_return(fake)
-  end
-
   describe "POST /api/v1/admin/partners" do
     let(:params) do
       { partner: { name: "Glow Studio", email: "owner@glowstudio.com",

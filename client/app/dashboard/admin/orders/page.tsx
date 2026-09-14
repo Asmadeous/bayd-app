@@ -36,7 +36,8 @@ interface Order {
   total: string
   created_at: string
   user: { email: string; first_name: string | null; last_name: string | null }
-  order_items: { quantity: number; unit_price: string; product: { name: string } }[]
+  // OrderItemSerializer sends these flat: `name` / `price`, no nested product.
+  order_items: { quantity: number; price: string; name: string }[]
 }
 
 interface PagedResponse<T> {
@@ -150,7 +151,7 @@ export default function AdminOrdersPage() {
                     </p>
                     <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5f6268]">
                       {order.order_items
-                        ?.map((item) => `${item.quantity}x ${item.product?.name}`)
+                        ?.map((item) => `${item.quantity}x ${item.name}`)
                         .join(", ")}
                     </p>
                   </div>

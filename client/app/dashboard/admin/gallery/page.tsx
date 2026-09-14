@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Images, Plus, Trash2 } from "lucide-react"
 import { z } from "zod"
 
+import { ImagePicker } from "@/components/image-picker"
+import { buildFormData } from "@/lib/build-form-data"
 import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
@@ -101,11 +103,12 @@ const gallerySchema = z.object({
   title: z.string().trim().min(1, "Title is required."),
   category: z.enum(CATEGORIES, "Choose a valid category."),
   description: z.string(),
+  // Optional: an uploaded photo can stand in for a URL. Validated in the submit
+  // handler (either a file OR a valid URL must be present).
   image_url: z
     .string()
     .trim()
-    .min(1, "Image URL is required.")
-    .refine((value) => z.url().safeParse(value).success, "Enter a valid image URL."),
+    .refine((value) => value === "" || z.url().safeParse(value).success, "Enter a valid image URL."),
   image_alt: z.string(),
   size: z.enum(SIZES, "Choose a valid display size."),
   featured: z.boolean(),
@@ -132,6 +135,7 @@ export default function AdminGalleryPage() {
   const [editing, setEditing] = useState<"create" | number | null>(null)
   const [form, setForm] = useState<GalleryFormState>(BLANK)
   const [errors, setErrors] = useState<GalleryFormErrors>({})
+  const [imageFile, setImageFile] = useState<File | null>(null)
 
   const { data, isLoading } = useQuery<PagedResponse<GalleryItem>>({
     queryKey: ["admin-gallery", page, catFilter],
@@ -139,7 +143,7 @@ export default function AdminGalleryPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => api.post("/admin/gallery_items", payload).then((r) => r.data),
+    mutationFn: (payload: Record<string, unknown> | FormData) => api.post("/admin/gallery_items", payload).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-gallery"] })
       closeEditor()
@@ -148,7 +152,7 @@ export default function AdminGalleryPage() {
     onError: (error) => handleMutationError(error, "Could not add this gallery item."),
   })
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: Record<string, unknown> }) => api.patch(`/admin/gallery_items/${id}`, payload).then((r) => r.data),
+    mutationFn: ({ id, payload }: { id: number; payload: Record<string, unknown> | FormData }) => api.patch(`/admin/gallery_items/${id}`, payload).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-gallery"] })
       closeEditor()
@@ -200,6 +204,7 @@ export default function AdminGalleryPage() {
     setEditing(null)
     setForm(BLANK)
     setErrors({})
+    setImageFile(null)
   }
 
   function set<K extends keyof GalleryFormState>(key: K, value: GalleryFormState[K]) {
@@ -226,11 +231,18 @@ export default function AdminGalleryPage() {
       return
     }
 
-    const payload = {
+    // Need either an uploaded photo or an image URL.
+    if (!imageFile && !form.image_url.trim()) {
+      setErrors({ image_url: "Upload a photo or enter an image URL." })
+      toast({ title: "Photo required", description: "Upload a photo or enter an image URL.", variant: "error" })
+      return
+    }
+
+    const fields = {
       title: form.title.trim(),
       category: form.category,
       description: form.description.trim() || undefined,
-      image_url: form.image_url.trim(),
+      image_url: form.image_url.trim() || undefined,
       image_alt: form.image_alt.trim() || undefined,
       size: form.size,
       featured: form.featured,
@@ -238,6 +250,11 @@ export default function AdminGalleryPage() {
       position: Number(form.position),
       employee_profile_id: form.employee_profile_id || undefined,
     }
+
+    // With a picked file, send multipart (the API attaches params[:image]).
+    const payload: Record<string, unknown> | FormData = imageFile
+      ? buildFormData(fields, imageFile)
+      : fields
 
     if (editing === "create") {
       createMutation.mutate(payload)
@@ -316,13 +333,11 @@ export default function AdminGalleryPage() {
                     </span>
                   )}
                 </div>
-                <Field error={errors.image_url} label="Image URL">
-                  <input
-                    aria-invalid={Boolean(errors.image_url)}
-                    className={fieldClass(errors.image_url)}
-                    onChange={(event) => set("image_url", event.target.value)}
-                    placeholder="https://example.com/gallery-photo.jpg"
-                    value={form.image_url}
+                <Field error={errors.image_url} label="Gallery photo">
+                  <ImagePicker
+                    currentUrl={form.image_url || null}
+                    onPick={setImageFile}
+                    label="Photo"
                   />
                 </Field>
               </div>

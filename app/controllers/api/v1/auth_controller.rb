@@ -5,12 +5,71 @@ module Api
 
       skip_before_action :authenticate_user!, only: %i[
         register login staff_login request_magic_link verify_magic_link
-        request_password_reset reset_password
+        request_password_reset reset_password request_phone_code verify_phone_code
+        request_email_code verify_email_code
       ]
 
       # Customers: passwordless, email-keyed. register == login (find-or-create).
       def register
         provision_customer(created: true)
+      end
+
+      # Phone login (customers): text a one-time code. Always responds success
+      # (even when SMS is unconfigured or rate-limited) so it can't be used to
+      # probe which numbers exist or whether SMS is set up. A too-soon resend is
+      # the one signal surfaced, so the app can show "please wait".
+      def request_phone_code
+        phone = params[:phone].to_s.strip
+        return render(json: { error: "Phone number is required" }, status: :unprocessable_entity) if phone.blank?
+
+        case PhoneOtp.request_code(phone)
+        when :too_soon
+          render json: { error: "Please wait a moment before requesting another code." }, status: :too_many_requests
+        else
+          render json: { status: "sent" }
+        end
+      end
+
+      # Verify the code and log the customer in (find-or-create by phone). Returns
+      # the same { token, user } shape as the other login paths. On SIGNUP the
+      # client also sends email + first_name so the OTP-created account isn't
+      # phone-only; they're applied only to a brand-new account (never overwrite an
+      # existing customer's details on a later phone sign-in).
+      def verify_phone_code
+        user = PhoneOtp.verify(
+          params[:phone].to_s, params[:code].to_s,
+          email: params[:email].to_s, first_name: params[:first_name].to_s
+        )
+        return render(json: { error: "That code is invalid or has expired." }, status: :unauthorized) unless user
+
+        render json: { token: generate_token(user), user: UserSerializer.render_as_hash(user) }
+      end
+
+      # Email login (customers): email a one-time code. The in-app alternative to
+      # the magic link, which can't complete inside the mobile app. Same privacy
+      # posture as phone OTP; a staff/admin email is the one refusal.
+      def request_email_code
+        email = params[:email].to_s.strip
+        return render(json: { error: "Email is required" }, status: :unprocessable_entity) if email.blank?
+
+        case EmailOtp.request_code(email)
+        when :too_soon
+          render json: { error: "Please wait a moment before requesting another code." }, status: :too_many_requests
+        when :staff
+          render json: { error: "That email belongs to a staff account — please use staff sign-in." },
+                 status: :forbidden
+        else
+          render json: { status: "sent" }
+        end
+      end
+
+      # Verify the emailed code and log the customer in (find-or-create by email).
+      # Returns the same { token, user } shape as the other login paths.
+      def verify_email_code
+        user = EmailOtp.verify(params[:email].to_s, params[:code].to_s)
+        return render(json: { error: "That code is invalid or has expired." }, status: :unauthorized) unless user
+
+        render json: { token: generate_token(user), user: UserSerializer.render_as_hash(user) }
       end
 
       def login

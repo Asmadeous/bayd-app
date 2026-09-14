@@ -1,7 +1,16 @@
 class ServiceSerializer < Blueprinter::Base
   identifier :id
-  fields :name, :description, :duration_minutes, :price, :image_url,
-         :requires_consultation, :active, :service_category_id, :simplybook_event_id, :kids_only
+  fields :name, :description, :duration_minutes, :price,
+         :requires_consultation, :active, :service_category_id, :kids_only
+
+  # Prefer an uploaded image; fall back to the legacy image_url string.
+  field :image_url do |service|
+    if service.image.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(service.image)
+    else
+      service.image_url
+    end
+  end
 
   field :category_name do |service, _opts|
     service.service_category&.name

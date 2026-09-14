@@ -23,7 +23,8 @@ interface Order {
   shipping_fee: string
   total: string
   created_at: string
-  order_items: { id: number; quantity: number; unit_price: string; product: { name: string } }[]
+  // Matches OrderItemSerializer: flat name + price, no nested product object.
+  order_items: { id: number; quantity: number; price: string; name: string }[]
 }
 
 interface PagedResponse<T> {
@@ -90,7 +91,7 @@ export default function CustomerOrdersPage() {
                   </p>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5f6268]">
                     {order.order_items
-                      ?.map((item) => `${item.quantity}x ${item.product?.name}`)
+                      ?.map((item) => `${item.quantity}x ${item.name}`)
                       .join(", ")}
                   </p>
                 </div>

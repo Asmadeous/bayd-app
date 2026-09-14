@@ -1,6 +1,10 @@
 Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # Real-time WebSocket endpoint (ActionCable over Solid Cable). Auth happens in
+  # ApplicationCable::Connection via a JWT passed as ?token= on the handshake.
+  mount ActionCable.server => "/cable"
+
   namespace :api do
     namespace :v1 do
       # Auth
@@ -9,6 +13,15 @@ Rails.application.routes.draw do
       post  "auth/staff_login", to: "auth#staff_login"
       post  "auth/magic_link",        to: "auth#request_magic_link"
       get   "auth/magic_link/verify", to: "auth#verify_magic_link"
+      post  "auth/phone_code",        to: "auth#request_phone_code"
+      post  "auth/phone_code/verify", to: "auth#verify_phone_code"
+      post  "auth/email_code",        to: "auth#request_email_code"
+      post  "auth/email_code/verify", to: "auth#verify_email_code"
+      # Passkeys / WebAuthn (optional MFA). Registration is authed; auth is public.
+      post  "auth/passkeys/registration_options",   to: "passkeys#registration_options"
+      post  "auth/passkeys/register",               to: "passkeys#register"
+      post  "auth/passkeys/authentication_options", to: "passkeys#authentication_options"
+      post  "auth/passkeys/authenticate",           to: "passkeys#authenticate"
       post  "auth/password_reset",         to: "auth#request_password_reset"
       post  "auth/password_reset/confirm", to: "auth#reset_password"
       get   "auth/me",       to: "auth#me"
@@ -93,7 +106,7 @@ Rails.application.routes.draw do
       get "coverage", to: "coverage#show"
 
       # Technician availability (public — "what times are open?"): free slots for a
-      # service+tech+date, sourced from SimplyBook's provider schedule.
+      # service+tech+date, computed by our own AvailabilityEngine.
       get "availability", to: "availability#show"
       # Every eligible tech's open times for a service+date, so the booking form
       # can auto-shift to another available tech when the chosen one is full.
@@ -130,20 +143,48 @@ Rails.application.routes.draw do
         patch  "profile",       to: "employees#update"
         post   "toggle_shift",  to: "employees#toggle_shift"
         get    "schedule",      to: "employees#schedule"
+        # A single one of the tech's own bookings (navigate / call screens).
+        get    "bookings/:id",  to: "employees#booking"
         get    "reviews",       to: "employees#reviews"
-        # Time clock (clock in/out with GPS → fuel-compensation mileage)
-        post   "clock_in",      to: "employees#clock_in"
-        post   "clock_out",     to: "employees#clock_out"
+        # Per-booking time clock (clock in/out AT the client, GPS geofence →
+        # fuel-compensation mileage + on-time tracking).
+        post   "bookings/:id/clock_in",  to: "employees#clock_in"
+        post   "bookings/:id/clock_out", to: "employees#clock_out"
+        # Mark a client no-show (client wasn't available for service). Triggers the
+        # no-show fee charge to their card on file (NoShowChargeJob).
+        post   "bookings/:id/no_show",   to: "employees#mark_no_show"
         get    "current_shift", to: "employees#current_shift"
         get    "shifts",        to: "employees#shifts"
+        # The tech's own earnings: tips owed/paid, fuel, partner payout split.
+        get    "earnings",      to: "employees#earnings"
         # Gift-card top-up at the customer (POS/cash → mark paid)
         get    "gift_cards/:code",       to: "employees#show_gift_card"
         post   "gift_cards/:code/topup", to: "employees#topup_gift_card"
         # Overtime charge when a service runs over its allocated time
         post   "bookings/:id/overtime",  to: "employees#booking_overtime"
+        # Square Tap to Pay (in-person POS): init config for the native SDK, then
+        # record a completed on-device payment against the booking.
+        get    "pos/config",              to: "employees#pos_config"
+        post   "bookings/:id/pos_payment", to: "employees#pos_payment"
         # Staff-initiated manual booking (force-book, skips eligibility gates)
         post   "bookings",               to: "employees#create_booking"
+        # Bookable-hours: the tech's own weekly template + date overrides.
+        resources :availability_schedules, only: %i[index create update destroy]
+        resources :availability_overrides, only: %i[index create update destroy]
+        # Live GPS while on the road (day-of tracking → customer ETA).
+        post "location", to: "employee/locations#create"
       end
+
+      # Direct messaging (customer↔staff, staff↔admin). Any authenticated user.
+      resources :conversations, only: %i[index create] do
+        resources :messages, only: %i[index create] do
+          post :read, on: :collection
+        end
+      end
+
+      # Push: the apps register/unregister their FCM device token.
+      post   "device_tokens", to: "device_tokens#create"
+      delete "device_tokens", to: "device_tokens#destroy"
 
       # Work-scope video calls (customer ↔ staff)
       resources :meetings, only: %i[show] do
@@ -158,8 +199,6 @@ Rails.application.routes.draw do
 
       # Webhooks
       namespace :webhooks do
-        post "traccar",    to: "traccar#positions"
-        post "simplybook", to: "simplybook#receive"
         # Path must NOT contain "helcim" — Helcim rejects such webhook URLs (400).
         post "hpay",       to: "helcim#receive"
         post "square",     to: "square#receive"
@@ -177,6 +216,9 @@ Rails.application.routes.draw do
             post :toggle_dispatch
             get  :analytics
           end
+          # Any tech's bookable-hours, managed by an admin.
+          resources :availability_schedules, only: %i[index create update destroy]
+          resources :availability_overrides, only: %i[index create update destroy]
         end
         resources :users, only: %i[index show update destroy]
 

@@ -6,9 +6,15 @@ import api from "@/lib/api"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuthStore, type AuthUser } from "@/lib/stores/auth-store"
 
-export function useAuth() {
+// `redirect` overrides where a successful auth lands. The website passes nothing
+// and keeps the role-based dashboard behavior; the mobile app passes its own app
+// routes (e.g. { afterAuth: "/app/home", afterLogout: "/app/welcome" }) so it
+// never bounces through the website's dashboard/sign-in pages.
+export function useAuth(redirect?: { afterAuth?: string; afterLogout?: string }) {
   const router = useRouter()
   const { user, token, isAuthenticated, setAuth, clearAuth } = useAuthStore()
+
+  const landingFor = (role: string) => redirect?.afterAuth ?? roleDashboard(role)
 
   const loginMutation = useMutation({
     // Passwordless for customers (email + optional phone). Staff also pass a password.
@@ -16,7 +22,7 @@ export function useAuth() {
       api.post<{ token: string; user: AuthUser }>("/auth/login", creds).then((r) => r.data),
     onSuccess: ({ token, user }) => {
       setAuth(user, token)
-      router.push(roleDashboard(user.role))
+      router.push(landingFor(user.role))
     },
   })
 
@@ -39,7 +45,7 @@ export function useAuth() {
         .then((r) => r.data),
     onSuccess: ({ token, user }) => {
       setAuth(user, token)
-      router.push(roleDashboard(user.role))
+      router.push(landingFor(user.role))
     },
   })
 
@@ -49,7 +55,7 @@ export function useAuth() {
       api.post<{ token: string; user: AuthUser }>("/auth/staff_login", creds).then((r) => r.data),
     onSuccess: ({ token, user }) => {
       setAuth(user, token)
-      router.push(roleDashboard(user.role))
+      router.push(landingFor(user.role))
     },
   })
 
@@ -81,6 +87,68 @@ export function useAuth() {
       api.post<{ message: string }>("/auth/password_reset/confirm", data).then((r) => r.data),
   })
 
+  // Phone-number OTP login (customers). Step 1: text a code. Step 2: verify it
+  // and receive a token, same as the other login paths.
+  const requestPhoneCodeMutation = useMutation({
+    mutationFn: (phone: string) =>
+      api.post<{ status: string }>("/auth/phone_code", { phone }).then((r) => r.data),
+  })
+
+  const verifyPhoneCodeMutation = useMutation({
+    // email + first_name are sent only on signup, to seed the new phone account.
+    mutationFn: (data: { phone: string; code: string; email?: string; first_name?: string }) =>
+      api.post<{ token: string; user: AuthUser }>("/auth/phone_code/verify", data).then((r) => r.data),
+    onSuccess: ({ token, user }) => {
+      setAuth(user, token)
+      router.push(landingFor(user.role))
+    },
+  })
+
+  // Email-code login (customers). The in-app alternative to the magic link,
+  // which can't complete inside the mobile app (the link opens the website, not
+  // the app). Step 1: email a code. Step 2: verify it and receive a token.
+  const requestEmailCodeMutation = useMutation({
+    mutationFn: (email: string) =>
+      api.post<{ status: string }>("/auth/email_code", { email }).then((r) => r.data),
+  })
+
+  const verifyEmailCodeMutation = useMutation({
+    mutationFn: (data: { email: string; code: string }) =>
+      api.post<{ token: string; user: AuthUser }>("/auth/email_code/verify", data).then((r) => r.data),
+    onSuccess: ({ token, user }) => {
+      setAuth(user, token)
+      router.push(landingFor(user.role))
+    },
+  })
+
+  // Passkeys (WebAuthn). Register: needs an authed session; runs the browser
+  // create() ceremony against the server's options. @github/webauthn-json maps
+  // the server JSON to navigator.credentials and back, handling base64url/buffers.
+  const registerPasskeyMutation = useMutation({
+    mutationFn: async (nickname?: string) => {
+      const { create } = await import("@github/webauthn-json")
+      const options = await api.post("/auth/passkeys/registration_options").then((r) => r.data)
+      const credential = await create({ publicKey: options })
+      return api.post("/auth/passkeys/register", { credential, nickname }).then((r) => r.data)
+    },
+  })
+
+  // Authenticate with a passkey: public, returns a token like the other logins.
+  const passkeySignInMutation = useMutation({
+    mutationFn: async (identifier: { email?: string; phone?: string }) => {
+      const { get } = await import("@github/webauthn-json")
+      const options = await api.post("/auth/passkeys/authentication_options", identifier).then((r) => r.data)
+      const credential = await get({ publicKey: options })
+      return api
+        .post<{ token: string; user: AuthUser }>("/auth/passkeys/authenticate", { ...identifier, credential })
+        .then((r) => r.data)
+    },
+    onSuccess: ({ token, user }) => {
+      setAuth(user, token)
+      router.push(landingFor(user.role))
+    },
+  })
+
   const updateMeMutation = useMutation({
     mutationFn: (data: {
       first_name?: string; last_name?: string; phone?: string; marketing_opt_in?: boolean; avatar_url?: string
@@ -106,7 +174,7 @@ export function useAuth() {
 
   function logout() {
     clearAuth()
-    router.push("/signin")
+    router.push(redirect?.afterLogout ?? "/signin")
   }
 
   return {
@@ -121,6 +189,12 @@ export function useAuth() {
     requestMagicLink: requestMagicLinkMutation,
     requestPasswordReset: requestPasswordResetMutation,
     resetPassword: resetPasswordMutation,
+    requestPhoneCode: requestPhoneCodeMutation,
+    verifyPhoneCode: verifyPhoneCodeMutation,
+    requestEmailCode: requestEmailCodeMutation,
+    verifyEmailCode: verifyEmailCodeMutation,
+    registerPasskey: registerPasskeyMutation,
+    passkeySignIn: passkeySignInMutation,
     updateMe: updateMeMutation,
   }
 }

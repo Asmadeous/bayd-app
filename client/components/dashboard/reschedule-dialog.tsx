@@ -26,7 +26,7 @@ interface AvailabilityResult {
 const TODAY = new Date().toISOString().split("T")[0]
 
 // Reschedule an existing booking to a new open slot for the SAME service + tech.
-// Reuses the /availability endpoint (SimplyBook-backed, travel-filtered) so the
+// Reuses the /availability endpoint (travel-filtered) so the
 // customer only sees slots the tech can actually take. The backend enforces the
 // 24h cutoff + 2-reschedule cap and returns a typed code on failure.
 export function RescheduleDialog({ booking, admin = false }: { booking: Booking; admin?: boolean }) {

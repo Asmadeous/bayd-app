@@ -74,7 +74,7 @@ module Api
         # Admin reschedule: move a booking to a new time, no cutoff and no
         # reschedule cap (unlike the customer endpoint). Optionally reassign to a
         # different technician in the same action via employee_profile_id.
-        # Re-validates travel + double-booking and re-syncs SimplyBook.
+        # Re-validates travel + double-booking.
         def reschedule
           booking   = Booking.find(params[:id])
           new_start = BusinessHours.parse_local(params[:starts_at])

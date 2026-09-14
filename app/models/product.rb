@@ -3,6 +3,10 @@ class Product < ApplicationRecord
   has_many :order_items, dependent: :restrict_with_error
   has_many :product_variants, -> { order(:position) }, dependent: :destroy
 
+  # Uploaded image (Active Storage). Preferred over the legacy image_url string;
+  # the serializer falls back to image_url when nothing is attached.
+  has_one_attached :image
+
   validates :name, presence: true
   validates :price, numericality: { greater_than_or_equal_to: 0 }
   validates :stock_quantity, numericality: { greater_than_or_equal_to: 0 }

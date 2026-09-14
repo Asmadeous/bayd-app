@@ -43,3 +43,4 @@ deploy/production.env
 # Raw Shopify product export dumps (source data; seeds are derived from these)
 products_export_*.csv
 products_export_*.md
+client-ios.zip

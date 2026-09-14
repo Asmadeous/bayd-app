@@ -11,6 +11,7 @@ class Meeting < ApplicationRecord
   validates :provider, presence: true
 
   after_create_commit :notify_participants
+  after_create_commit :schedule_reminders
 
   def url
     "https://#{ENV.fetch('JITSI_HOST', 'meet.jit.si')}/#{room_name}"
@@ -43,5 +44,12 @@ class Meeting < ApplicationRecord
         action_url: url
       )
     end
+  end
+
+  # Best-effort: a scheduling failure must never break meeting creation.
+  def schedule_reminders
+    MeetingReminders.schedule(self)
+  rescue StandardError => e
+    Rails.logger.warn("[Meeting##{id}] reminder scheduling failed: #{e.message}")
   end
 end
