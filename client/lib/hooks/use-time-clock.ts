@@ -16,6 +16,8 @@ export interface Shift {
   fuel_reimbursement: string
   fuel_rate_per_km: string | null
   duration_seconds: number
+  booking_id: number | null
+  arrived_late: boolean
   notes: string | null
   employee_profile?: {
     id: number
@@ -25,9 +27,14 @@ export interface Shift {
 }
 
 export interface ShiftTotals {
-  shifts?: number
+  shifts?: number // admin totals key
+  shifts_count?: number // employee totals key
+  hours_worked?: number
   distance_km: number
   fuel_reimbursement: number
+  on_time_arrivals?: number
+  late_arrivals?: number
+  on_time_rate?: number | null
 }
 
 interface PagedShifts {
@@ -78,23 +85,27 @@ export function useShifts(page = 1) {
   })
 }
 
-function useClockMutation(path: "clock_in" | "clock_out") {
+// Per-booking clock in/out. Reads the device GPS and posts it to the booking's
+// clock endpoint; the backend enforces the 150m geofence + 15-min grace and
+// returns a 422 with a message when you're too far from the client.
+function useBookingClock(action: "clock_in" | "clock_out") {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (bookingId: number) => {
       const loc = await getPosition()
-      return api.post<Shift>(`/employee/${path}`, loc).then((r) => r.data)
+      return api.post<Shift>(`/employee/bookings/${bookingId}/${action}`, loc).then((r) => r.data)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["current-shift"] })
       qc.invalidateQueries({ queryKey: ["shifts"] })
+      qc.invalidateQueries({ queryKey: ["employee-schedule"] })
       qc.invalidateQueries({ queryKey: ["employee-profile"] })
     },
   })
 }
 
-export const useClockIn = () => useClockMutation("clock_in")
-export const useClockOut = () => useClockMutation("clock_out")
+export const useClockIn = () => useBookingClock("clock_in")
+export const useClockOut = () => useBookingClock("clock_out")
 
 // ── Admin fuel-compensation report ─────────────────────────────────────────
 

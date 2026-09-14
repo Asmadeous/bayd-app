@@ -68,15 +68,6 @@ export function BookingCard({ booking, actions, className }: BookingCardProps) {
                 {clientTypeLabel(booking.client_type, booking.party_size)}
               </span>
             ) : null}
-            {booking.simplybook_sync_pending ? (
-              <span
-                title="This booking hasn't reached the SimplyBook calendar yet — it retries automatically, or push manually from Admin."
-                className="inline-flex min-h-6 items-center gap-1 bg-amber-500/15 px-2.5 py-1 text-xs font-bold leading-none text-amber-800"
-              >
-                <span aria-hidden="true">⚠</span>
-                Not synced to SimplyBook
-              </span>
-            ) : null}
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs leading-5 text-[#5f6268]">

@@ -12,22 +12,57 @@ export interface Booking {
   subtotal: string
   travel_fee: string
   total: string
+  outstanding_balance: string
   notes: string | null
   cancellation_reason: string | null
   has_review: boolean
   client_type: "adult" | "kids" | "elderly" | "group"
   party_size: number
-  // true = service+tech are SimplyBook-mapped but the push never landed there.
-  // nil = SimplyBook mapping doesn't apply to this booking (nothing to flag).
-  simplybook_sync_pending: boolean | null
   meeting_recommended: boolean
   recurrence_active: boolean
   recurrence_interval_weeks: number | null
   auto_charge: boolean
   reschedule_count: number
   overtime_amount: string
+  // Per-booking money picture, rendered per account type (the two never mix).
+  financials:
+    | {
+        account_type: "direct"
+        total: string
+        amount_paid: string
+        outstanding: string
+        tips: string
+        fuel_reimbursement: string
+      }
+    | {
+        account_type: "partner"
+        total: string
+        amount_paid: string
+        outstanding: string
+        partner_name: string
+        platform_fee_pct: string
+        provider_share: string
+        payout_status: "settled" | "owed"
+      }
+  // Extra services in this visit (same tech, back-to-back). Note-only, priced.
+  addons: { id: number; name: string; price: string; duration: number }[]
+  clocked_in_at: string | null
   service_latitude: string | null
   service_longitude: string | null
+  customer_name: string | null
+  address: {
+    id: number
+    label: string | null
+    line1: string
+    line2: string | null
+    city: string
+    province: string
+    postal_code: string
+    latitude: string | null
+    longitude: string | null
+    is_apartment: boolean
+    buzz_code: string | null
+  } | null
   created_at: string
   service: { id: number; name: string; duration_minutes: number; price: string; image_url: string | null }
   employee_profile: {

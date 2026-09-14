@@ -1,6 +1,6 @@
 "use client"
 
-import { X, Check } from "lucide-react"
+import { X, Check, TriangleAlert } from "lucide-react"
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react"
 
 import {
@@ -12,7 +12,7 @@ import {
   ToastViewport,
 } from "@/components/ui/toast"
 
-type ToastVariant = "default" | "success" | "error"
+type ToastVariant = "default" | "success" | "error" | "warning"
 type ToastInput = { title: string; description?: string; variant?: ToastVariant }
 type ActiveToast = ToastInput & { id: number }
 
@@ -43,14 +43,18 @@ export function BaydToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((item) => {
           const isError = item.variant === "error"
           const isSuccess = item.variant === "success"
-          const Icon = isError ? X : isSuccess ? Check : null
+          const isWarning = item.variant === "warning"
+          const Icon = isError ? X : isSuccess ? Check : isWarning ? TriangleAlert : null
+          const iconColor = isError
+            ? "text-[#b75c68]"
+            : isWarning
+              ? "text-[#c98a2e]"
+              : "text-[#8a9a6a]"
 
           return (
             <Toast key={item.id} onOpenChange={(open) => !open && dismiss(item.id)} duration={6000}>
               <div className="flex gap-3">
-                {Icon ? (
-                  <Icon className={isError ? "mt-0.5 size-5 text-[#b75c68]" : "mt-0.5 size-5 text-[#8a9a6a]"} />
-                ) : null}
+                {Icon ? <Icon className={`mt-0.5 size-5 ${iconColor}`} /> : null}
                 <div className="min-w-0 flex-1">
                   <ToastTitle>{item.title}</ToastTitle>
                   {item.description ? <ToastDescription>{item.description}</ToastDescription> : null}

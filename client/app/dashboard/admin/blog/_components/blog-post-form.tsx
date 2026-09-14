@@ -11,6 +11,8 @@ import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { Button, buttonVariants } from "@/components/ui/button"
 import api from "@/lib/api"
+import { buildFormData } from "@/lib/build-form-data"
+import { ImagePicker } from "@/components/image-picker"
 
 export interface BlogPostFormPost {
   id: number
@@ -63,11 +65,17 @@ export function BlogPostForm({ mode, post }: { mode: "create" | "edit"; post?: B
   }), [post])
   const [form, setForm] = useState<BlogPostFormState>(initial)
   const [errors, setErrors] = useState<BlogPostFormErrors>({})
+  const [coverFile, setCoverFile] = useState<File | null>(null)
 
   const saveMutation = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => {
+    mutationFn: (payload: Record<string, unknown> | FormData) => {
       if (mode === "edit" && post) {
         return api.patch(`/admin/blog_posts/${post.id}`, payload).then((r) => r.data)
+      }
+      // New posts start as drafts. Append status for both body shapes.
+      if (payload instanceof FormData) {
+        payload.append("status", "draft")
+        return api.post("/admin/blog_posts", payload).then((r) => r.data)
       }
       return api.post("/admin/blog_posts", { ...payload, status: "draft" }).then((r) => r.data)
     },
@@ -110,13 +118,15 @@ export function BlogPostForm({ mode, post }: { mode: "create" | "edit"; post?: B
       return
     }
 
-    saveMutation.mutate({
+    const fields = {
       title: form.title.trim(),
       excerpt: form.excerpt.trim() || undefined,
       body: form.body.trim(),
       category: form.category.trim() || undefined,
       cover_image_url: form.cover_image_url.trim() || undefined,
-    })
+    }
+    // With a picked cover photo, send multipart (API attaches params[:cover_image]).
+    saveMutation.mutate(coverFile ? buildFormData(fields, coverFile, "cover_image") : fields)
   }
 
   return (
@@ -150,13 +160,11 @@ export function BlogPostForm({ mode, post }: { mode: "create" | "edit"; post?: B
               </span>
             )}
           </div>
-          <Field error={errors.cover_image_url} label="Cover image URL">
-            <input
-              aria-invalid={Boolean(errors.cover_image_url)}
-              className={fieldClass(errors.cover_image_url)}
-              onChange={(event) => set("cover_image_url", event.target.value)}
-              placeholder="https://example.com/image.jpg"
-              value={form.cover_image_url}
+          <Field error={errors.cover_image_url} label="Cover photo">
+            <ImagePicker
+              currentUrl={form.cover_image_url || null}
+              onPick={setCoverFile}
+              label="Cover"
             />
           </Field>
         </div>

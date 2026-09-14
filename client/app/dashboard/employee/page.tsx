@@ -26,7 +26,7 @@ import { useEmployeeProfile, useEmployeeSchedule, useToggleShift } from "@/lib/h
 import { employeeDashboardSteps } from "@/lib/tours/employee-tour"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
-type ScheduleView = "list" | "calendar"
+type ScheduleView = "list" | "calendar" | "past"
 
 export default function EmployeeDashboardPage() {
   const { toast } = useToast()
@@ -35,9 +35,13 @@ export default function EmployeeDashboardPage() {
   const { data: profile, isError: isProfileError } = useEmployeeProfile()
   const { data, isError: isScheduleError, isLoading } = useEmployeeSchedule(1)
   const toggleShift = useToggleShift()
+  const initialView = searchParams.get("view")
   const [view, setView] = useState<ScheduleView>(
-    searchParams.get("view") === "calendar" ? "calendar" : "list",
+    initialView === "calendar" ? "calendar" : initialView === "past" ? "past" : "list",
   )
+  // Job history (completed/cancelled/no-show), loaded only when the Past view is open.
+  const { data: pastData, isLoading: isPastLoading } = useEmployeeSchedule(1, view === "past" ? "past" : undefined)
+  const pastBookings = pastData?.data ?? []
   const [selectedDay, setSelectedDay] = useState<{ date: Date; bookings: Booking[] } | null>(null)
 
   const bookings = data?.data ?? []
@@ -170,6 +174,7 @@ export default function EmployeeDashboardPage() {
             {([
               { icon: List, label: "List", value: "list" },
               { icon: CalendarDays, label: "Calendar", value: "calendar" },
+              { icon: CheckCircle2, label: "Past", value: "past" },
             ] as const).map((item) => {
               const Icon = item.icon
 
@@ -196,6 +201,29 @@ export default function EmployeeDashboardPage() {
           <DashboardPanel>
             <p className="text-sm text-[#5f6268]">Loading schedule...</p>
           </DashboardPanel>
+        ) : view === "past" ? (
+          isPastLoading ? (
+            <DashboardPanel>
+              <p className="text-sm text-[#5f6268]">Loading past bookings...</p>
+            </DashboardPanel>
+          ) : pastBookings.length === 0 ? (
+            <EmptyState
+              className="border-black/8 py-10"
+              icon={MapPin}
+              title="No past bookings"
+              description="Completed, cancelled, and no-show jobs will appear here."
+            />
+          ) : (
+            <DashboardPanel className="space-y-3">
+              {pastBookings.map((booking) => (
+                <BookingCard
+                  actions={<StaffBookingActions booking={booking} />}
+                  booking={booking}
+                  key={booking.id}
+                />
+              ))}
+            </DashboardPanel>
+          )
         ) : view === "calendar" ? (
           <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.75fr)]">
             <AppCalendar

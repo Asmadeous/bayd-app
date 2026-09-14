@@ -23,7 +23,6 @@ export const adminServicesSteps: StepType[] = [
       "• Name, Price, and Duration — the core booking fields\n" +
       "• Category — which section of the service menu it belongs to\n" +
       "• Image URL — the photo shown on the booking page\n" +
-      "• SimplyBook Service ID — links this service to its SimplyBook counterpart for sync\n" +
       "• Active toggle — controls whether customers can book it\n" +
       "• Description — the write-up customers see when browsing\n" +
       "• Price tiers — optional Kids, Elderly, and Group pricing overrides\n\n" +

@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button"
 import { useBookings, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
 import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
 import { MessageTechButton } from "@/components/dashboard/message-tech-button"
+import { MeetingButton } from "@/components/dashboard/meeting-button"
 import { TechEta } from "@/components/dashboard/tech-eta"
 import { customerBookingsSteps } from "@/lib/tours/customer-bookings-tour"
 
@@ -220,6 +221,7 @@ export default function CustomerBookingsPage() {
                     b.status === "pending" || b.status === "confirmed" ? (
                       <div className="flex flex-wrap items-center gap-2">
                         <MessageTechButton techUserId={b.employee_profile?.user?.id} />
+                        <MeetingButton booking={b} />
                         <RescheduleDialog booking={b} />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>

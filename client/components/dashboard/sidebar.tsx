@@ -38,12 +38,15 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { useAuth } from "@/lib/hooks/use-auth"
+import { useConfirm } from "@/components/confirm-provider"
 
 type NavItem = { label: string; href: string; icon: LucideIcon }
 type NavGroup = { group: string; items: NavItem[] }
 
 const customerNav: NavItem[] = [
   { label: "Overview", href: "/dashboard/customer", icon: Home },
+  { label: "Book", href: "/dashboard/customer/book", icon: CalendarDays },
+  { label: "Shop", href: "/dashboard/customer/shop", icon: ShoppingBag },
   { label: "Calendar", href: "/dashboard/customer/calendar", icon: CalendarDays },
   // { label: "Bookings", href: "/dashboard/customer/bookings", icon: CalendarDays },
   { label: "Subscriptions", href: "/dashboard/customer/subscriptions", icon: Repeat2 },
@@ -139,6 +142,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const { user } = useAuthStore()
   const { logout } = useAuth()
+  const confirm = useConfirm()
   const [isOpen, setIsOpen] = useState(false)
 
   const isAdmin = user?.role === "admin"
@@ -152,9 +156,17 @@ export function Sidebar() {
     setIsOpen(false)
   }
 
-  function handleLogout() {
-    closeMobileNav()
-    logout()
+  async function handleLogout() {
+    const ok = await confirm({
+      title: "Sign out?",
+      message: "You'll need to sign in again to access your dashboard.",
+      confirmLabel: "Sign out",
+      tone: "danger",
+    })
+    if (ok) {
+      closeMobileNav()
+      logout()
+    }
   }
 
   return (

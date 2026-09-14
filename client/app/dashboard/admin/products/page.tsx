@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Package, Plus } from "lucide-react"
 import { z } from "zod"
 
+import { ImagePicker } from "@/components/image-picker"
 import { useToast } from "@/components/bayd-toast-provider"
 import {
   DataTable,
@@ -125,12 +126,31 @@ export default function AdminProductsPage() {
       api.get<Category[]>("/admin/product_categories").then((response) => response.data),
   })
 
+  // A picked image file (optional). When present the request is sent multipart
+  // with the file; otherwise the plain JSON form is sent (image_url string still
+  // works as a fallback).
+  const [imageFile, setImageFile] = useState<File | null>(null)
+
+  function requestBody() {
+    if (!imageFile) return { body: form, config: undefined }
+    const fd = new FormData()
+    Object.entries(form).forEach(([k, v]) => {
+      if (v !== null && v !== undefined && v !== "") fd.append(k, String(v))
+    })
+    fd.append("image", imageFile)
+    return { body: fd, config: { headers: { "Content-Type": "multipart/form-data" } } }
+  }
+
   const createMutation = useMutation({
-    mutationFn: () => api.post("/admin/products", form),
+    mutationFn: () => {
+      const { body, config } = requestBody()
+      return api.post("/admin/products", body, config)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-products"] })
       setModal(null)
       setForm(BLANK)
+      setImageFile(null)
       setFormErrors({})
     },
     onError: (error: unknown) => {
@@ -140,10 +160,14 @@ export default function AdminProductsPage() {
     },
   })
   const updateMutation = useMutation({
-    mutationFn: (id: number) => api.patch(`/admin/products/${id}`, form),
+    mutationFn: (id: number) => {
+      const { body, config } = requestBody()
+      return api.patch(`/admin/products/${id}`, body, config)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-products"] })
       setModal(null)
+      setImageFile(null)
       setFormErrors({})
     },
     onError: (error: unknown) => {
@@ -316,13 +340,11 @@ export default function AdminProductsPage() {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field error={formErrors.image_url} label="Image URL">
-                <input
-                  aria-invalid={Boolean(formErrors.image_url)}
-                  className={fieldClass(formErrors.image_url)}
-                  onChange={(event) => updateForm("image_url", event.target.value)}
-                  type="url"
-                  value={form.image_url}
+              <Field error={formErrors.image_url} label="Product photo">
+                <ImagePicker
+                  currentUrl={form.image_url || null}
+                  onPick={setImageFile}
+                  label="Photo"
                 />
               </Field>
               <label className="flex min-h-10 items-center gap-2 border border-black/10 bg-[#fbfaf7] px-4 text-sm font-semibold text-[#101217] md:mt-6">

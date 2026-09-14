@@ -6,9 +6,15 @@ import api from "@/lib/api"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuthStore, type AuthUser } from "@/lib/stores/auth-store"
 
-export function useAuth() {
+// `redirect` overrides where a successful auth lands. The website passes nothing
+// and keeps the role-based dashboard behavior; the mobile app passes its own app
+// routes (e.g. { afterAuth: "/app/home", afterLogout: "/app/welcome" }) so it
+// never bounces through the website's dashboard/sign-in pages.
+export function useAuth(redirect?: { afterAuth?: string; afterLogout?: string }) {
   const router = useRouter()
   const { user, token, isAuthenticated, setAuth, clearAuth } = useAuthStore()
+
+  const landingFor = (role: string) => redirect?.afterAuth ?? roleDashboard(role)
 
   const loginMutation = useMutation({
     // Passwordless for customers (email + optional phone). Staff also pass a password.
@@ -16,7 +22,7 @@ export function useAuth() {
       api.post<{ token: string; user: AuthUser }>("/auth/login", creds).then((r) => r.data),
     onSuccess: ({ token, user }) => {
       setAuth(user, token)
-      router.push(roleDashboard(user.role))
+      router.push(landingFor(user.role))
     },
   })
 
@@ -39,7 +45,7 @@ export function useAuth() {
         .then((r) => r.data),
     onSuccess: ({ token, user }) => {
       setAuth(user, token)
-      router.push(roleDashboard(user.role))
+      router.push(landingFor(user.role))
     },
   })
 
@@ -49,7 +55,7 @@ export function useAuth() {
       api.post<{ token: string; user: AuthUser }>("/auth/staff_login", creds).then((r) => r.data),
     onSuccess: ({ token, user }) => {
       setAuth(user, token)
-      router.push(roleDashboard(user.role))
+      router.push(landingFor(user.role))
     },
   })
 
@@ -89,11 +95,29 @@ export function useAuth() {
   })
 
   const verifyPhoneCodeMutation = useMutation({
-    mutationFn: (data: { phone: string; code: string }) =>
+    // email + first_name are sent only on signup, to seed the new phone account.
+    mutationFn: (data: { phone: string; code: string; email?: string; first_name?: string }) =>
       api.post<{ token: string; user: AuthUser }>("/auth/phone_code/verify", data).then((r) => r.data),
     onSuccess: ({ token, user }) => {
       setAuth(user, token)
-      router.push(roleDashboard(user.role))
+      router.push(landingFor(user.role))
+    },
+  })
+
+  // Email-code login (customers). The in-app alternative to the magic link,
+  // which can't complete inside the mobile app (the link opens the website, not
+  // the app). Step 1: email a code. Step 2: verify it and receive a token.
+  const requestEmailCodeMutation = useMutation({
+    mutationFn: (email: string) =>
+      api.post<{ status: string }>("/auth/email_code", { email }).then((r) => r.data),
+  })
+
+  const verifyEmailCodeMutation = useMutation({
+    mutationFn: (data: { email: string; code: string }) =>
+      api.post<{ token: string; user: AuthUser }>("/auth/email_code/verify", data).then((r) => r.data),
+    onSuccess: ({ token, user }) => {
+      setAuth(user, token)
+      router.push(landingFor(user.role))
     },
   })
 
@@ -121,7 +145,7 @@ export function useAuth() {
     },
     onSuccess: ({ token, user }) => {
       setAuth(user, token)
-      router.push(roleDashboard(user.role))
+      router.push(landingFor(user.role))
     },
   })
 
@@ -150,7 +174,7 @@ export function useAuth() {
 
   function logout() {
     clearAuth()
-    router.push("/signin")
+    router.push(redirect?.afterLogout ?? "/signin")
   }
 
   return {
@@ -167,6 +191,8 @@ export function useAuth() {
     resetPassword: resetPasswordMutation,
     requestPhoneCode: requestPhoneCodeMutation,
     verifyPhoneCode: verifyPhoneCodeMutation,
+    requestEmailCode: requestEmailCodeMutation,
+    verifyEmailCode: verifyEmailCodeMutation,
     registerPasskey: registerPasskeyMutation,
     passkeySignIn: passkeySignInMutation,
     updateMe: updateMeMutation,

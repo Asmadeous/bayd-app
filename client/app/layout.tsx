@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { SmoothHashScroll } from "@/components/smooth-hash-scroll";
-import { TawkToChat } from "@/components/tawk-to-chat";
 import { BaydToastProvider } from "@/components/bayd-toast-provider";
+import { ConfirmProvider } from "@/components/confirm-provider";
 import { Providers } from "@/app/providers";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
@@ -87,6 +87,16 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
 };
 
+// viewport-fit=cover is what makes env(safe-area-inset-*) report real values.
+// Without it every safe-area inset resolves to 0, so the app screens'
+// pt-[env(safe-area-inset-top)] / pb-[env(safe-area-inset-bottom)] collapse and
+// content runs under the status bar and home indicator in the Capacitor apps.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -99,9 +109,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <SmoothHashScroll />
-        <TawkToChat />
         <Providers>
-          <BaydToastProvider>{children}</BaydToastProvider>
+          <BaydToastProvider>
+            <ConfirmProvider>{children}</ConfirmProvider>
+          </BaydToastProvider>
         </Providers>
       </body>
     </html>
