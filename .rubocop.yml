@@ -1,6 +1,13 @@
 # Omakase Ruby styling for Rails
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
+# The Next.js client (and its node_modules / generated iOS Cordova Podfiles) is
+# not Ruby we own - exclude it so `bin/ci` lints only backend source. Without
+# this, vendored Podfiles produce dozens of offenses and fail the deploy gate.
+AllCops:
+  Exclude:
+    - "client/**/*"
+
 # Overwrite or add rules to create your own house style
 #
 # # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`

@@ -55,7 +55,12 @@ env:
     # Hosts / URLs
     APP_HOST: api.baydspa.ca
     APP_URL: https://baydspa.ca
-    ALLOWED_ORIGINS: https://baydspa.ca
+    # Website + the three Capacitor apps' WebView origins (m-*.baydspa.ca). CORS,
+    # ActionCable, and WebAuthn all read this; a mobile app whose origin is missing
+    # here gets its API responses blocked.
+    # iOS Capacitor uses the capacitor:// scheme; Android uses https://. Both must
+    # be listed per app or the iOS apps' API calls are CORS-blocked.
+    ALLOWED_ORIGINS: https://baydspa.ca,https://m-customer.baydspa.ca,https://m-staff.baydspa.ca,https://m-admin.baydspa.ca,capacitor://m-customer.baydspa.ca,capacitor://m-staff.baydspa.ca,capacitor://m-admin.baydspa.ca
 
     # Database — 172.17.0.1 = the host's docker bridge (local Postgres from
     # deploy/server-setup.sh). For a managed DB, put its host here instead.
@@ -90,8 +95,8 @@ env:
     # Google OAuth callback (must exactly match a redirect URI in Google Console)
     GOOGLE_REDIRECT_URI: https://api.baydspa.ca/api/v1/auth/google/callback
 
-    # NOTE: SQUARE_LOCATION_ID, SMTP_ADDRESS, TRACCAR_URL, TRACCAR_USER, and the
-    # FCM/Infobip secrets are injected from GitHub (see env.secret) — no values here.
+    # NOTE: SQUARE_LOCATION_ID, SMTP_ADDRESS, and the FCM/Infobip secrets are
+    # injected from GitHub (see env.secret) — no values here.
 
     # Ops
     RAILS_LOG_LEVEL: info
@@ -115,6 +120,9 @@ env:
     - SQUARE_ACCESS_TOKEN
     - SQUARE_WEBHOOK_SIGNATURE_KEY
     - SQUARE_LOCATION_ID
+    # Square Tap to Pay POS (staff app). Blank keeps Tap to Pay inert.
+    - SQUARE_APPLICATION_ID
+    - SQUARE_ENVIRONMENT
     - SMTP_ADDRESS
     # Push (FCM) — blank keeps push inert
     - FCM_PROJECT_ID
@@ -123,10 +131,6 @@ env:
     - INFOBIP_BASE_URL
     - INFOBIP_API_KEY
     - INFOBIP_SENDER
-    - TRACCAR_URL
-    - TRACCAR_USER
-    - TRACCAR_PASSWORD
-    - TRACCAR_WEBHOOK_SECRET
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"

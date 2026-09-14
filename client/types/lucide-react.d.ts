@@ -42,6 +42,7 @@ declare module "lucide-react" {
   export const MailOpen: LucideIcon
   export const MapPin: LucideIcon
   export const Menu: LucideIcon
+  export const MessageCircle: LucideIcon
   export const Minus: LucideIcon
   export const Navigation: LucideIcon
   export const Package: LucideIcon
@@ -49,8 +50,10 @@ declare module "lucide-react" {
   export const Pencil: LucideIcon
   export const Phone: LucideIcon
   export const Plus: LucideIcon
+  export const Power: LucideIcon
   export const ReceiptText: LucideIcon
   export const Repeat: LucideIcon
+  export const Route: LucideIcon
   export const Repeat2: LucideIcon
   export const Scissors: LucideIcon
   export const Search: LucideIcon
@@ -64,6 +67,7 @@ declare module "lucide-react" {
   export const ToggleLeft: LucideIcon
   export const ToggleRight: LucideIcon
   export const Trash2: LucideIcon
+  export const TriangleAlert: LucideIcon
   export const Upload: LucideIcon
   export const UploadCloud: LucideIcon
   export const User: LucideIcon

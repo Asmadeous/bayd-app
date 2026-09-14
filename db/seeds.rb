@@ -304,21 +304,28 @@ end
 # First names only. service_fsas recovered from the live booking coverage data.
 employee_data = [
   { first: "Susi", email: "susi@baydspa.ca", title: "Nail Tech, Waxing and Massages", yrs: 28,
+    photo: "/images/new-pics-for-the-ladies/susi-team-headshot.webp",
     bio: "Meet Susi, an exceptional entrepreneur and visionary in the world of beauty. With an impressive 28 years of unparalleled experience, Susi has earned a reputation as a trailblazer and an industry icon. Her unwavering dedication to excellence and her innovative approach to beauty services have established her as a formidable force in the market. Get ready to dive into the extraordinary journey of Susi, a true master of her craft.",
     lat: 43.5890, lng: -79.6441, specialties: %w[nails waxing massage spa], on_shift: true,
     fsas: %w[L7A L6X L6Y L6W L6V L6Z L6R L6S L5N L5W L5T L5M L5L L5K L5J L5H L5V L5R L5B L5G L5A L5E L5Y L5X L5P L4V L4T L5S L6M L6L L6J L6H L6K M9C M9B M9A M8W M8V M8Z M8X M8Y L9T M6S] },
   { first: "Claire", email: "claire@baydspa.ca", title: "Lash Artist for Mississauga", yrs: 17,
+    photo: "/images/new-pics-for-the-ladies/claire-team-headshot.webp",
     bio: "Claire is a certified eyelash extension technician and coach since 2009, with extensive international experience across Europe and 8 years of expertise in Canada. She is a true master of her craft, skilled in all types of eyelash extensions and capable of creating any style or design tailored perfectly to each client. A devoted mother of three children, Claire now brings her expertise beyond her own home studio, providing professional, personalized eyelash services in clients' homes. With a passion for enhancing natural beauty, she combines precision, creativity, and professionalism in every appointment. Her extensive collection of diplomas and certificates reflects her commitment to excellence and continuous mastery of the latest techniques in eyelash artistry.",
     lat: 43.5453, lng: -79.5697, specialties: %w[lashes], on_shift: true,
     fsas: %w[L5N L5W L5T L5M L5L L5K L5J L5H L5V L5R L5B L5G L5A L5E L5Y L5X L5P L4V L4T L5S L6M L6L L6J L6H L6K] },
   { first: "Vanessa", email: "vanessa@baydspa.ca", title: "Nail Tech and Medical Pedicurist for Brampton", yrs: nil,
+    photo: "/images/new-pics-for-the-ladies/vanessa-team-headshot.webp",
     bio: "Vanessa, a Certified Nail Technician & Medical Pedicurist proudly serving the Brampton area only. Vanessa is a certified nail technician and specialized medical pedicurist dedicated to helping clients feel confident and comfortable from the toes up. With advanced training in foot care and nail health, she offers more than just beauty, she provides relief for common foot concerns like calluses, ingrown nails, thickened nails, and dry, cracked heels. Trust your feet to a specialist who puts health, safety, and comfort first—Vanessa, Brampton's go-to for expert nail and foot care.",
     lat: 43.7315, lng: -79.7624, specialties: %w[nails], on_shift: true,
     fsas: %w[L7A L6X L6Y L6W L6V L6Z L6R L6S] },
-  { first: "Dana", email: "dana@baydspa.ca", title: "Nail Care Specialist for Mississauga and Etobicoke", yrs: 20,
-    bio: "Dana is an experienced nail technician with 20 years in the beauty industry. Originally from Europe, she has honed expert skills in nail art, manicure, pedicure, and nail care techniques. With a passion for creativity and a commitment to client satisfaction, Dana stays updated on the latest trends and products, offering personalized services that enhance the beauty and confidence of her clients.",
-    lat: 43.6532, lng: -79.3832, specialties: %w[nails], on_shift: true,
-    fsas: %w[L5N L5W L5T L5M L5L L5K L5J L5H L5V L5R L5B L5G L5A L5E L5Y L5X L5P L4V L4T L5S] }
+  # Coverage left OPEN for now (widest set, mirrors Susi) so Rim is bookable
+  # across the whole service area until her exact area is set. Base is central
+  # Mississauga; adjust lat/lng + service_fsas once her home base is confirmed.
+  { first: "Rim", email: "rim@baydspa.ca", title: "Medical Aesthetician - Facials, Skin Rejuvenation and Massage", yrs: 15,
+    photo: "/images/new-pics-for-the-ladies/rim-team-headshot.webp",
+    bio: "Rim, a Medical Aesthetician, believes that beautiful skin starts with personalized care. Her passion for aesthetics spans 15 years, during which she built a successful career in Kuwait helping clients achieve their ultimate skin goals. After relocating to Canada, she advanced her expertise by obtaining a Canadian diploma in Medical Aesthetics, ensuring her techniques align with the highest industry standards. Rim is known for her warm approach, thorough consultations, and ability to make clients feel completely at ease. Whether you are looking for advanced skin rejuvenation, a preventative skincare routine, or a relaxing massage, she is dedicated to guiding you every step of the way.",
+    lat: 43.5890, lng: -79.6441, specialties: %w[spa massage], on_shift: true,
+    fsas: %w[L7A L6X L6Y L6W L6V L6Z L6R L6S L5N L5W L5T L5M L5L L5K L5J L5H L5V L5R L5B L5G L5A L5E L5Y L5X L5P L4V L4T L5S L6M L6L L6J L6H L6K M9C M9B M9A M8W M8V M8Z M8X M8Y L9T M6S] }
 ]
 
 employees = employee_data.map do |e|
@@ -337,7 +344,7 @@ employees = employee_data.map do |e|
   # on every deploy and must never silently overwrite live shift status.
   profile.on_shift = e[:on_shift] if profile.new_record?
   profile.assign_attributes(
-    title: e[:title], years_experience: e[:yrs], bio: e[:bio],
+    title: e[:title], years_experience: e[:yrs], bio: e[:bio], photo_url: e[:photo],
     base_latitude: e[:lat], base_longitude: e[:lng], service_fsas: e[:fsas],
     active: true, dispatchable: true
   )
@@ -366,6 +373,19 @@ employees = employee_data.map do |e|
   profile
 end
 puts "  #{employees.size} employee profiles"
+
+# Offboard any technician no longer in the seed list (e.g. laid off). We never
+# hard-delete a tech: their past bookings, shifts, and payouts must stay intact.
+# Instead deactivate + make undispatchable + clear on_shift so they drop out of
+# assignment, availability, and the public team, while history is preserved.
+seeded_emails = employee_data.map { |e| e[:email] }
+offboarded = EmployeeProfile.joins(:user)
+                            .where.not(users: { email: seeded_emails })
+                            .where(users: { role: "employee" })
+offboarded.find_each do |profile|
+  profile.update!(active: false, dispatchable: false, on_shift: false)
+end
+puts "  offboarded #{offboarded.count} former technician(s)" if offboarded.any?
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
 User.find_or_create_by!(email: "bookings@baydspa.ca") do |u|

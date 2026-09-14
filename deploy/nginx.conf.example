@@ -86,10 +86,60 @@ server {
     return 301 https://baydspa.ca$request_uri;
 }
 
+# ── Mobile app hosts ─────────────────────────────────────────────────────────
+# The three Capacitor apps serve their WebView from a real per-app origin
+# (capacitor.config.ts server.hostname) so third-party embeds like HelcimPay
+# accept it. These hosts serve the app's STATIC bundle (the `out/` export, no
+# Node process) from /var/www/<host>, plus each app's Digital Asset Links file
+# at /.well-known/assetlinks.json (used to verify the Android app <-> domain
+# association for App Links / Custom Tabs return).
+#
+# Publish a bundle:  CAP_APP=customer node scripts/build-mobile.mjs customer
+#   then rsync client/out/ -> server:/var/www/m-customer.baydspa.ca/
+# TLS (add all three to the certbot -d list):
+#   sudo certbot --nginx -d m-customer.baydspa.ca -d m-staff.baydspa.ca \
+#        -d m-admin.baydspa.ca --agree-tos -m admin@baydspa.ca --redirect
+
+map $host $mobile_root {
+    m-customer.baydspa.ca /var/www/m-customer.baydspa.ca;
+    m-staff.baydspa.ca    /var/www/m-staff.baydspa.ca;
+    m-admin.baydspa.ca    /var/www/m-admin.baydspa.ca;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name m-customer.baydspa.ca m-staff.baydspa.ca m-admin.baydspa.ca;
+
+    ssl_certificate     /etc/letsencrypt/live/m-customer.baydspa.ca/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/m-customer.baydspa.ca/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    gzip on;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+
+    root $mobile_root;
+    index index.html;
+
+    # Android App Links / asset association. Served as JSON, world-readable.
+    location = /.well-known/assetlinks.json {
+        default_type application/json;
+        add_header Access-Control-Allow-Origin "*";
+    }
+
+    # Static export: try the exact file, then <path>.html, then the SPA-ish
+    # fallback to the app entry. The export produces one .html per route.
+    location / {
+        try_files $uri $uri.html $uri/index.html /index.html;
+    }
+}
+
 # http → https (certbot adds/maintains these too)
 server {
     listen 80;
     listen [::]:80;
-    server_name baydspa.ca www.baydspa.ca api.baydspa.ca;
+    server_name baydspa.ca www.baydspa.ca api.baydspa.ca m-customer.baydspa.ca m-staff.baydspa.ca m-admin.baydspa.ca;
     return 301 https://$host$request_uri;
 }

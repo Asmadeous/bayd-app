@@ -54,16 +54,19 @@ jobs:
       HELCIM_WEBHOOK_VERIFIER_TOKEN: ${{ secrets.HELCIM_WEBHOOK_VERIFIER_TOKEN }}
       SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
       SQUARE_WEBHOOK_SIGNATURE_KEY: ${{ secrets.SQUARE_WEBHOOK_SIGNATURE_KEY }}
-      SIMPLYBOOK_LOGIN: ${{ secrets.SIMPLYBOOK_LOGIN }}
-      SIMPLYBOOK_API_USER_KEY: ${{ secrets.SIMPLYBOOK_API_USER_KEY }}
-      SIMPLYBOOK_WEBHOOK_SECRET: ${{ secrets.SIMPLYBOOK_WEBHOOK_SECRET }}
-      SIMPLYBOOK_COMPANY: ${{ secrets.SIMPLYBOOK_COMPANY }}
       SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+      # Square Tap to Pay POS (staff app). Blank keeps Tap to Pay inert (app falls
+      # back to a payment link). Environment defaults to sandbox in code.
+      SQUARE_APPLICATION_ID: ${{ secrets.SQUARE_APPLICATION_ID }}
+      SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
       SMTP_ADDRESS: ${{ secrets.SMTP_ADDRESS }}
-      TRACCAR_URL: ${{ secrets.TRACCAR_URL }}
-      TRACCAR_USER: ${{ secrets.TRACCAR_USER }}
-      TRACCAR_PASSWORD: ${{ secrets.TRACCAR_PASSWORD }}
-      TRACCAR_WEBHOOK_SECRET: ${{ secrets.TRACCAR_WEBHOOK_SECRET }}
+      # Push (FCM). Blank keeps push inert.
+      FCM_PROJECT_ID: ${{ secrets.FCM_PROJECT_ID }}
+      FCM_CREDENTIALS_JSON: ${{ secrets.FCM_CREDENTIALS_JSON }}
+      # Phone-OTP (Infobip). Blank keeps OTP send inert.
+      INFOBIP_BASE_URL: ${{ secrets.INFOBIP_BASE_URL }}
+      INFOBIP_API_KEY: ${{ secrets.INFOBIP_API_KEY }}
+      INFOBIP_SENDER: ${{ secrets.INFOBIP_SENDER }}
     steps:
       - uses: actions/checkout@v4
 
@@ -160,9 +163,6 @@ jobs:
             NEXT_PUBLIC_SQUARE_APP_ID=${{ secrets.SQUARE_APP_ID }}
             NEXT_PUBLIC_SQUARE_LOCATION_ID=${{ secrets.SQUARE_LOCATION_ID }}
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            NEXT_PUBLIC_SIMPLYBOOK_PWA_URL=${{ secrets.SIMPLYBOOK_PWA_URL }}
-            NEXT_PUBLIC_TAWK_PROPERTY_ID=${{ secrets.TAWK_PROPERTY_ID }}
-            NEXT_PUBLIC_TAWK_WIDGET_ID=${{ secrets.TAWK_WIDGET_ID }}
             NEXT_PUBLIC_COMPANY_PHONE=${{ secrets.COMPANY_PHONE }}
             NEXT_PUBLIC_GOOGLE_MAPS_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}
 

@@ -48,3 +48,8 @@ android-employee/app/src/main/assets/public
 ios-employee/App/App/public
 android-admin/app/src/main/assets/public
 ios-admin/App/App/public
+
+# Firebase per-app config (contains client API keys) — kept out of git; each
+# machine/CI provides its own from the Firebase console before a native build.
+**/google-services.json
+**/GoogleService-Info.plist
