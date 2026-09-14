@@ -1,0 +1,8 @@
+# Per-app identifiers are passed in at call time (lanes take an `app:` option),
+# so this file only holds what fastlane needs globally. The Play + App Store
+# credentials come from env vars set by CI (see fastlane/README + Fastfile).
+
+# App Store Connect API key (iOS uploads) - provided via env in CI:
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_CONTENT (base64 .p8)
+# Google Play service account (Android uploads) - provided via env in CI:
+#   SUPPLY_JSON_KEY_DATA (the service-account JSON)
