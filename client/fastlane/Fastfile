@@ -136,4 +136,28 @@ platform :ios do
   lane :release do |options|
     ios_release(options.merge(track: "production"))
   end
+
+  desc "Seed the match repo with signing certs + profiles for both apps (run once)"
+  lane :certs do
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_KEY_CONTENT"],
+      is_key_content_base64: true
+    )
+
+    # readonly: false so match creates whatever is missing. The bare `match` CLI
+    # cannot do this: it never sees the API key configured above, so it falls
+    # back to an Apple ID prompt and dies in a non-interactive shell.
+    # force_legacy_encryption: match's default AES-256-GCM encryption needs real
+    # OpenSSL. macOS system Ruby links LibreSSL, which cannot set GCM additional
+    # authenticated data, so seeding fails with "Error encrypting". The legacy
+    # AES-256-CBC path works everywhere, CI included.
+    match(
+      type: "appstore",
+      app_identifier: APPS.values.map { |c| c[:id] },
+      readonly: false,
+      force_legacy_encryption: true
+    )
+  end
 end
