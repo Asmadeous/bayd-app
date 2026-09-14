@@ -1,0 +1,5 @@
+# Ruby tooling for the mobile release pipeline (fastlane). The app itself is
+# JS/TS - this Gemfile exists only so CI can `bundle exec fastlane ...`.
+source "https://rubygems.org"
+
+gem "fastlane"

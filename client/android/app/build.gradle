@@ -1,5 +1,17 @@
 apply plugin: 'com.android.application'
 
+// Release signing is driven by env vars (CI) or gradle.properties (local), so no
+// keystore or password is ever committed. When BAYD_KEYSTORE_FILE is unset (dev
+// machines, PRs) the release build falls back to the debug signing config so the
+// project still assembles. See deploy/mobile/RELEASE.md for how to provision these.
+def keystoreFilePath = System.getenv("BAYD_KEYSTORE_FILE") ?: project.findProperty("BAYD_KEYSTORE_FILE")
+def hasReleaseKeystore = keystoreFilePath != null && file(keystoreFilePath).exists()
+
+// CI passes the app version through the build (bumped per release run). Fall back
+// to the committed defaults for local/dev builds.
+def appVersionCode = (System.getenv("BAYD_VERSION_CODE") ?: "1").toInteger()
+def appVersionName = System.getenv("BAYD_VERSION_NAME") ?: "1.0"
+
 android {
     namespace = "ca.baydspa.customer"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +19,8 @@ android {
         applicationId "ca.baydspa.customer"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +28,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (hasReleaseKeystore) {
+                storeFile file(keystoreFilePath)
+                storePassword System.getenv("BAYD_KEYSTORE_PASSWORD") ?: project.findProperty("BAYD_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("BAYD_KEY_ALIAS") ?: project.findProperty("BAYD_KEY_ALIAS")
+                keyPassword System.getenv("BAYD_KEY_PASSWORD") ?: project.findProperty("BAYD_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
         }
     }
 }

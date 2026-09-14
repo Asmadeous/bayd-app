@@ -44,3 +44,5 @@ deploy/production.env
 products_export_*.csv
 products_export_*.md
 client-ios.zip
+**/*.p8
+**/*.keystore

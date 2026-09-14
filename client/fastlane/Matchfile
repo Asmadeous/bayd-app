@@ -1,0 +1,10 @@
+# fastlane match: iOS signing certs + provisioning profiles stored encrypted in a
+# private git repo, decrypted with MATCH_PASSWORD, shared to CI read-only. Run
+# `bundle exec fastlane match appstore` ONCE locally (per app id) to seed the repo
+# before CI can use it. git_url + MATCH_PASSWORD are provided via env in CI.
+git_url(ENV["MATCH_GIT_URL"])
+storage_mode("git")
+type("appstore")
+
+# Both app bundle ids are managed in the same match repo.
+app_identifier(["ca.baydspa.customer", "ca.baydspa.staff"])

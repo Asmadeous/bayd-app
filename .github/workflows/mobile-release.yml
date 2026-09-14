@@ -1,0 +1,139 @@
+# Mobile app release pipeline for the customer + staff apps, both platforms.
+#
+# Trigger: manual (workflow_dispatch). You pick the app, the platform(s), and the
+# track (test vs production). Android runs on Linux; iOS runs on macOS (fastlane
+# match + Xcode archive). Version numbers are derived from the run number so every
+# release is monotonic without hand-editing gradle/xcode.
+#
+# This never runs automatically - shipping to a store is always a deliberate,
+# human-triggered action. Production tracks upload a build but DO NOT auto-submit
+# for review (submit_for_review: false) - you promote in the store console.
+#
+# Required GitHub secrets (see deploy/mobile/RELEASE.md for how to create each):
+#   Android:  BAYD_KEYSTORE_BASE64, BAYD_KEYSTORE_PASSWORD, BAYD_KEY_ALIAS,
+#             BAYD_KEY_PASSWORD, PLAY_SERVICE_ACCOUNT_JSON
+#   iOS:      ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_CONTENT_BASE64,
+#             MATCH_GIT_URL, MATCH_PASSWORD, MATCH_GIT_BASIC_AUTH
+#   Both:     SQUARE_APPLICATION_ID (staff Tap to Pay, baked at build)
+name: Mobile release
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "Which app to release"
+        type: choice
+        options: [customer, staff]
+        required: true
+      platform:
+        description: "Platform(s)"
+        type: choice
+        options: [android, ios, both]
+        default: both
+        required: true
+      track:
+        description: "Store track"
+        type: choice
+        options: [test, production]
+        default: test
+        required: true
+
+concurrency:
+  group: mobile-release-${{ github.event.inputs.app }}-${{ github.event.inputs.platform }}
+  cancel-in-progress: false
+
+jobs:
+  android:
+    if: ${{ github.event.inputs.platform == 'android' || github.event.inputs.platform == 'both' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: client
+
+      - run: npm ci
+
+      # Firebase client config for this app (push). Stored as a base64 secret so a
+      # fresh CI checkout produces a push-enabled build. One secret per app.
+      - name: Write google-services.json
+        env:
+          GS_CUSTOMER: ${{ secrets.GOOGLE_SERVICES_CUSTOMER_BASE64 }}
+          GS_STAFF: ${{ secrets.GOOGLE_SERVICES_STAFF_BASE64 }}
+        run: |
+          if [ "${{ github.event.inputs.app }}" = "customer" ]; then
+            echo "$GS_CUSTOMER" | base64 -d > android/app/google-services.json
+          else
+            echo "$GS_STAFF" | base64 -d > android-employee/app/google-services.json
+          fi
+
+      - name: Decode release keystore
+        run: echo "${{ secrets.BAYD_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/bayd-release.keystore"
+
+      - name: Build + upload to Play (${{ github.event.inputs.track }})
+        env:
+          BAYD_KEYSTORE_FILE: ${{ runner.temp }}/bayd-release.keystore
+          BAYD_KEYSTORE_PASSWORD: ${{ secrets.BAYD_KEYSTORE_PASSWORD }}
+          BAYD_KEY_ALIAS: ${{ secrets.BAYD_KEY_ALIAS }}
+          BAYD_KEY_PASSWORD: ${{ secrets.BAYD_KEY_PASSWORD }}
+          BAYD_VERSION_CODE: ${{ github.run_number }}
+          BAYD_VERSION_NAME: "1.0.${{ github.run_number }}"
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          SQUARE_APPLICATION_ID: ${{ secrets.SQUARE_APPLICATION_ID }}
+        run: |
+          LANE=${{ github.event.inputs.track == 'production' && 'production' || 'internal' }}
+          bundle exec fastlane android $LANE app:${{ github.event.inputs.app }}
+
+  ios:
+    if: ${{ github.event.inputs.platform == 'ios' || github.event.inputs.platform == 'both' }}
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: client
+
+      - run: npm ci
+
+      - name: Build + upload to App Store (${{ github.event.inputs.track }})
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT_BASE64 }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
+          BAYD_VERSION_CODE: ${{ github.run_number }}
+          BAYD_VERSION_NAME: "1.0.${{ github.run_number }}"
+        run: |
+          LANE=${{ github.event.inputs.track == 'production' && 'release' || 'beta' }}
+          bundle exec fastlane ios $LANE app:${{ github.event.inputs.app }}

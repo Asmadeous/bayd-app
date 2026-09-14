@@ -1,0 +1,132 @@
+# Fastlane release automation for the two BAYD Capacitor apps (customer + staff),
+# both platforms. One codebase, so lanes are parameterized by `app:` and read all
+# secrets from the environment (set by GitHub Actions). Nothing sensitive lives
+# here. See deploy/mobile/RELEASE.md for the full credential + deploy runbook.
+#
+# Usage (called by CI, but runnable locally with the env set):
+#   bundle exec fastlane android internal app:customer
+#   bundle exec fastlane android production app:staff
+#   bundle exec fastlane ios beta app:customer
+#   bundle exec fastlane ios release app:staff
+
+# app key -> package/bundle id, native project dir, the CAP_APP value, and the
+# npm build script suffix. Note: the staff CAP_APP + npm script are "employee",
+# not "staff" - the store-facing name differs from the internal codename.
+APPS = {
+  "customer" => { id: "ca.baydspa.customer", android_dir: "android",          ios_dir: "ios",          cap: "customer", script: "build:mobile" },
+  "staff"    => { id: "ca.baydspa.staff",    android_dir: "android-employee", ios_dir: "ios-employee", cap: "employee", script: "build:mobile:employee" }
+}.freeze
+
+def app_config(options)
+  key = options[:app]
+  UI.user_error!("Pass app:customer or app:staff") unless APPS.key?(key)
+  APPS[key]
+end
+
+# Build the static web bundle for this app (bakes the production API URL) and
+# sync it into the native project, exactly as scripts/build-mobile.mjs does.
+def build_web_bundle(cfg)
+  sh("cd .. && CAP_APP=#{cfg[:cap]} MOBILE_API_URL=https://api.baydspa.ca/api/v1 " \
+     "npm run #{cfg[:script]} && CAP_APP=#{cfg[:cap]} npx cap sync")
+end
+
+platform :android do
+  # Assemble a signed AAB and upload it to a Play track.
+  # track: "internal" (testers) or "production".
+  private_lane :android_release do |options|
+    cfg = app_config(options)
+    track = options[:track] || "internal"
+    project_dir = "../#{cfg[:android_dir]}"
+
+    build_web_bundle(cfg)
+
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: project_dir,
+      properties: {
+        "BAYD_VERSION_CODE" => ENV["BAYD_VERSION_CODE"],
+        "BAYD_VERSION_NAME" => ENV["BAYD_VERSION_NAME"]
+      }.compact
+    )
+
+    upload_to_play_store(
+      package_name: cfg[:id],
+      track: track,
+      aab: "#{project_dir}/app/build/outputs/bundle/release/app-release.aab",
+      json_key_data: ENV["SUPPLY_JSON_KEY_DATA"],
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: track == "production" ? "completed" : "draft"
+    )
+  end
+
+  desc "Build + upload the app to Play internal testing (app:customer|staff)"
+  lane :internal do |options|
+    android_release(options.merge(track: "internal"))
+  end
+
+  desc "Build + upload the app to Play production (app:customer|staff)"
+  lane :production do |options|
+    android_release(options.merge(track: "production"))
+  end
+end
+
+platform :ios do
+  # Fetch signing assets (match), build a signed IPA, upload to ASC.
+  private_lane :ios_release do |options|
+    cfg = app_config(options)
+    project_dir = "../#{cfg[:ios_dir]}/App"
+
+    build_web_bundle(cfg)
+
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_KEY_CONTENT"],
+      is_key_content_base64: true
+    )
+
+    # Signing certs + provisioning profiles from the private match repo.
+    match(
+      type: "appstore",
+      app_identifier: cfg[:id],
+      readonly: true,
+      git_url: ENV["MATCH_GIT_URL"]
+    )
+
+    build_app(
+      project: "#{project_dir}/App.xcodeproj",
+      scheme: "App",
+      export_method: "app-store",
+      output_directory: "#{project_dir}/build",
+      xcargs: "CURRENT_PROJECT_VERSION=#{ENV['BAYD_VERSION_CODE']} MARKETING_VERSION=#{ENV['BAYD_VERSION_NAME']}"
+    )
+
+    if options[:track] == "production"
+      upload_to_app_store(
+        app_identifier: cfg[:id],
+        skip_metadata: true,
+        skip_screenshots: true,
+        precheck_include_in_app_purchases: false,
+        submit_for_review: false
+      )
+    else
+      upload_to_testflight(
+        app_identifier: cfg[:id],
+        skip_waiting_for_build_processing: true
+      )
+    end
+  end
+
+  desc "Build + upload the app to TestFlight (app:customer|staff)"
+  lane :beta do |options|
+    ios_release(options.merge(track: "beta"))
+  end
+
+  desc "Build + upload the app to App Store review (app:customer|staff)"
+  lane :release do |options|
+    ios_release(options.merge(track: "production"))
+  end
+end
