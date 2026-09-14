@@ -51,6 +51,31 @@ RSpec.describe "Phone OTP login", type: :request do
       expect(response.parsed_body["user"]["id"]).to eq(customer.id)
     end
 
+    it "seeds a new account with the signup email + first_name" do
+      _record, raw = PhoneVerification.issue!("+14165550101")
+
+      post "/api/v1/auth/phone_code/verify",
+        params: { phone: "+14165550101", code: raw, email: "New@Example.com", first_name: "Nina" },
+        as: :json
+
+      expect(response).to have_http_status(:ok)
+      user = User.find_by(phone: "+14165550101")
+      expect(user.email).to eq("new@example.com")
+      expect(user.first_name).to eq("Nina")
+    end
+
+    it "does not overwrite an existing customer's details on a later phone sign-in" do
+      customer = create(:user, phone: "+14165550100", email: "keep@example.com", first_name: "Keep")
+      _record, raw = PhoneVerification.issue!("+14165550100")
+
+      post "/api/v1/auth/phone_code/verify",
+        params: { phone: "+14165550100", code: raw, email: "other@example.com", first_name: "Other" },
+        as: :json
+
+      expect(customer.reload.email).to eq("keep@example.com")
+      expect(customer.first_name).to eq("Keep")
+    end
+
     it "rejects a bad code" do
       PhoneVerification.issue!("+14165550100")
       post "/api/v1/auth/phone_code/verify", params: { phone: "+14165550100", code: "000000" }, as: :json

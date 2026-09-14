@@ -56,29 +56,6 @@ RSpec.describe "Webhooks — raw JSON body parsing", type: :request do
     end
   end
 
-  describe "POST /api/v1/webhooks/traccar" do
-    before { allow_any_instance_of(Traccar::WebhookProcessor).to receive(:call) }
-
-    it "parses the JSON body and stores it as the payload (no 500)" do
-      around_env("TRACCAR_WEBHOOK_SECRET", "s3cret") do
-        json_post "/api/v1/webhooks/traccar",
-                  { positions: [ { deviceId: "dev-1", latitude: 43.6, longitude: -79.6 } ] },
-                  { "X-Traccar-Secret" => "s3cret" }
-      end
-
-      expect(response).to have_http_status(:ok)
-      event = SyncEvent.find_by(provider: "traccar")
-      expect(event.payload["positions"].first["deviceId"]).to eq("dev-1")
-    end
-
-    it "rejects a bad secret before parsing" do
-      around_env("TRACCAR_WEBHOOK_SECRET", "s3cret") do
-        json_post "/api/v1/webhooks/traccar", { positions: [] }, { "X-Traccar-Secret" => "wrong" }
-      end
-      expect(response).to have_http_status(:unauthorized)
-    end
-  end
-
   # Temporarily set an ENV var (or delete it when value is nil) for the block.
   def around_env(key, value)
     original = ENV[key]

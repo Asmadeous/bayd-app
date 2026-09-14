@@ -32,15 +32,18 @@ RSpec.describe "GET /api/v1/availability", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(json["mapped"]).to be(true)
-    expect(json["slots"]).to include("09:00", "11:00")
-    expect(json["slots"]).not_to include("11:30") # 60-min visit would end 12:30
+    # 09:00-12:00, 60-min visit stepped by duration + 15-min travel off a 09:15
+    # start: 09:15 (ends 10:15), 10:30 (ends 11:30). 11:45 would end 12:45 > 12:00.
+    expect(json["slots"]).to include("09:15", "10:30")
+    expect(json["slots"]).not_to include("09:00", "10:15")
   end
 
   it "scales the visit for a group (count) — a party of 2 needs a longer window" do
-    schedule!(start_time: "09:00", end_time: "11:00")
+    schedule!(start_time: "09:00", end_time: "12:00")
     json = get_availability(service_id: service.id, employee_id: employee.id, date: date, count: 2)
-    # 60-min service × party 2 = 120 min → only 09:00 fits a 09:00-11:00 window.
-    expect(json["slots"]).to eq([ "09:00" ])
+    # 60-min service × party 2 = 120 min → only 09:15 fits a 09:00-12:00 window
+    # (09:15-11:15; the next start would end after 12:00).
+    expect(json["slots"]).to eq([ "09:15" ])
   end
 
   it "reports mapped:false (empty slots) when the tech does not perform the service" do
@@ -48,6 +51,27 @@ RSpec.describe "GET /api/v1/availability", type: :request do
     expect(response).to have_http_status(:ok)
     expect(json["mapped"]).to be(false)
     expect(json["slots"]).to eq([])
+  end
+
+  it "offers no slots when the tech does not cover the customer's FSA" do
+    schedule! # employee performs the service and has a window
+    employee.update!(service_fsas: [ "M5V" ]) # covers downtown Toronto, not L5L
+    other = create(:employee_profile) # a second tech WITH coverage, so coverage is configured
+    other.update!(service_fsas: [ "L5L" ])
+
+    json = get_availability(service_id: service.id, employee_id: employee.id, date: date, postal_code: "L5L 2E9")
+    expect(response).to have_http_status(:ok)
+    expect(json["mapped"]).to be(true)
+    expect(json["slots"]).to eq([])
+  end
+
+  it "still offers slots when no postal is supplied (booking gate enforces coverage)" do
+    schedule!
+    employee.update!(service_fsas: [ "M5V" ])
+    create(:employee_profile).update!(service_fsas: [ "L5L" ])
+
+    json = get_availability(service_id: service.id, employee_id: employee.id, date: date)
+    expect(json["slots"]).not_to be_empty
   end
 
   it "400s on a missing/invalid date" do
@@ -65,8 +89,9 @@ RSpec.describe "GET /api/v1/availability", type: :request do
     EmployeeService.find_or_create_by!(service: service, employee_profile: employee)
     create(:availability_schedule, employee_profile: employee, day_of_week: date_obj.wday,
            start_time: "09:00", end_time: "13:00")
-    # Existing job ends at 10:00 far from the customer → nearby-in-time slots
-    # (10:00, 10:15...) unreachable; a slot hours later is fine.
+    # Existing job ends at 10:00 far from the customer → the soonest slot after it
+    # (10:30) is unreachable in time; a later slot (11:45) is fine. Grid is
+    # 09:15, 10:30, 11:45 (60-min visit + 15-min travel step); 09:15 overlaps the job.
     ten = BusinessHours.parse_local("#{date} 10:00")
     Booking.create!(employee_profile: employee, service: service, user: create(:user),
                     client_type: "adult", party_size: 1, status: "confirmed",
@@ -75,9 +100,10 @@ RSpec.describe "GET /api/v1/availability", type: :request do
 
     json = get_availability(
       service_id: service.id, employee_id: employee.id, date: date,
-      latitude: 43.20, longitude: -79.00
+      latitude: 43.80, longitude: -79.80
     )
-    expect(json["slots"]).not_to include("10:00", "10:15")
+    expect(json["slots"]).not_to include("10:30")
+    expect(json["slots"]).to include("11:45")
   end
 
   describe "GET /api/v1/availability/any (auto-shift across techs)" do
@@ -87,9 +113,11 @@ RSpec.describe "GET /api/v1/availability", type: :request do
     it "returns each tech's slots and a by_time map of who is free when" do
       EmployeeService.create!(service: service, employee_profile: susi)
       EmployeeService.create!(service: service, employee_profile: claire)
-      # Susi 09:00-11:00 (slots 09:00,10:00); Claire 10:00-12:00 (slots 10:00,11:00).
-      create(:availability_schedule, employee_profile: susi, day_of_week: date_obj.wday, start_time: "09:00", end_time: "11:00")
-      create(:availability_schedule, employee_profile: claire, day_of_week: date_obj.wday, start_time: "10:00", end_time: "12:00")
+      # Slots step (60 + 15) min off a +15 start. Susi 09:00-12:00 → 09:15, 10:30;
+      # Claire 09:00-13:00 → 09:15, 10:30, 11:45. Both share 09:15 and 10:30;
+      # only Claire reaches 11:45.
+      create(:availability_schedule, employee_profile: susi, day_of_week: date_obj.wday, start_time: "09:00", end_time: "12:00")
+      create(:availability_schedule, employee_profile: claire, day_of_week: date_obj.wday, start_time: "09:00", end_time: "13:00")
 
       get "/api/v1/availability/any", params: { service_id: service.id, date: date }
       json = JSON.parse(response.body)
@@ -97,10 +125,9 @@ RSpec.describe "GET /api/v1/availability", type: :request do
       expect(response).to have_http_status(:ok)
       expect(json["mapped"]).to be(true)
       expect(json["providers"].size).to eq(2)
-      # 10:00 has BOTH free; 09:00 only Susi; 11:00 only Claire.
-      expect(json["by_time"]["10:00"].map { |p| p["name"] }).to contain_exactly("Susi", "Claire")
-      expect(json["by_time"]["09:00"].map { |p| p["name"] }).to eq([ "Susi" ])
-      expect(json["by_time"]["11:00"].map { |p| p["name"] }).to eq([ "Claire" ])
+      # 09:15 and 10:30 have BOTH free; 11:45 only Claire.
+      expect(json["by_time"]["10:30"].map { |p| p["name"] }).to contain_exactly("Susi", "Claire")
+      expect(json["by_time"]["11:45"].map { |p| p["name"] }).to eq([ "Claire" ])
     end
 
     it "reports mapped:false when the service has no techs" do
