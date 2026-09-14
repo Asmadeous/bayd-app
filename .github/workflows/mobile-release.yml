@@ -124,6 +124,20 @@ jobs:
 
       - run: npm ci
 
+      # Firebase client config for this app (push). The plist is gitignored, so a
+      # fresh checkout has none - and it is a required Resources build input, so
+      # the Xcode build fails without it. One secret per app, mirroring Android.
+      - name: Write GoogleService-Info.plist
+        env:
+          GS_CUSTOMER: ${{ secrets.GOOGLE_SERVICE_PLIST_CUSTOMER_BASE64 }}
+          GS_STAFF: ${{ secrets.GOOGLE_SERVICE_PLIST_STAFF_BASE64 }}
+        run: |
+          if [ "${{ github.event.inputs.app }}" = "customer" ]; then
+            echo "$GS_CUSTOMER" | base64 -d > ios/App/App/GoogleService-Info.plist
+          else
+            echo "$GS_STAFF" | base64 -d > ios-employee/App/App/GoogleService-Info.plist
+          fi
+
       - name: Build + upload to App Store (${{ github.event.inputs.track }})
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -134,6 +148,7 @@ jobs:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
           BAYD_VERSION_CODE: ${{ github.run_number }}
           BAYD_VERSION_NAME: "1.0.${{ github.run_number }}"
+          SQUARE_APPLICATION_ID: ${{ secrets.SQUARE_APPLICATION_ID }}
         run: |
           LANE=${{ github.event.inputs.track == 'production' && 'release' || 'beta' }}
           bundle exec fastlane ios $LANE app:${{ github.event.inputs.app }}

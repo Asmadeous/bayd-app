@@ -96,12 +96,19 @@ platform :ios do
       git_url: ENV["MATCH_GIT_URL"]
     )
 
+    # Square.xcconfig carries a sandbox id so local builds work out of the box.
+    # A SQUARE_APPLICATION_ID from CI must win over it, and an xcconfig value is
+    # only overridden on the xcodebuild command line, not by the environment.
+    xcargs = "CURRENT_PROJECT_VERSION=#{ENV['BAYD_VERSION_CODE']} MARKETING_VERSION=#{ENV['BAYD_VERSION_NAME']}"
+    square_id = ENV["SQUARE_APPLICATION_ID"].to_s
+    xcargs += " SQUARE_APPLICATION_ID='#{square_id}'" unless square_id.empty?
+
     build_app(
       project: "#{project_dir}/App.xcodeproj",
       scheme: "App",
       export_method: "app-store",
       output_directory: "#{project_dir}/build",
-      xcargs: "CURRENT_PROJECT_VERSION=#{ENV['BAYD_VERSION_CODE']} MARKETING_VERSION=#{ENV['BAYD_VERSION_NAME']}"
+      xcargs: xcargs
     )
 
     if options[:track] == "production"
