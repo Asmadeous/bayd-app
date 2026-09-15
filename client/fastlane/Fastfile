@@ -163,6 +163,30 @@ platform :ios do
     ios_release(options.merge(track: "production"))
   end
 
+  desc "Development signing for on-device testing (app:customer|staff)"
+  lane :dev_certs do |options|
+    cfg = app_config(options)
+
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_KEY_CONTENT"],
+      is_key_content_base64: true
+    )
+
+    # Tap to Pay was granted under Apple's development distribution restriction
+    # (Case-ID 22222435), so only a development profile carries the entitlement.
+    # force, because an existing profile is never rewritten in place and would
+    # come back without the newly granted key.
+    match(
+      type: "development",
+      app_identifier: cfg[:id],
+      readonly: false,
+      force: true,
+      force_legacy_encryption: true
+    )
+  end
+
   desc "Seed or refresh the match repo's signing certs + profiles (force:true to regenerate)"
   lane :certs do |options|
     app_store_connect_api_key(
