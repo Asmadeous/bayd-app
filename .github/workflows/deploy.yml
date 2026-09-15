@@ -117,8 +117,17 @@ jobs:
       - name: Clear stale Kamal lock on the server
         run: |
           kamal lock release || true
+          # Show what's actually in .kamal, find the lock wherever it lives, force
+          # it out, then confirm it's gone. Runs over the same deploy SSH; the
+          # broken lock dir ("already in place" yet stat says missing) is removed
+          # by path AND by find in case Kamal's cwd differs from the login home.
           ssh -p "${{ secrets.SSH_PORT || '2206' }}" -o StrictHostKeyChecking=no \
-            deploy@"${{ secrets.SSH_HOST }}" 'rm -rf ~/.kamal/lock-b_a_y_d_api' || true
+            deploy@"${{ secrets.SSH_HOST }}" '
+              echo "--- ~/.kamal before ---"; ls -la ~/.kamal 2>/dev/null || echo "(no ~/.kamal)";
+              rm -rf ~/.kamal/lock-b_a_y_d_api 2>/dev/null || true;
+              find ~ -maxdepth 4 -name "lock-b_a_y_d_api" -exec rm -rf {} + 2>/dev/null || true;
+              echo "--- ~/.kamal after ---"; ls -la ~/.kamal 2>/dev/null || echo "(no ~/.kamal)"
+            ' || true
 
       - name: Kamal deploy (or bootstrap)
         run: |
