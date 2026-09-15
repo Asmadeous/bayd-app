@@ -2,20 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Work-scope video call (embedded Jitsi in the WebView). iOS requires a
-	     usage string or camera/mic access is refused and the app can crash. -->
-	<key>NSCameraUsageDescription</key>
-	<string>Camera access is used for your work-scope video call and to take a profile photo.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Photo library access lets you choose a profile photo.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Microphone access is used for your work-scope video call with your technician.</string>
-  <key>CAPACITOR_DEBUG</key>
+	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>BAYD</string>
+	<string>BAYD</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -32,24 +24,36 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is used for your work-scope video call and to take a profile photo.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Your location is used to show how far away your technician is on the day of your appointment.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Your location is used to show how far away your technician is on the day of your appointment.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is used for your work-scope video call with your technician.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Photos you take in the app are saved to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access lets you choose a profile photo.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
-    <false/>
-    <key>UISceneConfigurations</key>
-    <dict>
-      <key>UIWindowSceneSessionRoleApplication</key>
-      <array>
-        <dict>
-            <key>UISceneConfigurationName</key>
-            <string>Default Configuration</string>
-            <key>UISceneDelegateClassName</key>
-            <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
-            <key>UISceneStoryboardFile</key>
-            <string>Main</string>
-        </dict>
-      </array>
-    </dict>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
 	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
