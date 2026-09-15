@@ -109,6 +109,13 @@ jobs:
             echo "::error::ssh-keyscan could not reach $HOST:$PORT after retries"; exit 1
           fi
 
+      # A deploy that dies mid-run (e.g. the DB was unreachable) can leave a stale
+      # lock on the server, and every later deploy then aborts with "Deploy lock
+      # already in place!". Release it first so a failed run never wedges the next
+      # one. Best-effort: no lock to release is fine, so never fail the deploy here.
+      - name: Release any stale Kamal lock
+        run: kamal lock release || true
+
       - name: Kamal deploy (or bootstrap)
         run: |
           if [ "${{ inputs.bootstrap }}" = "true" ]; then
