@@ -46,14 +46,13 @@ products_export_*.md
 client-ios.zip
 **/*.p8
 **/*.keystore
-
-# Firebase per-app config (contains client API keys). client/.gitignore covers the
-# in-target copies; this also catches raw downloads left at the repo root,
-# including browser-suffixed duplicates like "GoogleService-Info (1).plist".
-GoogleService-Info*.plist
+# Firebase per-app config (contains client API keys). Also catches raw downloads
+# left at the repo root, including browser-suffixed duplicates like
+# "GoogleService-Info (1).plist".
+**/GoogleService-Info*.plist
 google-services*.json
 
-# Other Apple signing material (upstream already ignores *.p8 / *.keystore)
+# Other Apple signing material (*.p8 / *.keystore are ignored above)
 **/*.p12
 **/*.mobileprovision
 **/*.cer

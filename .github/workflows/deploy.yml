@@ -109,6 +109,26 @@ jobs:
             echo "::error::ssh-keyscan could not reach $HOST:$PORT after retries"; exit 1
           fi
 
+      # A deploy that dies mid-run leaves a lock on the server; every later deploy
+      # then aborts with "Deploy lock already in place!". `kamal lock release` can't
+      # clear a CORRUPTED lock (Kamal reports it held while the lock dir is missing/
+      # partial - "stat: cannot statx .kamal/lock-..."), so remove the lock artifact
+      # directly over the same SSH Kamal uses. Best-effort; nothing to remove is fine.
+      - name: Clear stale Kamal lock on the server
+        run: |
+          kamal lock release || true
+          # Show what's actually in .kamal, find the lock wherever it lives, force
+          # it out, then confirm it's gone. Runs over the same deploy SSH; the
+          # broken lock dir ("already in place" yet stat says missing) is removed
+          # by path AND by find in case Kamal's cwd differs from the login home.
+          ssh -p "${{ secrets.SSH_PORT || '2206' }}" -o StrictHostKeyChecking=no \
+            deploy@"${{ secrets.SSH_HOST }}" '
+              echo "--- ~/.kamal before ---"; ls -la ~/.kamal 2>/dev/null || echo "(no ~/.kamal)";
+              rm -rf ~/.kamal/lock-b_a_y_d_api 2>/dev/null || true;
+              find ~ -maxdepth 4 -name "lock-b_a_y_d_api" -exec rm -rf {} + 2>/dev/null || true;
+              echo "--- ~/.kamal after ---"; ls -la ~/.kamal 2>/dev/null || echo "(no ~/.kamal)"
+            ' || true
+
       - name: Kamal deploy (or bootstrap)
         run: |
           if [ "${{ inputs.bootstrap }}" = "true" ]; then

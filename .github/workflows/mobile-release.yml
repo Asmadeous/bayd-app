@@ -54,7 +54,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: client/package-lock.json
 
@@ -112,7 +112,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: client/package-lock.json
 
@@ -124,13 +124,12 @@ jobs:
 
       - run: npm ci
 
-      # Firebase client config for this app (push). The plist is gitignored, so a
-      # fresh checkout has none - and it is a required Resources build input, so
-      # the Xcode build fails without it. One secret per app, mirroring Android.
+      # Firebase iOS config for this app (push). Base64 secret per app, decoded
+      # into the target so the build gets push. Mirrors the Android step.
       - name: Write GoogleService-Info.plist
         env:
-          GS_CUSTOMER: ${{ secrets.GOOGLE_SERVICE_PLIST_CUSTOMER_BASE64 }}
-          GS_STAFF: ${{ secrets.GOOGLE_SERVICE_PLIST_STAFF_BASE64 }}
+          GS_CUSTOMER: ${{ secrets.GOOGLE_SERVICE_INFO_CUSTOMER_BASE64 }}
+          GS_STAFF: ${{ secrets.GOOGLE_SERVICE_INFO_STAFF_BASE64 }}
         run: |
           if [ "${{ github.event.inputs.app }}" = "customer" ]; then
             echo "$GS_CUSTOMER" | base64 -d > ios/App/App/GoogleService-Info.plist
