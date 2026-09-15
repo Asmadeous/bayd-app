@@ -124,6 +124,19 @@ jobs:
 
       - run: npm ci
 
+      # Firebase iOS config for this app (push). Base64 secret per app, decoded
+      # into the target so the build gets push. Mirrors the Android step.
+      - name: Write GoogleService-Info.plist
+        env:
+          GS_CUSTOMER: ${{ secrets.GOOGLE_SERVICE_INFO_CUSTOMER_BASE64 }}
+          GS_STAFF: ${{ secrets.GOOGLE_SERVICE_INFO_STAFF_BASE64 }}
+        run: |
+          if [ "${{ github.event.inputs.app }}" = "customer" ]; then
+            echo "$GS_CUSTOMER" | base64 -d > ios/App/App/GoogleService-Info.plist
+          else
+            echo "$GS_STAFF" | base64 -d > ios-employee/App/App/GoogleService-Info.plist
+          fi
+
       - name: Build + upload to App Store (${{ github.event.inputs.track }})
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}

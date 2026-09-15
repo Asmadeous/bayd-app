@@ -62,9 +62,11 @@ env:
     # be listed per app or the iOS apps' API calls are CORS-blocked.
     ALLOWED_ORIGINS: https://baydspa.ca,https://m-customer.baydspa.ca,https://m-staff.baydspa.ca,https://m-admin.baydspa.ca,capacitor://m-customer.baydspa.ca,capacitor://m-staff.baydspa.ca,capacitor://m-admin.baydspa.ca
 
-    # Database — 172.17.0.1 = the host's docker bridge (local Postgres from
-    # deploy/server-setup.sh). For a managed DB, put its host here instead.
-    DB_HOST: 172.17.0.1
+    # Database — the "db" accessory below (Kamal-managed Postgres+PostGIS
+    # container). The accessory is reachable by its name on the Kamal Docker
+    # network, so no host bridge / pg_hba juggling. For a managed/external DB,
+    # put its host here instead.
+    DB_HOST: b_a_y_d_api-db
     DB_PORT: 5432
 
     # Behaviour
@@ -131,6 +133,28 @@ env:
     - INFOBIP_BASE_URL
     - INFOBIP_API_KEY
     - INFOBIP_SENDER
+
+# Kamal-managed Postgres + PostGIS, replacing the host Postgres. Runs as a
+# container on the Kamal Docker network, reachable by name (b_a_y_d_api-db) from
+# the app - no host bridge / listen_addresses / pg_hba juggling. The postgis
+# image ships the postgis + btree_gist + pgcrypto extensions the schema enables.
+# Data lives in the named volume, so it survives redeploys (only a volume delete
+# wipes it). Credentials come from the SAME DB_USERNAME/DB_PASSWORD secrets the
+# app uses, so both sides always agree. POSTGRES_DB creates the primary DB;
+# Rails db:prepare creates the cache/queue/cable DBs on first boot.
+accessories:
+  db:
+    # Postgres 18 + PostGIS 3.6, matching the dev environment (local psql 18.x).
+    image: postgis/postgis:18-3.6
+    host: <%= ENV.fetch("SSH_HOST") %>
+    env:
+      clear:
+        POSTGRES_DB: bayd_production
+      secret:
+        - POSTGRES_USER
+        - POSTGRES_PASSWORD
+    volumes:
+      - bayd_db_data:/var/lib/postgresql/data
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"

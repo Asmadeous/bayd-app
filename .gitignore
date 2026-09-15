@@ -46,3 +46,4 @@ products_export_*.md
 client-ios.zip
 **/*.p8
 **/*.keystore
+**/GoogleService-Info*.plist

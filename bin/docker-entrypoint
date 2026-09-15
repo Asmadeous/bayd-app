@@ -1,14 +1,19 @@
 #!/bin/bash -e
 
-# If running the rails server then create or migrate the database, then seed it.
-# db:prepare only seeds when it CREATES the database, so on an existing production
-# DB it migrates but never re-seeds. We run db:seed explicitly so every deploy
-# applies seed changes (new/removed technicians, catalog, settings). Safe because
-# db/seeds.rb is idempotent (find_or_create) and only ever deactivates removed
-# staff, never clobbering live passwords, shift status, or history.
+# If running the rails server: create or migrate the database, and seed it ONLY
+# when the database is brand new (empty). db/seeds.rb has destructive catalog
+# cleanup, so re-running it on a populated production DB has wiped live shop data
+# before - we must never do that. Guarding on an empty DB means the seed runs
+# automatically on the first boot of a fresh database (e.g. the Postgres accessory
+# bootstrap) and never again once real data exists.
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
-  ./bin/rails db:seed
+  # Seed only if there are no users yet (fresh DB). Any error in the check
+  # defaults to NOT seeding, so a populated DB is never touched.
+  if ./bin/rails runner 'exit(User.exists? ? 1 : 0)' 2>/dev/null; then
+    echo "[entrypoint] fresh database detected - seeding"
+    ./bin/rails db:seed
+  fi
 fi
 
 exec "${@}"
