@@ -163,8 +163,8 @@ platform :ios do
     ios_release(options.merge(track: "production"))
   end
 
-  desc "Seed the match repo with signing certs + profiles for both apps (run once)"
-  lane :certs do
+  desc "Seed or refresh the match repo's signing certs + profiles (force:true to regenerate)"
+  lane :certs do |options|
     app_store_connect_api_key(
       key_id: ENV["ASC_KEY_ID"],
       issuer_id: ENV["ASC_ISSUER_ID"],
@@ -179,10 +179,15 @@ platform :ios do
     # OpenSSL. macOS system Ruby links LibreSSL, which cannot set GCM additional
     # authenticated data, so seeding fails with "Error encrypting". The legacy
     # AES-256-CBC path works everywhere, CI included.
+    # force regenerates the profiles rather than reusing what the repo holds.
+    # Needed whenever an App ID's capabilities change: an existing profile is
+    # never rewritten in place, so a newly granted entitlement (Tap to Pay) only
+    # appears in a freshly issued one.
     match(
       type: "appstore",
       app_identifier: APPS.values.map { |c| c[:id] },
       readonly: false,
+      force: options[:force].to_s == "true",
       force_legacy_encryption: true
     )
   end

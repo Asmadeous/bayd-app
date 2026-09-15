@@ -24,6 +24,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1190187B9E783A88F0BF79A0 /* AppDebug.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = AppDebug.entitlements; sourceTree = "<group>"; };
 		27C440FD4B374FEEFAB60CB9 /* BackgroundLocationPlugin.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = BackgroundLocationPlugin.m; sourceTree = "<group>"; };
 		2E4FF15FD8CFE6AA166BDB66 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
@@ -90,6 +91,7 @@
 				27C440FD4B374FEEFAB60CB9 /* BackgroundLocationPlugin.m */,
 				BCD0C1090F212A63829AE29E /* SquarePosPlugin.swift */,
 				48E0079FE328F3CD82D5BAB5 /* SquarePosPlugin.m */,
+				1190187B9E783A88F0BF79A0 /* AppDebug.entitlements */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -348,7 +350,7 @@
 			baseConfigurationReference = F3DDD569E34CEAB8B20E670A /* Square.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
+				CODE_SIGN_ENTITLEMENTS = App/AppDebug.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
