@@ -36,7 +36,10 @@ platform :android do
   private_lane :android_release do |options|
     cfg = app_config(options)
     track = options[:track] || "internal"
-    project_dir = "../#{cfg[:android_dir]}"
+    # The gradle action resolves project_dir relative to the fastlane project
+    # root (client/), so it's just the native dir name - NOT ../<dir> (that would
+    # resolve to the repo root, where no android project exists).
+    project_dir = cfg[:android_dir]
 
     build_web_bundle(cfg)
 
@@ -77,7 +80,8 @@ platform :ios do
   # Fetch signing assets (match), build a signed IPA, upload to ASC.
   private_lane :ios_release do |options|
     cfg = app_config(options)
-    project_dir = "../#{cfg[:ios_dir]}/App"
+    # Relative to the fastlane project root (client/), so just the dir - not ../.
+    project_dir = "#{cfg[:ios_dir]}/App"
 
     build_web_bundle(cfg)
 
