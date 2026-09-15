@@ -7,6 +7,23 @@
 # automatically on the first boot of a fresh database (e.g. the Postgres accessory
 # bootstrap) and never again once real data exists.
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
+  # Wait for Postgres to accept connections before touching the DB. On a fresh
+  # bootstrap the DB accessory container is still running initdb + the PostGIS
+  # extension when the app starts, so an immediate db:prepare fails with "could
+  # not translate host name" / connection refused. Retry for up to ~90s.
+  echo "[entrypoint] waiting for database at ${DB_HOST:-localhost}:${DB_PORT:-5432}..."
+  for i in $(seq 1 45); do
+    if ./bin/rails runner 'ActiveRecord::Base.establish_connection; ActiveRecord::Base.connection.execute("SELECT 1")' 2>/dev/null; then
+      echo "[entrypoint] database is up"
+      break
+    fi
+    if [ "$i" -eq 45 ]; then
+      echo "[entrypoint] database did not become reachable in time" >&2
+      exit 1
+    fi
+    sleep 2
+  done
+
   ./bin/rails db:prepare
   # Seed only if there are no users yet (fresh DB). Any error in the check
   # defaults to NOT seeding, so a populated DB is never touched.
