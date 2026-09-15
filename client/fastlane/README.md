@@ -52,13 +52,21 @@ Build + upload the app to TestFlight (app:customer|staff)
 
 Build + upload the app to App Store review (app:customer|staff)
 
+### ios dev_certs
+
+```sh
+[bundle exec] fastlane ios dev_certs
+```
+
+Development signing for on-device testing (app:customer|staff)
+
 ### ios certs
 
 ```sh
 [bundle exec] fastlane ios certs
 ```
 
-Seed the match repo with signing certs + profiles for both apps (run once)
+Seed or refresh the match repo's signing certs + profiles (force:true to regenerate)
 
 ----
 
