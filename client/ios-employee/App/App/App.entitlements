@@ -3,12 +3,19 @@
 <plist version="1.0">
 <dict>
 	<!-- Tap to Pay on iPhone. This is a MANAGED entitlement: Apple must grant it
-	     to your developer team (developer.apple.com/tap-to-pay), and until Apple
-	     approves production distribution it only works for Development builds.
-	     The App target must reference this file via its CODE_SIGN_ENTITLEMENTS
-	     build setting (set in Xcode on a Mac). -->
+	     to your developer team (developer.apple.com/tap-to-pay). Team HFZWQ3G4MV
+	     does not have it yet, and an entitlement the provisioning profile does
+	     not carry fails the archive outright:
+	       "Entitlement com.apple.developer.proximity-reader.payment.acceptance
+	        not found and could not be included in profile"
+	     It is commented out so the staff app can ship. Tap to Pay cannot work
+	     without Apple's grant either way, and SquarePosPlugin.isReady() already
+	     reports false so the app falls back to a payment link. Restore this line
+	     once Apple approves the team, and confirm the key appears in the profile
+	     match issues before archiving.
 	<key>com.apple.developer.proximity-reader.payment.acceptance</key>
 	<true/>
+	-->
 	<!-- Required for remote push. Without it iOS refuses registerForRemoteNotifications
 	     and no APNs/FCM token is ever issued. "development" for Dev builds; Xcode's
 	     Push Notifications capability + a production provisioning profile promote it
