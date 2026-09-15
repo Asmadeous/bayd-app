@@ -100,12 +100,41 @@ platform :ios do
       git_url: ENV["MATCH_GIT_URL"]
     )
 
+    # match installs the profiles, but the Xcode project ships with automatic
+    # signing and no team, so xcodebuild refuses to archive. Write manual signing
+    # onto the App TARGET only: applying it globally (via xcargs) also hits the
+    # SPM package targets, which cannot take a provisioning profile and fail the
+    # build. profile_name comes from match itself, so the name stays correct even
+    # when Apple appends a suffix to a regenerated profile.
+    update_code_signing_settings(
+      path: "#{project_dir}/App.xcodeproj",
+      use_automatic_signing: false,
+      team_id: ENV["APPLE_TEAM_ID"] || "HFZWQ3G4MV",
+      targets: ["App"],
+      bundle_identifier: cfg[:id],
+      code_sign_identity: "Apple Distribution",
+      profile_name: lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING][cfg[:id]]
+    )
+
+    # Square.xcconfig carries a sandbox id so local builds work out of the box.
+    # A SQUARE_APPLICATION_ID from CI must win over it, and an xcconfig value is
+    # only overridden on the xcodebuild command line, not by the environment.
+    xcargs = "CURRENT_PROJECT_VERSION=#{ENV['BAYD_VERSION_CODE']} MARKETING_VERSION=#{ENV['BAYD_VERSION_NAME']}"
+    square_id = ENV["SQUARE_APPLICATION_ID"].to_s
+    xcargs += " SQUARE_APPLICATION_ID='#{square_id}'" unless square_id.empty?
+
     build_app(
       project: "#{project_dir}/App.xcodeproj",
       scheme: "App",
       export_method: "app-store",
+      export_team_id: ENV["APPLE_TEAM_ID"] || "HFZWQ3G4MV",
+      export_options: {
+        provisioningProfiles: {
+          cfg[:id] => lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING][cfg[:id]]
+        }
+      },
       output_directory: "#{project_dir}/build",
-      xcargs: "CURRENT_PROJECT_VERSION=#{ENV['BAYD_VERSION_CODE']} MARKETING_VERSION=#{ENV['BAYD_VERSION_NAME']}"
+      xcargs: xcargs
     )
 
     if options[:track] == "production"
@@ -132,5 +161,34 @@ platform :ios do
   desc "Build + upload the app to App Store review (app:customer|staff)"
   lane :release do |options|
     ios_release(options.merge(track: "production"))
+  end
+
+  desc "Seed or refresh the match repo's signing certs + profiles (force:true to regenerate)"
+  lane :certs do |options|
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_KEY_CONTENT"],
+      is_key_content_base64: true
+    )
+
+    # readonly: false so match creates whatever is missing. The bare `match` CLI
+    # cannot do this: it never sees the API key configured above, so it falls
+    # back to an Apple ID prompt and dies in a non-interactive shell.
+    # force_legacy_encryption: match's default AES-256-GCM encryption needs real
+    # OpenSSL. macOS system Ruby links LibreSSL, which cannot set GCM additional
+    # authenticated data, so seeding fails with "Error encrypting". The legacy
+    # AES-256-CBC path works everywhere, CI included.
+    # force regenerates the profiles rather than reusing what the repo holds.
+    # Needed whenever an App ID's capabilities change: an existing profile is
+    # never rewritten in place, so a newly granted entitlement (Tap to Pay) only
+    # appears in a freshly issued one.
+    match(
+      type: "appstore",
+      app_identifier: APPS.values.map { |c| c[:id] },
+      readonly: false,
+      force: options[:force].to_s == "true",
+      force_legacy_encryption: true
+    )
   end
 end
