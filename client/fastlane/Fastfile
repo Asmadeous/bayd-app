@@ -77,7 +77,11 @@ platform :ios do
   # Fetch signing assets (match), build a signed IPA, upload to ASC.
   private_lane :ios_release do |options|
     cfg = app_config(options)
-    project_dir = "../#{cfg[:ios_dir]}/App"
+    # Absolute, because fastlane does not use one working directory for every
+    # action: `sh` runs from fastlane/, while build_app resolves relative paths
+    # from client/. A relative "../" is therefore correct for only one of them
+    # and sent build_app looking outside client/ for the Xcode project.
+    project_dir = File.expand_path("#{cfg[:ios_dir]}/App", File.expand_path("..", FastlaneCore::FastlaneFolder.path))
 
     build_web_bundle(cfg)
 
@@ -96,6 +100,22 @@ platform :ios do
       git_url: ENV["MATCH_GIT_URL"]
     )
 
+    # match installs the profiles, but the Xcode project ships with automatic
+    # signing and no team, so xcodebuild refuses to archive. Write manual signing
+    # onto the App TARGET only: applying it globally (via xcargs) also hits the
+    # SPM package targets, which cannot take a provisioning profile and fail the
+    # build. profile_name comes from match itself, so the name stays correct even
+    # when Apple appends a suffix to a regenerated profile.
+    update_code_signing_settings(
+      path: "#{project_dir}/App.xcodeproj",
+      use_automatic_signing: false,
+      team_id: ENV["APPLE_TEAM_ID"] || "HFZWQ3G4MV",
+      targets: ["App"],
+      bundle_identifier: cfg[:id],
+      code_sign_identity: "Apple Distribution",
+      profile_name: lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING][cfg[:id]]
+    )
+
     # Square.xcconfig carries a sandbox id so local builds work out of the box.
     # A SQUARE_APPLICATION_ID from CI must win over it, and an xcconfig value is
     # only overridden on the xcodebuild command line, not by the environment.
@@ -107,6 +127,12 @@ platform :ios do
       project: "#{project_dir}/App.xcodeproj",
       scheme: "App",
       export_method: "app-store",
+      export_team_id: ENV["APPLE_TEAM_ID"] || "HFZWQ3G4MV",
+      export_options: {
+        provisioningProfiles: {
+          cfg[:id] => lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING][cfg[:id]]
+        }
+      },
       output_directory: "#{project_dir}/build",
       xcargs: xcargs
     )
