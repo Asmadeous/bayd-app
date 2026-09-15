@@ -109,12 +109,16 @@ jobs:
             echo "::error::ssh-keyscan could not reach $HOST:$PORT after retries"; exit 1
           fi
 
-      # A deploy that dies mid-run (e.g. the DB was unreachable) can leave a stale
-      # lock on the server, and every later deploy then aborts with "Deploy lock
-      # already in place!". Release it first so a failed run never wedges the next
-      # one. Best-effort: no lock to release is fine, so never fail the deploy here.
-      - name: Release any stale Kamal lock
-        run: kamal lock release || true
+      # A deploy that dies mid-run leaves a lock on the server; every later deploy
+      # then aborts with "Deploy lock already in place!". `kamal lock release` can't
+      # clear a CORRUPTED lock (Kamal reports it held while the lock dir is missing/
+      # partial - "stat: cannot statx .kamal/lock-..."), so remove the lock artifact
+      # directly over the same SSH Kamal uses. Best-effort; nothing to remove is fine.
+      - name: Clear stale Kamal lock on the server
+        run: |
+          kamal lock release || true
+          ssh -p "${{ secrets.SSH_PORT || '2206' }}" -o StrictHostKeyChecking=no \
+            deploy@"${{ secrets.SSH_HOST }}" 'rm -rf ~/.kamal/lock-b_a_y_d_api' || true
 
       - name: Kamal deploy (or bootstrap)
         run: |
