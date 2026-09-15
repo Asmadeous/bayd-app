@@ -160,7 +160,11 @@ accessories:
         - POSTGRES_USER
         - POSTGRES_PASSWORD
     volumes:
-      - bayd_db_data:/var/lib/postgresql/data
+      # Postgres 18+ images store data in a version-specific subdirectory and
+      # REQUIRE the mount at /var/lib/postgresql (NOT /var/lib/postgresql/data,
+      # the pre-18 convention) - mounting at /data makes the container refuse to
+      # start with a "data in unused mount/volume" error and crash-loop.
+      - bayd_db_data:/var/lib/postgresql
 
 aliases:
   console: app exec --interactive --reuse "bin/rails console"
