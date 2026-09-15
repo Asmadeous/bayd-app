@@ -27,6 +27,12 @@ proxy:
     bind_ips:
       - "127.0.0.1"
 
+# The app entrypoint waits for the Postgres accessory (initdb + PostGIS) and runs
+# migrations before the web server binds, so on a fresh bootstrap the container
+# needs longer than the 30s default to report healthy. deploy_timeout is a
+# top-level Kamal option (not under proxy).
+deploy_timeout: 120
+
 # EDIT: container registry. GHCR shown; alternatives: docker.io, registry.digitalocean.com …
 registry:
   server: ghcr.io
