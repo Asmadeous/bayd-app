@@ -206,7 +206,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_125252) do
     t.index ["status"], name: "index_bookings_on_status"
     t.index ["subscription_id"], name: "index_bookings_on_subscription_id"
     t.index ["user_id"], name: "index_bookings_on_user_id"
-    t.exclusion_constraint "employee_profile_id WITH =, tsrange(starts_at, ends_at) WITH &&", where: "(status)::text = ANY (ARRAY[('pending'::character varying)::text, ('confirmed'::character varying)::text, ('in_progress'::character varying)::text])", using: :gist, deferrable: :immediate, name: "no_double_booking"
+    t.exclusion_constraint "employee_profile_id WITH =, tsrange(starts_at, ends_at) WITH &&", where: "(status)::text = ANY ((ARRAY['pending'::character varying, 'confirmed'::character varying, 'in_progress'::character varying])::text[])", using: :gist, deferrable: :immediate, name: "no_double_booking"
   end
 
   create_table "callback_requests", force: :cascade do |t|

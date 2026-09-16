@@ -1,19 +1,63 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Banknote, CreditCard, ReceiptText, type LucideIcon } from "lucide-react";
 
 import { NewsletterSignup } from "@/components/layout/newsletter-signup";
 import { siteConfig } from "@/lib/site";
 
-// Accepted payment methods shown in the footer, from real logo/image assets in
-// public/. Interac covers Interac e-Transfer. Each renders on a white chip so the
-// brand colours read against the dark footer.
-const PAYMENT_METHODS: { label: string; src: string; w: number; h: number }[] = [
-  { label: "Visa", src: "/pngfind.com-visa-png-810117.png", w: 938, h: 356 },
-  { label: "Mastercard", src: "/pngfind.com-master-card-logo-png-2088053.png", w: 800, h: 480 },
-  { label: "Interac", src: "/interaclogosvg.png", w: 800, h: 450 },
-  { label: "Credit / Debit", src: "/credit-card.png", w: 512, h: 512 },
-  { label: "Cash", src: "/dollars.png", w: 512, h: 512 },
-  { label: "Cheque", src: "/cheque.png", w: 512, h: 512 },
+type BrandPaymentMethod = {
+  label: string;
+  src: string;
+  width: number;
+  height: number;
+  className?: string;
+  standalone?: boolean;
+};
+
+type IconPaymentMethod = {
+  label: string;
+  icon: LucideIcon;
+};
+
+type PaymentMethod = BrandPaymentMethod | IconPaymentMethod;
+
+const PAYMENT_METHODS: PaymentMethod[] = [
+  {
+    label: "Visa",
+    src: "/logos/payments/visa-white.svg",
+    width: 256,
+    height: 83,
+    className: "h-7 w-auto",
+    standalone: true,
+  },
+  {
+    label: "Mastercard",
+    src: "/logos/payments/mastercard.svg",
+    width: 256,
+    height: 199,
+    className: "h-11 w-auto",
+    standalone: true,
+  },
+  {
+    label: "Interac",
+    src: "/logos/payments/interac.svg",
+    width: 540,
+    height: 540,
+    className: "h-12 w-auto",
+    standalone: true,
+  },
+  {
+    label: "Credit / Debit",
+    icon: CreditCard,
+  },
+  {
+    label: "Cash",
+    icon: Banknote,
+  },
+  {
+    label: "Cheque",
+    icon: ReceiptText,
+  },
 ];
 
 export function SiteFooter() {
@@ -170,27 +214,45 @@ export function SiteFooter() {
           </div>
         </div>
 
-        {/* Accepted payment methods — so clients stop asking what we take. */}
+        {/* Accepted payment methods for quick footer scanning. */}
         <div className="border-t border-white/10 pt-6 md:col-span-full">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/55">
             Accepted payments
           </p>
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-4">
+          <div className="mt-4 flex flex-wrap gap-3">
             {PAYMENT_METHODS.map((method) => (
-              <div key={method.label} className="flex w-14 flex-col items-center gap-1.5">
-                <span className="grid h-9 w-full place-items-center rounded-md border border-white/15 bg-white/95">
-                  <Image
-                    src={method.src}
-                    alt={method.label}
-                    width={method.w}
-                    height={method.h}
-                    className="max-h-5 w-auto max-w-[2.75rem] object-contain"
-                    unoptimized
-                  />
+              <div
+                key={method.label}
+                className={
+                  "standalone" in method && method.standalone
+                    ? "flex min-h-16 w-[6.25rem] items-center justify-center"
+                    : "flex min-h-16 w-[6.25rem] flex-col items-center justify-center gap-1 rounded-md border border-white/10 bg-white/[0.045] px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                }
+              >
+                <span className="grid h-7 place-items-center text-white">
+                  {"src" in method ? (
+                    <Image
+                      alt={method.standalone ? method.label : ""}
+                      aria-hidden={method.standalone ? undefined : "true"}
+                      className={method.className ?? "h-7 w-auto"}
+                      height={method.height}
+                      src={method.src}
+                      unoptimized
+                      width={method.width}
+                    />
+                  ) : (
+                    <method.icon
+                      aria-hidden="true"
+                      className="size-6 text-white/85"
+                      strokeWidth={1.8}
+                    />
+                  )}
                 </span>
-                <span className="text-center text-[11px] font-medium leading-tight text-white/55">
-                  {method.label}
-                </span>
+                {!("standalone" in method && method.standalone) && (
+                  <span className="text-center text-[10px] font-semibold uppercase leading-tight tracking-[0.08em] text-white/50">
+                    {method.label}
+                  </span>
+                )}
               </div>
             ))}
           </div>

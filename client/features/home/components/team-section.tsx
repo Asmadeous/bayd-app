@@ -40,16 +40,16 @@ const teamMembers = [
     profileImage: "/images/new-pics-for-the-ladies/vanessa-team-headshot.webp",
   },
   {
-    name: "Dana",
-    initials: "DA",
-    role: "Nail Technician",
-    location: "20+ years of experience",
-    bio: "Dana is a skilled nail technician with over 20 years of experience from Europe. Known for precision, creativity, and passion, she creates personalized nail designs that reflect each client’s unique style.",
-    accent: "#d9bba9",
-    backgroundImage: "/images/new-pics-for-the-ladies/dana-team-headshot.webp",
-    profileImage: "/images/new-pics-for-the-ladies/dana-team-headshot.webp",
+    name: "Rim",
+    initials: "RI",
+    role: "Medical Aesthetician",
+    location: "15 years of aesthetics experience",
+    bio: "Rim believes beautiful skin starts with personalized care. Her passion for aesthetics spans 15 years, during which she built a successful career in Kuwait helping clients achieve their ultimate skin goals. After relocating to Canada, she advanced her expertise with a Canadian diploma in Medical Aesthetics. Known for her warm approach, thorough consultations, and ability to make clients feel completely at ease, Rim supports advanced skin rejuvenation, preventative skincare routines, and relaxing massage.",
+    accent: "#d8c7b8",
+    backgroundImage: "/images/new-pics-for-the-ladies/rim-team-headshot.webp",
+    profileImage: "/images/new-pics-for-the-ladies/rim-team-headshot.webp",
     backgroundPosition: "center 35%",
-    profilePosition: "center 42%",
+    profilePosition: "center 38%",
   },
 ];
 
@@ -71,7 +71,8 @@ export function TeamSection() {
           </div>
           <p className="max-w-xl text-base leading-7 text-[#62666d]">
             A mobile team with deep experience in nails, lashes, pedicure care,
-            massage, and client-first service across home and event bookings.
+            medical aesthetics, massage, and client-first service across home
+            and event bookings.
           </p>
         </ScrollReveal>
 
@@ -99,7 +100,9 @@ export function TeamSection() {
                     quality={96}
                     sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
                     src={member.backgroundImage}
-                    style={{ objectPosition: member.backgroundPosition ?? "center" }}
+                    style={{
+                      objectPosition: member.backgroundPosition ?? "center",
+                    }}
                   />
                 )}
                 <div

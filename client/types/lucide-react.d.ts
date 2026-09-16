@@ -8,6 +8,7 @@ declare module "lucide-react" {
   export const ArrowUpRight: LucideIcon
   export const BadgeCheck: LucideIcon
   export const BarChart3: LucideIcon
+  export const Banknote: LucideIcon
   export const Bell: LucideIcon
   export const Briefcase: LucideIcon
   export const BriefcaseBusiness: LucideIcon
