@@ -31,6 +31,12 @@ if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
     echo "[entrypoint] fresh database detected - seeding"
     ./bin/rails db:seed
   fi
+
+  # Always upsert the $1 QA test services (idempotent, no destructive cleanup),
+  # so they exist even on a populated production DB the full seed won't re-run.
+  # Runs LAST so it re-activates them after any full seed's catalog cleanup.
+  echo "[entrypoint] seeding test services"
+  ./bin/rails runner "load Rails.root.join('db/seeds/test_services.rb')" || echo "[entrypoint] test-service seed failed (non-fatal)"
 fi
 
 exec "${@}"

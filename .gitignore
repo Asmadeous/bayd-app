@@ -50,6 +50,7 @@ client-ios.zip
 # left at the repo root, including browser-suffixed duplicates like
 # "GoogleService-Info (1).plist".
 **/GoogleService-Info*.plist
+docs/*.json
 google-services*.json
 
 # Other Apple signing material (*.p8 / *.keystore are ignored above)

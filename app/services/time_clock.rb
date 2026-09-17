@@ -59,6 +59,11 @@ class TimeClock
   end
 
   def self.within_geofence!(booking, latitude, longitude)
+    # Testing escape hatch: GEOFENCE_DISABLED=true lets a tech clock in from
+    # anywhere (so QA can exercise clock-in without being at the client's address).
+    # Default OFF - the 150 m gate is enforced in normal operation.
+    return if ENV["GEOFENCE_DISABLED"] == "true"
+
     metres = distance_to_booking_m(booking, latitude, longitude)
     return if metres.nil? # unknown client location -> can't judge, don't block
 
