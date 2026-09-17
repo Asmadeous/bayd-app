@@ -47,3 +47,4 @@ client-ios.zip
 **/*.p8
 **/*.keystore
 **/GoogleService-Info*.plist
+docs/*.json

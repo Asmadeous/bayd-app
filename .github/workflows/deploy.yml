@@ -67,6 +67,8 @@ jobs:
       INFOBIP_BASE_URL: ${{ secrets.INFOBIP_BASE_URL }}
       INFOBIP_API_KEY: ${{ secrets.INFOBIP_API_KEY }}
       INFOBIP_SENDER: ${{ secrets.INFOBIP_SENDER }}
+      # TESTING ONLY - disables the clock-in geofence. Remove before public launch.
+      GEOFENCE_DISABLED: ${{ secrets.GEOFENCE_DISABLED }}
     steps:
       - uses: actions/checkout@v4
 
