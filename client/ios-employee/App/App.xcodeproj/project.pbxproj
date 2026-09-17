@@ -196,7 +196,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Square ships CorePaymentCard/LCRCore/SquareReader nested inside\n# SquareMobilePaymentsSDK.framework. App Store validation rejects nested\n# bundles (90205/90206), so Square provides this script to hoist them into\n# the app Frameworks dir. It MUST be the last build phase, after embedding.\n# See developer.squareup.com/docs/mobile-payments-sdk/ios\nFRAMEWORKS=\"${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\n\"${FRAMEWORKS}/SquareMobilePaymentsSDK.framework/setup\"\n";
+			shellScript = "# Square ships CorePaymentCard/LCRCore/SquareReader nested inside\n# SquareMobilePaymentsSDK.framework. App Store validation rejects nested\n# bundles (90205/90206), so Square provides this script to hoist them into\n# the app Frameworks dir. It MUST be the last build phase, after embedding.\n# See developer.squareup.com/docs/mobile-payments-sdk/ios\n#\n# Simulator builds never reach App Store validation, and Squares script runs\n# under set -e ending on an \"is this an archive\" test, so it reports failure\n# on a plain build and breaks the simulator. Nothing to hoist there anyway.\nif [ \"${EFFECTIVE_PLATFORM_NAME}\" = \"-iphonesimulator\" ]; then\n  echo \"note: skipping Square framework unpack for the simulator\"\n  exit 0\nfi\n\nFRAMEWORKS=\"${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\n\"${FRAMEWORKS}/SquareMobilePaymentsSDK.framework/setup\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -351,7 +351,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = App/AppDebug.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = HFZWQ3G4MV;
@@ -366,7 +366,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = ca.baydspa.staff;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "match AppStore ca.baydspa.staff 1789429789";
+				PROVISIONING_PROFILE_SPECIFIER = "match Development ca.baydspa.staff";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
