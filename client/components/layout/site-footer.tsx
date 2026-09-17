@@ -1,11 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Banknote, CreditCard, ReceiptText, type LucideIcon } from "lucide-react";
 
 import { NewsletterSignup } from "@/components/layout/newsletter-signup";
 import { siteConfig } from "@/lib/site";
 
-type BrandPaymentMethod = {
+type PaymentMethod = {
   label: string;
   src: string;
   width: number;
@@ -13,13 +12,6 @@ type BrandPaymentMethod = {
   className?: string;
   standalone?: boolean;
 };
-
-type IconPaymentMethod = {
-  label: string;
-  icon: LucideIcon;
-};
-
-type PaymentMethod = BrandPaymentMethod | IconPaymentMethod;
 
 const PAYMENT_METHODS: PaymentMethod[] = [
   {
@@ -48,15 +40,24 @@ const PAYMENT_METHODS: PaymentMethod[] = [
   },
   {
     label: "Credit / Debit",
-    icon: CreditCard,
+    src: "/logos/payments/credit-debit.svg",
+    width: 96,
+    height: 96,
+    className: "h-7 w-auto opacity-[0.85]",
   },
   {
     label: "Cash",
-    icon: Banknote,
+    src: "/logos/payments/cash.svg",
+    width: 512,
+    height: 512,
+    className: "h-7 w-auto opacity-[0.85]",
   },
   {
     label: "Cheque",
-    icon: ReceiptText,
+    src: "/logos/payments/cheque.svg",
+    width: 64,
+    height: 64,
+    className: "h-7 w-auto opacity-[0.85]",
   },
 ];
 
@@ -230,23 +231,15 @@ export function SiteFooter() {
                 }
               >
                 <span className="grid h-7 place-items-center text-white">
-                  {"src" in method ? (
-                    <Image
-                      alt={method.standalone ? method.label : ""}
-                      aria-hidden={method.standalone ? undefined : "true"}
-                      className={method.className ?? "h-7 w-auto"}
-                      height={method.height}
-                      src={method.src}
-                      unoptimized
-                      width={method.width}
-                    />
-                  ) : (
-                    <method.icon
-                      aria-hidden="true"
-                      className="size-6 text-white/85"
-                      strokeWidth={1.8}
-                    />
-                  )}
+                  <Image
+                    alt={method.standalone ? method.label : ""}
+                    aria-hidden={method.standalone ? undefined : "true"}
+                    className={method.className ?? "h-7 w-auto"}
+                    height={method.height}
+                    src={method.src}
+                    unoptimized
+                    width={method.width}
+                  />
                 </span>
                 {!("standalone" in method && method.standalone) && (
                   <span className="text-center text-[10px] font-semibold uppercase leading-tight tracking-[0.08em] text-white/50">
