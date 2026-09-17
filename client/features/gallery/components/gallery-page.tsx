@@ -74,9 +74,13 @@ export function GalleryPage() {
       const mappedApiItems =
         apiItems?.filter((item) => item.category !== "Team").map(mapApiItem) ?? [];
       const existingIds = new Set(staticGalleryItems.map((item) => item.id));
+      const existingImageSources = new Set(
+        staticGalleryItems.map((item) => item.image.src),
+      );
       const additionalApiItems = mappedApiItems.filter(
         (item) =>
           !existingIds.has(item.id) &&
+          !existingImageSources.has(item.image.src) &&
           item.image.src.startsWith("/images/new-pics-for-the-ladies/"),
       );
 

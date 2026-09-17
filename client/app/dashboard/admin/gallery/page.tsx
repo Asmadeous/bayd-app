@@ -299,7 +299,7 @@ export default function AdminGalleryPage() {
             </p>
             <DialogTitle>{editing === "create" ? "Add gallery item" : "Edit gallery item"}</DialogTitle>
             <DialogDescription>
-              Add a public gallery image URL, category, display size, and visibility details.
+              Upload a public gallery photo, or add an image URL, then set its category and visibility details.
             </DialogDescription>
           </DialogHeader>
 
@@ -328,7 +328,7 @@ export default function AdminGalleryPage() {
                       <Images aria-hidden="true" className="size-10 text-[#c96c83]" />
                       <span className="text-sm font-extrabold text-[#101217]">Image preview</span>
                       <span className="text-xs leading-5">
-                        Add an image URL to preview the gallery item.
+                        Upload a photo or add an image URL to preview the gallery item.
                       </span>
                     </span>
                   )}
@@ -433,7 +433,7 @@ export default function AdminGalleryPage() {
             </div>
           </DialogBody>
           <DialogFooter>
-            <Button size="sm" disabled={saving || !form.title || !form.image_url} onClick={submit} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
+            <Button size="sm" disabled={saving || !form.title || (!form.image_url && !imageFile)} onClick={submit} style={{ background: "#c96c83", border: "none", color: "#fff" }}>
               {saving ? "Saving..." : editing === "create" ? "Add to gallery" : "Save changes"}
             </Button>
             <Button size="sm" variant="ghost" onClick={closeEditor}>Cancel</Button>

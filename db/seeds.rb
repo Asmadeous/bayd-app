@@ -499,7 +499,11 @@ end
   { title: "Soft Gel Finish",            category: "Nails",    image: "/images/new-pics-for-the-ladies/finished-manicure-result-01.webp", size: "standard" },
   { title: "Client Care Moment",         category: "Nails",    image: "/images/new-pics-for-the-ladies/manicure-client-moment-01.webp", size: "tall" },
   { title: "At-Home Appointment",        category: "Nails",    image: "/images/new-pics-for-the-ladies/mobile-manicure-appointment-01.webp", size: "tall" },
-  { title: "Detailed Nail Care",         category: "Pedicure", image: "/images/new-pics-for-the-ladies/nail-care-service-close-up-01.webp", size: "standard" }
+  { title: "Detailed Nail Care",         category: "Pedicure", image: "/images/new-pics-for-the-ladies/nail-care-service-close-up-01.webp", size: "standard" },
+  { title: "Lash Application Close-Up",  category: "Lashes",   image: "/images/new-pics-for-the-ladies/gallery-lash-application-close-up.webp", size: "tall" },
+  { title: "Mobile Lash Appointment Setup", category: "Lashes", image: "/images/new-pics-for-the-ladies/gallery-mobile-lash-appointment-setup.webp", size: "standard" },
+  { title: "Lash Extension Detail Work", category: "Lashes",   image: "/images/new-pics-for-the-ladies/gallery-lash-extension-detail-work.webp", size: "tall" },
+  { title: "Lash Result Full Set",       category: "Lashes",   image: "/images/new-pics-for-the-ladies/gallery-lash-result-full-set.webp", size: "standard" }
 ].each_with_index do |g, i|
   gi = GalleryItem.find_or_initialize_by(title: g[:title])
   gi.update!(
@@ -512,7 +516,7 @@ end
     active: true
   )
 end
-puts "  22 gallery items"
+puts "  #{GalleryItem.count} gallery items"
 
 # ── Job postings ──────────────────────────────────────────────────────────────
 [
