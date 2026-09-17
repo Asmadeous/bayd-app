@@ -22,6 +22,7 @@ import type {
   GalleryCategory,
   GalleryItem,
 } from "@/features/gallery/types";
+import { SocialPostsSection } from "@/features/social-posts/components/social-posts-section";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 
@@ -144,6 +145,7 @@ export function GalleryPage() {
           }}
           onSelect={setSelectedItem}
         />
+        <SocialPostsSection context="gallery" />
         <GalleryTrustBand />
       </main>
       <SiteFooter />

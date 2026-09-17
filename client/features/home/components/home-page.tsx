@@ -8,6 +8,7 @@ import { ServicesSection } from "@/features/home/components/services-section";
 import { TeamSection } from "@/features/home/components/team-section";
 import { TestimonialsSection } from "@/features/home/components/testimonials-section";
 import { PartnersSection } from "@/features/partners/components/partners-section";
+import { SocialPostsSection } from "@/features/social-posts/components/social-posts-section";
 
 type HomePageProps = {
   content: HomePageContent;
@@ -21,9 +22,10 @@ export function HomePage({ content }: HomePageProps) {
         <HeroSection />
         <ServicesSection />
         <BenefitsSection benefits={content.benefits} />
-        <PartnersSection />
         <TeamSection />
         <TestimonialsSection />
+        <SocialPostsSection context="home" />
+        <PartnersSection />
         <ContactSection />
       </main>
       <SiteFooter />

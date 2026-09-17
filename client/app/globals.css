@@ -134,18 +134,33 @@
   body {
     overflow-x: clip;
   }
-  a,
-  button,
-  [role="button"],
-  summary,
-  input[type="button"],
-  input[type="submit"],
-  input[type="reset"] {
-    cursor: pointer;
-  }
-  button:disabled,
-  [aria-disabled="true"] {
-    cursor: not-allowed;
+
+  @media (hover: hover) and (pointer: fine) {
+    html,
+    body {
+      cursor: url("/cursors/bayd-cursor.svg") 4 3, auto;
+    }
+
+    a,
+    button,
+    [role="button"],
+    summary,
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"] {
+      cursor: pointer;
+    }
+
+    input,
+    textarea,
+    [contenteditable="true"] {
+      cursor: text;
+    }
+
+    button:disabled,
+    [aria-disabled="true"] {
+      cursor: not-allowed;
+    }
   }
 }
 
