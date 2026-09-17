@@ -2,31 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>B.A.Y.D shares your location with your customer while you're on shift so they can see your ETA on the day of their appointment.</string>
-	<!-- Work-scope video call (embedded Jitsi in the WebView). iOS requires a
-	     usage string or camera/mic access is refused and the app can crash. -->
-	<key>NSCameraUsageDescription</key>
-	<string>Camera access is used for your work-scope video call with the customer.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Microphone access is used for your work-scope video call with the customer.</string>
-	<!-- Square Mobile Payments SDK (Tap to Pay). Bluetooth is required by the SDK
-	     even for Tap to Pay (reader/accessory comms). Location is already declared
-	     above. -->
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Bluetooth is used to take card payments with Square.</string>
-	<!-- Square application id for Tap to Pay, read by AppDelegate to initialize the
-	     SDK. Populated at build time from SQUARE_APPLICATION_ID via the build
-	     setting of the same name. Empty -> Tap to Pay stays off (payment-link
-	     fallback). -->
-	<key>SquareApplicationID</key>
-	<string>$(SQUARE_APPLICATION_ID)</string>
-  <key>CAPACITOR_DEBUG</key>
+	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>BAYD Staff</string>
+	<string>BAYD Staff</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -41,27 +22,51 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NFCReaderUsageDescription</key>
+	<string>NFC is used to accept contactless card and phone payments with Tap to Pay on iPhone.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Bluetooth is used to take card payments with Square.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is used for your work-scope video call with the customer.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>B.A.Y.D shares your location with your customer while you are on shift so they can see your ETA on the day of their appointment.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>B.A.Y.D shares your location with your customer while you're on shift so they can see your ETA on the day of their appointment.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is used for your work-scope video call with the customer.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Photos you take in the app are saved to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access lets you attach a photo to a job or set your profile photo.</string>
+	<key>SquareApplicationID</key>
+	<string>$(SQUARE_APPLICATION_ID)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
-    <false/>
-    <key>UISceneConfigurations</key>
-    <dict>
-      <key>UIWindowSceneSessionRoleApplication</key>
-      <array>
-        <dict>
-            <key>UISceneConfigurationName</key>
-            <string>Default Configuration</string>
-            <key>UISceneDelegateClassName</key>
-            <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
-            <key>UISceneStoryboardFile</key>
-            <string>Main</string>
-        </dict>
-      </array>
-    </dict>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

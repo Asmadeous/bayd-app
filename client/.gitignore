@@ -53,3 +53,12 @@ ios-admin/App/App/public
 # machine/CI provides its own from the Firebase console before a native build.
 **/google-services.json
 **/GoogleService-Info.plist
+
+# Local fastlane gem install (bundler path). CI uses its own bundler cache.
+/vendor/bundle
+/.bundle
+
+# fastlane run artifacts
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output

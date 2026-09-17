@@ -11,7 +11,7 @@
 // uses. Sandbox ids start with "sandbox-sq0idb-", production with "sq0idp-".
 // Leave it blank to keep Tap to Pay inert (the app falls back to a payment link).
 
-SQUARE_APPLICATION_ID =
+SQUARE_APPLICATION_ID = sq0idp-YsoJmjsFHuXl3ZD0Q3LbAw
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NOTE: these are NOT read by Xcode. They are consumed by the WEB build step

@@ -147,6 +147,7 @@ jobs:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
           BAYD_VERSION_CODE: ${{ github.run_number }}
           BAYD_VERSION_NAME: "1.0.${{ github.run_number }}"
+          SQUARE_APPLICATION_ID: ${{ secrets.SQUARE_APPLICATION_ID }}
         run: |
           LANE=${{ github.event.inputs.track == 'production' && 'release' || 'beta' }}
           bundle exec fastlane ios $LANE app:${{ github.event.inputs.app }}

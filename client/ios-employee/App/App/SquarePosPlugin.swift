@@ -63,14 +63,16 @@ public class SquarePosPlugin: CAPPlugin, PaymentManagerDelegate {
         }
         let currency: Currency = (call.getString("currency", "CAD") == "USD") ? .USD : .CAD
 
+        // processingMode is required since SDK 2.5. onlineOnly refuses the payment
+        // when there is no connectivity rather than deferring authorisation, so a
+        // tech never leaves a job believing a card cleared when it has not.
         let params = PaymentParameters(
             paymentAttemptID: UUID().uuidString,
-            amountMoney: Money(amount: UInt(amountCents), currency: currency)
+            amountMoney: Money(amount: UInt(amountCents), currency: currency),
+            processingMode: .onlineOnly
         )
-        // Note: PaymentParameters has an optional `note` in the SDK, but its exact
-        // Swift setter name isn't verified here (can't resolve the pod on Linux),
-        // so it's omitted rather than guessed. The backend already labels the
-        // charge (BKG-<id>) via the booking; add note on a Mac if wanted.
+        // Shows up on the Square receipt and dashboard next to the charge.
+        params.note = call.getString("note")
 
         // .all includes Tap to Pay on iPhone in Square's default prompt.
         let prompt = PromptParameters(mode: .default, additionalMethods: .all)
