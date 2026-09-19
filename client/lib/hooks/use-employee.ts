@@ -97,6 +97,18 @@ export function useToggleShift() {
   })
 }
 
+// Staff-operated card checkout for a booking: returns a hosted-checkout link for
+// the balance. The tech opens it and enters the CLIENT'S card there (the payment
+// is the customer's, staff just runs the terminal). No card-on-file auto-charge.
+export function useChargeBooking() {
+  return useMutation({
+    mutationFn: (bookingId: number) =>
+      api
+        .post<{ mode: string; url: string }>(`/employee/bookings/${bookingId}/payment_link`)
+        .then((r) => r.data),
+  })
+}
+
 export function useUpdateProfile() {
   const qc = useQueryClient()
   return useMutation({

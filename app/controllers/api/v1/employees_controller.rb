@@ -181,6 +181,23 @@ module Api
         render json: SquareService.pos_config.merge(access_token: SquareService.pos_access_token)
       end
 
+      # Staff-operated card checkout for one of the tech's OWN bookings. Returns a
+      # hosted-checkout link for the booking's outstanding balance; the tech opens
+      # it and enters the CLIENT'S card there (no card-on-file auto-charge). The
+      # payment + invoice stay attributed to the customer (booking.user); the
+      # Square webhook marks it paid. Scoped to profile.bookings.
+      def payment_link
+        booking = profile.bookings.find(params[:id])
+        amount  = params[:amount].present? ? params[:amount].to_d : booking.outstanding_balance
+        result  = BookingPaymentService.new(booking).checkout_link(amount: amount, tip: params[:tip].to_d)
+
+        if result.success?
+          render json: { mode: result.mode.to_s, url: result.url }
+        else
+          render json: { error: result.error }, status: :unprocessable_entity
+        end
+      end
+
       def pos_payment
         booking = profile.bookings.find(params[:id])
         payment_id = params[:square_payment_id].to_s.strip

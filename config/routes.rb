@@ -166,6 +166,9 @@ Rails.application.routes.draw do
         # record a completed on-device payment against the booking.
         get    "pos/config",              to: "employees#pos_config"
         post   "bookings/:id/pos_payment", to: "employees#pos_payment"
+        # Staff-operated card checkout: hosted-checkout link for the booking balance
+        # (tech enters the client's card there).
+        post   "bookings/:id/payment_link", to: "employees#payment_link"
         # Staff-initiated manual booking (force-book, skips eligibility gates)
         post   "bookings",               to: "employees#create_booking"
         # Bookable-hours: the tech's own weekly template + date overrides.

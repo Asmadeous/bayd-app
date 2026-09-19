@@ -44,6 +44,7 @@ class AvailabilityEngine
     duration = @service.duration_minutes * @party_size
 
     windows.flat_map { |ws, we| candidate_starts(ws, we, duration) }
+           .select  { |start| start > Time.current } # never offer a slot in the past (today)
            .select  { |start| fits_and_free?(start, duration, tf) }
            .map     { |start| start.in_time_zone(BusinessHours.zone).strftime("%H:%M") }
            .uniq

@@ -34,6 +34,19 @@ class BookingPaymentService
     @user.card_on_file? ? auto_charge(amount, tip, note) : payment_link(amount, tip)
   end
 
+  # Always return a hosted-checkout link for the balance, even when the customer
+  # has a card on file. Used by the staff in-person flow: the tech opens the
+  # checkout on the client's booking and enters the client's card there, so we
+  # must NOT silently auto-charge a stored card. Payment stays attributed to the
+  # customer (booking.user) - it's their invoice, staff-operated.
+  def checkout_link(amount:, tip: 0)
+    amount = amount.to_d
+    tip    = tip.to_d
+    return Result.new(success: false, error: "Nothing due") if amount + tip <= 0
+
+    payment_link(amount, tip)
+  end
+
   private
 
   # Redeem up to `amount` from the gift card toward this booking; records a paid
