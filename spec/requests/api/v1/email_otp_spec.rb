@@ -64,5 +64,35 @@ RSpec.describe "Email OTP login", type: :request do
       post "/api/v1/auth/email_code/verify", params: { email: "staff@baydspa.ca", code: raw }, as: :json
       expect(response).to have_http_status(:unauthorized)
     end
+
+    context "app-review demo bypass" do
+      around do |ex|
+        ClimateControl.modify(APP_REVIEW_DEMO_EMAIL: "appreview@baydspa.ca", APP_REVIEW_DEMO_CODE: "424242") { ex.run }
+      rescue NameError
+        # ClimateControl not available - set/unset ENV directly
+        ENV["APP_REVIEW_DEMO_EMAIL"] = "appreview@baydspa.ca"
+        ENV["APP_REVIEW_DEMO_CODE"]  = "424242"
+        ex.run
+      ensure
+        ENV.delete("APP_REVIEW_DEMO_EMAIL")
+        ENV.delete("APP_REVIEW_DEMO_CODE")
+      end
+
+      it "logs the demo email in with the fixed code (no real OTP)" do
+        post "/api/v1/auth/email_code/verify", params: { email: "appreview@baydspa.ca", code: "424242" }, as: :json
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["token"]).to be_present
+      end
+
+      it "rejects the demo email with the wrong code" do
+        post "/api/v1/auth/email_code/verify", params: { email: "appreview@baydspa.ca", code: "000000" }, as: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "does not let any other email use the demo code" do
+        post "/api/v1/auth/email_code/verify", params: { email: "someone@example.com", code: "424242" }, as: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
   end
 end
