@@ -23,13 +23,31 @@ module EmailOtp
   # Verify a code and return the matching CUSTOMER (find-or-create by email), or
   # nil on a bad/expired code. Staff/admin are refused (they use passwords).
   def verify(email, code)
-    return nil unless EmailVerification.verify(email, code)
-
     normalized = EmailVerification.normalize(email)
+
+    # App-review demo bypass: the ONE demo email + its fixed code log in without a
+    # real OTP, so an App Store / Play reviewer (who can't receive an email code)
+    # can exercise the app. Env-gated (blank = disabled), single account, and the
+    # code is compared in constant time. Documented in App Store Connect notes.
+    unless demo_login?(normalized, code)
+      return nil unless EmailVerification.verify(email, code)
+    end
+
     user = User.find_by(email: normalized)
     return user if user&.customer?
     return nil if user # a staff/admin email can't use passwordless login
 
     User.create!(email: normalized, role: :customer)
+  end
+
+  # True only when a demo email + code are configured AND both match. Both come
+  # from ENV so nothing is hardcoded; unset disables the bypass entirely.
+  def demo_login?(normalized_email, code)
+    demo_email = ENV["APP_REVIEW_DEMO_EMAIL"].presence&.downcase
+    demo_code  = ENV["APP_REVIEW_DEMO_CODE"].presence
+    return false if demo_email.blank? || demo_code.blank?
+
+    normalized_email == EmailVerification.normalize(demo_email) &&
+      ActiveSupport::SecurityUtils.secure_compare(code.to_s, demo_code)
   end
 end

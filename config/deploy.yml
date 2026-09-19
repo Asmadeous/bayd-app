@@ -141,6 +141,9 @@ env:
     - INFOBIP_SENDER
     # TESTING ONLY — disables the clock-in geofence. REMOVE before public launch.
     - GEOFENCE_DISABLED
+    # App-review demo login (one email + fixed code bypasses OTP for reviewers)
+    - APP_REVIEW_DEMO_EMAIL
+    - APP_REVIEW_DEMO_CODE
 
 # Kamal-managed Postgres + PostGIS, replacing the host Postgres. Runs as a
 # container on the Kamal Docker network, reachable by name (b_a_y_d_api-db) from
