@@ -9,7 +9,8 @@ import type { Booking } from "@/lib/hooks/use-bookings"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
 import { useStartMeeting } from "@/lib/hooks/use-meetings"
 import { useClockIn, useClockOut } from "@/lib/hooks/use-time-clock"
-import { useTapToPay } from "@/lib/hooks/use-tap-to-pay"
+import { useChargeBooking } from "@/lib/hooks/use-employee"
+import { openPaymentUrl } from "@/lib/native/open-external"
 import { useToast } from "@/lib/app-ui/app-ui-provider"
 import { useRouter } from "next/navigation"
 import { cardClass, bookingStatusStyle, mutedClass, staffTheme } from "./staff-theme"
@@ -99,7 +100,7 @@ export function StaffBookingCard({ booking }: { booking: Booking }) {
       {/* A just-completed job (in the active list) can still be charged. */}
       {done && (
         <>
-          <TapToPayButton booking={booking} />
+          <ChargeCardButton booking={booking} />
           <OvertimeCharge bookingId={booking.id} />
         </>
       )}
@@ -145,29 +146,30 @@ function PastFinancials({ booking }: { booking: Booking }) {
   )
 }
 
-// In-person Square Tap to Pay for the booking's outstanding balance. Renders only
-// when the device + account can actually take a tap (native, NFC, Square set up);
-// otherwise it's hidden and the tech uses the payment-link path (OvertimeCharge /
-// the customer's own pay flow). The native tap is DEVICE-GATED - it can't run on
-// an emulator or a non-eligible phone.
-function TapToPayButton({ booking }: { booking: Booking }) {
+// In-person card checkout for the booking's outstanding balance. Opens the same
+// hosted checkout the customer app uses (Square), where the tech enters the
+// CLIENT'S card - the payment/invoice stays the customer's, staff just runs the
+// terminal. The backend marks it paid by webhook; on returning from the checkout
+// we refresh the schedule so the paid state shows.
+function ChargeCardButton({ booking }: { booking: Booking }) {
   const { toast } = useToast()
   const qc = useQueryClient()
-  const { ready, busy, charge } = useTapToPay()
+  const charge = useChargeBooking()
   const due = Number(booking.outstanding_balance)
 
-  if (!ready || due <= 0) return null
+  if (due <= 0) return null
 
-  async function tap() {
+  async function chargeCard() {
     try {
-      await charge(booking.id, due)
-      qc.invalidateQueries({ queryKey: ["employee-schedule"] })
-      toast({ title: "Payment taken", description: `$${due.toFixed(2)} charged in person.`, variant: "success" })
+      const { url } = await charge.mutateAsync(booking.id)
+      // Open the hosted checkout; on return, refresh so the webhook-confirmed
+      // paid state is reflected.
+      void openPaymentUrl(url, () => qc.invalidateQueries({ queryKey: ["employee-schedule"] }))
     } catch (e: unknown) {
       const d = e as { response?: { data?: { error?: string } }; message?: string }
       toast({
-        title: "Tap to Pay didn't complete",
-        description: d?.response?.data?.error ?? d?.message ?? "Try again or send a link.",
+        title: "Couldn't start the checkout",
+        description: d?.response?.data?.error ?? d?.message ?? "Please try again.",
         variant: "error",
       })
     }
@@ -176,12 +178,12 @@ function TapToPayButton({ booking }: { booking: Booking }) {
   return (
     <button
       type="button"
-      onClick={tap}
-      disabled={busy}
+      onClick={chargeCard}
+      disabled={charge.isPending}
       className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#14100F] py-3 text-sm font-bold text-white disabled:opacity-50"
     >
       <CreditCard className="size-4" aria-hidden />
-      {busy ? "Follow the tap prompt…" : `Tap to Pay · $${due.toFixed(2)}`}
+      {charge.isPending ? "Opening checkout…" : `Charge card · $${due.toFixed(2)}`}
     </button>
   )
 }

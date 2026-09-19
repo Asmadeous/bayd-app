@@ -359,15 +359,17 @@ employees = employee_data.map do |e|
     latitude: e[:lat], longitude: e[:lng], recorded_at: Time.current
   )
 
-  # TESTING: 24/7 bookable hours (all seven days, 00:00–23:59) so QA can book any
-  # time. REVERT before public launch to the real operating window (was Mon–Sat
-  # 09:00–19:00). Updates existing rows too (not just on create) so a redeploy
-  # actually widens the window. Every dispatchable tech needs a schedule or they'd
-  # be unbookable.
-  (0..6).each do |dow| # 0=Sun .. 6=Sat — all seven days
+  # Default bookable hours: Mon–Sat 9:00–19:00 (the real operating window).
+  # Availability drives what customers can book, so every dispatchable tech needs a
+  # schedule or they'd be unbookable. Updates existing rows too (not just on create)
+  # so this narrows any previously-widened schedule back to real hours, and removes
+  # any Sunday rows left from testing. Techs adjust their own hours via the
+  # availability endpoints.
+  AvailabilitySchedule.where(employee_profile: profile, day_of_week: 0).delete_all # drop testing Sunday rows
+  (1..6).each do |dow| # 1=Mon .. 6=Sat (closed Sundays)
     sched = AvailabilitySchedule.find_or_initialize_by(employee_profile: profile, day_of_week: dow)
-    sched.start_time = "00:00"
-    sched.end_time   = "23:59"
+    sched.start_time = "09:00"
+    sched.end_time   = "19:00"
     sched.save!
   end
 

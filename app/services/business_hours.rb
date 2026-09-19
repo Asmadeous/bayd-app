@@ -12,8 +12,8 @@ module BusinessHours
               ActiveSupport::TimeZone["America/Toronto"]
   end
 
-  OPEN_HOUR  = 0   # midnight — the business operates 24 hours
-  CLOSE_HOUR = 24  # end of day — 24-hour availability
+  OPEN_HOUR  = 9   # 9:00 AM local
+  CLOSE_HOUR = 19  # 7:00 PM local
 
   # Interpret a naive wall-clock value ("2026-08-17T13:00:00", "2026-08-17 13:00",
   # or a Time the rack parser already stamped UTC) as local business time and
