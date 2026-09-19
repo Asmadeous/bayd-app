@@ -32,11 +32,11 @@ if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
     ./bin/rails db:seed
   fi
 
-  # Always upsert the $1 QA test services (idempotent, no destructive cleanup),
-  # so they exist even on a populated production DB the full seed won't re-run.
-  # Runs LAST so it re-activates them after any full seed's catalog cleanup.
-  echo "[entrypoint] seeding test services"
-  ./bin/rails runner "load Rails.root.join('db/seeds/test_services.rb')" || echo "[entrypoint] test-service seed failed (non-fatal)"
+  # One-time revert of testing data (24/7 schedules + $1 test services) on the
+  # populated production DB the full seed above won't touch. Idempotent - a no-op
+  # once reverted. Remove this + the file after it has run on prod once.
+  echo "[entrypoint] reverting testing data"
+  ./bin/rails runner "load Rails.root.join('db/seeds/revert_testing.rb')" || echo "[entrypoint] revert_testing failed (non-fatal)"
 fi
 
 exec "${@}"
