@@ -109,6 +109,17 @@ export function useChargeBooking() {
   })
 }
 
+// The tech self-reports a booking they couldn't attend (missed). The client is
+// never charged; the customer is notified and offered a reschedule server-side.
+export function useMarkMissed() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (bookingId: number) =>
+      api.post<Booking>(`/employee/bookings/${bookingId}/missed`).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["employee-schedule"] }),
+  })
+}
+
 export function useUpdateProfile() {
   const qc = useQueryClient()
   return useMutation({

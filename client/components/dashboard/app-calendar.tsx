@@ -14,6 +14,7 @@ const STATUS_COLORS: Record<string, string> = {
   completed: "#5a9e5a",
   cancelled: "#8a8d93",
   no_show: "#d4754a",
+  missed: "#101217",
 }
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]

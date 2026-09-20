@@ -249,6 +249,8 @@ function statusStyle(status: string) {
     case "cancelled":
     case "no_show":
       return "bg-[#8f3f4b]/12 text-[#8f3f4b]"
+    case "missed":
+      return "bg-[#101217] text-white"
     default:
       return "bg-black/8 text-[#101217]/60"
   }

@@ -17,3 +17,13 @@ production:
     class: SubscriptionSchedulerJob
     queue: low
     schedule: every day at 6am
+  overdue_booking_sweep:
+    class: OverdueBookingSweepJob
+    queue: default
+    schedule: every 10 minutes
+
+development:
+  overdue_booking_sweep:
+    class: OverdueBookingSweepJob
+    queue: default
+    schedule: every 10 minutes

@@ -9,7 +9,7 @@ import type { Booking } from "@/lib/hooks/use-bookings"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
 import { useStartMeeting } from "@/lib/hooks/use-meetings"
 import { useClockIn, useClockOut } from "@/lib/hooks/use-time-clock"
-import { useChargeBooking } from "@/lib/hooks/use-employee"
+import { useChargeBooking, useMarkMissed } from "@/lib/hooks/use-employee"
 import { openPaymentUrl } from "@/lib/native/open-external"
 import { useToast } from "@/lib/app-ui/app-ui-provider"
 import { useRouter } from "next/navigation"
@@ -29,7 +29,7 @@ export function StaffBookingCard({ booking }: { booking: Booking }) {
   const inProgress = booking.status === "in_progress"
   const done = booking.status === "completed"
   const preArrival = booking.status === "confirmed"
-  const isPast = ["completed", "cancelled", "no_show"].includes(booking.status)
+  const isPast = ["completed", "cancelled", "no_show", "missed"].includes(booking.status)
 
   return (
     <li className={`${cardClass} p-4`}>
@@ -93,6 +93,10 @@ export function StaffBookingCard({ booking }: { booking: Booking }) {
 
       {/* Clock in (pre-arrival) or Clock out (in service) - the primary action. */}
       {(preArrival || inProgress) && <ClockButton booking={booking} />}
+
+      {/* Pre-arrival only: self-report that you can't attend (missed). The client
+          is never charged; they're notified and offered a reschedule. */}
+      {preArrival && <MarkMissedButton booking={booking} />}
 
       {/* Past bookings (history): show the money summary, not action buttons. */}
       {isPast && <PastFinancials booking={booking} />}
@@ -253,6 +257,49 @@ function ClockButton({ booking }: { booking: Booking }) {
     >
       <MapPin className="size-4" aria-hidden />
       {busy ? "Locating…" : isIn ? "Clock out" : "Clock in"}
+    </button>
+  )
+}
+
+// Self-report a booking the tech can't attend (missed). Two-tap confirm because
+// it's customer-visible and not something to fire by accident: the client gets a
+// "we missed your appointment" notification and a reschedule prompt. Never charges.
+function MarkMissedButton({ booking }: { booking: Booking }) {
+  const { toast } = useToast()
+  const markMissed = useMarkMissed()
+  const [confirming, setConfirming] = useState(false)
+
+  async function go() {
+    if (!confirming) {
+      setConfirming(true)
+      return
+    }
+    try {
+      await markMissed.mutateAsync(booking.id)
+      toast({
+        title: "Marked as missed",
+        description: "The client was notified and offered a reschedule. No charge was applied.",
+        variant: "success",
+      })
+    } catch (e: unknown) {
+      const d = e as { response?: { data?: { error?: string } }; message?: string }
+      toast({
+        title: "Couldn't mark missed",
+        description: d?.response?.data?.error ?? d?.message ?? "Please try again.",
+        variant: "error",
+      })
+      setConfirming(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={go}
+      disabled={markMissed.isPending}
+      className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-2.5 text-sm font-semibold text-[#8f3f4b] disabled:opacity-50"
+    >
+      {markMissed.isPending ? "…" : confirming ? "Tap again to confirm you can't attend" : "Can't attend"}
     </button>
   )
 }

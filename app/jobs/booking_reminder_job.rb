@@ -10,10 +10,12 @@ class BookingReminderJob < ApplicationJob
   queue_as :default
 
   REMINDERS = {
-    "confirmed"   => { kind: "booking_confirmed",              audience: :customer },
-    "day_before"  => { kind: "booking_reminder_day_before",    audience: :customer },
-    "day_of"      => { kind: "booking_reminder_day_of",        audience: :customer },
-    "dispatch"    => { kind: "booking_dispatch",               audience: :staff }
+    "confirmed"    => { kind: "booking_confirmed",           audience: :customer },
+    "day_before"   => { kind: "booking_reminder_day_before", audience: :customer },
+    "day_of"       => { kind: "booking_reminder_day_of",     audience: :customer },
+    "dispatch"     => { kind: "booking_dispatch",            audience: :staff },
+    "starting"     => { kind: "booking_starting",            audience: :staff },
+    "window_ended" => { kind: "booking_window_ended",        audience: :staff }
   }.freeze
 
   def perform(booking_id, reminder)
@@ -39,7 +41,7 @@ class BookingReminderJob < ApplicationJob
       title: title_for(reminder, booking),
       body:  body_for(reminder, booking),
       booking: booking,
-      action_url: "/dashboard/customer/bookings"
+      action_url: spec[:audience] == :staff ? "/staff/schedule" : "/dashboard/customer/bookings"
     )
   end
 
@@ -60,6 +62,12 @@ class BookingReminderJob < ApplicationJob
       booking.starts_at > Time.current && booking.starts_at <= 26.hours.from_now
     when "day_of", "dispatch"
       booking.starts_at.in_time_zone(BusinessHours.zone).to_date == Time.current.in_time_zone(BusinessHours.zone).to_date
+    when "starting"
+      # Fires at starts_at; a reschedule moves that time, so only deliver if the
+      # booking's CURRENT start is near now (the re-enqueued job covers the new time).
+      booking.starts_at.between?(30.minutes.ago, 30.minutes.from_now)
+    when "window_ended"
+      booking.ends_at.between?(30.minutes.ago, 30.minutes.from_now)
     else
       false
     end
@@ -68,20 +76,24 @@ class BookingReminderJob < ApplicationJob
   def title_for(reminder, booking)
     svc = booking.service&.name || "your appointment"
     case reminder
-    when "confirmed"  then "Booking confirmed: #{svc}"
-    when "day_before" then "Reminder: #{svc} tomorrow"
-    when "day_of"     then "Today: #{svc}"
-    when "dispatch"   then "Job today: #{svc}"
+    when "confirmed"    then "Booking confirmed: #{svc}"
+    when "day_before"   then "Reminder: #{svc} tomorrow"
+    when "day_of"       then "Today: #{svc}"
+    when "dispatch"     then "Job today: #{svc}"
+    when "starting"     then "Time to clock in: #{svc}"
+    when "window_ended" then "Job wrapping up? #{svc}"
     end
   end
 
   def body_for(reminder, booking)
     when_local = booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%b %-d at %-l:%M %p")
     case reminder
-    when "confirmed"  then "You're booked for #{when_local}. We'll remind you before."
-    when "day_before" then "See you tomorrow, #{when_local}."
-    when "day_of"     then "Your appointment is today at #{when_local}."
-    when "dispatch"   then "You have a job today at #{when_local}. Check your schedule."
+    when "confirmed"    then "You're booked for #{when_local}. We'll remind you before."
+    when "day_before"   then "See you tomorrow, #{when_local}."
+    when "day_of"       then "Your appointment is today at #{when_local}."
+    when "dispatch"     then "You have a job today at #{when_local}. Check your schedule."
+    when "starting"     then "Your #{when_local} job starts now. Clock in when you arrive."
+    when "window_ended" then "Your #{when_local} job's time is up. Clock out to mark it done."
     end
   end
 end

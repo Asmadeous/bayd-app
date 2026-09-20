@@ -50,6 +50,8 @@ export function bookingStatusStyle(status: string) {
     case "cancelled":
     case "no_show":
       return "bg-[#8f3f4b]/12 text-[#8f3f4b]"
+    case "missed":
+      return "bg-[#14100F] text-white"
     default:
       return "bg-black/8 text-[#14100F]/55"
   }

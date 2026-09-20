@@ -34,6 +34,7 @@ export interface AnalyticsEmployee {
   bookings_completed: number
   revenue: number
   cancellations: number
+  missed: number
   average_rating: number | null
 }
 
@@ -73,6 +74,7 @@ export interface EmployeeAnalytics {
     reviews_count: number
     cancellations: number
     no_shows: number
+    missed: number
     completion_rate: number | null
     upcoming_count: number
   }

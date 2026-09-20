@@ -6,7 +6,7 @@ import type { Meeting } from "@/lib/hooks/use-meetings"
 
 export interface Booking {
   id: number
-  status: "pending" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show"
+  status: "pending" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show" | "missed"
   starts_at: string
   ends_at: string
   subtotal: string

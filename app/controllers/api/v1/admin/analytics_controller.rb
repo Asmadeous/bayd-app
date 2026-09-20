@@ -56,7 +56,7 @@ module Api
         end
 
         def summary
-          finished = all_bookings.where(status: %w[completed cancelled no_show]).count
+          finished = all_bookings.where(status: %w[completed cancelled no_show missed]).count
           completed = completed_bookings.count
           service_revenue = completed_bookings.sum(:total).to_f
           product_revenue = paid_orders.sum(:total).to_f
@@ -93,6 +93,9 @@ module Api
           revenue_by_emp = completed_bookings.group(:employee_profile_id).sum(:total)
           count_by_emp   = completed_bookings.group(:employee_profile_id).count
           cancels_by_emp = all_bookings.where(status: %w[cancelled no_show]).group(:employee_profile_id).count
+          # missed = the tech didn't attend. Kept separate from cancellations/
+          # no_shows (client outcomes) because it's a tech-performance signal.
+          missed_by_emp  = all_bookings.where(status: "missed").group(:employee_profile_id).count
           rating_by_emp  = Review.approved.group(:employee_profile_id).average(:rating)
 
           ids = (revenue_by_emp.keys + count_by_emp.keys).uniq.compact
@@ -107,6 +110,7 @@ module Api
               bookings_completed: count_by_emp[id].to_i,
               revenue: revenue_by_emp[id].to_f.round(2),
               cancellations: cancels_by_emp[id].to_i,
+              missed: missed_by_emp[id].to_i,
               average_rating: rating_by_emp[id]&.to_f&.round(2)
             }
           end.sort_by { |e| -e[:revenue] }

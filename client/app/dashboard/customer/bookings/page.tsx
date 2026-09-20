@@ -53,7 +53,7 @@ function destinationOf(b: Booking): { lat: number; lng: number } | null {
 }
 
 const ALL_STATUSES: Booking["status"][] = [
-  "pending", "confirmed", "in_progress", "completed", "cancelled", "no_show",
+  "pending", "confirmed", "in_progress", "completed", "cancelled", "no_show", "missed",
 ]
 
 type BookingsView = "list" | "calendar"
