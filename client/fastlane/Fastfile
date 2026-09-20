@@ -141,12 +141,9 @@ platform :ios do
       profile_name: lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING][cfg[:id]]
     )
 
-    # Square.xcconfig carries a sandbox id so local builds work out of the box.
-    # A SQUARE_APPLICATION_ID from CI must win over it, and an xcconfig value is
-    # only overridden on the xcodebuild command line, not by the environment.
+    # The project ships MARKETING_VERSION 1.0 / CURRENT_PROJECT_VERSION 1; CI
+    # derives the real, monotonic values from the run number.
     xcargs = "CURRENT_PROJECT_VERSION=#{ENV['BAYD_VERSION_CODE']} MARKETING_VERSION=#{ENV['BAYD_VERSION_NAME']}"
-    square_id = ENV["SQUARE_APPLICATION_ID"].to_s
-    xcargs += " SQUARE_APPLICATION_ID='#{square_id}'" unless square_id.empty?
 
     build_app(
       project: "#{project_dir}/App.xcodeproj",
@@ -210,10 +207,8 @@ platform :ios do
       is_key_content_base64: true
     )
 
-    # Tap to Pay was granted under Apple's development distribution restriction
-    # (Case-ID 22222435), so only a development profile carries the entitlement.
-    # force, because an existing profile is never rewritten in place and would
-    # come back without the newly granted key.
+    # force, because an existing profile is never rewritten in place: a newly
+    # granted capability only shows up in a freshly issued one.
     match(
       type: "development",
       app_identifier: cfg[:id],

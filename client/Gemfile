@@ -1,5 +1,15 @@
 # Ruby tooling for the mobile release pipeline (fastlane). The app itself is
 # JS/TS - this Gemfile exists only so CI can `bundle exec fastlane ...`.
+#
+# Deliberately NO checked-in Gemfile.lock. ruby/setup-ruby installs the exact
+# Bundler named in a lockfile's BUNDLED WITH, and the old lockfile here pinned
+# 1.17.2 (2018), which calls String#untaint - removed in Ruby 3.2. Every
+# mobile-release run died at `bundle install` before reaching any app code
+# (245798c), and bumping the pin alone did not clear it (reverted in b0b9f6b).
+# With no lockfile, setup-ruby uses a current Bundler and resolves fresh.
+#
+# Reproducibility comes from the constraint below, which is where the intent
+# belongs, not from 125 transitively-pinned gems nobody chose.
 source "https://rubygems.org"
 
-gem "fastlane"
+gem "fastlane", "~> 2.230"

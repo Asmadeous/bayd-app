@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'org.jetbrains.kotlin.android'
 
 // Release signing driven by env vars (CI) or gradle.properties (local); no
 // keystore or password committed. Falls back to debug signing when unset so the
@@ -15,17 +14,11 @@ android {
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "ca.baydspa.staff"
-        // Square Mobile Payments SDK (Tap to Pay) needs API 28+, above the shared 24.
-        minSdkVersion 28
+        minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode appVersionCode
         versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        // Square Tap to Pay application id, exposed as the square_application_id
-        // string resource that SquarePosApp reads to initialize the SDK. Empty by
-        // default; set SQUARE_APPLICATION_ID in the build env to enable Tap to Pay.
-        // Empty -> SDK stays uninitialized -> app falls back to a payment link.
-        resValue "string", "square_application_id", (System.getenv("SQUARE_APPLICATION_ID") ?: "")
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -49,14 +42,9 @@ android {
             signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
         }
     }
-    // Kotlin (Square Tap to Pay plugin) must match the Java target Capacitor
-    // uses (21), or compileDebugKotlin fails JVM-target validation.
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21
-    }
-    kotlinOptions {
-        jvmTarget = "21"
     }
 }
 
@@ -72,8 +60,6 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
-    // Square Mobile Payments SDK — Tap to Pay on the phone's NFC (no reader).
-    implementation "com.squareup.sdk:mobile-payments-sdk:2.6.1"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

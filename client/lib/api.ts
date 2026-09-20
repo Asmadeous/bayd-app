@@ -16,12 +16,16 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (r) => r,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== "undefined") {
-      const requestUrl = error.config?.url ?? ""
-      const isAuthRequest = requestUrl.includes("/auth/login") || requestUrl.includes("/auth/register")
+    // A 401 only means "your session died" when the request actually carried a
+    // token. An anonymous login/OTP-verify attempt also 401s on bad credentials,
+    // but that's a normal failure the calling screen already handles inline, so
+    // force-logging out and hard-redirecting would yank the user out of an
+    // in-app flow (e.g. the OTP verify screen) into the website's /signin page.
+    const hadToken = Boolean(error.config?.headers?.Authorization)
+    if (error.response?.status === 401 && hadToken && typeof window !== "undefined") {
       const isAuthPage = window.location.pathname === "/signin" || window.location.pathname === "/signup"
 
-      if (!isAuthRequest && !isAuthPage) {
+      if (!isAuthPage) {
         useAuthStore.getState().clearAuth()
         window.location.assign("/signin")
       }

@@ -14,7 +14,6 @@
 #             BAYD_KEY_PASSWORD, PLAY_SERVICE_ACCOUNT_JSON
 #   iOS:      ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_CONTENT_BASE64,
 #             MATCH_GIT_URL, MATCH_PASSWORD, MATCH_GIT_BASIC_AUTH
-#   Both:     SQUARE_APPLICATION_ID (staff Tap to Pay, baked at build)
 name: Mobile release
 
 on:
@@ -50,22 +49,25 @@ jobs:
       run:
         working-directory: client
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version: "24"
           cache: npm
           cache-dependency-path: client/package-lock.json
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3"
+          ruby-version: "3.4"
+          # Pin the tool, not a stale lockfile: setup-ruby otherwise installs the
+          # Bundler named in BUNDLED WITH, which is what broke every run here.
+          bundler: latest
           bundler-cache: true
           working-directory: client
 
@@ -96,31 +98,40 @@ jobs:
           BAYD_VERSION_CODE: ${{ github.run_number }}
           BAYD_VERSION_NAME: "1.0.${{ github.run_number }}"
           SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          SQUARE_APPLICATION_ID: ${{ secrets.SQUARE_APPLICATION_ID }}
         run: |
           LANE=${{ github.event.inputs.track == 'production' && 'production' || 'internal' }}
           bundle exec fastlane android $LANE app:${{ github.event.inputs.app }}
 
   ios:
     if: ${{ github.event.inputs.platform == 'ios' || github.event.inputs.platform == 'both' }}
-    runs-on: macos-14
+    runs-on: macos-26
     defaults:
       run:
         working-directory: client
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: "22"
+          node-version: "24"
           cache: npm
           cache-dependency-path: client/package-lock.json
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3"
+          ruby-version: "3.4"
+          # Pin the tool, not a stale lockfile: setup-ruby otherwise installs the
+          # Bundler named in BUNDLED WITH, which is what broke every run here.
+          bundler: latest
           bundler-cache: true
           working-directory: client
+
+      # App Store Connect rejects an upload built against an SDK older than the
+      # floor Apple currently enforces, and that floor rises every year. Pin the
+      # toolchain instead of inheriting whatever the runner image happens to ship.
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
       - run: npm ci
 
@@ -147,7 +158,6 @@ jobs:
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
           BAYD_VERSION_CODE: ${{ github.run_number }}
           BAYD_VERSION_NAME: "1.0.${{ github.run_number }}"
-          SQUARE_APPLICATION_ID: ${{ secrets.SQUARE_APPLICATION_ID }}
         run: |
           LANE=${{ github.event.inputs.track == 'production' && 'release' || 'beta' }}
           bundle exec fastlane ios $LANE app:${{ github.event.inputs.app }}
