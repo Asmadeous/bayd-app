@@ -67,3 +67,6 @@ fastlane/test_output
 ios/build/
 ios-employee/build/
 ios-admin/build/
+
+# Resolved fresh in CI; see the note in client/Gemfile.
+Gemfile.lock

@@ -65,6 +65,9 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.4"
+          # Pin the tool, not a stale lockfile: setup-ruby otherwise installs the
+          # Bundler named in BUNDLED WITH, which is what broke every run here.
+          bundler: latest
           bundler-cache: true
           working-directory: client
 
@@ -117,6 +120,9 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.4"
+          # Pin the tool, not a stale lockfile: setup-ruby otherwise installs the
+          # Bundler named in BUNDLED WITH, which is what broke every run here.
+          bundler: latest
           bundler-cache: true
           working-directory: client
 
