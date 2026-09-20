@@ -53,6 +53,7 @@ const STATUSES: Array<Booking["status"] | "all"> = [
   "completed",
   "cancelled",
   "no_show",
+  "missed",
 ]
 
 type BookingsView = "list" | "calendar"

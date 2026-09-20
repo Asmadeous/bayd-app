@@ -12,6 +12,7 @@ const STATUS_COLORS: Record<Booking["status"], string> = {
   completed: "#5a9e5a",
   cancelled: "#8a8d93",
   no_show: "#d4754a",
+  missed: "#101217",
 }
 
 // Who the booking is for, so the tech knows at a glance. Group shows the real

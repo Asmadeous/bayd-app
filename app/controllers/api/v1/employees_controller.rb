@@ -123,6 +123,20 @@ module Api
         render json: BookingSerializer.render_as_hash(booking.reload)
       end
 
+      # The tech failed to attend (self-report) - the opposite of no_show. The
+      # client is NEVER charged; the transition fires BookingMissedJob (notifies
+      # the customer + offers a reschedule). Scoped through profile.bookings so a
+      # tech can only mark their OWN booking.
+      def mark_missed
+        booking = profile.bookings.find(params[:id])
+        if booking.completed? || booking.cancelled?
+          return render json: { error: "This booking is already #{booking.status}." }, status: :unprocessable_entity
+        end
+
+        booking.update!(status: :missed)
+        render json: BookingSerializer.render_as_hash(booking.reload)
+      end
+
       def current_shift
         shift = profile.current_shift
         render json: shift ? ShiftSerializer.render_as_hash(shift) : nil

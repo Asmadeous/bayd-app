@@ -45,6 +45,10 @@ class EmployeeAnalytics
     completed_count = completed.count
     cancellations = bookings.where(status: "cancelled").count
     no_shows = bookings.where(status: "no_show").count
+    # missed is the tech's OWN fault (they didn't attend) - the opposite of a
+    # no_show, so it's tracked as its own KPI and kept OUT of the finished/
+    # completion-rate denominator (a missed job isn't a client outcome).
+    missed = bookings.where(status: "missed").count
     finished = completed_count + cancellations + no_shows
 
     {
@@ -54,6 +58,7 @@ class EmployeeAnalytics
       reviews_count: reviews.count,
       cancellations: cancellations,
       no_shows: no_shows,
+      missed: missed,
       completion_rate: finished.zero? ? nil : (completed_count.to_f / finished).round(3),
       upcoming_count: @ep.bookings.where(status: "confirmed").where("starts_at > ?", Time.current).count
     }

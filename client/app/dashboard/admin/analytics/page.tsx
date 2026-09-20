@@ -197,6 +197,7 @@ function EmployeeLeaderboard({ employees }: { employees: AnalyticsEmployee[] }) 
                 <th className="pb-2 font-medium text-right">Completed</th>
                 <th className="pb-2 font-medium text-right">Revenue</th>
                 <th className="pb-2 font-medium text-right">Cancels</th>
+                <th className="pb-2 font-medium text-right">Missed</th>
                 <th className="pb-2 font-medium text-right">Avg Rating</th>
               </tr>
             </thead>
@@ -215,6 +216,7 @@ function EmployeeLeaderboard({ employees }: { employees: AnalyticsEmployee[] }) 
                   <td className="py-2.5 text-right text-[#101217]">{e.bookings_completed}</td>
                   <td className="py-2.5 text-right font-semibold text-[#101217]">{cad.format(e.revenue)}</td>
                   <td className="py-2.5 text-right text-[#5f6268]">{e.cancellations}</td>
+                  <td className="py-2.5 text-right text-[#5f6268]">{e.missed}</td>
                   <td className="py-2.5 text-right text-[#101217]">
                     {e.average_rating != null ? (
                       <span className="inline-flex items-center gap-1">

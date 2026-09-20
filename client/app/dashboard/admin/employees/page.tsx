@@ -457,11 +457,12 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
         </div>
 
         {/* Performance KPIs */}
-        <div className="mt-3 grid grid-cols-4 gap-2 border-t border-black/8 pt-3">
+        <div className="mt-3 grid grid-cols-5 gap-2 border-t border-black/8 pt-3">
           <Kpi label="Completed" value={kpi?.bookings_completed ?? 0} />
           <Kpi label="Revenue" value={cad.format(kpi?.revenue ?? 0)} />
           <Kpi label="Rating" value={kpi?.average_rating != null ? kpi.average_rating.toFixed(1) : "—"} />
           <Kpi label="Cancels" value={kpi?.cancellations ?? 0} />
+          <Kpi label="Missed" value={kpi?.missed ?? 0} />
         </div>
         <Link
           href={`/dashboard/admin/employees/detail?id=${employee.id}`}

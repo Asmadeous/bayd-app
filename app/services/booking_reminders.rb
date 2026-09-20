@@ -4,10 +4,12 @@
 # reminder from before a reschedule/cancel simply no-ops when it fires (we don't
 # need to hunt down and cancel the old jobs).
 #
-#   confirmed  -> now (on book)
-#   day_before -> 24h before starts_at (skipped if that's already past)
-#   day_of     -> that morning, 9am company-zone (skipped if past)
-#   dispatch   -> staff, that morning 8am company-zone (skipped if past)
+#   confirmed    -> now (on book)
+#   day_before   -> 24h before starts_at (skipped if that's already past)
+#   day_of       -> that morning, 9am company-zone (skipped if past)
+#   dispatch     -> staff, that morning 8am company-zone (skipped if past)
+#   starting     -> staff, at starts_at (nudge to clock in)
+#   window_ended -> staff, at ends_at (prompt to confirm completion)
 class BookingReminders
   def self.schedule(booking)
     new(booking).schedule
@@ -24,6 +26,8 @@ class BookingReminders
     enqueue_at("day_before", 24.hours.before(@booking.starts_at))
     enqueue_at("day_of", morning_of(@booking.starts_at, hour: 9))
     enqueue_at("dispatch", morning_of(@booking.starts_at, hour: 8))
+    enqueue_at("starting", @booking.starts_at)
+    enqueue_at("window_ended", @booking.ends_at)
   end
 
   private

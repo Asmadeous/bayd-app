@@ -26,7 +26,8 @@ class Booking < ApplicationRecord
     in_progress: "in_progress",
     completed:   "completed",
     cancelled:   "cancelled",
-    no_show:     "no_show"
+    no_show:     "no_show",   # client unavailable - chargeable (Setting.no_show_fee)
+    missed:      "missed"     # tech failed to attend - never charged
   }
 
   enum :client_type, {
@@ -63,6 +64,12 @@ class Booking < ApplicationRecord
   # marked no_show (whichever path made the change). Best-effort in the service.
   after_update_commit :on_no_show, if: -> { saved_change_to_status? && no_show? }
 
+  # A tech failed to attend. The client is NEVER charged (that's the whole point
+  # of missed vs no_show), so this does not touch NoShowChargeJob - it only
+  # notifies the customer and offers a reschedule. Best-effort; never breaks the
+  # status write.
+  after_update_commit :on_missed, if: -> { saved_change_to_status? && missed? }
+
   scope :upcoming,  -> { where(status: %w[confirmed]).where("starts_at > ?", Time.current) }
   # The tech's working list: in-progress jobs, plus confirmed jobs that haven't
   # ended yet. A confirmed booking whose end time has passed is NOT active — it
@@ -71,7 +78,7 @@ class Booking < ApplicationRecord
   # A tech's job history: terminal-state bookings, plus confirmed bookings whose
   # time has already passed (overdue / not clocked out) so they don't linger in
   # the working list forever.
-  scope :past,      -> { where(status: %w[completed cancelled no_show]).or(where(status: "confirmed").where("ends_at <= ?", Time.current)) }
+  scope :past,      -> { where(status: %w[completed cancelled no_show missed]).or(where(status: "confirmed").where("ends_at <= ?", Time.current)) }
 
   # Recurring bookings due to be re-created: active recurrence, completed,
   # and no follow-up booking spawned yet.
@@ -236,6 +243,10 @@ class Booking < ApplicationRecord
 
   def on_no_show
     NoShowChargeJob.perform_later(id)
+  end
+
+  def on_missed
+    BookingMissedJob.perform_later(id)
   end
 
   # Both ends must fall within the business's open hours (local zone), and the

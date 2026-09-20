@@ -34,6 +34,7 @@ const statusToneMap: Record<string, StatusTone> = {
   no_availability: "red",
   no_coverage: "red",
   no_show: "red",
+  missed: "dark",
   paid: "green",
   pending: "gold",
   published: "green",
