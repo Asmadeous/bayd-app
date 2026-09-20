@@ -1,6 +1,5 @@
 import UIKit
 import Capacitor
-import SquareMobilePaymentsSDK
 import FirebaseCore
 import FirebaseMessaging
 
@@ -8,10 +7,6 @@ import FirebaseMessaging
 class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate {
 
     var window: UIWindow?
-
-    // The SDK has no public "is initialized?" query, so we track it ourselves —
-    // SquarePosPlugin.isReady() reads this to decide whether Tap to Pay can run.
-    static var squareSdkInitialized = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Firebase powers push on iOS. Capacitor's push plugin hands back the raw
@@ -21,16 +16,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate {
         FirebaseApp.configure()
         Messaging.messaging().delegate = self
 
-        // Initialize the Square Mobile Payments SDK (Tap to Pay) once, at launch,
-        // only when a Square application id is configured (SquareApplicationID in
-        // Info.plist, set per build from SQUARE_APPLICATION_ID). Empty -> SDK is
-        // not initialized -> SquarePosPlugin.isReady() is false -> the app falls
-        // back to a payment link. See docs/square-tap-to-pay.md.
-        if let appId = Bundle.main.object(forInfoDictionaryKey: "SquareApplicationID") as? String,
-           !appId.isEmpty {
-            MobilePaymentsSDK.initialize(squareApplicationID: appId)
-            AppDelegate.squareSdkInitialized = true
-        }
         return true
     }
 

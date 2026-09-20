@@ -2,14 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Debug/development signing only. Apple granted Tap to Pay to team
-	     HFZWQ3G4MV under the development distribution restriction (Case-ID
-	     22222435): it works on registered test devices and nowhere else until
-	     the required videos and App Review checklist are accepted. A development
-	     provisioning profile carries this key; an App Store one does not, which
-	     is why Release uses App.entitlements without it. -->
-	<key>com.apple.developer.proximity-reader.payment.acceptance</key>
-	<true/>
+	<!-- Debug/development signing only. "development" here; a production
+	     provisioning profile promotes it for App Store / TestFlight builds. -->
 	<key>aps-environment</key>
 	<string>development</string>
 </dict>

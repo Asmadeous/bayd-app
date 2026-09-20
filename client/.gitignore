@@ -62,3 +62,8 @@ ios-admin/App/App/public
 fastlane/report.xml
 fastlane/Preview.html
 fastlane/test_output
+
+# Xcode derived data for the per-app native projects (multi-GB, never committed)
+ios/build/
+ios-employee/build/
+ios-admin/build/

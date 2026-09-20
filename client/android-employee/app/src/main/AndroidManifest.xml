@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:name=".SquarePosApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -59,11 +58,4 @@
     <!-- Not required so the app still installs on devices without a camera/mic. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
-
-    <!-- Square Tap to Pay uses the device NFC to read the card. Not required, so
-         the app still installs on phones that can't do Tap to Pay (they fall back
-         to a payment link). -->
-    <uses-permission android:name="android.permission.NFC" />
-    <uses-feature android:name="android.hardware.nfc.hce" android:required="false" />
-    <uses-feature android:name="android.hardware.nfc" android:required="false" />
 </manifest>
