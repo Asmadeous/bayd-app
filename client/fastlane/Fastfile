@@ -9,6 +9,8 @@
 #   bundle exec fastlane ios beta app:customer
 #   bundle exec fastlane ios release app:staff
 
+require "securerandom" # CI keychain password (ios_release); explicit so it's never a load-order surprise
+
 # app key -> package/bundle id, native project dir, the CAP_APP value, and the
 # npm build script suffix. Note: the staff CAP_APP + npm script are "employee",
 # not "staff" - the store-facing name differs from the internal codename.
@@ -92,12 +94,35 @@ platform :ios do
       is_key_content_base64: true
     )
 
-    # Signing certs + provisioning profiles from the private match repo.
+    # CI has no default unlocked keychain, so match would install the signing key
+    # into the locked login keychain and xcodebuild's codesign step would then
+    # block forever on a GUI "allow codesign to use this key" prompt that a
+    # headless runner can never answer (the build hangs at "Signing ...framework").
+    # Create a dedicated, unlocked keychain for this run and give codesign
+    # non-interactive access to it. Only on CI - a developer's Mac already has an
+    # unlocked login keychain.
+    keychain_name = "bayd_ci.keychain"
+    keychain_password = SecureRandom.hex(16)
+    if ENV["CI"]
+      create_keychain(
+        name: keychain_name,
+        password: keychain_password,
+        default_keychain: true,
+        unlock: true,
+        timeout: 3600,
+        lock_when_sleeps: false
+      )
+    end
+
+    # Signing certs + provisioning profiles from the private match repo, installed
+    # into the CI keychain above (nil on a dev Mac -> match uses the login keychain).
     match(
       type: "appstore",
       app_identifier: cfg[:id],
       readonly: true,
-      git_url: ENV["MATCH_GIT_URL"]
+      git_url: ENV["MATCH_GIT_URL"],
+      keychain_name: ENV["CI"] ? keychain_name : nil,
+      keychain_password: ENV["CI"] ? keychain_password : nil
     )
 
     # match installs the profiles, but the Xcode project ships with automatic
@@ -150,6 +175,17 @@ platform :ios do
         app_identifier: cfg[:id],
         skip_waiting_for_build_processing: true
       )
+    end
+
+    # GitHub macos runners are ephemeral (the keychain dies with the VM), so this
+    # is just tidy-up. Wrapped so a cleanup hiccup can't fail an otherwise-good
+    # build - and scoped to ONLY the delete, so a real build error still raises.
+    if ENV["CI"]
+      begin
+        delete_keychain(name: keychain_name)
+      rescue StandardError => e
+        UI.important("CI keychain cleanup skipped: #{e.message}")
+      end
     end
   end
 
