@@ -26,10 +26,6 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NFCReaderUsageDescription</key>
-	<string>NFC is used to accept contactless card and phone payments with Tap to Pay on iPhone.</string>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Bluetooth is used to take card payments with Square.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is used for your work-scope video call with the customer.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
@@ -42,8 +38,6 @@
 	<string>Photos you take in the app are saved to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Photo library access lets you attach a photo to a job or set your profile photo.</string>
-	<key>SquareApplicationID</key>
-	<string>$(SQUARE_APPLICATION_ID)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

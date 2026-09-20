@@ -97,12 +97,6 @@ git repo**, so CI can sign headlessly.
 | `MATCH_PASSWORD` | the passphrase you set when running match |
 | `MATCH_GIT_BASIC_AUTH` | `base64 -w0` of `x-access-token:<a GitHub PAT with repo read on the match repo>` |
 
-### 6. Square (staff Tap to Pay, baked at build)
-
-| Secret | Value |
-|---|---|
-| `SQUARE_APPLICATION_ID` | your Square app id (sandbox for testing, production later) |
-
 ---
 
 ## Deploying
@@ -150,9 +144,10 @@ These are store-listing requirements the pipeline can't fill for you:
 
 ## Notes / gotchas
 
-- **Square is on SANDBOX** in secrets right now. Swap `SQUARE_APPLICATION_ID`
-  (and the backend Square secrets) to production before a real production
-  release, or POS runs in test mode. See the memory note.
+- **The apps carry no Square credentials.** Card payment happens in Square's
+  hosted checkout, opened from the app, so the backend's Square secrets are the
+  only ones that matter. Adding native Tap to Pay back would reintroduce a
+  build-time app id: see `docs/square-tap-to-pay.md`.
 - **App Links** (`deploy/mobile/assetlinks.*.json`) currently carry the DEBUG
   SHA-256. After generating the release keystore (step 1), add its SHA-256 to
   each file and redeploy them to `/.well-known/assetlinks.json`. Get it with:
