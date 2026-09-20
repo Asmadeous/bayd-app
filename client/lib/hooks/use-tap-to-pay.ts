@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useRef } from "react"
 import { Capacitor } from "@capacitor/core"
 
 import api from "@/lib/api"
@@ -54,8 +54,16 @@ export function useTapToPay() {
     }
   }, [])
 
+  // setBusy is async, so two quick taps both pass a `busy` check and fire two
+  // startPayment calls; the SDK then fails the attempt outright with
+  // PaymentError.unsupportedMode. A ref flips synchronously, so the second tap
+  // is dropped before it reaches the bridge.
+  const inFlight = useRef(false)
+
   const charge = useCallback(
     async (bookingId: number, amountDollars: number): Promise<{ paid: boolean }> => {
+      if (inFlight.current) return { paid: false }
+      inFlight.current = true
       setBusy(true)
       try {
         if (!authorized) {
@@ -82,6 +90,7 @@ export function useTapToPay() {
         })
         return { paid: true }
       } finally {
+        inFlight.current = false
         setBusy(false)
       }
     },

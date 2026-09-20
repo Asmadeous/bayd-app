@@ -17,9 +17,11 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+		5DBE44548781795C08EC34A6 /* BridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C7D2E6C78CDD03EB963B355 /* BridgeViewController.swift */; };
 		74C28C158F5C8F93687755A6 /* SquarePosPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 48E0079FE328F3CD82D5BAB5 /* SquarePosPlugin.m */; };
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
 		A17C4630DDBAD1D53363DE5A /* BackgroundLocationPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 27C440FD4B374FEEFAB60CB9 /* BackgroundLocationPlugin.m */; };
+		AC7FE960B7DD132DCB89517D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4985548AE5C3E3EACA6A49E2 /* PrivacyInfo.xcprivacy */; };
 		AF416FE3902DF6458ED3D8D7 /* BackgroundLocationPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4AA32C2532071130638DF00 /* BackgroundLocationPlugin.swift */; };
 /* End PBXBuildFile section */
 
@@ -29,6 +31,7 @@
 		2E4FF15FD8CFE6AA166BDB66 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
 		48E0079FE328F3CD82D5BAB5 /* SquarePosPlugin.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = SquarePosPlugin.m; sourceTree = "<group>"; };
+		4985548AE5C3E3EACA6A49E2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -37,6 +40,7 @@
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
+		8C7D2E6C78CDD03EB963B355 /* BridgeViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BridgeViewController.swift; sourceTree = "<group>"; };
 		9582B6822FE993A50072D4E8 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 		B4AA32C2532071130638DF00 /* BackgroundLocationPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackgroundLocationPlugin.swift; sourceTree = "<group>"; };
@@ -92,6 +96,8 @@
 				BCD0C1090F212A63829AE29E /* SquarePosPlugin.swift */,
 				48E0079FE328F3CD82D5BAB5 /* SquarePosPlugin.m */,
 				1190187B9E783A88F0BF79A0 /* AppDebug.entitlements */,
+				4985548AE5C3E3EACA6A49E2 /* PrivacyInfo.xcprivacy */,
+				8C7D2E6C78CDD03EB963B355 /* BridgeViewController.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -174,6 +180,7 @@
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
 				257CF2F1542370300AEDFD34 /* GoogleService-Info.plist in Resources */,
+				AC7FE960B7DD132DCB89517D /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -211,6 +218,7 @@
 				A17C4630DDBAD1D53363DE5A /* BackgroundLocationPlugin.m in Sources */,
 				2653F9AC96BDC46E3394C463 /* SquarePosPlugin.swift in Sources */,
 				74C28C158F5C8F93687755A6 /* SquarePosPlugin.m in Sources */,
+				5DBE44548781795C08EC34A6 /* BridgeViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

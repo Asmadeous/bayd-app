@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import Capacitor
 import SquareMobilePaymentsSDK
 
@@ -74,22 +75,67 @@ public class SquarePosPlugin: CAPPlugin, PaymentManagerDelegate {
         // Shows up on the Square receipt and dashboard next to the charge.
         params.note = call.getString("note")
 
-        // .all includes Tap to Pay on iPhone in Square's default prompt.
-        let prompt = PromptParameters(mode: .default, additionalMethods: .all)
+        // Ask for Tap to Pay only. `.all` also bundles keyed entry and cash, and
+        // offering a method the seller is not configured for makes the SDK reject
+        // the attempt outright rather than just hiding that option.
+        let prompt = PromptParameters(mode: .default, additionalMethods: .tapToPay)
 
         DispatchQueue.main.async {
+            // A second startPayment while one is already in flight makes the SDK
+            // fail the whole attempt with PaymentError.unsupportedMode (13), so a
+            // double tap loses the payment rather than being ignored. pendingCall
+            // is the in-flight marker: it is cleared in every delegate callback.
+            guard self.pendingCall == nil else {
+                call.reject("A payment is already in progress. Finish or cancel it first.")
+                return
+            }
             guard let presenter = self.bridge?.viewController else {
                 call.reject("No view controller to present the payment sheet")
                 return
             }
-            self.pendingCall = call
-            MobilePaymentsSDK.shared.paymentManager.startPayment(
-                params,
-                promptParameters: prompt,
-                from: presenter,
-                delegate: self
-            )
+
+            let settings = MobilePaymentsSDK.shared.readerManager.tapToPaySettings
+            guard settings.isDeviceCapable else {
+                call.reject("This iPhone can't take taps. Tap to Pay needs an iPhone XS or newer on iOS 16.7+.")
+                return
+            }
+
+            // Tap to Pay is unavailable until the merchant links their Square
+            // account to an Apple Account, which is how Apple's terms are
+            // accepted. Starting a payment before that fails the whole attempt
+            // with PaymentError.unsupportedMode, so link first and let Square
+            // present its own terms sheet.
+            settings.isAppleAccountLinked { linked, _ in
+                DispatchQueue.main.async {
+                    if linked {
+                        self.start(params, prompt, presenter, call)
+                    } else {
+                        settings.linkAppleAccount { error in
+                            DispatchQueue.main.async {
+                                if let error {
+                                    call.reject("Tap to Pay setup didn't finish: \(error.localizedDescription)")
+                                } else {
+                                    self.start(params, prompt, presenter, call)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    private func start(_ params: PaymentParameters,
+                       _ prompt: PromptParameters,
+                       _ presenter: UIViewController,
+                       _ call: CAPPluginCall) {
+        pendingCall = call
+        MobilePaymentsSDK.shared.paymentManager.startPayment(
+            params,
+            promptParameters: prompt,
+            from: presenter,
+            delegate: self
+        )
     }
 
     // MARK: - PaymentManagerDelegate
@@ -103,7 +149,12 @@ public class SquarePosPlugin: CAPPlugin, PaymentManagerDelegate {
     }
 
     public func paymentManager(_ paymentManager: PaymentManager, didFail payment: Payment, withError error: Error) {
-        pendingCall?.reject("Payment failed: \(error.localizedDescription)")
+        // Square's localizedDescription only says "contact the developer", so
+        // carry the domain, code and underlying error through to the log: that is
+        // the difference between diagnosing this and guessing at it.
+        let ns = error as NSError
+        let detail = "domain=\(ns.domain) code=\(ns.code) info=\(ns.userInfo)"
+        pendingCall?.reject("Payment failed: \(error.localizedDescription) [\(detail)]")
         pendingCall = nil
     }
 
