@@ -153,6 +153,9 @@ Rails.application.routes.draw do
         # Mark a client no-show (client wasn't available for service). Triggers the
         # no-show fee charge to their card on file (NoShowChargeJob).
         post   "bookings/:id/no_show",   to: "employees#mark_no_show"
+        # Mark a booking missed (the tech failed to attend). Client is never
+        # charged; notifies the customer + offers a reschedule (BookingMissedJob).
+        post   "bookings/:id/missed",    to: "employees#mark_missed"
         get    "current_shift", to: "employees#current_shift"
         get    "shifts",        to: "employees#shifts"
         # The tech's own earnings: tips owed/paid, fuel, partner payout split.
