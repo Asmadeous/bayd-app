@@ -145,6 +145,13 @@ platform :ios do
     # derives the real, monotonic values from the run number.
     xcargs = "CURRENT_PROJECT_VERSION=#{ENV['BAYD_VERSION_CODE']} MARKETING_VERSION=#{ENV['BAYD_VERSION_NAME']}"
 
+    # build_app runs `xcodebuild -showBuildSettings` first. Its default 3s base
+    # timeout is far too short here: this is an SPM Capacitor project, so that
+    # call blocks on resolving the whole Swift Package graph (Firebase, gRPC,
+    # abseil, ...) on a cold runner and times out after 4 retries. Give it room.
+    ENV["FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT"] ||= "180"
+    ENV["FASTLANE_XCODEBUILD_SETTINGS_RETRIES"] ||= "6"
+
     build_app(
       project: "#{project_dir}/App.xcodeproj",
       scheme: "App",
