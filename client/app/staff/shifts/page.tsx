@@ -1,20 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Fuel, Route } from "lucide-react"
+import { Route } from "lucide-react"
 
 import { useShifts, type Shift } from "@/lib/hooks/use-time-clock"
-import { useEmployeeProfile } from "@/lib/hooks/use-employee"
 import { staffScreenClass, cardClass, eyebrowClass, mutedClass, staffTheme } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
 
 export default function StaffShiftsScreen() {
   const [page, setPage] = useState(1)
   const { data, isLoading } = useShifts(page)
-  const { data: profile } = useEmployeeProfile()
-  // Partner providers aren't reimbursed for fuel — it flows through the partner,
-  // so their shift view hides fuel entirely. Attendance/hours still apply.
-  const isPartner = !!profile?.partner_id
   const shifts = data?.data ?? []
   const totals = data?.totals
   const pagination = data?.pagination
@@ -23,7 +18,7 @@ export default function StaffShiftsScreen() {
     <div className={staffScreenClass}>
       <StaffHeader
         title="Shifts"
-        subtitle={isPartner ? "Clock-in history and hours." : "Clock-in history and travel reimbursement."}
+        subtitle="Clock-in history and hours."
       />
 
       <div className="space-y-4 px-5">
@@ -33,9 +28,8 @@ export default function StaffShiftsScreen() {
           <Stat label="Hours" value={formatHours(totals?.hours_worked)} />
           <Stat label="On-time" value={formatRate(totals?.on_time_rate)} accent />
         </div>
-        <div className={`grid gap-3 ${isPartner ? "grid-cols-1" : "grid-cols-2"}`}>
+        <div className="grid grid-cols-1 gap-3">
           <Stat label="Distance" value={formatDistance(totals?.distance_km)} />
-          {!isPartner && <Stat label="Fuel" value={formatCurrency(totals?.fuel_reimbursement)} accent />}
         </div>
 
         {isLoading ? (
@@ -46,14 +40,14 @@ export default function StaffShiftsScreen() {
           </div>
         ) : shifts.length === 0 ? (
           <div className={`${cardClass} flex flex-col items-center gap-2 p-8 text-center`}>
-            <Fuel className="size-7 text-[#C96C83]" aria-hidden />
+            <Route className="size-7 text-[#C96C83]" aria-hidden />
             <p className="font-bold">No shifts yet</p>
             <p className={`text-sm ${mutedClass}`}>Clock in from Schedule to start tracking.</p>
           </div>
         ) : (
           <ul className="space-y-3">
             {shifts.map((s) => (
-              <ShiftRow key={s.id} shift={s} showFuel={!isPartner} />
+              <ShiftRow key={s.id} shift={s} />
             ))}
           </ul>
         )}
@@ -86,7 +80,7 @@ export default function StaffShiftsScreen() {
   )
 }
 
-function ShiftRow({ shift, showFuel }: { shift: Shift; showFuel: boolean }) {
+function ShiftRow({ shift }: { shift: Shift }) {
   const open = shift.status === "open"
   return (
     <li className={`${cardClass} p-4`}>
@@ -113,12 +107,6 @@ function ShiftRow({ shift, showFuel }: { shift: Shift; showFuel: boolean }) {
           <Route className="size-3.5 text-[#C96C83]" aria-hidden />
           {formatDistance(shift.distance_km)}
         </span>
-        {showFuel && (
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#C96C83]/10 px-2.5 py-1.5 text-xs font-semibold text-[#C96C83]">
-            <Fuel className="size-3.5" aria-hidden />
-            {formatCurrency(shift.fuel_reimbursement)}
-          </span>
-        )}
         {!open && (
           <span
             className="inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold"
@@ -165,11 +153,6 @@ function duration(secs: unknown) {
 function formatDistance(value: unknown) {
   const d = Number(value ?? 0)
   return Number.isFinite(d) ? `${d.toFixed(1)} km` : "-"
-}
-
-function formatCurrency(value: unknown) {
-  const a = Number(value ?? 0)
-  return Number.isFinite(a) ? `$${a.toFixed(2)}` : "-"
 }
 
 function formatHours(value: unknown) {
