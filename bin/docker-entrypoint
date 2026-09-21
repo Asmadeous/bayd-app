@@ -37,6 +37,13 @@ if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   # once reverted. Remove this + the file after it has run on prod once.
   echo "[entrypoint] reverting testing data"
   ./bin/rails runner "load Rails.root.join('db/seeds/revert_testing.rb')" || echo "[entrypoint] revert_testing failed (non-fatal)"
+
+  # One-time NON-destructive catalog update on the populated prod DB: add Rim's
+  # facial/esthetic services + Susi's phone. Upsert-only (no destroy/deactivate),
+  # so unlike a full db:seed it can't wipe live shop/catalog data. Idempotent.
+  # Remove this + the file after it has run on prod once.
+  echo "[entrypoint] applying facials + Susi phone update"
+  ./bin/rails runner "load Rails.root.join('db/seeds/add_facials_and_susi_phone.rb')" || echo "[entrypoint] facials update failed (non-fatal)"
 fi
 
 exec "${@}"

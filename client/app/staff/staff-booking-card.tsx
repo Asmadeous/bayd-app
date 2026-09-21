@@ -113,8 +113,9 @@ export function StaffBookingCard({ booking }: { booking: Booking }) {
 }
 
 // Financial summary for a past booking, rendered per account type: a direct tech
-// sees charged/tips/fuel; a partner provider sees charged + their share + payout
-// status (no fuel — partners aren't reimbursed). Read-only history.
+// sees charged + their tips; a partner provider sees charged + their share +
+// payout status. Fuel reimbursement is intentionally NOT shown - it's admin comp
+// data, not something the tech is meant to see. Read-only history.
 function PastFinancials({ booking }: { booking: Booking }) {
   const f = booking.financials
   if (!f) return null
@@ -128,7 +129,6 @@ function PastFinancials({ booking }: { booking: Booking }) {
       : [
           { label: "Charged", value: money(f.amount_paid) },
           { label: "Tips", value: money(f.tips) },
-          { label: "Fuel", value: money(f.fuel_reimbursement) },
         ]
 
   return (

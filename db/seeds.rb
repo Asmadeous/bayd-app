@@ -80,7 +80,20 @@ services_data = [
   # Spa / Body
   { category: "spa",     name: "Deluxe spa manicure + nail care",             duration: 60,  price: 65.00, image: "/images/services/nails-manicure.webp", desc: "An elevated spa manicure with extended nail and cuticle care, exfoliation, a hydrating mask, and a relaxing hand-and-arm massage, finished with polish." },
   { category: "spa",     name: "Body scrub",                                   duration: 30,  price: 50.00, desc: "A full-body exfoliating scrub that sloughs away dead skin and leaves you feeling smooth, soft, and refreshed — a spa treatment at home." },
-  { category: "spa",     name: "Group booking",                                duration: 270, price: 0.00, consult: true, desc: "Book a shared session for a group — perfect for parties, bridal prep, or a spa day with friends. We bring the pampering to you. Price quoted based on your group and chosen services." }
+  { category: "spa",     name: "Group booking",                                duration: 270, price: 0.00, consult: true, desc: "Book a shared session for a group — perfect for parties, bridal prep, or a spa day with friends. We bring the pampering to you. Price quoted based on your group and chosen services." },
+  # Facials, peels & esthetics (Rim — Medical Aesthetician). Women only.
+  { category: "spa",     name: "Express facial (women only)",                  duration: 45,  price: 95.00,  image: "/images/services/spa-facial.webp", desc: "A quick, refreshing facial — cleanse, exfoliation, mask, and hydration to leave skin glowing. Perfect between deeper treatments. Women only." },
+  { category: "spa",     name: "Deep facial (women only)",                     duration: 75,  price: 135.00, image: "/images/services/spa-facial.webp", desc: "A thorough deep-cleansing facial with extractions, exfoliation, a treatment mask, and massage for a deeply refreshed, radiant complexion. Women only." },
+  { category: "spa",     name: "Microdermabrasion add on (women only)",        duration: 30,  price: 50.00,  image: "/images/services/spa-facial.webp", desc: "A resurfacing add-on that gently buffs away dull, dead skin to reveal a smoother, brighter surface. Added to any facial. Women only." },
+  { category: "spa",     name: "Problem skin facial (women only)",             duration: 90,  price: 160.00, image: "/images/services/spa-facial.webp", desc: "A targeted facial for congested, acne-prone, or reactive skin, with deep cleansing, extractions, and calming treatment to rebalance the complexion. Women only." },
+  { category: "spa",     name: "Full Back facial (women only)",                duration: 60,  price: 120.00, image: "/images/services/spa-facial.webp", desc: "A back treatment that cleanses, exfoliates, and clears congestion across the full back — ideal for hard-to-reach breakouts. Women only." },
+  { category: "spa",     name: "Half Back facial (women only)",                duration: 40,  price: 65.00,  image: "/images/services/spa-facial.webp", desc: "A focused facial for the upper or lower back — cleansing, exfoliation, and extractions to clear and smooth the skin. Women only." },
+  { category: "spa",     name: "Face chemical peel (women only)",              duration: 45,  price: 150.00, image: "/images/services/spa-facial.webp", desc: "A professional chemical peel for the face that exfoliates at a deeper level to improve tone, texture, and clarity. Women only." },
+  { category: "spa",     name: "Underarm chemical peel (women only)",          duration: 30,  price: 150.00, image: "/images/services/spa-facial.webp", desc: "A brightening chemical peel for the underarms that targets darkness and uneven tone for smoother, more even skin. Women only." },
+  { category: "spa",     name: "Upper back chemical peel (women only)",        duration: 60,  price: 200.00, image: "/images/services/spa-facial.webp", desc: "A deeper chemical peel treatment for the upper back to clear congestion and improve tone and texture over the area. Women only." },
+  { category: "spa",     name: "Facial massage add on (women only)",           duration: 15,  price: 40.00,  image: "/images/services/spa-facial.webp", desc: "A relaxing facial massage added to any treatment to boost circulation, ease tension, and enhance your glow. Women only." },
+  { category: "massage", name: "Head & scalp massage (women only)",            duration: 30,  price: 40.00,  desc: "A soothing head and scalp massage that releases tension and promotes relaxation and circulation. Women only." },
+  { category: "massage", name: "Lymphatic drainage massage (full body, 1 hour, women only)", duration: 60, price: 140.00, desc: "A gentle, full-body lymphatic drainage massage that encourages circulation and reduces puffiness, leaving you lighter and refreshed. Women only." }
 ]
 
 # Pick a real service photo for a menu entry. An explicit `image:` always wins;
@@ -303,7 +316,7 @@ end
 # ── Employees / technicians ───────────────────────────────────────────────────
 # First names only. service_fsas recovered from the live booking coverage data.
 employee_data = [
-  { first: "Susi", email: "susi@baydspa.ca", title: "Nail Tech, Waxing and Massages", yrs: 28,
+  { first: "Susi", email: "susi@baydspa.ca", phone: "+13063698034", title: "Nail Tech, Waxing and Massages", yrs: 28,
     photo: "/images/new-pics-for-the-ladies/susi-team-headshot.webp",
     bio: "Meet Susi, an exceptional entrepreneur and visionary in the world of beauty. With an impressive 28 years of unparalleled experience, Susi has earned a reputation as a trailblazer and an industry icon. Her unwavering dedication to excellence and her innovative approach to beauty services have established her as a formidable force in the market. Get ready to dive into the extraordinary journey of Susi, a true master of her craft.",
     lat: 43.5890, lng: -79.6441, specialties: %w[nails waxing massage spa], on_shift: true,
@@ -336,6 +349,9 @@ employees = employee_data.map do |e|
   # setting this unconditionally would silently overwrite a real password the
   # tech has since changed, locking them out.
   user.password = "TempStaff2026!" if user.new_record?
+  # Phone is optional per tech; only overwrite when the seed carries one, so a
+  # tech who later set their own number in-app isn't clobbered by a blank.
+  user.phone = e[:phone] if e[:phone].present?
   user.update!(first_name: e[:first], last_name: "", role: :employee)
 
   profile = EmployeeProfile.find_or_initialize_by(user: user)
