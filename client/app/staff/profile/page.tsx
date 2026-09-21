@@ -11,6 +11,7 @@ import { biometricAvailable, biometricLockEnabled, setBiometricLock, verifyBiome
 import { hapticError, hapticSuccess } from "@/lib/native/haptics"
 import { assetUrl } from "@/lib/asset-url"
 import { ImagePicker } from "@/components/image-picker"
+import { ChangePasswordForm } from "@/components/change-password-form"
 import { staffScreenClass, cardClass, eyebrowClass, inputClass, labelClass, mutedClass } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
 
@@ -251,6 +252,15 @@ export default function StaffProfileScreen() {
             </button>
           </section>
         )}
+
+        {/* Change password - staff have a password login (customers are OTP). */}
+        <section className={`${cardClass} p-4`}>
+          <p className={eyebrowClass}>Change password</p>
+          <p className={`mb-3 mt-1 text-sm ${mutedClass}`}>
+            Enter your current password and choose a new one. You&apos;ll stay signed in.
+          </p>
+          <ChangePasswordForm />
+        </section>
 
         <button
           type="button"

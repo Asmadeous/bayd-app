@@ -10,6 +10,7 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
+import { ChangePasswordForm } from "@/components/change-password-form"
 import api from "@/lib/api"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useAuthStore } from "@/lib/stores/auth-store"
@@ -222,6 +223,19 @@ export default function AdminSettingsPage() {
             {save.isPending ? "Saving..." : "Save"}
           </Button>
           {save.isSuccess ? <p className="text-xs font-semibold text-green-700">Saved.</p> : null}
+        </div>
+      </DashboardPanel>
+
+      <DashboardPanel>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
+          Security
+        </p>
+        <h2 className="mt-1 text-lg font-extrabold text-[#101217]">Change Password</h2>
+        <p className="mt-2 text-xs leading-5 text-[#5f6268]">
+          Enter your current password and choose a new one. You&apos;ll stay signed in.
+        </p>
+        <div className="mt-5 max-w-md">
+          <ChangePasswordForm />
         </div>
       </DashboardPanel>
 
