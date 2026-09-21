@@ -58,4 +58,25 @@ RSpec.describe Fcm::Client, type: :service do
     expect(Faraday).not_to receive(:new)
     expect(described_class.new.send_to(token: "t", title: "x", body: "y")).to eq(:skipped)
   end
+
+  # Raw multi-line JSON in a secret/env var gets its private_key newlines
+  # mangled, so the pipeline passes base64. The client accepts both.
+  describe "credentials format" do
+    let(:json) { '{"type":"service_account","project_id":"bayd-spa"}' }
+
+    it "passes raw JSON through unchanged" do
+      ENV["FCM_CREDENTIALS_JSON"] = json
+      expect(described_class.new.send(:credentials_json)).to eq(json)
+    end
+
+    it "decodes a base64-encoded credential" do
+      ENV["FCM_CREDENTIALS_JSON"] = Base64.strict_encode64(json)
+      expect(described_class.new.send(:credentials_json)).to eq(json)
+    end
+
+    it "is nil when unset" do
+      ENV.delete("FCM_CREDENTIALS_JSON")
+      expect(described_class.new.send(:credentials_json)).to be_nil
+    end
+  end
 end

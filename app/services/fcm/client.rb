@@ -1,5 +1,6 @@
 require "googleauth"
 require "stringio"
+require "base64"
 
 module Fcm
   # The ONE external call in the push stack: sends a single message to one device
@@ -72,7 +73,18 @@ module Fcm
       @connection ||= Faraday.new(url: BASE_URL)
     end
 
-    def project_id       = ENV["FCM_PROJECT_ID"].presence
-    def credentials_json = ENV["FCM_CREDENTIALS_JSON"].presence
+    def project_id = ENV["FCM_PROJECT_ID"].presence
+
+    # The service-account key JSON. Raw multi-line JSON does not survive a secret
+    # store / env var cleanly - the newlines inside private_key get mangled and
+    # make_creds fails with "expected object key, got '\n'". So accept base64 too
+    # (single line, pipeline-safe) and decode it: if the value doesn't look like
+    # JSON, treat it as base64. Backward compatible with a raw-JSON secret.
+    def credentials_json
+      raw = ENV["FCM_CREDENTIALS_JSON"].presence
+      return nil unless raw
+
+      raw.strip.start_with?("{") ? raw : Base64.decode64(raw)
+    end
   end
 end
