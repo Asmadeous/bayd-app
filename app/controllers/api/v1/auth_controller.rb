@@ -138,6 +138,27 @@ module Api
         render json: { message: "Password updated. You can sign in now." }
       end
 
+      # Change password for a LOGGED-IN staff/admin: verify the current password,
+      # then set the new one. Distinct from reset_password (which uses an emailed
+      # token for someone locked out). Customers are passwordless, so they can't
+      # use this. The current session token stays valid - no forced re-login.
+      def change_password
+        user = current_user
+        return render(json: { error: "Password changes aren't available for this account." }, status: :unprocessable_entity) if user.customer?
+
+        unless params[:current_password].present? && user.authenticate(params[:current_password])
+          return render json: { error: "Your current password is incorrect." }, status: :unauthorized
+        end
+
+        new_password = params[:new_password].to_s
+        user.password = new_password
+        if user.save
+          render json: { message: "Password updated." }
+        else
+          render json: { error: user.errors.full_messages.to_sentence.presence || "Could not update the password." }, status: :unprocessable_entity
+        end
+      end
+
       # Staff & admin: dedicated endpoint, email + password (never email-only).
       def staff_login
         user = User.find_by(email: params[:email].to_s.downcase.strip)

@@ -24,6 +24,8 @@ Rails.application.routes.draw do
       post  "auth/passkeys/authenticate",           to: "passkeys#authenticate"
       post  "auth/password_reset",         to: "auth#request_password_reset"
       post  "auth/password_reset/confirm", to: "auth#reset_password"
+      # Logged-in staff/admin changing their own password (current + new).
+      post  "auth/change_password",        to: "auth#change_password"
       get   "auth/me",       to: "auth#me"
       patch "auth/me",       to: "auth#update_me"
       get   "auth/google",          to: "google_auth#start"
