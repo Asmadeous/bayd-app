@@ -14,7 +14,8 @@ categories = {
   "lashes"  => ServiceCategory.find_or_create_by!(slug: "lashes")  { |c| c.name = "Lashes";  c.position = 2 },
   "massage" => ServiceCategory.find_or_create_by!(slug: "massage") { |c| c.name = "Massage"; c.position = 3 },
   "waxing"  => ServiceCategory.find_or_create_by!(slug: "waxing")  { |c| c.name = "Waxing";  c.position = 4 },
-  "spa"     => ServiceCategory.find_or_create_by!(slug: "spa")     { |c| c.name = "Spa";     c.position = 5 }
+  "facials" => ServiceCategory.find_or_create_by!(slug: "facials") { |c| c.name = "Facials"; c.position = 5 },
+  "spa"     => ServiceCategory.find_or_create_by!(slug: "spa")     { |c| c.name = "Spa";     c.position = 6 }
 }
 puts "  #{categories.size} service categories"
 
@@ -82,18 +83,18 @@ services_data = [
   { category: "spa",     name: "Body scrub",                                   duration: 30,  price: 50.00, desc: "A full-body exfoliating scrub that sloughs away dead skin and leaves you feeling smooth, soft, and refreshed — a spa treatment at home." },
   { category: "spa",     name: "Group booking",                                duration: 270, price: 0.00, consult: true, desc: "Book a shared session for a group — perfect for parties, bridal prep, or a spa day with friends. We bring the pampering to you. Price quoted based on your group and chosen services." },
   # Facials, peels & esthetics (Rim — Medical Aesthetician). Women only.
-  { category: "spa",     name: "Express facial (women only)",                  duration: 45,  price: 95.00,  image: "/images/services/spa-facial.webp", desc: "A quick, refreshing facial — cleanse, exfoliation, mask, and hydration to leave skin glowing. Perfect between deeper treatments. Women only." },
-  { category: "spa",     name: "Deep facial (women only)",                     duration: 75,  price: 135.00, image: "/images/services/spa-facial.webp", desc: "A thorough deep-cleansing facial with extractions, exfoliation, a treatment mask, and massage for a deeply refreshed, radiant complexion. Women only." },
-  { category: "spa",     name: "Microdermabrasion add on (women only)",        duration: 30,  price: 50.00,  image: "/images/services/spa-facial.webp", desc: "A resurfacing add-on that gently buffs away dull, dead skin to reveal a smoother, brighter surface. Added to any facial. Women only." },
-  { category: "spa",     name: "Problem skin facial (women only)",             duration: 90,  price: 160.00, image: "/images/services/spa-facial.webp", desc: "A targeted facial for congested, acne-prone, or reactive skin, with deep cleansing, extractions, and calming treatment to rebalance the complexion. Women only." },
-  { category: "spa",     name: "Full Back facial (women only)",                duration: 60,  price: 120.00, image: "/images/services/spa-facial.webp", desc: "A back treatment that cleanses, exfoliates, and clears congestion across the full back — ideal for hard-to-reach breakouts. Women only." },
-  { category: "spa",     name: "Half Back facial (women only)",                duration: 40,  price: 65.00,  image: "/images/services/spa-facial.webp", desc: "A focused facial for the upper or lower back — cleansing, exfoliation, and extractions to clear and smooth the skin. Women only." },
-  { category: "spa",     name: "Face chemical peel (women only)",              duration: 45,  price: 150.00, image: "/images/services/spa-facial.webp", desc: "A professional chemical peel for the face that exfoliates at a deeper level to improve tone, texture, and clarity. Women only." },
-  { category: "spa",     name: "Underarm chemical peel (women only)",          duration: 30,  price: 150.00, image: "/images/services/spa-facial.webp", desc: "A brightening chemical peel for the underarms that targets darkness and uneven tone for smoother, more even skin. Women only." },
-  { category: "spa",     name: "Upper back chemical peel (women only)",        duration: 60,  price: 200.00, image: "/images/services/spa-facial.webp", desc: "A deeper chemical peel treatment for the upper back to clear congestion and improve tone and texture over the area. Women only." },
-  { category: "spa",     name: "Facial massage add on (women only)",           duration: 15,  price: 40.00,  image: "/images/services/spa-facial.webp", desc: "A relaxing facial massage added to any treatment to boost circulation, ease tension, and enhance your glow. Women only." },
-  { category: "massage", name: "Head & scalp massage (women only)",            duration: 30,  price: 40.00,  desc: "A soothing head and scalp massage that releases tension and promotes relaxation and circulation. Women only." },
-  { category: "massage", name: "Lymphatic drainage massage (full body, 1 hour, women only)", duration: 60, price: 140.00, desc: "A gentle, full-body lymphatic drainage massage that encourages circulation and reduces puffiness, leaving you lighter and refreshed. Women only." }
+  { category: "facials", name: "Express facial (women only)",                  duration: 45,  price: 95.00,  image: "/images/services/spa-facial.webp", desc: "A quick, refreshing facial — cleanse, exfoliation, mask, and hydration to leave skin glowing. Perfect between deeper treatments. Women only." },
+  { category: "facials", name: "Deep facial (women only)",                     duration: 75,  price: 135.00, image: "/images/services/spa-facial.webp", desc: "A thorough deep-cleansing facial with extractions, exfoliation, a treatment mask, and massage for a deeply refreshed, radiant complexion. Women only." },
+  { category: "facials", name: "Microdermabrasion add on (women only)",        duration: 30,  price: 50.00,  image: "/images/services/spa-facial.webp", desc: "A resurfacing add-on that gently buffs away dull, dead skin to reveal a smoother, brighter surface. Added to any facial. Women only." },
+  { category: "facials", name: "Problem skin facial (women only)",             duration: 90,  price: 160.00, image: "/images/services/spa-facial.webp", desc: "A targeted facial for congested, acne-prone, or reactive skin, with deep cleansing, extractions, and calming treatment to rebalance the complexion. Women only." },
+  { category: "facials", name: "Full Back facial (women only)",                duration: 60,  price: 120.00, image: "/images/services/spa-facial.webp", desc: "A back treatment that cleanses, exfoliates, and clears congestion across the full back — ideal for hard-to-reach breakouts. Women only." },
+  { category: "facials", name: "Half Back facial (women only)",                duration: 40,  price: 65.00,  image: "/images/services/spa-facial.webp", desc: "A focused facial for the upper or lower back — cleansing, exfoliation, and extractions to clear and smooth the skin. Women only." },
+  { category: "facials", name: "Face chemical peel (women only)",              duration: 45,  price: 150.00, image: "/images/services/spa-facial.webp", desc: "A professional chemical peel for the face that exfoliates at a deeper level to improve tone, texture, and clarity. Women only." },
+  { category: "facials", name: "Underarm chemical peel (women only)",          duration: 30,  price: 150.00, image: "/images/services/spa-facial.webp", desc: "A brightening chemical peel for the underarms that targets darkness and uneven tone for smoother, more even skin. Women only." },
+  { category: "facials", name: "Upper back chemical peel (women only)",        duration: 60,  price: 200.00, image: "/images/services/spa-facial.webp", desc: "A deeper chemical peel treatment for the upper back to clear congestion and improve tone and texture over the area. Women only." },
+  { category: "facials", name: "Facial massage add on (women only)",           duration: 15,  price: 40.00,  image: "/images/services/spa-facial.webp", desc: "A relaxing facial massage added to any treatment to boost circulation, ease tension, and enhance your glow. Women only." },
+  { category: "facials", name: "Head & scalp massage (women only)",            duration: 30,  price: 40.00,  image: "/images/services/spa-facial.webp", desc: "A soothing head and scalp massage that releases tension and promotes relaxation and circulation. Women only." },
+  { category: "facials", name: "Lymphatic drainage massage (full body, 1 hour, women only)", duration: 60, price: 140.00, image: "/images/services/spa-facial.webp", desc: "A gentle, full-body lymphatic drainage massage that encourages circulation and reduces puffiness, leaving you lighter and refreshed. Women only." }
 ]
 
 # Pick a real service photo for a menu entry. An explicit `image:` always wins;
@@ -337,7 +338,7 @@ employee_data = [
   { first: "Rim", email: "rim@baydspa.ca", title: "Medical Aesthetician - Facials, Skin Rejuvenation and Massage", yrs: 15,
     photo: "/images/new-pics-for-the-ladies/rim-team-headshot.webp",
     bio: "Rim, a Medical Aesthetician, believes that beautiful skin starts with personalized care. Her passion for aesthetics spans 15 years, during which she built a successful career in Kuwait helping clients achieve their ultimate skin goals. After relocating to Canada, she advanced her expertise by obtaining a Canadian diploma in Medical Aesthetics, ensuring her techniques align with the highest industry standards. Rim is known for her warm approach, thorough consultations, and ability to make clients feel completely at ease. Whether you are looking for advanced skin rejuvenation, a preventative skincare routine, or a relaxing massage, she is dedicated to guiding you every step of the way.",
-    lat: 43.5890, lng: -79.6441, specialties: %w[spa massage], on_shift: true,
+    lat: 43.5890, lng: -79.6441, specialties: %w[facials], on_shift: true,
     fsas: %w[L7A L6X L6Y L6W L6V L6Z L6R L6S L5N L5W L5T L5M L5L L5K L5J L5H L5V L5R L5B L5G L5A L5E L5Y L5X L5P L4V L4T L5S L6M L6L L6J L6H L6K M9C M9B M9A M8W M8V M8Z M8X M8Y L9T M6S] }
 ]
 
