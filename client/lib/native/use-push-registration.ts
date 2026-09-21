@@ -25,6 +25,27 @@ export function usePushRegistration() {
 
       const platform = Capacitor.getPlatform() // "ios" | "android"
 
+      // Android 8+ requires a notification channel; without one, FCM messages land
+      // on a silent default channel (no sound, no heads-up banner). Create a
+      // high-importance channel so notifications actually make a sound and pop.
+      // The backend sends android.notification.channel_id = "bayd_default".
+      if (platform === "android") {
+        try {
+          await PushNotifications.createChannel({
+            id: "bayd_default",
+            name: "Bookings & updates",
+            description: "Appointment updates, messages, and reminders",
+            importance: 5, // IMPORTANCE_HIGH: sound + heads-up banner
+            visibility: 1, // VISIBILITY_PUBLIC
+            sound: "default",
+            vibration: true,
+            lights: true,
+          })
+        } catch {
+          // channel creation is best-effort; push still works, just quieter
+        }
+      }
+
       const registration = await PushNotifications.addListener("registration", async (token) => {
         lastToken = token.value
         try {
