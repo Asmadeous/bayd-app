@@ -41,6 +41,9 @@ RSpec.describe Fcm::Client, type: :service do
     expect(msg["token"]).to eq("dev-1")
     expect(msg["notification"]).to eq("title" => "Hi", "body" => "There")
     expect(msg["data"]).to eq("booking_id" => "7") # values stringified
+    # Android routed to the high-importance channel so it makes a sound.
+    expect(msg.dig("android", "notification", "channel_id")).to eq("bayd_default")
+    expect(msg.dig("apns", "payload", "aps", "sound")).to eq("default")
   end
 
   it "returns :unregistered on a 404 so the caller can prune the token" do

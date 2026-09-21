@@ -47,7 +47,13 @@ module Fcm
           token: token,
           notification: { title: title, body: body }.compact,
           # FCM data values must be strings.
-          data: data.transform_values(&:to_s)
+          data: data.transform_values(&:to_s),
+          # Route Android to the high-importance channel the app creates
+          # ("bayd_default") so notifications play a sound + show a heads-up
+          # banner. Without a channel_id they land silently.
+          android: { notification: { channel_id: "bayd_default", sound: "default" }, priority: "high" },
+          # iOS: play the default alert sound.
+          apns: { payload: { aps: { sound: "default" } } }
         }.compact
       }
     end
