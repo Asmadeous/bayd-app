@@ -78,8 +78,7 @@ export default function BookingsScreen() {
 }
 
 function BookingCard({ booking, cancellable }: { booking: Booking; cancellable: boolean }) {
-  const tech = booking.employee_profile.user
-  const techName = [tech.first_name, tech.last_name].filter(Boolean).join(" ") || "Your technician"
+  const techName = booking.employee_profile.name || "Your technician"
   const [rescheduling, setRescheduling] = useState(false)
   const [reviewing, setReviewing] = useState(false)
   // Self-reschedule is capped at 2 per booking (backend enforces; hide when spent).
@@ -116,7 +115,7 @@ function BookingCard({ booking, cancellable }: { booking: Booking; cancellable: 
 
       {cancellable && booking.meeting_recommended && <MeetAction booking={booking} />}
 
-      {cancellable && tech.id ? <MessageTechAction techUserId={tech.id} /> : null}
+      {cancellable && booking.employee_profile.user_id ? <MessageTechAction techUserId={booking.employee_profile.user_id} /> : null}
 
       {cancellable && ["confirmed", "in_progress"].includes(booking.status) && (
         <Link

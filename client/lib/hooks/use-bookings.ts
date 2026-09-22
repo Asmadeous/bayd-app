@@ -50,6 +50,7 @@ export interface Booking {
   service_latitude: string | null
   service_longitude: string | null
   customer_name: string | null
+  booked_for_phone: string | null
   address: {
     id: number
     label: string | null
@@ -69,7 +70,11 @@ export interface Booking {
     id: number
     title: string | null
     photo_url: string | null
-    user: { id: number; first_name: string | null; last_name: string | null }
+    // Customer-facing: name + a bare user_id for starting an in-app conversation.
+    // No email/phone/address/earnings - the API withholds the tech's contact and
+    // pay from customers to prevent off-platform collusion.
+    name: string | null
+    user_id: number | null
   }
   meeting: Meeting | null
 }

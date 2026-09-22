@@ -20,12 +20,7 @@ export function ReviewDialog({ booking, onClose }: ReviewDialogProps) {
   const [body, setBody] = useState("")
   const submit = useSubmitReview()
 
-  const employeeName = [
-    booking.employee_profile?.user?.first_name,
-    booking.employee_profile?.user?.last_name,
-  ]
-    .filter(Boolean)
-    .join(" ")
+  const employeeName = booking.employee_profile?.name ?? ""
 
   function handleSubmit() {
     if (rating < 1) {

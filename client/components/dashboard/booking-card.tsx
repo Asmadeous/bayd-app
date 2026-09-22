@@ -37,12 +37,7 @@ interface BookingCardProps {
 }
 
 export function BookingCard({ booking, actions, className }: BookingCardProps) {
-  const employeeName = [
-    booking.employee_profile?.user?.first_name,
-    booking.employee_profile?.user?.last_name,
-  ]
-    .filter(Boolean)
-    .join(" ")
+  const employeeName = booking.employee_profile?.name ?? ""
 
   const dateLabel = formatBookingDateTime(booking.starts_at)
   const total = formatCurrency(booking.total)

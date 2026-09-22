@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User, X } from "lucide-react"
@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation"
 
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
+import { AddressAutocomplete } from "@/components/address-autocomplete"
 import api from "@/lib/api"
 import { openPaymentUrl } from "@/lib/native/open-external"
 import { assetUrl } from "@/lib/asset-url"
@@ -131,16 +132,38 @@ export function BookingFlow({
   const [staff, setStaff] = useState<string>("any") // "any" | providerId
   const [date, setDate] = useState(searchParams.get("date") ?? "")
   const [time, setTime] = useState("10:00")
-  const [name, setName] = useState(dashboardMode ? user?.first_name ?? "" : "")
-  const [email, setEmail] = useState(dashboardMode ? user?.email ?? "" : "")
-  const [phone, setPhone] = useState(dashboardMode ? user?.phone ?? "" : "")
-  const [line1, setLine1] = useState(dashboardMode ? initialAddress?.line1 ?? user?.street_address ?? "" : "")
-  const [unit, setUnit] = useState(dashboardMode ? initialAddress?.line2 ?? "" : "")
-  const [city, setCity] = useState(dashboardMode ? initialAddress?.city ?? user?.city ?? "" : "")
-  const [province, setProvince] = useState(dashboardMode ? initialAddress?.province ?? "ON" : "ON")
-  const [postal, setPostal] = useState(dashboardMode ? initialAddress?.postal_code ?? user?.postal_code ?? "" : "")
-  const [isApartment, setIsApartment] = useState(dashboardMode ? Boolean(initialAddress?.is_apartment) : false)
-  const [buzzCode, setBuzzCode] = useState(dashboardMode ? initialAddress?.buzz_code ?? "" : "")
+  // Prefill from the account whenever the customer is SIGNED IN - not just in
+  // dashboard mode. A logged-in user booking from the public /book page shouldn't
+  // have to retype details we already have. Dashboard mode still layers a chosen
+  // saved address (initialAddress) on top of the account defaults.
+  const [name, setName] = useState(user ? [user.first_name, user.last_name].filter(Boolean).join(" ") : "")
+  const [email, setEmail] = useState(user?.email ?? "")
+  const [phone, setPhone] = useState(user?.phone ?? "")
+  const [line1, setLine1] = useState(initialAddress?.line1 ?? user?.street_address ?? "")
+  const [unit, setUnit] = useState(initialAddress?.line2 ?? "")
+  const [city, setCity] = useState(initialAddress?.city ?? user?.city ?? "")
+  const [province, setProvince] = useState(initialAddress?.province ?? "ON")
+  const [postal, setPostal] = useState(initialAddress?.postal_code ?? user?.postal_code ?? "")
+  const [isApartment, setIsApartment] = useState(Boolean(initialAddress?.is_apartment))
+  const [buzzCode, setBuzzCode] = useState(initialAddress?.buzz_code ?? "")
+
+  // The auth store is persisted and hydrates from localStorage AFTER first render,
+  // so the useState initializers above can miss it. Once `user` becomes available,
+  // backfill any field the customer hasn't already typed exactly once - so a
+  // signed-in user never re-enters details we hold, without clobbering their edits.
+  const prefilledRef = useRef(false)
+  useEffect(() => {
+    if (!user || prefilledRef.current) return
+    prefilledRef.current = true
+    const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ")
+    setName((v) => v || fullName)
+    setEmail((v) => v || user.email || "")
+    setPhone((v) => v || user.phone || "")
+    setLine1((v) => v || user.street_address || "")
+    setCity((v) => v || user.city || "")
+    setPostal((v) => v || user.postal_code || "")
+  }, [user])
+
   const [notes, setNotes] = useState("")
   const [tip, setTip] = useState("") // optional gratuity in dollars
   const [giftCard, setGiftCard] = useState("")
@@ -958,7 +981,18 @@ export function BookingFlow({
             ) : null}
 
             <label className={cn(lbl, "mt-1")}><MapPin className="mr-1 inline size-3.5" /> Service address</label>
-            <input className={field} value={line1} onChange={(e) => setLine1(e.target.value)} placeholder="Street address *" />
+            <AddressAutocomplete
+              className={field}
+              value={line1}
+              onChange={setLine1}
+              onResolved={(addr) => {
+                if (addr.city) setCity(addr.city)
+                if (addr.province) setProvince(addr.province)
+                if (addr.postal_code) setPostal(addr.postal_code)
+                if (addr.latitude != null) setCustLat(addr.latitude)
+                if (addr.longitude != null) setCustLng(addr.longitude)
+              }}
+            />
             <div className="grid gap-4 sm:grid-cols-3">
               <input className={field} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City *" />
               <select className={field} value={province} onChange={(e) => setProvince(e.target.value)}>

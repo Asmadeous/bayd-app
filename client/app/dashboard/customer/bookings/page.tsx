@@ -220,7 +220,7 @@ export default function CustomerBookingsPage() {
                   actions={
                     b.status === "pending" || b.status === "confirmed" ? (
                       <div className="flex flex-wrap items-center gap-2">
-                        <MessageTechButton techUserId={b.employee_profile?.user?.id} />
+                        <MessageTechButton techUserId={b.employee_profile?.user_id ?? undefined} />
                         <MeetingButton booking={b} />
                         <RescheduleDialog booking={b} />
                         <AlertDialog>

@@ -11,36 +11,6 @@ class BookingSerializer < Blueprinter::Base
     booking.outstanding_balance
   end
 
-  # Per-booking money picture for the staff history view, rendered ACCORDING TO
-  # the tech's account type (the two never mix):
-  #   • Partner provider → the partner keeps partner_share_pct of the service
-  #     total; show that share + payout status. NO fuel (partners aren't
-  #     reimbursed) and no individual tip line - it flows through the partner.
-  #   • Direct (solo) staff → the amount they were paid, their tips, and their
-  #     fuel reimbursement. No partner fields.
-  field :financials do |booking|
-    partner = booking.partner
-    base = {
-      account_type: partner ? "partner" : "direct",
-      total:        booking.total,
-      amount_paid:  booking.amount_paid,
-      outstanding:  booking.outstanding_balance
-    }
-    if partner
-      base.merge(
-        partner_name:     partner.name,
-        platform_fee_pct: partner.platform_fee_pct,
-        provider_share:   (booking.amount_paid * partner.partner_share_pct / 100).round(2),
-        payout_status:    booking.partner_payout_id ? "settled" : "owed"
-      )
-    else
-      base.merge(
-        tips:               booking.tips.sum(:amount),
-        fuel_reimbursement: booking.shifts.sum(:fuel_reimbursement)
-      )
-    end
-  end
-
   # Extra services the customer added to this visit. They are note-only (the same
   # tech does them back-to-back — NOT a separate booking), stored on raw["addons"]
   # as [{ id, name, price, duration }]. Empty when none.
@@ -70,8 +40,45 @@ class BookingSerializer < Blueprinter::Base
     booking.booked_for_name.presence || booking.user&.first_name
   end
 
-  association :service,          blueprint: ServiceSerializer
-  association :employee_profile, blueprint: EmployeeProfileSerializer
-  association :meeting,          blueprint: MeetingSerializer
-  association :address,          blueprint: AddressSerializer
+  association :service, blueprint: ServiceSerializer
+  association :meeting, blueprint: MeetingSerializer
+  association :address, blueprint: AddressSerializer
+
+  # Default: the tech as the PUBLIC (customer-safe) profile - no contact, no
+  # earnings. This is the safe default; a leak now requires opting IN to :full,
+  # not remembering to opt out. `financials` (the tech's pay) is defined in the
+  # :full view below, NOT here, so it isn't in the default customer payload.
+  association :employee_profile, blueprint: EmployeeProfileSerializer, view: :public
+
+  # ── Full view (STAFF / ADMIN) ──────────────────────────────────────────────
+  # The tech's full profile (their own user record + operational data) and the
+  # per-booking money picture. Rendered to the tech themselves and to admins only.
+  view :full do
+    association :employee_profile, blueprint: EmployeeProfileSerializer, view: :full
+
+    # Per-booking money picture, per the tech's account type (partner vs direct).
+    # NOT in the default view - a customer must never see their tech's earnings.
+    field :financials do |booking|
+      partner = booking.partner
+      base = {
+        account_type: partner ? "partner" : "direct",
+        total:        booking.total,
+        amount_paid:  booking.amount_paid,
+        outstanding:  booking.outstanding_balance
+      }
+      if partner
+        base.merge(
+          partner_name:     partner.name,
+          platform_fee_pct: partner.platform_fee_pct,
+          provider_share:   (booking.amount_paid * partner.partner_share_pct / 100).round(2),
+          payout_status:    booking.partner_payout_id ? "settled" : "owed"
+        )
+      else
+        base.merge(
+          tips:               booking.tips.sum(:amount),
+          fuel_reimbursement: booking.shifts.sum(:fuel_reimbursement)
+        )
+      end
+    end
+  end
 end

@@ -18,8 +18,7 @@ export function ReviewSheet({ booking, onClose }: { booking: Booking; onClose: (
   const [body, setBody] = useState("")
   const submit = useSubmitReview()
 
-  const tech = booking.employee_profile?.user
-  const techName = [tech?.first_name, tech?.last_name].filter(Boolean).join(" ")
+  const techName = booking.employee_profile?.name ?? ""
 
   function handleSubmit() {
     if (rating < 1) {

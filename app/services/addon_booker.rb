@@ -50,7 +50,7 @@ class AddonBooker
       }
     end
 
-    persist_note(addons) if addons.any?
+    persist(addons) if addons.any?
     Result.new(addons: addons, failures: failures)
   end
 
@@ -77,9 +77,24 @@ class AddonBooker
     service.service_category&.slug == LASHES_SLUG
   end
 
-  # Stamp the add-ons onto the primary booking so they're queryable and survive
-  # for the customer's records / admin dashboard. Note-only — no child bookings.
-  def persist_note(addons)
-    @primary.update_columns(raw: @primary.raw.merge("addons" => addons.map { |a| a.transform_keys(&:to_s) }))
+  # Stamp the add-ons onto the primary booking AND fold their price into its
+  # subtotal + total, so the money is correct everywhere (the combined charge,
+  # outstanding_balance, and the invoice) regardless of pay-now vs pay-after.
+  # Without the total bump, a pay-after booking with add-ons would never bill the
+  # add-on cost and would report a total short by that amount. Note-only for the
+  # scheduling side - no child bookings.
+  #
+  # Re-run safe: we subtract the PREVIOUS add-on total (from the existing note)
+  # before adding the new one, so re-resolving the same booking replaces rather
+  # than stacks the add-on cost.
+  def persist(addons)
+    previous_total = Array(@primary.raw["addons"]).sum { |a| a["price"].to_d }
+    new_total      = addons.sum { |a| a[:price].to_d }
+    delta          = new_total - previous_total
+    @primary.update_columns(
+      raw:      @primary.raw.merge("addons" => addons.map { |a| a.transform_keys(&:to_s) }),
+      subtotal: @primary.subtotal.to_d + delta,
+      total:    @primary.total.to_d + delta
+    )
   end
 end

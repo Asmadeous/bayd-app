@@ -46,7 +46,10 @@ class AssignmentService
     return failure(:no_availability, :no_availability, "no_candidates") if booking.nil?
 
     # Resolve any add-ons (note-only — not their own booking; the tech factors the
-    # extra work in on the day). Stamps raw["addons"] on the booking too.
+    # extra work in on the day). AddonBooker folds the price into subtotal/total
+    # and stamps raw["addons"]. The booking's ends_at already covers the add-on
+    # time: total_duration_minutes reserved it up front, so the whole visit was
+    # checked for availability and can't overlap the tech's next job.
     @addon_result = AddonBooker.new(booking, @addon_service_ids).call
 
     # Confirmation now + timed reminders (day-before / day-of / dispatch) on Solid
@@ -71,9 +74,26 @@ class AssignmentService
     @requested_end ||= requested_start + total_duration_minutes.minutes
   end
 
-  # Group bookings run longer: service duration × party size (1× for everyone else).
+  # Total time to RESERVE for the visit: the primary service (× party size for
+  # groups) PLUS any add-on services done back-to-back in the same appointment.
+  # Including add-on time here is what makes the slot search, operating-hours
+  # check, tech-free check, and the booking's ends_at all cover the whole visit,
+  # so the extra work can't overlap the tech's next job (no double-booking).
   def total_duration_minutes
-    @total_duration_minutes ||= @booking_request.service.duration_minutes * booking_party_size
+    @total_duration_minutes ||=
+      (@booking_request.service.duration_minutes * booking_party_size) + addon_duration_minutes
+  end
+
+  # Duration of the requested add-on services, summed. Computed from the raw
+  # requested ids (the assigned tech isn't known yet at search time), so it may
+  # slightly OVER-reserve if an add-on is later rejected - which is safe; only
+  # under-reserving risks a double-book. Add-ons are per-visit, not × party size.
+  def addon_duration_minutes
+    @addon_duration_minutes ||= begin
+      ids = Array(@addon_service_ids).map(&:to_i).uniq
+              .reject { |id| id == @booking_request.service_id }
+      ids.empty? ? 0 : Service.active.where(id: ids).sum(:duration_minutes)
+    end
   end
 
   # Scheduled times are stored as naive wall-clock (the ET time the customer
