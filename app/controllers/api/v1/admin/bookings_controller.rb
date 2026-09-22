@@ -7,17 +7,17 @@ module Api
           scope = scope.where(status: params[:status])       if params[:status].present?
           scope = scope.where(employee_profile_id: params[:employee_id]) if params[:employee_id].present?
           records, meta = paginate(scope)
-          render json: { data: BookingSerializer.render_as_hash(records), pagination: meta }
+          render json: { data: BookingSerializer.render_as_hash(records, view: :full), pagination: meta }
         end
 
         def show
-          render json: BookingSerializer.render_as_hash(Booking.find(params[:id]))
+          render json: BookingSerializer.render_as_hash(Booking.find(params[:id], view: :full))
         end
 
         def update
           booking = Booking.find(params[:id])
           booking.update!(status: params[:status], cancellation_reason: params[:cancellation_reason])
-          render json: BookingSerializer.render_as_hash(booking)
+          render json: BookingSerializer.render_as_hash(booking, view: :full)
         end
 
         def destroy
@@ -66,7 +66,7 @@ module Api
           booking = Booking.find(params[:id])
           EmployeeProfile.find(params[:employee_profile_id]) # 404 if missing
           booking.update!(employee_profile_id: params[:employee_profile_id])
-          render json: BookingSerializer.render_as_hash(booking.reload)
+          render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
         rescue ActiveRecord::RecordNotUnique, ActiveRecord::StatementInvalid
           render json: { error: "That technician already has an overlapping booking at this time." }, status: :unprocessable_entity
         end
@@ -82,7 +82,7 @@ module Api
 
           new_employee = EmployeeProfile.find(params[:employee_profile_id]) if params[:employee_profile_id].present?
           booking.reschedule!(new_start: new_start, by_customer: false, new_employee: new_employee)
-          render json: BookingSerializer.render_as_hash(booking.reload)
+          render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
         rescue Booking::RescheduleError => e
           render json: { error: e.reason.to_s.humanize, code: e.reason },
                  status: e.reason == :slot_taken ? :conflict : :unprocessable_entity

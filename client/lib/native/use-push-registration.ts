@@ -59,9 +59,37 @@ export function usePushRegistration() {
         // swallow — push is optional; the app works without it
       })
 
+      // Foreground gap: when a push arrives while the app is OPEN, Android hands
+      // it to the app instead of showing a banner - so without this it's silently
+      // dropped and the user never sees it. Re-display it as a local notification
+      // (same high-importance channel) so it shows + makes a sound regardless of
+      // whether the app is foreground, backgrounded, or closed.
+      const foregroundListener = await PushNotifications.addListener(
+        "pushNotificationReceived",
+        async (notification) => {
+          try {
+            const { LocalNotifications } = await import("@capacitor/local-notifications")
+            await LocalNotifications.schedule({
+              notifications: [
+                {
+                  id: Date.now() % 2147483647,
+                  title: notification.title ?? "BAYD",
+                  body: notification.body ?? "",
+                  channelId: platform === "android" ? "bayd_default" : undefined,
+                  extra: notification.data,
+                },
+              ],
+            })
+          } catch {
+            // best-effort — never break the app over a foreground display
+          }
+        },
+      )
+
       removeListeners = () => {
         registration.remove()
         errorListener.remove()
+        foregroundListener.remove()
       }
 
       const perm = await PushNotifications.requestPermissions()

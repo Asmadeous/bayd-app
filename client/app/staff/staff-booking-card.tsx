@@ -54,8 +54,13 @@ export function StaffBookingCard({ booking }: { booking: Booking }) {
         <p className="flex items-center gap-2">
           <Clock3 className="size-4 text-[#C96C83]" aria-hidden />
           {booking.service?.duration_minutes} min
+          {booking.client_type === "group" && booking.party_size > 1 ? ` · party of ${booking.party_size}` : ""}
         </p>
       </div>
+
+      {/* Client details the tech needs to run the visit: who, where, how to reach
+          them, and any special requests. */}
+      <ClientDetails booking={booking} />
 
       {/* Add-ons: extra services the same tech does this visit (note-only). */}
       {booking.addons?.length > 0 && (
@@ -109,6 +114,62 @@ export function StaffBookingCard({ booking }: { booking: Booking }) {
         </>
       )}
     </li>
+  )
+}
+
+// Everything the technician needs to run the visit: client name, the full
+// service address (with apartment / buzz code so they can get in), a tappable
+// phone to call ahead, and any notes / special requests the client left.
+function ClientDetails({ booking }: { booking: Booking }) {
+  const addr = booking.address
+  const name = booking.customer_name
+  const phone = booking.booked_for_phone
+  const notes = booking.notes?.trim()
+
+  const addressLine = addr
+    ? [addr.line1, addr.line2, addr.city, addr.province, addr.postal_code].filter(Boolean).join(", ")
+    : null
+
+  if (!name && !addressLine && !phone && !notes) return null
+
+  return (
+    <div className="mt-3 space-y-2 rounded-xl bg-black/[0.03] px-3 py-2.5 text-sm">
+      {name && (
+        <div className="flex items-start gap-2">
+          <span className="text-[#14100F]/45">Client</span>
+          <span className="ml-auto text-right font-semibold text-[#14100F]">{name}</span>
+        </div>
+      )}
+
+      {addressLine && (
+        <a
+          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addressLine)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-start gap-2"
+        >
+          <MapPin className="mt-0.5 size-4 shrink-0 text-[#C96C83]" aria-hidden />
+          <span className="text-[#14100F]">
+            {addressLine}
+            {addr?.is_apartment && addr?.buzz_code ? ` · Buzz ${addr.buzz_code}` : ""}
+          </span>
+        </a>
+      )}
+
+      {phone && (
+        <a href={`tel:${phone}`} className="flex items-center gap-2 font-semibold text-[#C96C83]">
+          <span className="text-[#14100F]/45">Call</span>
+          <span className="ml-auto text-right">{phone}</span>
+        </a>
+      )}
+
+      {notes && (
+        <div className="rounded-lg bg-[#C98A2E]/10 px-2.5 py-1.5 text-[#8a5e12]">
+          <span className="text-[0.6rem] font-bold uppercase tracking-[0.08em]">Notes</span>
+          <p className="mt-0.5 leading-snug">{notes}</p>
+        </div>
+      )}
+    </div>
   )
 }
 

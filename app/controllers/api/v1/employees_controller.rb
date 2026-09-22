@@ -35,7 +35,7 @@ module Api
         scope = params[:filter] == "past" ? profile.bookings.past.order(starts_at: :desc)
                                           : profile.bookings.active.order(:starts_at)
         records, meta = paginate(scope.includes(:user, :service, :address, :partner, :tips, :shifts))
-        render json: { data: BookingSerializer.render_as_hash(records), pagination: meta }
+        render json: { data: BookingSerializer.render_as_hash(records, view: :full), pagination: meta }
       end
 
       # A single one of the tech's OWN bookings (for the navigate / call screens).
@@ -44,7 +44,7 @@ module Api
       # nothing for a staff user.
       def booking
         record = profile.bookings.includes(:user, :service, :address, :partner, :tips, :shifts).find(params[:id])
-        render json: BookingSerializer.render_as_hash(record)
+        render json: BookingSerializer.render_as_hash(record, view: :full)
       end
 
       def reviews
@@ -120,7 +120,7 @@ module Api
         end
 
         booking.update!(status: :no_show)
-        render json: BookingSerializer.render_as_hash(booking.reload)
+        render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
       end
 
       # The tech failed to attend (self-report) - the opposite of no_show. The
@@ -134,7 +134,7 @@ module Api
         end
 
         booking.update!(status: :missed)
-        render json: BookingSerializer.render_as_hash(booking.reload)
+        render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
       end
 
       def current_shift
@@ -171,7 +171,7 @@ module Api
 
         result = BookingPaymentService.new(booking).collect(amount: amount, note: "Overtime BKG-#{booking.id}")
         if result.success?
-          render json: { mode: result.mode.to_s, url: result.url, booking: BookingSerializer.render_as_hash(booking.reload) }
+          render json: { mode: result.mode.to_s, url: result.url, booking: BookingSerializer.render_as_hash(booking.reload, view: :full) }
         else
           render json: { error: result.error }, status: :unprocessable_entity
         end
@@ -230,7 +230,7 @@ module Api
         end
 
         booking.mark_paid!(processor: "square_pos", reference: payment_id, amount: amount)
-        render json: BookingSerializer.render_as_hash(booking.reload)
+        render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
       end
 
       # ── Staff-initiated manual booking (force-book) ─────────────────────────
@@ -276,17 +276,16 @@ module Api
         # validates each against employee_services + category, stamps raw["addons"],
         # and returns priced entries. Their price + duration fold into this one
         # booking (the tech charges the combined total on the day).
+        # AddonBooker already folds the add-on price into subtotal + total (single
+        # source of truth), so only extend the appointment window here for the
+        # extra time - do NOT re-add the price or it double-counts.
         addons = AddonBooker.new(booking, params[:addon_service_ids]).call
         if addons.any?
           extra_minutes = addons.addons.sum { |a| a[:duration].to_i }
-          booking.update!(
-            subtotal: booking.subtotal + addons.total,
-            total:    booking.total + addons.total,
-            ends_at:  booking.ends_at + extra_minutes.minutes
-          )
+          booking.update!(ends_at: booking.ends_at + extra_minutes.minutes)
         end
 
-        render json: BookingSerializer.render_as_hash(booking.reload).merge(
+        render json: BookingSerializer.render_as_hash(booking.reload, view: :full).merge(
           addons: addons.addons, addon_failures: addons.failures
         ), status: :created
       rescue ManualAddressError => e

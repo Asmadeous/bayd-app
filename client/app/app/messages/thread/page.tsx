@@ -50,6 +50,13 @@ function MessageThread() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
   }, [messages, otherTyping])
 
+  // setTyping auto-stops after a pause (handled in useChat), so just fire it on
+  // keystroke - typing true while there's text, false when the box is emptied.
+  function onDraftChange(value: string) {
+    setDraft(value)
+    setTyping(value.trim().length > 0)
+  }
+
   async function onSend() {
     const body = draft.trim()
     if (!body || sending) return
@@ -127,10 +134,7 @@ function MessageThread() {
         <textarea
           rows={1}
           value={draft}
-          onChange={(e) => {
-            setDraft(e.target.value)
-            setTyping(e.target.value.trim().length > 0)
-          }}
+          onChange={(e) => onDraftChange(e.target.value)}
           onBlur={() => setTyping(false)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {

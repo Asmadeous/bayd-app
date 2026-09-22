@@ -61,7 +61,11 @@ export function useChat(conversationId: number, currentUserId: number): UseChat 
           } else if (event.type === "presence" && event.user_id !== currentUserId) {
             setOtherOnline(event.online)
           } else if (event.type === "read" && event.reader_id !== currentUserId) {
-            setMessages((prev) => prev.map((m) => (m.read_at ? m : { ...m, read_at: event.at })))
+            // The OTHER person read the thread -> mark MY messages (the ones they
+            // just saw) as read. Don't touch their own messages' read state.
+            setMessages((prev) =>
+              prev.map((m) => (m.sender_id === currentUserId && !m.read_at ? { ...m, read_at: event.at } : m)),
+            )
           }
         },
       }
@@ -77,14 +81,40 @@ export function useChat(conversationId: number, currentUserId: number): UseChat 
     async (body: string) => {
       const trimmed = body.trim()
       if (!trimmed) return
-      // Post over REST (the server broadcasts it back to the stream, incl. to us).
-      await api.post(`/conversations/${conversationId}/messages`, { body: trimmed })
+      // Post over REST; the endpoint returns the created message. Append it
+      // IMMEDIATELY (optimistic) so the sender sees it without waiting for the
+      // cable round-trip - the dedup-by-id in `received` drops the echoed
+      // broadcast, so it never appears twice.
+      const { data } = await api.post<ChatMessage>(`/conversations/${conversationId}/messages`, { body: trimmed })
+      setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data]))
     },
     [conversationId]
   )
 
+  // setTyping(true) signals typing AND schedules an auto-stop after a pause, so
+  // the other side never sees "typing…" stuck when the user types then stops
+  // without sending. Callers can just fire setTyping(true) on each keystroke -
+  // the hook debounces and auto-clears. setTyping(false) stops immediately.
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const setTyping = useCallback((typing: boolean) => {
+    if (typingTimer.current) {
+      clearTimeout(typingTimer.current)
+      typingTimer.current = null
+    }
     subRef.current?.perform(typing ? "typing" : "stopped_typing", {})
+    if (typing) {
+      typingTimer.current = setTimeout(() => {
+        subRef.current?.perform("stopped_typing", {})
+        typingTimer.current = null
+      }, 2500)
+    }
+  }, [])
+
+  // Clear the typing timer if the component unmounts mid-typing.
+  useEffect(() => {
+    return () => {
+      if (typingTimer.current) clearTimeout(typingTimer.current)
+    }
   }, [])
 
   return { messages, otherTyping, otherOnline, send, setTyping }

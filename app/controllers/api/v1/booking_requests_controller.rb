@@ -50,7 +50,9 @@ module Api
           addon_result = result.addons
           notify_admin_addons(booking, addon_result) if addon_result&.any?
           subscription = maybe_start_subscription(booking)
-          payment = collect_initial_payment(booking, extra_amount: addon_result&.total || 0)
+          # Add-on prices are already folded into booking.total by AddonBooker, so
+          # collect_initial_payment charges the correct combined amount - no extra.
+          payment = collect_initial_payment(booking)
           render json: {
             booking_request: BookingRequestSerializer.render_as_hash(result.booking_request),
             booking:         BookingSerializer.render_as_hash(booking),
@@ -161,19 +163,23 @@ module Api
       #   • pay_upfront    → collect the full total
       #   • pay_after      → collect nothing now
       # Returns a hash the client uses to open a link or confirm the charge.
-      # extra_amount folds add-on service prices into the one combined charge so
-      # the customer pays once for the whole visit.
-      def collect_initial_payment(booking, extra_amount: 0)
+      # booking.total already includes any add-on prices (AddonBooker folds them
+      # in), so the "full total" here is the whole combined visit - one charge.
+      def collect_initial_payment(booking)
         amount =
           if booking.client_type_group? then (group_charge_full? ? booking.total : booking.required_deposit)
           elsif booking.timing_pay_upfront? then booking.total
           else 0
           end
-        amount = amount.to_d + extra_amount.to_d if amount.to_d.positive? # only add when actually charging now
-        return { mode: "none" } if amount.to_d <= 0
 
         tip = (params.dig(:booking_request, :tip) || params[:tip]).to_d
         gift_card_code = params.dig(:booking_request, :gift_card_code) || params[:gift_card_code]
+
+        # Collect if there's a service amount now OR a tip. A tip is money the
+        # customer chose to give the tech - it must NOT be dropped just because the
+        # booking is pay-after (amount 0). Only bail when there's truly nothing.
+        return { mode: "none" } if amount.to_d <= 0 && tip <= 0
+
         result = BookingPaymentService.new(booking).collect(amount: amount, tip: tip, gift_card_code: gift_card_code)
         return { mode: "error", error: result.error } unless result.success?
 

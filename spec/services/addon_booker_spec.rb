@@ -44,6 +44,24 @@ RSpec.describe AddonBooker, type: :service do
     )
   end
 
+  it "folds add-on prices into the primary's subtotal + total (so the charge is right)" do
+    b = primary # Manicure $40
+    described_class.new(b, [ pedi.id ]).call # + Pedicure $50
+    b.reload
+    expect(b.total).to eq(90)
+    expect(b.subtotal).to eq(90)
+    expect(b.outstanding_balance).to eq(90) # nothing paid yet
+  end
+
+  it "does not double-count the total when the same booking is re-resolved" do
+    b = primary # $40
+    described_class.new(b, [ pedi.id ]).call # + $50 -> $90
+    described_class.new(b.reload, [ pedi.id ]).call # re-run: still $90, not $140
+    b.reload
+    expect(b.total).to eq(90)
+    expect(b.raw["addons"].size).to eq(1)
+  end
+
   it "resolves multiple add-ons and sums the total" do
     b = primary
     extra = create(:service, name: "Extra", duration_minutes: 15, price: 10, service_category: nails_cat)

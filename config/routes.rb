@@ -120,6 +120,11 @@ Rails.application.routes.draw do
       # Address verification (public — geocode the typed address and confirm it's
       # a real Canadian address before letting the booking form proceed).
       post "geo/verify_address", to: "geo#verify_address"
+      # Address autocomplete (public — proxies Google Places so the key stays
+      # server-side). autocomplete returns suggestions; place_details resolves a
+      # chosen suggestion to structured street/city/province/postal + lat/lng.
+      get  "geo/autocomplete",   to: "geo#autocomplete"
+      get  "geo/place_details",  to: "geo#place_details"
 
       # Shop & checkout
       resources :orders, only: %i[index show create]

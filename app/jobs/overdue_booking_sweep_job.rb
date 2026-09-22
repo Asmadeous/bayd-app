@@ -46,7 +46,7 @@ class OverdueBookingSweepJob < ApplicationJob
       title: "Missed clock-in: #{svc}",
       body: "This job started at #{local_time(booking)} and you haven't clocked in. Clock in now, or let an admin know if you can't attend.",
       booking: booking,
-      action_url: "/staff/schedule"
+      action_url: "#{app_url}/staff/schedule"
     )
   end
 
@@ -61,7 +61,7 @@ class OverdueBookingSweepJob < ApplicationJob
         title: "Overdue booking - no clock-in",
         body: "#{tech_name} hasn't clocked in for #{svc} (started #{local_time(booking)}). Follow up or mark it missed.",
         booking: booking,
-        action_url: "/dashboard/admin/bookings"
+        action_url: "#{app_url}/dashboard/admin/bookings"
       )
     end
   end
@@ -73,4 +73,8 @@ class OverdueBookingSweepJob < ApplicationJob
   def local_time(booking)
     booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%-l:%M %p")
   end
+
+  # Absolute frontend URL so the link works in email + SMS (a relative path is a
+  # dead link outside the app).
+  def app_url = ENV.fetch("APP_URL", "http://localhost:3001")
 end

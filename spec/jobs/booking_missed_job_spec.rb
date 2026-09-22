@@ -21,7 +21,9 @@ RSpec.describe BookingMissedJob, type: :job do
       .to change { Notification.where(user: customer, booking: booking, kind: "booking_missed").count }.by(1)
 
     note = Notification.find_by(user: customer, booking: booking, kind: "booking_missed")
-    expect(note.action_url).to eq("/book")
+    # Absolute URL so the link works in email + SMS, not just in-app.
+    expect(note.action_url).to end_with("/book")
+    expect(note.action_url).to start_with("http")
   end
 
   it "never charges the customer" do

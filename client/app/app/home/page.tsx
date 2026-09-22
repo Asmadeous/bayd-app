@@ -100,8 +100,7 @@ function nextUpcoming(bookings: Booking[], now: number): Booking | null {
 }
 
 function NextBookingCard({ booking }: { booking: Booking }) {
-  const tech = booking.employee_profile.user
-  const techName = [tech.first_name, tech.last_name].filter(Boolean).join(" ") || "your technician"
+  const techName = booking.employee_profile.name || "your technician"
 
   return (
     <Link

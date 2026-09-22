@@ -23,9 +23,15 @@ class BookingMissedJob < ApplicationJob
       title: "We missed your #{svc} appointment",
       body: "We're sorry - your technician couldn't make it. No charge was applied. Tap to rebook at a time that works for you.",
       booking: booking,
-      action_url: "/book"
+      action_url: "#{app_url}/book"
     )
   rescue StandardError => e
     Rails.logger.warn("[BookingMissedJob] booking #{booking_id} failed: #{e.message}")
   end
+
+  private
+
+  # Absolute frontend URL so the link works in email + SMS (a relative path is a
+  # dead link outside the app).
+  def app_url = ENV.fetch("APP_URL", "http://localhost:3001")
 end
