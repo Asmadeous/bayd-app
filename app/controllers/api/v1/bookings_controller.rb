@@ -13,8 +13,23 @@ module Api
         render json: BookingSerializer.render_as_hash(scoped_booking)
       end
 
+      # Customer self-cancel. Only a pending/confirmed booking, and only up to
+      # CANCEL_CUTOFF_HOURS before the start (mirrors the reschedule cutoff) - a
+      # tech is already en route / working inside that window. Any refund is
+      # handled by an admin (no automatic money movement here).
+      CANCEL_CUTOFF_HOURS = 24
+
       def cancel
         booking = scoped_booking
+
+        unless booking.pending? || booking.confirmed?
+          return render json: { error: "This booking can't be cancelled." }, status: :unprocessable_entity
+        end
+        if booking.starts_at <= CANCEL_CUTOFF_HOURS.hours.from_now
+          return render json: { error: "Cancellations must be at least #{CANCEL_CUTOFF_HOURS} hours before your appointment. Please call us for last-minute changes." },
+                        status: :unprocessable_entity
+        end
+
         booking.update!(status: :cancelled, cancellation_reason: params[:reason])
         render json: BookingSerializer.render_as_hash(booking)
       end

@@ -20,4 +20,28 @@ RSpec.describe NotificationService, type: :service do
     notification = described_class.deliver(user: user, kind: "review_request", title: "x")
     expect(notification).to be_persisted
   end
+
+  describe "email is gated to review requests only (no email flood)" do
+    before { allow(PushService).to receive(:push) }
+
+    it "emails a review_request" do
+      expect {
+        described_class.deliver(user: user, kind: "review_request", title: "Rate us")
+      }.to have_enqueued_mail(CustomerMailer, :notify)
+    end
+
+    it "does NOT email a routine confirmation/reminder" do
+      %w[booking_confirmed booking_reminder_day_of booking_missed booking_rescheduled loyalty_earned].each do |kind|
+        expect {
+          described_class.deliver(user: user, kind: kind, title: "x")
+        }.not_to have_enqueued_mail(CustomerMailer, :notify)
+      end
+    end
+
+    it "still sends SMS for a routine confirmation (SMS replaces email)" do
+      expect {
+        described_class.deliver(user: user, kind: "booking_confirmed", title: "Confirmed")
+      }.to have_enqueued_job(NotificationSmsJob)
+    end
+  end
 end

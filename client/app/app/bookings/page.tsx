@@ -6,7 +6,8 @@ import { useMemo, useState } from "react"
 import { CalendarDays, Clock3, MessageCircle, Navigation, Star, Video } from "lucide-react"
 
 import api from "@/lib/api"
-import { useBookings, type Booking } from "@/lib/hooks/use-bookings"
+import { useBookings, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
+import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
 import { useStartMeeting } from "@/lib/hooks/use-meetings"
 import type { Conversation } from "@/lib/cable/chat-types"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
@@ -68,7 +69,7 @@ export default function BookingsScreen() {
         ) : (
           <ul className="space-y-3">
             {list.map((b) => (
-              <BookingCard key={b.id} booking={b} cancellable={tab === "upcoming"} />
+              <BookingCard key={b.id} booking={b} cancellable={tab === "upcoming"} now={now} />
             ))}
           </ul>
         )}
@@ -77,14 +78,40 @@ export default function BookingsScreen() {
   )
 }
 
-function BookingCard({ booking, cancellable }: { booking: Booking; cancellable: boolean }) {
+function BookingCard({ booking, cancellable, now }: { booking: Booking; cancellable: boolean; now: number }) {
   const techName = booking.employee_profile.name || "Your technician"
+  const { toast } = useToast()
+  const confirm = useConfirm()
   const [rescheduling, setRescheduling] = useState(false)
   const [reviewing, setReviewing] = useState(false)
+  const cancelBooking = useCancelBooking()
   // Self-reschedule is capped at 2 per booking (backend enforces; hide when spent).
   const canReschedule = booking.reschedule_count < 2 && ["pending", "confirmed"].includes(booking.status)
+  // Self-cancel: only pending/confirmed and at least 24h before the start (the
+  // backend enforces the same cutoff). Hidden otherwise - "call us" for late changes.
+  const cutoff = new Date(booking.starts_at).getTime() - 24 * 60 * 60 * 1000
+  const canCancel = ["pending", "confirmed"].includes(booking.status) && now < cutoff
   // Review a completed booking once (has_review from the serializer).
   const canReview = booking.status === "completed" && !booking.has_review
+
+  async function onCancel() {
+    // Dangerous, irreversible -> real modal confirmation, not an inline toggle.
+    const ok = await confirm({
+      title: "Cancel appointment?",
+      message: `Your ${booking.service.name} on ${formatBookingDate(booking.starts_at)} will be cancelled. This can't be undone.`,
+      confirmLabel: "Cancel appointment",
+      cancelLabel: "Keep it",
+      tone: "danger",
+    })
+    if (!ok) return
+    try {
+      await cancelBooking.mutateAsync({ id: booking.id })
+      toast({ title: "Appointment cancelled", variant: "success" })
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
+      toast({ title: "Couldn't cancel", description: msg ?? "Please try again.", variant: "error" })
+    }
+  }
 
   return (
     <li className="rounded-2xl bg-white p-4 shadow-sm">
@@ -127,17 +154,29 @@ function BookingCard({ booking, cancellable }: { booking: Booking; cancellable: 
         </Link>
       )}
 
-      {/* Customers can reschedule (to an open slot for the same tech); cancelling
-          is admin-only (removed here). */}
-      {cancellable && canReschedule && (
-        <div className="mt-3 border-t border-black/10 pt-3">
-          <button
-            type="button"
-            onClick={() => setRescheduling(true)}
-            className="block w-full rounded-lg border border-black/15 py-2 text-center text-sm font-semibold"
-          >
-            Reschedule
-          </button>
+      {/* Customers can reschedule (same tech, open slot) or cancel - both up to
+          24h before the appointment; within that window they call us. */}
+      {cancellable && (canReschedule || canCancel) && (
+        <div className="mt-3 space-y-2 border-t border-black/10 pt-3">
+          {canReschedule && (
+            <button
+              type="button"
+              onClick={() => setRescheduling(true)}
+              className="block w-full rounded-lg border border-black/15 py-2 text-center text-sm font-semibold"
+            >
+              Reschedule
+            </button>
+          )}
+          {canCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={cancelBooking.isPending}
+              className="block w-full rounded-lg py-2 text-center text-sm font-semibold text-[#8f3f4b] disabled:opacity-50"
+            >
+              {cancelBooking.isPending ? "Cancelling…" : "Cancel appointment"}
+            </button>
+          )}
         </div>
       )}
 
