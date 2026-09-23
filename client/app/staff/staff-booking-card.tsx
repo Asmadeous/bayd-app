@@ -11,7 +11,7 @@ import { useStartMeeting } from "@/lib/hooks/use-meetings"
 import { useClockIn, useClockOut } from "@/lib/hooks/use-time-clock"
 import { useChargeBooking, useMarkMissed } from "@/lib/hooks/use-employee"
 import { openPaymentUrl } from "@/lib/native/open-external"
-import { useToast } from "@/lib/app-ui/app-ui-provider"
+import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
 import { useRouter } from "next/navigation"
 import { cardClass, bookingStatusStyle, mutedClass, staffTheme } from "./staff-theme"
 
@@ -327,14 +327,19 @@ function ClockButton({ booking }: { booking: Booking }) {
 // "we missed your appointment" notification and a reschedule prompt. Never charges.
 function MarkMissedButton({ booking }: { booking: Booking }) {
   const { toast } = useToast()
+  const confirm = useConfirm()
   const markMissed = useMarkMissed()
-  const [confirming, setConfirming] = useState(false)
 
   async function go() {
-    if (!confirming) {
-      setConfirming(true)
-      return
-    }
+    // Customer-visible + irreversible -> real modal confirmation.
+    const ok = await confirm({
+      title: "Can't attend this job?",
+      message: "The client will be notified and offered a reschedule. No charge is applied. This can't be undone.",
+      confirmLabel: "Yes, I can't attend",
+      cancelLabel: "Back",
+      tone: "danger",
+    })
+    if (!ok) return
     try {
       await markMissed.mutateAsync(booking.id)
       toast({
@@ -349,7 +354,6 @@ function MarkMissedButton({ booking }: { booking: Booking }) {
         description: d?.response?.data?.error ?? d?.message ?? "Please try again.",
         variant: "error",
       })
-      setConfirming(false)
     }
   }
 
@@ -360,7 +364,7 @@ function MarkMissedButton({ booking }: { booking: Booking }) {
       disabled={markMissed.isPending}
       className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-2.5 text-sm font-semibold text-[#8f3f4b] disabled:opacity-50"
     >
-      {markMissed.isPending ? "…" : confirming ? "Tap again to confirm you can't attend" : "Can't attend"}
+      {markMissed.isPending ? "…" : "Can't attend"}
     </button>
   )
 }
