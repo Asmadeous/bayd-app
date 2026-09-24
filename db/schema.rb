@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_125252) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_24_094555) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -824,6 +824,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_125252) do
     t.index ["user_id"], name: "index_subscriptions_on_user_id"
   end
 
+  create_table "support_messages", force: :cascade do |t|
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.boolean "from_staff", default: false, null: false
+    t.datetime "read_at"
+    t.bigint "sender_id"
+    t.bigint "support_thread_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["sender_id"], name: "index_support_messages_on_sender_id"
+    t.index ["support_thread_id", "created_at"], name: "index_support_messages_on_support_thread_id_and_created_at"
+    t.index ["support_thread_id"], name: "index_support_messages_on_support_thread_id"
+  end
+
+  create_table "support_threads", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "email", null: false
+    t.datetime "last_message_at"
+    t.string "name", null: false
+    t.string "status", default: "open", null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["status", "last_message_at"], name: "index_support_threads_on_status_and_last_message_at"
+    t.index ["token"], name: "index_support_threads_on_token", unique: true
+    t.index ["user_id"], name: "index_support_threads_on_user_id"
+  end
+
   create_table "sync_events", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "event_type", null: false
@@ -984,6 +1011,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_125252) do
   add_foreign_key "subscriptions", "addresses"
   add_foreign_key "subscriptions", "services"
   add_foreign_key "subscriptions", "users"
+  add_foreign_key "support_messages", "support_threads"
+  add_foreign_key "support_messages", "users", column: "sender_id"
+  add_foreign_key "support_threads", "users"
   add_foreign_key "tips", "bookings"
   add_foreign_key "tips", "employee_profiles"
   add_foreign_key "users", "users", column: "referred_by_id"

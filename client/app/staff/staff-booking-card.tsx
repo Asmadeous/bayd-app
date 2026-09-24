@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { CalendarDays, Clock3, MapPin, CreditCard, Navigation, Video } from "lucide-react"
+import { CalendarDays, Check, Clock3, MapPin, CreditCard, Navigation, Video } from "lucide-react"
 
 import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
 import { useStartMeeting } from "@/lib/hooks/use-meetings"
 import { useClockIn, useClockOut } from "@/lib/hooks/use-time-clock"
-import { useChargeBooking, useMarkMissed } from "@/lib/hooks/use-employee"
+import { useChargeBooking, useMarkMissed, useRecordPayment } from "@/lib/hooks/use-employee"
+import { CHARGE_METHODS, paymentMethodLabel, type OfflinePaymentMethod } from "@/lib/payment-methods"
 import { openPaymentUrl } from "@/lib/native/open-external"
 import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
 import { useRouter } from "next/navigation"
@@ -109,7 +110,7 @@ export function StaffBookingCard({ booking }: { booking: Booking }) {
       {/* A just-completed job (in the active list) can still be charged. */}
       {done && (
         <>
-          <ChargeCardButton booking={booking} />
+          <ChargeButton booking={booking} />
           <OvertimeCharge bookingId={booking.id} />
         </>
       )}
@@ -191,6 +192,9 @@ function PastFinancials({ booking }: { booking: Booking }) {
           { label: "Charged", value: money(f.amount_paid) },
           { label: "Tips", value: money(f.tips) },
         ]
+  if (booking.paid_methods?.length) {
+    rows.push({ label: "Paid by", value: booking.paid_methods.map(paymentMethodLabel).join(" + ") })
+  }
 
   return (
     <div className="mt-3 rounded-lg bg-black/[0.03] px-3 py-2.5">
@@ -211,46 +215,95 @@ function PastFinancials({ booking }: { booking: Booking }) {
   )
 }
 
-// In-person card checkout for the booking's outstanding balance. Opens the same
-// hosted checkout the customer app uses (Square), where the tech enters the
-// CLIENT'S card - the payment/invoice stays the customer's, staff just runs the
-// terminal. The backend marks it paid by webhook; on returning from the checkout
-// we refresh the schedule so the paid state shows.
-function ChargeCardButton({ booking }: { booking: Booking }) {
+// Settle the booking's outstanding balance. The tech picks how the client is
+// paying: Card opens Square's card form in the in-app browser, where the tech
+// enters the card the client hands them (it is never sent to the client); the
+// webhook marks it paid, and we refresh when the browser closes. Cash, Interac e-Transfer,
+// and cheque are collected in person, so confirming marks it paid with that
+// method. Once settled, the card shows how it was paid instead.
+function ChargeButton({ booking }: { booking: Booking }) {
   const { toast } = useToast()
+  const confirm = useConfirm()
   const qc = useQueryClient()
   const charge = useChargeBooking()
+  const record = useRecordPayment()
+  const [open, setOpen] = useState(false)
   const due = Number(booking.outstanding_balance)
+  const busy = charge.isPending || record.isPending
 
-  if (due <= 0) return null
+  if (due <= 0) {
+    if (!booking.paid_methods?.length) return null
+    return (
+      <p className="mt-3 flex items-center justify-center gap-1.5 rounded-xl bg-[#4E9A57]/10 py-2.5 text-sm font-bold text-[#3f7e47]">
+        <Check className="size-4" aria-hidden />
+        Paid · {booking.paid_methods.map(paymentMethodLabel).join(" + ")}
+      </p>
+    )
+  }
 
   async function chargeCard() {
     try {
       const { url } = await charge.mutateAsync(booking.id)
-      // Open the hosted checkout; on return, refresh so the webhook-confirmed
-      // paid state is reflected.
       void openPaymentUrl(url, () => qc.invalidateQueries({ queryKey: ["employee-schedule"] }))
+      setOpen(false)
     } catch (e: unknown) {
-      const d = e as { response?: { data?: { error?: string } }; message?: string }
-      toast({
-        title: "Couldn't start the checkout",
-        description: d?.response?.data?.error ?? d?.message ?? "Please try again.",
-        variant: "error",
-      })
+      toast({ title: "Couldn't start the checkout", description: apiError(e), variant: "error" })
+    }
+  }
+
+  async function recordOffline(method: OfflinePaymentMethod) {
+    const label = paymentMethodLabel(method)
+    const ok = await confirm({
+      title: `Paid by ${label}?`,
+      message: `Only confirm once you have the $${due.toFixed(2)}. The booking will be marked paid by ${label}.`,
+      confirmLabel: `Mark paid · ${label}`,
+      cancelLabel: "Back",
+    })
+    if (!ok) return
+    try {
+      await record.mutateAsync({ bookingId: booking.id, method })
+      setOpen(false)
+      toast({ title: "Marked paid", description: `$${due.toFixed(2)} by ${label}.`, variant: "success" })
+    } catch (e: unknown) {
+      toast({ title: "Couldn't mark paid", description: apiError(e), variant: "error" })
     }
   }
 
   return (
-    <button
-      type="button"
-      onClick={chargeCard}
-      disabled={charge.isPending}
-      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#14100F] py-3 text-sm font-bold text-white disabled:opacity-50"
-    >
-      <CreditCard className="size-4" aria-hidden />
-      {charge.isPending ? "Opening checkout…" : `Charge card · $${due.toFixed(2)}`}
-    </button>
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        disabled={busy}
+        aria-expanded={open}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#14100F] py-3 text-sm font-bold text-white disabled:opacity-50"
+      >
+        <CreditCard className="size-4" aria-hidden />
+        {charge.isPending ? "Opening card form…" : busy ? "Working…" : `Charge · $${due.toFixed(2)}`}
+      </button>
+      {open && (
+        <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label="Payment method">
+          {CHARGE_METHODS.map((m) => (
+            <button
+              key={m.value}
+              type="button"
+              disabled={busy}
+              onClick={() => (m.value === "card" ? chargeCard() : recordOffline(m.value))}
+              className="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-left disabled:opacity-50"
+            >
+              <span className="block text-sm font-bold text-[#14100F]">{m.label}</span>
+              <span className="block text-[0.7rem] leading-tight text-[#14100F]/55">{m.hint}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
+}
+
+function apiError(e: unknown) {
+  const d = e as { response?: { data?: { error?: string } }; message?: string }
+  return d?.response?.data?.error ?? d?.message ?? "Please try again."
 }
 
 // Live timer while clocked in on a job (HH:MM:SS since clock-in).

@@ -20,8 +20,8 @@ class BookingMissedJob < ApplicationJob
     NotificationService.deliver(
       user: user,
       kind: :booking_missed,
-      title: "We missed your #{svc} appointment",
-      body: "We're sorry - your technician couldn't make it. No charge was applied. Tap to rebook at a time that works for you.",
+      title: "Your appointment was missed",
+      body: "We're sorry - your technician couldn't make it to your #{svc}. No charge was applied. Tap to rebook at a time that works for you.",
       booking: booking,
       action_url: "#{app_url}/book"
     )

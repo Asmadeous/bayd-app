@@ -144,6 +144,11 @@ Rails.application.routes.draw do
       post "franchise", to: "inbound_forms#franchise"
       post "careers",   to: "inbound_forms#job"
 
+      # Website support chat (public; the thread token is the visitor's credential)
+      post "support/threads",                to: "support_threads#create"
+      get  "support/threads/:token",         to: "support_threads#show"
+      post "support/threads/:token/messages", to: "support_threads#create_message"
+
       # Employee self-service
       scope :employee do
         get    "profile",       to: "employees#show"
@@ -179,6 +184,8 @@ Rails.application.routes.draw do
         # Staff-operated card checkout: hosted-checkout link for the booking balance
         # (tech enters the client's card there).
         post   "bookings/:id/payment_link", to: "employees#payment_link"
+        # Cash / Interac e-Transfer / cheque collected in person: marks it paid.
+        post   "bookings/:id/record_payment", to: "employees#record_payment"
         # Staff-initiated manual booking (force-book, skips eligibility gates)
         post   "bookings",               to: "employees#create_booking"
         # Bookable-hours: the tech's own weekly template + date overrides.
@@ -337,6 +344,11 @@ Rails.application.routes.draw do
         get   "inquiries/contacts",      to: "inquiries#contacts"
         patch "inquiries/franchise/:id", to: "inquiries#update_franchise"
         patch "inquiries/jobs/:id",      to: "inquiries#update_job"
+
+        # Website support chat inbox
+        resources :support_threads, only: %i[index show update] do
+          member { post :reply }
+        end
       end
     end
   end

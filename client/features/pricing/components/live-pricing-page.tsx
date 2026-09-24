@@ -48,11 +48,17 @@ const CATEGORY_META: Record<
     accent: "bg-white/80",
     order: 4,
   },
+  Facials: {
+    id: "facials",
+    summary: "Facials, peels, back treatments, and facial, scalp, and lymphatic massage with Rim.",
+    accent: "bg-[#eef1ec]",
+    order: 5,
+  },
   Spa: {
     id: "spa",
     summary: "Spa manicures, body scrubs, and group pampering.",
     accent: "bg-[#f7ede9]",
-    order: 5,
+    order: 6,
   },
 };
 
@@ -103,12 +109,12 @@ export function LivePricingPage() {
   });
 
   // While loading, or if the API is unreachable, fall back to the static menu
-  // so the page never renders empty. Facials have no DB equivalent, so the
-  // static Facials section is always appended after the live categories.
-  const live =
+  // so the page never renders empty. Facials are a real seeded category, so the
+  // static copy only fills in for the fallback.
+  const categories =
     !isLoading && !isError && services && services.length > 0
       ? toPriceCategories(services)
-      : pricingCategories;
+      : [...pricingCategories, FACIAL_SERVICES];
 
-  return <PricingPage categories={[...live, FACIAL_SERVICES]} />;
+  return <PricingPage categories={categories} />;
 }

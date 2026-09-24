@@ -246,6 +246,36 @@ function NotificationRow({
   )
 }
 
+const KIND_LABELS: Record<string, string> = {
+  booking_confirmed: "Confirmed",
+  booking_reminder_day_before: "Reminder",
+  booking_reminder_day_of: "Reminder",
+  booking_rescheduled: "Rescheduled",
+  booking_cancelled: "Cancelled",
+  booking_no_show: "Missed appointment",
+  booking_missed: "Missed appointment",
+  booking_dispatch: "Job today",
+  booking_starting: "Clock in",
+  booking_window_ended: "Clock out",
+  booking_overdue: "Missed clock-in",
+  booking_follow_up: "Follow-up",
+  booking_redirected: "Booking update",
+  review_request: "Review",
+  rebook_nudge: "Book again",
+  referral_offer: "Referral",
+  recurring_booked: "Recurring booking",
+  charge_failed: "Payment failed",
+  loyalty_earned: "Loyalty",
+  meeting_scheduled: "Video call",
+  meeting_reminder_day_before: "Video call",
+  meeting_reminder_soon: "Video call",
+  support_message: "Support chat",
+}
+
+function kindLabel(kind: string) {
+  return KIND_LABELS[kind] ?? kind.replaceAll("_", " ")
+}
+
 function NotificationDetailsSheet({
   notification,
   onOpenChange,
@@ -278,7 +308,7 @@ function NotificationDetailsSheet({
           <SheetBody className="space-y-5">
             <div className="flex flex-wrap gap-2">
               <span className="border border-black/8 bg-[#fbfaf7] px-2.5 py-1 text-xs font-bold capitalize text-[#5f6268]">
-                {notification.kind.replaceAll("_", " ")}
+                {kindLabel(notification.kind)}
               </span>
               <span className="border border-black/8 bg-[#fbfaf7] px-2.5 py-1 text-xs font-bold text-[#5f6268]">
                 {notification.read_at ? "Read" : "Unread"}

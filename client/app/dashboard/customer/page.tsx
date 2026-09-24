@@ -7,6 +7,8 @@ import { CalendarDays, CheckCircle2, Clock3, Gift, Sparkles } from "lucide-react
 import { useToast } from "@/components/bayd-toast-provider"
 import { AppCalendar } from "@/components/dashboard/app-calendar"
 import { BookingCard } from "@/components/dashboard/booking-card"
+import { CancelBookingButton } from "@/components/dashboard/cancel-booking-button"
+import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
 import { DashboardHero } from "@/components/dashboard/dashboard-hero"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
@@ -159,7 +161,16 @@ export default function CustomerDashboardPage() {
             ) : (
               <div className="space-y-3">
                 {upcoming.slice(0, 4).map((booking) => (
-                  <BookingCard booking={booking} key={booking.id} />
+                  <BookingCard
+                    booking={booking}
+                    key={booking.id}
+                    actions={
+                      <div className="flex flex-wrap items-center gap-2">
+                        <RescheduleDialog booking={booking} />
+                        <CancelBookingButton booking={booking} />
+                      </div>
+                    }
+                  />
                 ))}
               </div>
             )}

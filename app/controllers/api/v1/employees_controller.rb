@@ -212,6 +212,31 @@ module Api
         end
       end
 
+      # The tech collected a non-card payment in person (cash, Interac e-Transfer,
+      # cheque). Nothing to verify with a processor, so this records it as paid
+      # with the method used. Card payments go through payment_link instead.
+      def record_payment
+        booking = profile.bookings.find(params[:id])
+        method  = params[:method].to_s
+        due     = booking.outstanding_balance
+        amount  = params[:amount].present? ? params[:amount].to_d : due
+
+        unless Payment::OFFLINE_METHODS.include?(method)
+          return render json: { error: "Choose cash, Interac e-Transfer, or cheque." }, status: :unprocessable_entity
+        end
+        unless booking.in_progress? || booking.completed?
+          return render json: { error: "Clock in to this appointment before charging." }, status: :unprocessable_entity
+        end
+        return render json: { error: "This booking is already paid." }, status: :unprocessable_entity unless due.positive?
+        unless amount.positive? && amount <= due
+          return render json: { error: "Enter an amount up to the #{ActiveSupport::NumberHelper.number_to_currency(due)} due." }, status: :unprocessable_entity
+        end
+
+        booking.mark_paid!(processor: "manual", method: method, amount: amount,
+                           reference: params[:reference].to_s.strip.presence)
+        render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
+      end
+
       def pos_payment
         booking = profile.bookings.find(params[:id])
         payment_id = params[:square_payment_id].to_s.strip

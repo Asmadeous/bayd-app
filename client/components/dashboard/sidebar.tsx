@@ -21,6 +21,7 @@ import {
   Mail,
   MapPin,
   Menu,
+  MessageCircle,
   ReceiptText,
   Repeat2,
   Settings,
@@ -83,6 +84,7 @@ const adminNavGroups: NavGroup[] = [
       { label: "Employees", href: "/dashboard/admin/employees", icon: Users },
       { label: "Partners", href: "/dashboard/admin/partners", icon: Handshake },
       { label: "Jobs", href: "/dashboard/admin/jobs", icon: BriefcaseBusiness },
+      { label: "Support Chat", href: "/dashboard/admin/support", icon: MessageCircle },
     ],
   },
   {

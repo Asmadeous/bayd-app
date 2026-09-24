@@ -20,19 +20,9 @@ import { BookingCard } from "@/components/dashboard/booking-card"
 import { ReviewDialog } from "@/components/dashboard/review-dialog"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { useBookings, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
+import { useBookings, type Booking } from "@/lib/hooks/use-bookings"
+import { CancelBookingButton } from "@/components/dashboard/cancel-booking-button"
 import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
 import { MessageTechButton } from "@/components/dashboard/message-tech-button"
 import { MeetingButton } from "@/components/dashboard/meeting-button"
@@ -71,7 +61,6 @@ export default function CustomerBookingsPage() {
   const [dayBookings, setDayBookings] = useState<Booking[]>([])
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
   const { data, isError, isLoading } = useBookings(page)
-  const cancelMutation = useCancelBooking()
 
   const bookings = data?.data ?? []
   const pagination = data?.pagination
@@ -101,20 +90,6 @@ export default function CustomerBookingsPage() {
   function handleDaySelect(date: Date, selectedBookings: Booking[]) {
     setSelectedDate(date)
     setDayBookings(selectedBookings)
-  }
-
-  function cancelBooking(id: number) {
-    cancelMutation.mutate(
-      { id },
-      {
-        onSuccess: () => toast({ title: "Booking cancelled", variant: "success" }),
-        onError: (error) => toast({
-          title: "Booking not cancelled",
-          description: getApiErrorMessage(error, "Could not cancel this booking."),
-          variant: "error",
-        }),
-      },
-    )
   }
 
   useEffect(() => {
@@ -223,31 +198,7 @@ export default function CustomerBookingsPage() {
                         <MessageTechButton techUserId={b.employee_profile?.user_id ?? undefined} />
                         <MeetingButton booking={b} />
                         <RescheduleDialog booking={b} />
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="destructive"
-                              size="xs"
-                              disabled={cancelMutation.isPending}
-                            >
-                              Cancel
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Cancel booking?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will cancel {b.service?.name ?? "this appointment"}. You may need to book again if you change your mind.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Keep booking</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => cancelBooking(b.id)}>
-                                Cancel booking
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <CancelBookingButton booking={b} />
                       </div>
                     ) : b.status === "completed" ? (
                       b.has_review ? (
@@ -315,9 +266,4 @@ export default function CustomerBookingsPage() {
       <TutorialButton steps={customerBookingsSteps} pageKey="customer-bookings" />
     </DashboardPage>
   )
-}
-
-function getApiErrorMessage(error: unknown, fallback: string) {
-  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
-  return data?.error ?? data?.errors?.join(", ") ?? fallback
 }

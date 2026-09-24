@@ -13,6 +13,7 @@ import api from "@/lib/api"
 import { openPaymentUrl } from "@/lib/native/open-external"
 import { assetUrl } from "@/lib/asset-url"
 import { useCoverage } from "@/lib/hooks/use-coverage"
+import { FREQUENCY_PRESETS } from "@/lib/hooks/use-subscriptions"
 import { siteConfig } from "@/lib/site"
 import { useAuthStore } from "@/lib/stores/auth-store"
 
@@ -171,8 +172,8 @@ export function BookingFlow({
   // Subscription from the first booking and SubscriptionSchedulerJob books the
   // next one automatically; auto-charge bills the card on file each time.
   const [recurring, setRecurring] = useState(false)
-  const [recurInterval, setRecurInterval] = useState<"week" | "month">("week")
-  const [recurCount, setRecurCount] = useState("1")
+  const [recurLabel, setRecurLabel] = useState<string>("Weekly")
+  const recurPreset = FREQUENCY_PRESETS.find((p) => p.label === recurLabel) ?? FREQUENCY_PRESETS[1]
   const [autoCharge, setAutoCharge] = useState(false)
   // Service add-ons: extra services the CHOSEN tech also performs, done back-to-
   // back in the same visit and folded into one combined charge.
@@ -349,8 +350,8 @@ export function BookingFlow({
             notes: notes.trim() || undefined,
             // Auto-renewal (recurring booking). Only sent when the customer opts in.
             recurrence_active: recurring || undefined,
-            recurrence_interval_unit: recurring ? recurInterval : undefined,
-            recurrence_interval_count: recurring ? Math.max(1, Number(recurCount) || 1) : undefined,
+            recurrence_interval_unit: recurring ? recurPreset.unit : undefined,
+            recurrence_interval_count: recurring ? recurPreset.count : undefined,
             auto_charge: recurring && autoCharge ? true : undefined,
             // Service add-ons: extra services the same tech performs, this visit.
             // Only send IDs that are still valid options (a primary/tech change can
@@ -1175,30 +1176,18 @@ export function BookingFlow({
 
               {recurring ? (
                 <div className="mt-4 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-[#5f6268]">Every</span>
-                    <input
-                      className={cn(field, "w-16 text-center")}
-                      value={recurCount}
-                      onChange={(e) => setRecurCount(e.target.value.replace(/\D/g, "") || "")}
-                      inputMode="numeric"
-                      aria-label="Interval count"
-                    />
-                    <div className="inline-flex overflow-hidden rounded-lg border border-black/15">
-                      {(["week", "month"] as const).map((u) => (
-                        <button
-                          key={u}
-                          type="button"
-                          onClick={() => setRecurInterval(u)}
-                          className={cn(
-                            "px-3 py-2 text-sm font-bold transition-colors",
-                            recurInterval === u ? "bg-[#c96c83] text-white" : "bg-white text-[#5f6268] hover:bg-black/5",
-                          )}
-                        >
-                          {Number(recurCount) === 1 ? u : `${u}s`}
-                        </button>
+                  <div>
+                    <label className={lbl} htmlFor="repeat-frequency">How often</label>
+                    <select
+                      id="repeat-frequency"
+                      className={field}
+                      value={recurLabel}
+                      onChange={(e) => setRecurLabel(e.target.value)}
+                    >
+                      {FREQUENCY_PRESETS.map((p) => (
+                        <option key={p.label} value={p.label}>{p.label}</option>
                       ))}
-                    </div>
+                    </select>
                   </div>
 
                   <label className="flex cursor-pointer items-start gap-3">

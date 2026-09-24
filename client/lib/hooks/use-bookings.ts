@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import type { Meeting } from "@/lib/hooks/use-meetings"
+import type { PaymentMethod } from "@/lib/payment-methods"
 
 export interface Booking {
   id: number
@@ -13,6 +14,7 @@ export interface Booking {
   travel_fee: string
   total: string
   outstanding_balance: string
+  paid_methods: PaymentMethod[]
   notes: string | null
   cancellation_reason: string | null
   has_review: boolean

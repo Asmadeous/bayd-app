@@ -4,8 +4,6 @@ class TeamMemberSerializer < Blueprinter::Base
 
   field :photo_url do |ep|
     case ep.user&.first_name.to_s.downcase
-    when "dana"
-      "/images/new-pics-for-the-ladies/dana-team-headshot.webp"
     when "claire"
       "/images/new-pics-for-the-ladies/claire-team-profile.webp"
     else

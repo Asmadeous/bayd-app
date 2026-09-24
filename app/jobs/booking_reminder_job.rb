@@ -73,27 +73,27 @@ class BookingReminderJob < ApplicationJob
     end
   end
 
-  def title_for(reminder, booking)
-    svc = booking.service&.name || "your appointment"
+  def title_for(reminder, _booking)
     case reminder
-    when "confirmed"    then "Booking confirmed: #{svc}"
-    when "day_before"   then "Reminder: #{svc} tomorrow"
-    when "day_of"       then "Today: #{svc}"
-    when "dispatch"     then "Job today: #{svc}"
-    when "starting"     then "Time to clock in: #{svc}"
-    when "window_ended" then "Job wrapping up? #{svc}"
+    when "confirmed"    then "Your appointment is confirmed"
+    when "day_before"   then "Your appointment is tomorrow"
+    when "day_of"       then "Your appointment is today"
+    when "dispatch"     then "You have a job today"
+    when "starting"     then "Time to clock in"
+    when "window_ended" then "Time to clock out"
     end
   end
 
   def body_for(reminder, booking)
+    svc = booking.service&.name || "Your appointment"
     when_local = booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%b %-d at %-l:%M %p")
     case reminder
-    when "confirmed"    then "You're booked for #{when_local}. We'll remind you before."
-    when "day_before"   then "See you tomorrow, #{when_local}."
-    when "day_of"       then "Your appointment is today at #{when_local}."
-    when "dispatch"     then "You have a job today at #{when_local}. Check your schedule."
-    when "starting"     then "Your #{when_local} job starts now. Clock in when you arrive."
-    when "window_ended" then "Your #{when_local} job's time is up. Clock out to mark it done."
+    when "confirmed"    then "#{svc} is booked for #{when_local}. We'll remind you before."
+    when "day_before"   then "#{svc} is tomorrow, #{when_local}."
+    when "day_of"       then "#{svc} is today at #{when_local}."
+    when "dispatch"     then "#{svc} at #{when_local}. Check your schedule."
+    when "starting"     then "#{svc} at #{when_local} starts now. Clock in when you arrive."
+    when "window_ended" then "#{svc} at #{when_local} should be wrapping up. Clock out to mark it done."
     end
   end
 end

@@ -62,7 +62,7 @@ export function RecommendPopup() {
     <div
       aria-live="polite"
       className={cn(
-        "fixed bottom-4 left-4 z-40 w-[19rem] max-w-[calc(100vw-2rem)] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:bottom-6 sm:left-6",
+        "fixed bottom-4 left-4 z-40 w-[19rem] max-w-[calc(100vw-6rem)] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:bottom-6 sm:left-6",
         visible
           ? "translate-y-0 opacity-100"
           : "pointer-events-none translate-y-6 opacity-0",

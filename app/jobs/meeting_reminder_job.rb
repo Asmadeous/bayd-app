@@ -13,8 +13,8 @@ class MeetingReminderJob < ApplicationJob
   queue_as :default
 
   REMINDERS = {
-    "day_before" => { kind: "meeting_reminder_day_before" },
-    "soon"       => { kind: "meeting_reminder_soon" }
+    "day_before" => { kind: "meeting_reminder_day_before", title: "Your video call is tomorrow" },
+    "soon"       => { kind: "meeting_reminder_soon",       title: "Your video call starts soon" }
   }.freeze
 
   def perform(meeting_id, reminder)
@@ -33,7 +33,7 @@ class MeetingReminderJob < ApplicationJob
       NotificationService.deliver(
         user:  recipient,
         kind:  spec[:kind],
-        title: "Work-scope video call reminder",
+        title: spec[:title],
         body:  body_for(reminder, meeting),
         booking: booking,
         action_url: meeting.url

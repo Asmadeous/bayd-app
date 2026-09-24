@@ -104,85 +104,87 @@ export const pricingCategories: PriceCategory[] = [
   },
 ];
 
-// Facials are advertised as a range of options rather than discrete bookable
-// services, so they live here as static data (there is no DB equivalent). The
-// live /services page appends this section after the API-driven categories.
+// Offline fallback for the Facials section, mirroring the facials category in
+// db/seeds.rb (the source of truth). The live /services page renders facials
+// from the API; this only shows when the API is unreachable.
 export const FACIAL_SERVICES: PriceCategory = {
   id: "facials",
-  title: "Facial Services",
+  title: "Facials",
   summary:
-    "Personalized facial care, targeted treatments, and relaxation-focused options.",
-  accent: "bg-white/80",
+    "Facials, peels, back treatments, and facial, scalp, and lymphatic massage with Rim.",
+  accent: "bg-[#eef1ec]",
   items: [
     {
-      name: "Basic / Express Facial",
-      duration: "30–60 min",
-      price: "$80–$150",
-      description:
-        "A cleansing, exfoliating, and hydrating facial that refreshes the skin — a great introduction or a quick reset between fuller treatments.",
+      name: "Express facial (women only)",
+      duration: "45 min",
+      price: "$95",
+      description: "A quick, refreshing facial - cleanse, exfoliation, mask, and hydration to leave skin glowing.",
     },
     {
-      name: "Signature / Hydrating Facial",
-      duration: "60–90 min",
-      price: "$120–$200",
-      description:
-        "A deeply nourishing facial that cleanses, exfoliates, and replenishes moisture for a smooth, radiant, well-rested glow.",
+      name: "Deep facial (women only)",
+      duration: "75 min",
+      price: "$135",
+      description: "A thorough deep-cleansing facial with extractions, exfoliation, a treatment mask, and massage.",
     },
     {
-      name: "Anti-Aging / Collagen-Boosting Facial",
-      duration: "60–90 min",
-      price: "$150–$250+",
-      description:
-        "A targeted anti-ageing facial that firms, smooths, and boosts collagen to soften the look of fine lines and restore youthful vitality.",
+      name: "Microdermabrasion add on (women only)",
+      duration: "30 min",
+      price: "$50",
+      description: "A resurfacing add-on that gently buffs away dull, dead skin. Added to any facial.",
     },
     {
-      name: "Acne / Problem Skin Facial",
-      duration: "60–90 min",
-      price: "$140–$230",
-      description:
-        "A deep-cleansing facial for blemish-prone skin that clears congestion, calms breakouts, and supports a clearer, healthier complexion.",
+      name: "Problem skin facial (women only)",
+      duration: "90 min",
+      price: "$160",
+      description: "A targeted facial for congested, acne-prone, or reactive skin.",
     },
     {
-      name: "Brightening / Glow Facial",
-      duration: "60–90 min",
-      price: "$130–$220",
-      description:
-        "A brightening facial that targets dullness and uneven tone to reveal a fresh, luminous, even glow.",
+      name: "Full Back facial (women only)",
+      duration: "60 min",
+      price: "$120",
+      description: "Cleanses, exfoliates, and clears congestion across the full back.",
     },
     {
-      name: "Sensitive / Soothing Facial",
-      duration: "60–90 min",
-      price: "$120–$200",
-      description:
-        "A gentle, calming facial formulated for sensitive skin that soothes redness and irritation while restoring comfort and balance.",
+      name: "Half Back facial (women only)",
+      duration: "40 min",
+      price: "$65",
+      description: "A focused facial for the upper or lower back.",
     },
     {
-      name: "Chemical Peel (Light / Superficial)",
-      duration: "30–60 min",
-      price: "$100–$200+",
-      description:
-        "A light chemical peel that gently resurfaces the skin to improve tone and texture and reveal a brighter, smoother complexion.",
+      name: "Face chemical peel (women only)",
+      duration: "45 min",
+      price: "$150",
+      description: "A professional chemical peel to improve tone, texture, and clarity.",
     },
     {
-      name: "Back Facial",
-      duration: "45–75 min",
-      price: "$130–$210",
-      description:
-        "A cleansing and exfoliating treatment for the back that clears congestion and leaves hard-to-reach skin smooth and refreshed.",
+      name: "Underarm chemical peel (women only)",
+      duration: "30 min",
+      price: "$150",
+      description: "A brightening peel that targets darkness and uneven tone.",
     },
     {
-      name: "Relaxation Massage (Full Body or Targeted)",
-      duration: "30–90 min",
-      price: "$80–$180",
-      description:
-        "A soothing massage, full-body or focused on a target area, to release tension and leave you deeply relaxed.",
+      name: "Upper back chemical peel (women only)",
+      duration: "60 min",
+      price: "$200",
+      description: "A deeper peel for the upper back to clear congestion and improve tone.",
     },
     {
-      name: "Facial Massage (Add-on or Standalone)",
-      duration: "20–45 min",
-      price: "$50–$120",
-      description:
-        "A relaxing facial massage that eases tension, boosts circulation, and leaves the face lifted and glowing — as an add-on or on its own.",
+      name: "Facial massage add on (women only)",
+      duration: "15 min",
+      price: "$40",
+      description: "A relaxing facial massage added to any treatment.",
+    },
+    {
+      name: "Head & scalp massage (women only)",
+      duration: "30 min",
+      price: "$40",
+      description: "A soothing head and scalp massage that releases tension.",
+    },
+    {
+      name: "Lymphatic drainage massage (full body, 1 hour, women only)",
+      duration: "60 min",
+      price: "$140",
+      description: "A gentle, full-body lymphatic drainage massage.",
     },
   ],
 };

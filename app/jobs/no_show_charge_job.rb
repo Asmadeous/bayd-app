@@ -1,8 +1,9 @@
-# Charges the flat no-show fee to a customer's card on file after a booking is
-# marked no_show. Best-effort and idempotent: it no-ops when the fee is off, the
-# customer has no card, or a no-show charge was already recorded for the booking.
-# A charge failure is logged, never raised - marking a booking no_show must always
-# succeed regardless of whether the card could be billed.
+# Handles a booking marked no_show (the customer wasn't there): charges the flat
+# no-show fee to their card on file when one applies, then tells the customer they
+# missed the appointment. Best-effort and idempotent: one no-show charge and one
+# no-show notification per booking. The charge no-ops when the fee is off or there
+# is no card; the notification goes out either way. Failures are logged, never
+# raised - marking a booking no_show must always succeed.
 class NoShowChargeJob < ApplicationJob
   queue_as :default
 
@@ -12,14 +13,23 @@ class NoShowChargeJob < ApplicationJob
     booking = Booking.find_by(id: booking_id)
     return unless booking&.no_show?
 
+    user = booking.user
+    return unless user
+
+    charged = charge_fee(booking, user)
+    notify(booking, user, charged)
+  rescue StandardError => e
+    Rails.logger.warn("[NoShowChargeJob] booking #{booking_id} failed: #{e.message}")
+  end
+
+  private
+
+  # Returns the fee charged on this run, or nil when nothing was charged.
+  def charge_fee(booking, user)
     fee = Setting.no_show_fee
     return if fee <= 0
-
-    # Idempotency: one no-show charge per booking.
     return if booking.payments.where(processor: "square_no_show").exists?
-
-    user = booking.user
-    return unless user&.card_on_file? && user.square_customer_id.present?
+    return unless user.card_on_file? && user.square_customer_id.present?
 
     result = SquareService.charge_card(
       customer_id: user.square_customer_id,
@@ -37,14 +47,21 @@ class NoShowChargeJob < ApplicationJob
       amount: fee, status: "paid", method: "card",
       processor: "square_no_show", processor_ref: result[:payment_id], paid_at: Time.current
     )
+    fee
+  end
+
+  def notify(booking, user, charged)
+    return if Notification.exists?(user: user, booking: booking, kind: :booking_no_show)
+
+    svc = booking.service&.name || "appointment"
+    when_str = booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%b %-d at %-l:%M %p")
+    fee_line = charged ? " A #{ActiveSupport::NumberHelper.number_to_currency(charged)} no-show fee was charged to your card on file." : ""
 
     NotificationService.deliver(
       user: user, kind: :booking_no_show,
-      title: "No-show fee charged",
-      body: "A #{ActiveSupport::NumberHelper.number_to_currency(fee)} no-show fee was charged for your missed #{booking.service.name} appointment.",
+      title: "You missed your appointment",
+      body: "Your technician arrived for your #{svc} on #{when_str} but couldn't reach you.#{fee_line} Book again anytime.",
       booking: booking
     )
-  rescue StandardError => e
-    Rails.logger.warn("[NoShowChargeJob] booking #{booking_id} failed: #{e.message}")
   end
 end

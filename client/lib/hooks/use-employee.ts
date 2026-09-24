@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
+import type { OfflinePaymentMethod } from "@/lib/payment-methods"
 
 interface EmployeeProfile {
   id: number
@@ -106,6 +107,17 @@ export function useChargeBooking() {
       api
         .post<{ mode: string; url: string }>(`/employee/bookings/${bookingId}/payment_link`)
         .then((r) => r.data),
+  })
+}
+
+// Cash / Interac e-Transfer / cheque collected in person: marks the booking paid
+// with that method. Card goes through useChargeBooking (hosted checkout).
+export function useRecordPayment() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingId, method, amount }: { bookingId: number; method: OfflinePaymentMethod; amount?: number }) =>
+      api.post(`/employee/bookings/${bookingId}/record_payment`, { method, amount }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["employee-schedule"] }),
   })
 }
 

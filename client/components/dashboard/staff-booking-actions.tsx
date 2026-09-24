@@ -5,12 +5,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Navigation } from "lucide-react"
 import { useToast } from "@/components/bayd-toast-provider"
 import { Button } from "@/components/ui/button"
+import { ChargeBookingDialog } from "@/components/dashboard/charge-booking-dialog"
 import { MeetingButton } from "@/components/dashboard/meeting-button"
 import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
 // Actions a technician has on their own booking card: join the work-scope call,
-// navigate to the customer, and add an overtime charge if the service ran over.
+// navigate to the customer, charge the balance by the client's payment method,
+// and add an overtime charge if the service ran over.
 export function StaffBookingActions({ booking }: { booking: Booking }) {
   const { toast } = useToast()
   const qc = useQueryClient()
@@ -75,6 +77,7 @@ export function StaffBookingActions({ booking }: { booking: Booking }) {
             <Navigation className="size-3.5 text-[#c96c83]" /> Navigate
           </a>
         )}
+        <ChargeBookingDialog booking={booking} />
       </div>
 
       {/* Overtime — service ran over the allocated time */}

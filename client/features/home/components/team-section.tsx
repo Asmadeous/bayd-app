@@ -40,16 +40,16 @@ const teamMembers = [
     profileImage: "/images/new-pics-for-the-ladies/vanessa-team-headshot.webp",
   },
   {
-    name: "Dana",
-    initials: "DA",
-    role: "Nail Technician",
-    location: "20+ years of experience",
-    bio: "Dana is a skilled nail technician with over 20 years of experience from Europe. Known for precision, creativity, and passion, she creates personalized nail designs that reflect each client’s unique style.",
+    name: "Rim",
+    initials: "RI",
+    role: "Medical Aesthetician - Facials & Skin Rejuvenation",
+    location: "15 years of experience",
+    bio: "Rim is a Medical Aesthetician with 15 years in aesthetics, first in Kuwait and now in Canada, where she earned her Canadian diploma in Medical Aesthetics. She offers facials, chemical peels, and relaxing facial, scalp, and lymphatic massage, with thorough consultations that put clients at ease.",
     accent: "#d9bba9",
-    backgroundImage: "/images/new-pics-for-the-ladies/dana-team-headshot.webp",
-    profileImage: "/images/new-pics-for-the-ladies/dana-team-headshot.webp",
-    backgroundPosition: "center 35%",
-    profilePosition: "center 42%",
+    backgroundImage: "/images/new-pics-for-the-ladies/rim-team-headshot.webp",
+    profileImage: "/images/new-pics-for-the-ladies/rim-team-headshot.webp",
+    backgroundPosition: "center 30%",
+    profilePosition: "center 35%",
   },
 ];
 
@@ -71,7 +71,7 @@ export function TeamSection() {
           </div>
           <p className="max-w-xl text-base leading-7 text-[#62666d]">
             A mobile team with deep experience in nails, lashes, pedicure care,
-            massage, and client-first service across home and event bookings.
+            facials, massage, and client-first service across home and event bookings.
           </p>
         </ScrollReveal>
 

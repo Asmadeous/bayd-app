@@ -11,6 +11,12 @@ class BookingSerializer < Blueprinter::Base
     booking.outstanding_balance
   end
 
+  # How the booking was paid (e.g. ["cash"], ["card", "interac"]) so staff and
+  # admins can see the method a tech recorded.
+  field :paid_methods do |booking|
+    booking.payments.select { |p| p.status == "paid" }.filter_map(&:method).uniq
+  end
+
   # Extra services the customer added to this visit. They are note-only (the same
   # tech does them back-to-back — NOT a separate booking), stored on raw["addons"]
   # as [{ id, name, price, duration }]. Empty when none.

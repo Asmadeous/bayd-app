@@ -4,6 +4,7 @@ import { SmoothHashScroll } from "@/components/smooth-hash-scroll";
 import { BaydToastProvider } from "@/components/bayd-toast-provider";
 import { ConfirmProvider } from "@/components/confirm-provider";
 import { Providers } from "@/app/providers";
+import { SupportChatBubble } from "@/components/support/support-chat-bubble";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
 
@@ -111,7 +112,10 @@ export default function RootLayout({
         <SmoothHashScroll />
         <Providers>
           <BaydToastProvider>
-            <ConfirmProvider>{children}</ConfirmProvider>
+            <ConfirmProvider>
+              {children}
+              <SupportChatBubble />
+            </ConfirmProvider>
           </BaydToastProvider>
         </Providers>
       </body>

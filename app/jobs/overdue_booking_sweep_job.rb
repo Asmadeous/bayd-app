@@ -43,8 +43,8 @@ class OverdueBookingSweepJob < ApplicationJob
     svc = booking.service&.name || "your appointment"
     NotificationService.deliver(
       user: tech, kind: :booking_overdue,
-      title: "Missed clock-in: #{svc}",
-      body: "This job started at #{local_time(booking)} and you haven't clocked in. Clock in now, or let an admin know if you can't attend.",
+      title: "You missed a clock-in",
+      body: "Your #{svc} job started at #{local_time(booking)} and you haven't clocked in. Clock in now, or let an admin know if you can't attend.",
       booking: booking,
       action_url: "#{app_url}/staff/schedule"
     )

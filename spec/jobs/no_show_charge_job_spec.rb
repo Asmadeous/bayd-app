@@ -67,6 +67,26 @@ RSpec.describe NoShowChargeJob, type: :job do
       .not_to change(Payment, :count)
   end
 
+  it "tells the customer they missed it, mentioning the fee when one was charged" do
+    booking = build_booking(user: carded_customer)
+    allow(SquareService).to receive(:charge_card).and_return({ success: true, payment_id: "sqpay_1" })
+
+    described_class.perform_now(booking.id)
+    note = Notification.find_by(user: carded_customer, booking: booking, kind: "booking_no_show")
+    expect(note.title).to eq("You missed your appointment")
+    expect(note.body).to include("$40.00 no-show fee")
+  end
+
+  it "still tells the customer when there is no card to charge" do
+    customer = create(:user)
+    booking = build_booking(user: customer)
+
+    described_class.perform_now(booking.id)
+    note = Notification.find_by(user: customer, booking: booking, kind: "booking_no_show")
+    expect(note.title).to eq("You missed your appointment")
+    expect(note.body).not_to include("fee")
+  end
+
   it "fires on the no_show status transition via the model callback" do
     booking = build_booking(user: carded_customer, status: "confirmed")
     expect(NoShowChargeJob).to receive(:perform_later).with(booking.id)

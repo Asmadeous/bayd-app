@@ -70,6 +70,10 @@ class Booking < ApplicationRecord
   # status write.
   after_update_commit :on_missed, if: -> { saved_change_to_status? && missed? }
 
+  # Tell the customer and the tech, whichever path cancelled it (customer, admin,
+  # subscription failure).
+  after_update_commit :on_cancelled, if: -> { saved_change_to_status? && cancelled? }
+
   scope :upcoming,  -> { where(status: %w[confirmed]).where("starts_at > ?", Time.current) }
   # The tech's working list: in-progress jobs, plus confirmed jobs that haven't
   # ended yet. A confirmed booking whose end time has passed is NOT active — it
@@ -131,14 +135,14 @@ class Booking < ApplicationRecord
 
   # Settle a confirmed payment (from auto-charge or a webhook). Reuses a pending
   # payment row if one exists (payment-link path), else creates one.
-  def mark_paid!(processor:, reference: nil, amount: nil)
+  def mark_paid!(processor:, reference: nil, amount: nil, method: "card")
     amt = (amount || outstanding_balance).to_d
     payment = payments.find_by(status: "pending")
     if payment
-      payment.update!(status: "paid", processor: processor, processor_ref: reference,
+      payment.update!(status: "paid", method: method, processor: processor, processor_ref: reference,
                       amount: amt, paid_at: Time.current)
     else
-      payments.create!(amount: amt, status: "paid", method: "card",
+      payments.create!(amount: amt, status: "paid", method: method,
                        processor: processor, processor_ref: reference, paid_at: Time.current)
     end
     refresh_payment_status!
@@ -249,6 +253,10 @@ class Booking < ApplicationRecord
     BookingMissedJob.perform_later(id)
   end
 
+  def on_cancelled
+    BookingCancelledJob.perform_later(id)
+  end
+
   # Both ends must fall within the business's open hours (local zone), and the
   # whole service must finish before close.
   def within_business_hours?(new_start, new_end)
@@ -276,7 +284,7 @@ class Booking < ApplicationRecord
     if (tech = employee_profile&.user)
       NotificationService.deliver(
         user: tech, kind: "booking_rescheduled",
-        title: "A booking was rescheduled",
+        title: "Booking rescheduled",
         body: "#{service.name} for #{user.first_name} is now #{when_str}.", booking: self
       )
     end
