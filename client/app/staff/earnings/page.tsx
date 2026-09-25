@@ -15,7 +15,7 @@ export default function StaffEarningsScreen() {
 
   return (
     <div className={staffScreenClass}>
-      <StaffHeader title="Earnings" subtitle="What you're owed and what's been paid out." />
+      <StaffHeader back title="Earnings" subtitle="What you're owed and what's been paid out." />
 
       <div className="space-y-4 px-5">
         {isLoading || !data ? (
@@ -53,7 +53,7 @@ function DirectEarnings({
 
       <section className={`${cardClass} p-4`}>
         <p className={eyebrowClass}>Tips</p>
-        <div className="mt-2 grid grid-cols-2 gap-3">
+        <div className="mt-2 space-y-2">
           <Line icon={HandCoins} label="Owed (held)" value={money(tips.owed)} accent />
           <Line icon={CreditCard} label="Paid out" value={money(tips.paid_out)} />
         </div>

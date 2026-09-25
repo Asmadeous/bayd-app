@@ -6,6 +6,7 @@ import { Lock } from "lucide-react"
 
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { biometricLockEnabled, verifyBiometric } from "@/lib/native/biometric"
+import { requestStatusBarSync } from "@/lib/native/use-native-shell"
 import { AppUIProvider } from "@/lib/app-ui/app-ui-provider"
 import { BottomNav } from "./bottom-nav"
 
@@ -41,6 +42,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (!isAuthenticated && !isPublic) router.replace("/app/welcome")
     if (isAuthenticated && isPublic) router.replace("/app/home")
   }, [ready, isAuthenticated, isPublic, router])
+
+  // The lock screen is dark; once it opens the bar must follow the real screen.
+  useEffect(() => {
+    if (!locked) requestStatusBarSync()
+  }, [locked])
 
   async function unlock() {
     const ok = await verifyBiometric("Unlock Beauty @ Your Door")

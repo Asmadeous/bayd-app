@@ -54,7 +54,7 @@ export default function StaffGiftCardsScreen() {
 
   return (
     <div className={staffScreenClass}>
-      <StaffHeader title="Gift cards" subtitle="Look up a card and add funds." />
+      <StaffHeader back title="Gift cards" subtitle="Look up a card and add funds." />
 
       <div className="space-y-4 px-5">
         <div className={`${cardClass} space-y-3 p-4`}>

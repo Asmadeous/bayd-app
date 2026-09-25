@@ -138,7 +138,7 @@ function dt(s: string | null) {
   const date = new Date(s)
   return Number.isNaN(date.getTime())
     ? "-"
-    : date.toLocaleString("en-CA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+    : date.toLocaleString("en-US", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
 }
 
 function duration(secs: unknown) {

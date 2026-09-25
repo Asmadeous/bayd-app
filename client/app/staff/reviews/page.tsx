@@ -34,7 +34,7 @@ export default function StaffReviewsScreen() {
 
   return (
     <div className={staffScreenClass}>
-      <StaffHeader title="Reviews" subtitle="What your clients said." />
+      <StaffHeader back title="Reviews" subtitle="What your clients said." />
 
       <div className="space-y-4 px-5">
         {average && (

@@ -53,7 +53,7 @@ function StaffNewBooking() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
-  const [date, setDate] = useState(searchParams.get("date") ?? "")
+  const [date, setDate] = useState(() => searchParams.get("date") ?? todayInput())
   const [time, setTime] = useState(searchParams.get("time") ?? "10:00")
   const [line1, setLine1] = useState("")
   const [city, setCity] = useState("")
@@ -293,7 +293,7 @@ function StaffNewBooking() {
           <input className={inputClass} type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-[3fr_2fr] gap-3">
           <div>
             <label className={labelClass}>Date</label>
             <input className={inputClass} type="date" min={today} value={date} onChange={(e) => setDate(e.target.value)} />

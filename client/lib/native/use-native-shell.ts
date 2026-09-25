@@ -10,8 +10,13 @@ import { Capacitor } from "@capacitor/core"
 // brand pink (#C96C83, L≈0.25) wrong.
 const DARK_ICON_THRESHOLD = 0.179
 
-// Fired by AnimatedSplash once it has faded out.
-export const SPLASH_DONE_EVENT = "bayd:splash-done"
+// Asks the shell to re-sample the status bar colour. For screen changes that
+// don't change the route: the launch splash fading out, the app lock opening.
+const STATUS_BAR_SYNC_EVENT = "bayd:status-bar-sync"
+
+export function requestStatusBarSync() {
+  window.dispatchEvent(new Event(STATUS_BAR_SYNC_EVENT))
+}
 
 function relativeLuminance(r: number, g: number, b: number) {
   const lin = (c: number) => {
@@ -86,9 +91,9 @@ export function useNativeShell() {
     return () => cleanup?.()
   }, [])
 
-  // Re-match the bar to the screen on every navigation, and again when the launch
-  // splash leaves: while it is up it is what sits under the bar, so the first
-  // sample would otherwise pin the bar to splash pink. Runs after paint so the
+  // Re-match the bar to the screen on every navigation, and on request (see
+  // requestStatusBarSync): the splash and the lock screen sit over the route, so
+  // sampling only on navigation would pin the bar to their colour. Runs after paint so the
   // new screen's background is the one being sampled.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
@@ -112,11 +117,11 @@ export function useNativeShell() {
     }
 
     sync()
-    window.addEventListener(SPLASH_DONE_EVENT, sync)
+    window.addEventListener(STATUS_BAR_SYNC_EVENT, sync)
     return () => {
       cancelled = true
       cancelAnimationFrame(frame)
-      window.removeEventListener(SPLASH_DONE_EVENT, sync)
+      window.removeEventListener(STATUS_BAR_SYNC_EVENT, sync)
     }
   }, [pathname])
 }

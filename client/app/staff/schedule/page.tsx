@@ -59,7 +59,7 @@ export default function StaffScheduleScreen() {
     <div className={staffScreenClass}>
       <StaffHeader
         title="Schedule"
-        subtitle={onShift ? "You're clocked in and live." : "Your booked jobs for today."}
+        subtitle={onShift ? "You're clocked in and live." : "Your upcoming appointments."}
         action={
           <Link
             href="/staff/schedule/new"

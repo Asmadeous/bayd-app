@@ -6,6 +6,7 @@ import { Lock } from "lucide-react"
 
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { biometricLockEnabled, verifyBiometric } from "@/lib/native/biometric"
+import { requestStatusBarSync } from "@/lib/native/use-native-shell"
 import { AppUIProvider } from "@/lib/app-ui/app-ui-provider"
 import { StaffNav } from "./staff-nav"
 
@@ -46,6 +47,11 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
     if (!staff && !isPublic) router.replace("/staff/welcome")
     if (staff && isPublic) router.replace("/staff/schedule")
   }, [ready, staff, isPublic, router])
+
+  // The lock screen is dark; once it opens the bar must follow the real screen.
+  useEffect(() => {
+    if (!locked) requestStatusBarSync()
+  }, [locked])
 
   async function unlock() {
     const ok = await verifyBiometric("Unlock the staff app")
