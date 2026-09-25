@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { CalendarDays, Check, Clock3, MapPin, CreditCard, Navigation, Video } from "lucide-react"
+import { CalendarDays, Check, Clock3, Lock, MapPin, CreditCard, Navigation, Video } from "lucide-react"
 
 import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
+import { useBookingAccess, windowNotStartedMessage } from "@/lib/booking-access"
 import { useStartMeeting } from "@/lib/hooks/use-meetings"
 import { useClockIn, useClockOut } from "@/lib/hooks/use-time-clock"
 import { useChargeBooking, useMarkMissed, useRecordPayment } from "@/lib/hooks/use-employee"
@@ -31,6 +32,7 @@ export function StaffBookingCard({ booking }: { booking: Booking }) {
   const done = booking.status === "completed"
   const preArrival = booking.status === "confirmed"
   const isPast = ["completed", "cancelled", "no_show", "missed"].includes(booking.status)
+  const access = useBookingAccess(booking)
 
   return (
     <li className={`${cardClass} p-4`}>
@@ -81,11 +83,13 @@ export function StaffBookingCard({ booking }: { booking: Booking }) {
       {/* In service -> live timer */}
       {inProgress && booking.clocked_in_at && <RunningTimer since={booking.clocked_in_at} />}
 
-      {/* Pre-arrival actions: navigate + call as equal-width halves, then clock in. */}
+      {/* Pre-arrival actions: navigate + call as equal-width halves, then clock in.
+          Navigate and clock-in open 30 minutes before the start (the API refuses
+          an earlier clock-in). */}
       {preArrival && (
-        <div className={`mt-3 grid gap-2 ${canNavigate ? "grid-cols-2" : "grid-cols-1"}`}>
+        <div className={`mt-3 grid gap-2 ${canNavigate && access.open ? "grid-cols-2" : "grid-cols-1"}`}>
           <JoinCallButton booking={booking} />
-          {canNavigate && (
+          {canNavigate && access.open && (
             <button
               type="button"
               onClick={() => router.push(`/staff/schedule/navigate?id=${booking.id}`)}
@@ -97,8 +101,12 @@ export function StaffBookingCard({ booking }: { booking: Booking }) {
         </div>
       )}
 
-      {/* Clock in (pre-arrival) or Clock out (in service) - the primary action. */}
-      {(preArrival || inProgress) && <ClockButton booking={booking} />}
+      {preArrival && !access.open && (
+        <LockedWindow opensLabel={access.opensLabel} />
+      )}
+
+      {/* Clock in (pre-arrival, once open) or Clock out (in service) - the primary action. */}
+      {((preArrival && access.open) || inProgress) && <ClockButton booking={booking} />}
 
       {/* Pre-arrival only: self-report that you can't attend (missed). The client
           is never charged; they're notified and offered a reschedule. */}
@@ -304,6 +312,24 @@ function ChargeButton({ booking }: { booking: Booking }) {
 function apiError(e: unknown) {
   const d = e as { response?: { data?: { error?: string } }; message?: string }
   return d?.response?.data?.error ?? d?.message ?? "Please try again."
+}
+
+// Clock-in and navigation are locked until 30 minutes before the start; tapping
+// explains why (the API refuses an early clock-in with the same message).
+function LockedWindow({ opensLabel }: { opensLabel: string }) {
+  const { toast } = useToast()
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        toast({ title: "Not open yet", description: windowNotStartedMessage(opensLabel, "clock in and navigate"), variant: "error" })
+      }
+      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-black/[0.04] py-3 text-sm font-semibold text-[#14100F]/60"
+    >
+      <Lock className="size-4" aria-hidden />
+      Clock in &amp; navigate open at {opensLabel}
+    </button>
+  )
 }
 
 // Live timer while clocked in on a job (HH:MM:SS since clock-in).

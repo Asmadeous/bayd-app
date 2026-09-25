@@ -13,7 +13,7 @@ RSpec.describe TripBroadcaster, type: :service do
   end
 
   it "computes an ETA (via Directions) and broadcasts the position to the upcoming booking" do
-    booking = booking_at(30.minutes.from_now, lat: 43.65, lng: -79.38)
+    booking = booking_at(20.minutes.from_now, lat: 43.65, lng: -79.38)
     # Directions is stubbed so the spec never hits Google.
     allow(Directions).to receive(:eta_minutes).and_return(12)
 
@@ -27,6 +27,12 @@ RSpec.describe TripBroadcaster, type: :service do
 
   it "does nothing when the tech has no upcoming active booking" do
     booking_at(2.hours.ago, lat: 43.65, lng: -79.38) # already ended
+    expect(TripChannel).not_to receive(:broadcast_position)
+    described_class.call(employee_profile: tech, latitude: 43.70, longitude: -79.42)
+  end
+
+  it "shares nothing before the booking's tracking window opens" do
+    booking_at(2.hours.from_now, lat: 43.65, lng: -79.38)
     expect(TripChannel).not_to receive(:broadcast_position)
     described_class.call(employee_profile: tech, latitude: 43.70, longitude: -79.42)
   end

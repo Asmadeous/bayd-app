@@ -12,6 +12,9 @@ module Api
       def create
         other = User.find(params.require(:user_id))
         return render(json: { error: "You can't message yourself." }, status: :unprocessable_entity) if other == current_user
+        if (reason = ContactWindow.blocked_reason(current_user, other))
+          return render(json: { error: reason, code: "contact_window_closed" }, status: :unprocessable_entity)
+        end
 
         convo = Conversation.between(current_user, other)
         render json: ConversationSerializer.render_as_hash(convo, current_user: current_user), status: :created

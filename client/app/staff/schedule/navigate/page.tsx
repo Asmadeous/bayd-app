@@ -6,6 +6,7 @@ import { Suspense } from "react"
 import { ChevronLeft, MapPin, Navigation } from "lucide-react"
 
 import { useEmployeeBooking } from "@/lib/hooks/use-employee"
+import { useBookingAccess } from "@/lib/booking-access"
 import { useLivePosition } from "@/lib/native/use-live-position"
 import { openPaymentUrl } from "@/lib/native/open-external"
 
@@ -44,7 +45,10 @@ function NavigateView() {
 
   const destLat = booking?.service_latitude ? Number(booking.service_latitude) : null
   const destLng = booking?.service_longitude ? Number(booking.service_longitude) : null
-  const hasDest = destLat != null && destLng != null
+  // In-app navigation opens 30 minutes before the appointment.
+  const access = useBookingAccess(booking ?? { status: "cancelled", access_opens_at: null, starts_at: "" })
+  const locked = !!booking && access.active && !access.open
+  const hasDest = destLat != null && destLng != null && !locked
 
   const addr = booking?.address
   const addressLine = addr
@@ -81,6 +85,10 @@ function NavigateView() {
       <div className="relative flex-1 overflow-hidden">
         {isLoading ? (
           <div className="h-full w-full animate-pulse bg-black/5" />
+        ) : locked ? (
+          <div className="grid h-full place-items-center px-8 text-center text-sm text-[#14100F]/60">
+            Navigation opens at {access.opensLabel}, 30 minutes before the appointment.
+          </div>
         ) : !hasDest ? (
           <div className="grid h-full place-items-center px-8 text-center text-sm text-[#14100F]/60">
             This booking has no mapped address, so it can&apos;t be navigated to.

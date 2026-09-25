@@ -1,6 +1,22 @@
+<% d = @invoice.details || {} %>
+<% appt = d["appointment"] %>
 Invoice <%= @invoice.invoice_number %>
 
-Hi <%= @user.first_name.presence || "there" %>, thanks for your purchase.
+Hi <%= @user.first_name.presence || "there" %>, thank you for choosing Beauty @ Your Door.
 Your invoice for <%= number_to_currency(@invoice.total) %> <%= @invoice.currency %> is attached as a PDF.
+<% if appt %>
+
+Service: <%= appt["service"] %>
+Date: <%= appt["date"] %>
+Time: <%= [appt["start_time"], appt["end_time"]].compact.join(" - ") %>
+<% if appt["technician"] %>Technician: <%= appt["technician"] %>
+<% end %>Booking ref.: <%= appt["reference"] %>
+<% end %>
+
+<% @invoice.line_items.each do |li| %><%= li["description"] %>: <%= number_to_currency(li["amount"]) %>
+<% end %>HST included: <%= number_to_currency(@invoice.tax) %>
+Total: <%= number_to_currency(@invoice.total) %> <%= @invoice.currency %>
+<% if d.key?("balance_due") %>Balance due: <%= number_to_currency(d["balance_due"]) %>
+<% end %>
 
 You can also view and download all your invoices from your dashboard.

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { CalendarDays, CheckCircle2, Clock3, List, MapPin, Plus, ToggleLeft, ToggleRight } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
-import { AppCalendar } from "@/components/dashboard/app-calendar"
+import { StaffBookingCalendar } from "@/components/dashboard/role-booking-calendars"
 import { BookingCard } from "@/components/dashboard/booking-card"
 import { DashboardHero } from "@/components/dashboard/dashboard-hero"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
@@ -24,7 +24,6 @@ import { useToast } from "@/components/bayd-toast-provider"
 import { Button } from "@/components/ui/button"
 import { useEmployeeProfile, useEmployeeSchedule, useToggleShift } from "@/lib/hooks/use-employee"
 import { employeeDashboardSteps } from "@/lib/tours/employee-tour"
-import type { Booking } from "@/lib/hooks/use-bookings"
 
 type ScheduleView = "list" | "calendar" | "past"
 
@@ -42,7 +41,6 @@ export default function EmployeeDashboardPage() {
   // Job history (completed/cancelled/no-show), loaded only when the Past view is open.
   const { data: pastData, isLoading: isPastLoading } = useEmployeeSchedule(1, view === "past" ? "past" : undefined)
   const pastBookings = pastData?.data ?? []
-  const [selectedDay, setSelectedDay] = useState<{ date: Date; bookings: Booking[] } | null>(null)
 
   const bookings = data?.data ?? []
   const upcoming = bookings
@@ -50,7 +48,6 @@ export default function EmployeeDashboardPage() {
     .sort((a, b) => getTime(a.starts_at) - getTime(b.starts_at))
   const inProgress = bookings.filter((b) => b.status === "in_progress")
   const nextBooking = upcoming[0]
-  const visibleBookings = selectedDay ? selectedDay.bookings : upcoming.slice(0, 5)
   const listBookings = bookings
     .slice()
     .sort((a, b) => getTime(a.starts_at) - getTime(b.starts_at))
@@ -225,14 +222,7 @@ export default function EmployeeDashboardPage() {
             </DashboardPanel>
           )
         ) : view === "calendar" ? (
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.75fr)]">
-            <AppCalendar
-              bookings={bookings}
-              onSelectDay={(date, dayBookings) => setSelectedDay({ date, bookings: dayBookings })}
-            />
-
-            <SchedulePanel selectedDay={selectedDay} visibleBookings={visibleBookings} />
-          </div>
+          <StaffBookingCalendar />
         ) : listBookings.length === 0 ? (
           <EmptyState
             className="border-black/8 py-10"
@@ -258,52 +248,6 @@ export default function EmployeeDashboardPage() {
         pageKey="employee-dashboard"
       />
     </DashboardPage>
-  )
-}
-
-function SchedulePanel({
-  selectedDay,
-  visibleBookings,
-}: {
-  selectedDay: { date: Date; bookings: Booking[] } | null
-  visibleBookings: Booking[]
-}) {
-  return (
-    <DashboardPanel>
-      <div className="mb-4">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">
-          Schedule
-        </p>
-        <h2 className="mt-1 text-lg font-extrabold text-[#101217]">
-          {selectedDay
-            ? selectedDay.date.toLocaleDateString("en-CA", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-              })
-            : "Upcoming Appointments"}
-        </h2>
-      </div>
-
-      {visibleBookings.length === 0 ? (
-        <EmptyState
-          className="border-black/8 py-10"
-          icon={MapPin}
-          title="No appointments"
-          description="Appointments assigned to you will appear here."
-        />
-      ) : (
-        <div className="space-y-3">
-          {visibleBookings.map((booking) => (
-            <BookingCard
-              actions={<StaffBookingActions booking={booking} />}
-              booking={booking}
-              key={booking.id}
-            />
-          ))}
-        </div>
-      )}
-    </DashboardPanel>
   )
 }
 

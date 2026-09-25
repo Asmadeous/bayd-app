@@ -12,8 +12,13 @@ module Api
       end
 
       def create
+        if (reason = ContactWindow.blocked_reason(current_user, @conversation.other_participant(current_user)))
+          return render(json: { error: reason, code: "contact_window_closed" }, status: :unprocessable_entity)
+        end
+
         message = @conversation.messages.create!(sender: current_user, body: params.require(:body))
         ChatChannel.broadcast_message(message)
+        ChatMessagePushJob.perform_later(message.id)
         render json: MessageSerializer.render_as_hash(message), status: :created
       end
 

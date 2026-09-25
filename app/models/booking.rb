@@ -186,6 +186,31 @@ class Booking < ApplicationRecord
 
   RESCHEDULABLE_STATUSES = %w[confirmed pending].freeze
 
+  # Day-of contact and tools open this long before the start: the customer can
+  # message and track the tech, and the tech can message the customer, clock in,
+  # and navigate. They close once the booking is completed, cancelled, a no-show,
+  # or missed (i.e. it leaves ACCESS_STATUSES).
+  ACCESS_LEAD_MIN = 30
+  ACCESS_STATUSES = %w[pending confirmed in_progress].freeze
+
+  scope :access_open, lambda { |at = Time.current|
+    where(status: ACCESS_STATUSES).where(starts_at: ..(at + ACCESS_LEAD_MIN.minutes))
+  }
+
+  def access_opens_at = starts_at && starts_at - ACCESS_LEAD_MIN.minutes
+
+  def access_open?(at = Time.current)
+    status.in?(ACCESS_STATUSES) && starts_at.present? && at >= access_opens_at
+  end
+
+  # "9:15 AM" today, or "Fri, Sep 26 at 9:15 AM" on another day (company zone),
+  # for the "opens at" messages.
+  def access_opens_label
+    opens = access_opens_at.in_time_zone(BusinessHours.zone)
+    today = Time.current.in_time_zone(BusinessHours.zone).to_date
+    opens.to_date == today ? opens.strftime("%-l:%M %p") : opens.strftime("%a, %b %-d at %-l:%M %p")
+  end
+
   # Move this booking to new_start. Re-validates business hours, travel
   # feasibility for the SAME tech, and the no_double_booking DB constraint, then
   # notifies the customer + tech in-app and by email. `by_customer:` increments

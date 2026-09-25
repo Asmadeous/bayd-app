@@ -18,11 +18,62 @@ import { adminSettingsSteps } from "@/lib/tours/admin-settings-tour"
 
 interface Settings {
   group_deposit_pct: string
+  invoice_hst_number?: string
+  invoice_business_address?: string
 }
 
 const fieldClass =
   "h-10 w-full border border-black/15 bg-white px-3 text-sm font-semibold text-[#101217] outline-none transition-colors focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"
 const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
+
+// Business details printed on every new invoice. Blank prints nothing: the
+// GST/HST number must be the real registration number, never a placeholder.
+function InvoiceDetailsPanel({ settings }: { settings?: Settings }) {
+  const { toast } = useToast()
+  const qc = useQueryClient()
+  const [hst, setHst] = useState<string | null>(null)
+  const [address, setAddress] = useState<string | null>(null)
+  const hstValue = hst ?? settings?.invoice_hst_number ?? ""
+  const addressValue = address ?? settings?.invoice_business_address ?? ""
+
+  const save = useMutation({
+    mutationFn: () =>
+      api
+        .patch("/admin/settings", { invoice_hst_number: hstValue.trim(), invoice_business_address: addressValue.trim() })
+        .then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-settings"] })
+      setHst(null)
+      setAddress(null)
+      toast({ title: "Invoice details saved", description: "New invoices will show them.", variant: "success" })
+    },
+    onError: (error: unknown) =>
+      toast({ title: "Invoice details not saved", description: getApiErrorMessage(error, "Please try again."), variant: "error" }),
+  })
+
+  return (
+    <DashboardPanel>
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">Invoices</p>
+      <h2 className="mt-1 text-lg font-extrabold text-[#101217]">Business details on invoices</h2>
+      <p className="mt-2 text-xs leading-5 text-[#5f6268]">
+        Printed on every new invoice. Canadian invoices should show your GST/HST registration number. Leave a field blank to leave it off.
+      </p>
+      <div className="mt-5 grid max-w-2xl gap-4 sm:grid-cols-2">
+        <label>
+          <span className={labelClass}>GST/HST number</span>
+          <input className={fieldClass} value={hstValue} onChange={(e) => setHst(e.target.value)} placeholder="123456789 RT0001" />
+        </label>
+        <label>
+          <span className={labelClass}>Business address</span>
+          <input className={fieldClass} value={addressValue} onChange={(e) => setAddress(e.target.value)} placeholder="Street, City, Province, Postal code" />
+        </label>
+      </div>
+      <Button className="mt-4" size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+        {save.isPending ? "Saving..." : "Save invoice details"}
+      </Button>
+    </DashboardPanel>
+  )
+}
 
 function AdminProfilePanel() {
   const { toast } = useToast()
@@ -225,6 +276,8 @@ export default function AdminSettingsPage() {
           {save.isSuccess ? <p className="text-xs font-semibold text-green-700">Saved.</p> : null}
         </div>
       </DashboardPanel>
+
+      <InvoiceDetailsPanel settings={data} />
 
       <DashboardPanel>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">

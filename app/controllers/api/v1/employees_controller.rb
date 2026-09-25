@@ -2,6 +2,7 @@ module Api
   module V1
     class EmployeesController < ApplicationController
       include ImageUploadValidation
+      include BookingDateRange
 
       # Raised when a staff-typed booking address can't be geocoded — the booking
       # is rejected rather than created without coordinates.
@@ -32,9 +33,15 @@ module Api
         # Default: the working schedule (active jobs, soonest first). filter=past
         # returns the tech's job history (completed / cancelled / no-show), most
         # recent first, so they can review previous bookings.
+        includes = [ :user, :service, :address, :partner, :tips, :shifts, :payments, :meeting ]
+        if date_range_requested?
+          ranged = within_date_range(profile.bookings.includes(*includes))
+          return render json: { data: BookingSerializer.render_as_hash(ranged, view: :full) }
+        end
+
         scope = params[:filter] == "past" ? profile.bookings.past.order(starts_at: :desc)
                                           : profile.bookings.active.order(:starts_at)
-        records, meta = paginate(scope.includes(:user, :service, :address, :partner, :tips, :shifts))
+        records, meta = paginate(scope.includes(*includes))
         render json: { data: BookingSerializer.render_as_hash(records, view: :full), pagination: meta }
       end
 

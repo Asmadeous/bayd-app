@@ -37,6 +37,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Select,
@@ -53,6 +54,7 @@ import {
 } from "@/lib/hooks/use-admin"
 import { adminInvoicesSteps } from "@/lib/tours/admin-invoices-tour"
 import { downloadInvoice, type Invoice } from "@/lib/hooks/use-invoices"
+import { InvoiceBreakdown } from "@/components/invoice/invoice-breakdown"
 
 const cad = (v: string | number) => `$${Number(v).toFixed(2)}`
 const STATUSES = ["issued", "paid", "void", "refunded"]
@@ -260,6 +262,24 @@ function Row({ deleting, invoice, onStatus, onDelete, onResend, resending, savin
             ))}
           </SelectContent>
         </Select>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button size="xs" variant="outline" title="View invoice">
+              <FileText className="size-3.5" /> View
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader className="pr-14">
+              <DialogTitle>{invoice.invoice_number}</DialogTitle>
+              <DialogDescription>
+                {invoice.source_label} · {invoice.payment_method ?? "Payment pending"}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogBody>
+              <InvoiceBreakdown invoice={invoice} />
+            </DialogBody>
+          </DialogContent>
+        </Dialog>
         {invoice.has_pdf && (
           <Button size="xs" variant="outline" onClick={() => downloadInvoice(invoice.id, invoice.invoice_number, "admin")}>
             <Download className="size-3.5" />

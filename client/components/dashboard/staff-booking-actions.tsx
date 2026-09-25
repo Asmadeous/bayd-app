@@ -9,6 +9,7 @@ import { ChargeBookingDialog } from "@/components/dashboard/charge-booking-dialo
 import { MeetingButton } from "@/components/dashboard/meeting-button"
 import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
+import { useBookingAccess } from "@/lib/booking-access"
 
 // Actions a technician has on their own booking card: join the work-scope call,
 // navigate to the customer, charge the balance by the client's payment method,
@@ -21,7 +22,9 @@ export function StaffBookingActions({ booking }: { booking: Booking }) {
 
   const lat = booking.service_latitude
   const lng = booking.service_longitude
-  const canNavigate = !!lat && !!lng
+  // Navigation opens 30 minutes before the appointment, like clock-in.
+  const access = useBookingAccess(booking)
+  const canNavigate = !!lat && !!lng && access.open
 
   const overtime = useMutation({
     mutationFn: () =>
@@ -77,6 +80,11 @@ export function StaffBookingActions({ booking }: { booking: Booking }) {
             <Navigation className="size-3.5 text-[#c96c83]" /> Navigate
           </a>
         )}
+        {!!lat && !!lng && access.active && !access.open ? (
+          <span className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-black/[0.04] px-3 text-xs font-semibold text-[#5f6268]">
+            <Navigation className="size-3.5" /> Navigate opens {access.opensLabel}
+          </span>
+        ) : null}
         <ChargeBookingDialog booking={booking} />
       </div>
 

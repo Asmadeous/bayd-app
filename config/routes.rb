@@ -235,6 +235,7 @@ Rails.application.routes.draw do
             post :toggle_shift
             post :toggle_dispatch
             get  :analytics
+            get  :bookable_windows
           end
           # Any tech's bookable-hours, managed by an admin.
           resources :availability_schedules, only: %i[index create update destroy]
@@ -253,7 +254,7 @@ Rails.application.routes.draw do
         end
 
         # Bookings & scheduling
-        resources :bookings,            only: %i[index show update destroy] do
+        resources :bookings,            only: %i[index show update] do
           member do
             post  :payment_link
             get   :candidates      # eligible staff ranked by proximity

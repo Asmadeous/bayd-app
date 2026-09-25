@@ -1,10 +1,17 @@
 module Api
   module V1
     class BookingsController < ApplicationController
+      include BookingDateRange
+
       def index
         scope = current_user.bookings
                             .includes(:service, :review, employee_profile: :user)
                             .order(starts_at: :desc)
+        if date_range_requested?
+          ranged = within_date_range(scope.includes(:address, :payments, :shifts, :meeting))
+          return render json: { data: BookingSerializer.render_as_hash(ranged) }
+        end
+
         records, meta = paginate(scope)
         render json: { data: BookingSerializer.render_as_hash(records), pagination: meta }
       end

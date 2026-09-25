@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { useChat } from "@/lib/cable/use-chat"
+import { useToast } from "@/components/bayd-toast-provider"
 import type { Conversation } from "@/lib/cable/chat-types"
 import { useAuthStore } from "@/lib/stores/auth-store"
 
@@ -81,6 +82,7 @@ function ChatThread({
     endRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, otherTyping])
 
+  const { toast } = useToast()
   const name = [conversation.other_participant?.first_name, conversation.other_participant?.last_name]
     .filter(Boolean)
     .join(" ") || "B.A.Y.D"
@@ -89,7 +91,12 @@ function ChatThread({
     const body = draft
     setDraft("")
     setTyping(false)
-    await send(body)
+    try {
+      await send(body)
+    } catch (e) {
+      setDraft(body)
+      toast({ title: "Message not sent", description: sendError(e), variant: "error" })
+    }
   }
 
   return (
@@ -143,4 +150,10 @@ function ChatThread({
       </div>
     </div>
   )
+}
+
+// The API explains why a send was refused (e.g. customer-technician messaging
+// only opens 30 minutes before the appointment); show that instead of failing silently.
+function sendError(e: unknown) {
+  return (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Message not sent. Please try again."
 }

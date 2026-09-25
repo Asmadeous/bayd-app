@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { ArrowRight, Bell, CalendarDays, Clock3, MapPin, ShoppingBag, Sparkles } from "lucide-react"
+import { MessageCircle, ArrowRight, Bell, CalendarDays, Clock3, MapPin, ShoppingBag, Sparkles } from "lucide-react"
 
 import { useBookings, type Booking } from "@/lib/hooks/use-bookings"
 import { useNotifications } from "@/lib/hooks/use-notifications"
@@ -63,6 +63,7 @@ export default function HomeScreen() {
             <QuickAction href="/app/shop" icon={ShoppingBag} label="Shop products" hint="Delivered" tone="paper" />
             <QuickAction href="/app/bookings" icon={CalendarDays} label="My bookings" hint="Upcoming & past" tone="paper" />
             <QuickAction href="/app/account" icon={MapPin} label="My account" hint="Profile & lock" tone="paper" />
+            <QuickAction href="/app/support" icon={MessageCircle} label="Chat with us" hint="Questions & help" tone="paper" />
           </div>
         </section>
       </div>

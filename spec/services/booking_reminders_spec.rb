@@ -33,4 +33,10 @@ RSpec.describe BookingReminders, type: :service do
     expect(kinds).to include("confirmed")
     expect(kinds).not_to include("day_before")
   end
+
+  it "sends the tech's clock-in nudge when clock-in opens, #{Booking::ACCESS_LEAD_MIN} minutes before the start" do
+    b = booking(starts_at: 3.days.from_now)
+    expect { described_class.schedule(b) }
+      .to have_enqueued_job(BookingReminderJob).with(b.id, "starting").at(b.starts_at - Booking::ACCESS_LEAD_MIN.minutes)
+  end
 end

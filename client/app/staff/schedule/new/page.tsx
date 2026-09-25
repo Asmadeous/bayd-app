@@ -1,7 +1,7 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { useMemo, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Check, Plus } from "lucide-react"
 
@@ -25,7 +25,18 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 // Staff-created booking - a purpose-built mobile form on the SAME
 // useCreateStaffBooking hook the desktop uses. Books a client straight onto the
 // tech's schedule. Every desktop field is here.
+// useSearchParams needs a Suspense boundary or the static app export fails.
 export default function StaffNewBookingScreen() {
+  return (
+    <Suspense>
+      <StaffNewBooking />
+    </Suspense>
+  )
+}
+
+// ?date=YYYY-MM-DD&time=HH:MM pre-fill from the Schedule calendar.
+function StaffNewBooking() {
+  const searchParams = useSearchParams()
   const router = useRouter()
   const { toast } = useToast()
   const { data: services = [] } = useQuery<ApiService[]>({
@@ -42,8 +53,8 @@ export default function StaffNewBookingScreen() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
-  const [date, setDate] = useState("")
-  const [time, setTime] = useState("10:00")
+  const [date, setDate] = useState(searchParams.get("date") ?? "")
+  const [time, setTime] = useState(searchParams.get("time") ?? "10:00")
   const [line1, setLine1] = useState("")
   const [city, setCity] = useState("")
   const [province, setProvince] = useState("ON")

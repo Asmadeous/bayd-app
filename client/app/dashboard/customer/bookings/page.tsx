@@ -15,7 +15,7 @@ import {
   ToolbarSection,
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
-import { AppCalendar } from "@/components/dashboard/app-calendar"
+import { CustomerBookingCalendar } from "@/components/dashboard/role-booking-calendars"
 import { BookingCard } from "@/components/dashboard/booking-card"
 import { ReviewDialog } from "@/components/dashboard/review-dialog"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
@@ -27,6 +27,7 @@ import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
 import { MessageTechButton } from "@/components/dashboard/message-tech-button"
 import { MeetingButton } from "@/components/dashboard/meeting-button"
 import { TechEta } from "@/components/dashboard/tech-eta"
+import { useBookingAccess } from "@/lib/booking-access"
 import { customerBookingsSteps } from "@/lib/tours/customer-bookings-tour"
 
 // Only subscribe to live tracking for a booking happening today.
@@ -34,6 +35,16 @@ function isToday(iso: string): boolean {
   const d = new Date(iso)
   const now = new Date()
   return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+}
+
+// The tech's live map, from 30 minutes before the appointment (the API refuses
+// tracking earlier); before that, when it will open.
+function LiveTracking({ booking }: { booking: Booking }) {
+  const access = useBookingAccess(booking)
+  if (!access.open) {
+    return <p className="mt-2 text-xs text-[#5f6268]">Live tracking of your technician opens at {access.opensLabel}.</p>
+  }
+  return <TechEta bookingId={booking.id} enabled destination={destinationOf(booking)} />
 }
 
 // The service address coords for the map's destination pin, or null if unknown.
@@ -57,8 +68,6 @@ export default function CustomerBookingsPage() {
   const [view, setView] = useState<BookingsView>(
     searchParams.get("view") === "calendar" ? "calendar" : "list",
   )
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [dayBookings, setDayBookings] = useState<Booking[]>([])
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
   const { data, isError, isLoading } = useBookings(page)
 
@@ -67,12 +76,6 @@ export default function CustomerBookingsPage() {
 
   const filtered =
     filter === "all" ? bookings : bookings.filter((b) => b.status === filter)
-
-  const dateLabel = selectedDate?.toLocaleDateString("en-CA", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  })
 
   function handleViewChange(nextView: BookingsView) {
     setView(nextView)
@@ -85,11 +88,6 @@ export default function CustomerBookingsPage() {
         : "/dashboard/customer/bookings",
       { scroll: false },
     )
-  }
-
-  function handleDaySelect(date: Date, selectedBookings: Booking[]) {
-    setSelectedDate(date)
-    setDayBookings(selectedBookings)
   }
 
   useEffect(() => {
@@ -159,25 +157,7 @@ export default function CustomerBookingsPage() {
           <p className="text-sm text-[#5f6268]">Loading bookings...</p>
         </DashboardPanel>
       ) : view === "calendar" ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <AppCalendar bookings={bookings} onSelectDay={handleDaySelect} />
-
-          <DashboardPanel className="space-y-3">
-            <h2 className="text-sm font-semibold text-[#101217]">
-              {selectedDate ? dateLabel : "Select a day to see appointments"}
-            </h2>
-            {selectedDate && dayBookings.length === 0 ? (
-              <EmptyState
-                icon={CalendarDays}
-                title="No bookings on this day"
-                description="Select another date to review scheduled appointments."
-              />
-            ) : null}
-            {dayBookings.map((b) => (
-              <BookingCard key={b.id} booking={b} />
-            ))}
-          </DashboardPanel>
-        </div>
+        <CustomerBookingCalendar />
       ) : (
         <>
           {filtered.length === 0 ? (
@@ -195,7 +175,7 @@ export default function CustomerBookingsPage() {
                   actions={
                     b.status === "pending" || b.status === "confirmed" ? (
                       <div className="flex flex-wrap items-center gap-2">
-                        <MessageTechButton techUserId={b.employee_profile?.user_id ?? undefined} />
+                        <MessageTechButton booking={b} />
                         <MeetingButton booking={b} />
                         <RescheduleDialog booking={b} />
                         <CancelBookingButton booking={b} />
@@ -215,13 +195,7 @@ export default function CustomerBookingsPage() {
                     ) : null
                   }
                 />
-                {b.status === "confirmed" && (
-                  <TechEta
-                    bookingId={b.id}
-                    enabled={isToday(b.starts_at)}
-                    destination={destinationOf(b)}
-                  />
-                )}
+                {b.status === "confirmed" && isToday(b.starts_at) && <LiveTracking booking={b} />}
                 </div>
               ))}
             </div>

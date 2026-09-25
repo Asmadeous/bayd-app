@@ -18,6 +18,7 @@ import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { downloadInvoice, useInvoices, type Invoice } from "@/lib/hooks/use-invoices"
+import { InvoiceBreakdown } from "@/components/invoice/invoice-breakdown"
 import { customerTransactionsSteps } from "@/lib/tours/customer-transactions-tour"
 
 const cad = (value: string | number) => {
@@ -277,39 +278,7 @@ function ReceiptDialog({ invoice, onClose }: { invoice: Invoice; onClose: () => 
           </div>
 
           <div className="py-5">
-            <div className="grid grid-cols-[1fr_4rem_6rem] border-b border-black/10 pb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">
-              <span>Description</span>
-              <span className="text-right">Qty</span>
-              <span className="text-right">Amount</span>
-            </div>
-
-            <div className="divide-y divide-black/8">
-              {invoice.line_items.map((item, index) => (
-                <div
-                  className="grid grid-cols-[1fr_4rem_6rem] gap-3 py-3 text-sm"
-                  key={`${item.description}-${index}`}
-                >
-                  <span className="font-semibold text-[#101217]">{item.description}</span>
-                  <span className="text-right text-[#5f6268]">{item.quantity}</span>
-                  <span className="text-right font-semibold text-[#101217]">
-                    {cad(item.amount)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="ml-auto w-full max-w-xs space-y-2 border-t border-black/10 pt-4 text-sm">
-            <ReceiptTotal label="Subtotal" value={cad(invoice.subtotal)} />
-            <ReceiptTotal
-              label={`HST (${formatTaxRate(invoice.tax_rate)})`}
-              value={cad(invoice.tax)}
-            />
-            <ReceiptTotal
-              emphasis
-              label="Total"
-              value={`${cad(invoice.total)} ${invoice.currency}`}
-            />
+            <InvoiceBreakdown invoice={invoice} />
           </div>
 
           {invoice.notes ? (
@@ -344,29 +313,6 @@ function ReceiptMeta({ label, children }: { label: string; children: React.React
   )
 }
 
-function ReceiptTotal({
-  label,
-  value,
-  emphasis,
-}: {
-  label: string
-  value: string
-  emphasis?: boolean
-}) {
-  return (
-    <div
-      className={
-        emphasis
-          ? "flex justify-between pt-2 text-base font-extrabold text-[#c96c83]"
-          : "flex justify-between text-[#5f6268]"
-      }
-    >
-      <span>{label}</span>
-      <span>{value}</span>
-    </div>
-  )
-}
-
 function formatDate(value: string | null) {
   if (!value) return "Not dated"
 
@@ -382,11 +328,6 @@ function formatDate(value: string | null) {
 
 function formatLabel(value: string) {
   return value.replaceAll("_", " ")
-}
-
-function formatTaxRate(value: string) {
-  const rate = Number(value)
-  return Number.isFinite(rate) ? `${Math.round(rate * 100)}%` : "-"
 }
 
 function getApiErrorMessage(error: unknown, fallback: string) {

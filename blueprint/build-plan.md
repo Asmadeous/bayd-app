@@ -122,3 +122,20 @@ role-conditional for staff vs admin. NOT a wrapped website.
         a passkey (Face ID / fingerprint / device biometric) for stronger login.
         Server-side WebAuthn (registration + assertion) + credential storage;
         Capacitor/web client integration. Opt-in, additive to existing auth.
+
+## Roadmap — Phase 6: Editable booking calendar
+
+- [x] 6. Editable booking calendar — a List | Calendar toggle on every bookings
+      screen (list stays the default); appointments are managed from the calendar
+      under each role's existing rules. Staff: view + existing actions only (no
+      reschedule/cancel). "Delete" means cancel; bookings are never hard-deleted.
+  - [x] 6a. Backend + dashboard calendars — `from`/`to` date range on the customer,
+        staff, and admin booking lists; fix admin booking `show`; remove admin
+        hard delete; bucket days in the company zone; shared calendar component
+        (month/week/day) with an appointment detail sheet and tap-empty-slot
+        create; replaces the read-only calendars on all three dashboards.
+  - [x] 6b. App calendars — Calendar toggle on customer app Bookings and staff app
+        Schedule (month strip + day timeline), reusing 6a.
+  - [x] 6c. Admin calendar tools — drag-to-reschedule (same availability and
+        double-booking checks as the reschedule dialog) and a tech availability +
+        blackout overlay; pairs with the admin schedule editor.

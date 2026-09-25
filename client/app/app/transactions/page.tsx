@@ -1,6 +1,10 @@
 "use client"
 
-import { useInvoices } from "@/lib/hooks/use-invoices"
+import { useState } from "react"
+import { X } from "lucide-react"
+
+import { InvoiceBreakdown } from "@/components/invoice/invoice-breakdown"
+import { useInvoices, type Invoice } from "@/lib/hooks/use-invoices"
 import { cardClass, mutedClass } from "../app-theme"
 import { SectionScreen } from "../section-screen"
 
@@ -14,6 +18,7 @@ const STATUS_STYLE: Record<string, string> = {
 export default function AppTransactionsScreen() {
   const { data, isLoading } = useInvoices(1)
   const invoices = data?.data ?? []
+  const [open, setOpen] = useState<Invoice | null>(null)
 
   return (
     <SectionScreen title="Transactions">
@@ -26,7 +31,8 @@ export default function AppTransactionsScreen() {
           {invoices.map((inv) => {
             const when = new Date(inv.issued_at ?? inv.created_at)
             return (
-              <li key={inv.id} className={`p-4 ${cardClass}`}>
+              <li key={inv.id}>
+                <button type="button" onClick={() => setOpen(inv)} className={`block w-full p-4 text-left ${cardClass}`}>
                 <div className="flex items-center justify-between">
                   <span
                     className={`rounded-full px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] ${
@@ -41,12 +47,40 @@ export default function AppTransactionsScreen() {
                 <p className={`mt-0.5 text-xs ${mutedClass}`}>
                   {inv.invoice_number} · {when.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                 </p>
+                </button>
               </li>
             )
           })}
         </ul>
       )}
+      {open ? <InvoiceSheet invoice={open} onClose={() => setOpen(null)} /> : null}
     </SectionScreen>
+  )
+}
+
+// Full invoice (the same breakdown as the PDF) as a bottom sheet.
+function InvoiceSheet({ invoice, onClose }: { invoice: Invoice; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end bg-black/40" role="dialog" aria-modal="true" aria-label={`Invoice ${invoice.invoice_number}`} onClick={onClose}>
+      <div
+        className="max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-white px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-[#C96C83]">Invoice</p>
+            <p className="text-lg font-extrabold">{invoice.invoice_number}</p>
+            <p className={`text-xs ${mutedClass}`}>
+              {invoice.source_label} · {invoice.payment_method ?? "Payment pending"}
+            </p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="grid size-9 place-items-center rounded-full bg-black/5">
+            <X className="size-4" aria-hidden />
+          </button>
+        </div>
+        <InvoiceBreakdown invoice={invoice} />
+      </div>
+    </div>
   )
 }
 

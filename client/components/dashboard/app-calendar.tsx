@@ -6,8 +6,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { Booking } from "@/lib/hooks/use-bookings"
+import { bookingDateKey } from "@/lib/booking-time"
 
-const STATUS_COLORS: Record<string, string> = {
+export const STATUS_COLORS: Record<string, string> = {
   pending: "#d4a843",
   confirmed: "#c96c83",
   in_progress: "#d4a843",
@@ -35,7 +36,7 @@ export function AppCalendar({ bookings, footer, onSelectDay }: AppCalendarProps)
   const bookingMap = useMemo(() => {
     const map = new Map<string, Booking[]>()
     for (const b of bookings) {
-      const key = b.starts_at.slice(0, 10)
+      const key = bookingDateKey(b.starts_at)
       const arr = map.get(key) ?? []
       arr.push(b)
       map.set(key, arr)

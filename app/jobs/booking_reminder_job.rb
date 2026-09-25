@@ -63,9 +63,9 @@ class BookingReminderJob < ApplicationJob
     when "day_of", "dispatch"
       booking.starts_at.in_time_zone(BusinessHours.zone).to_date == Time.current.in_time_zone(BusinessHours.zone).to_date
     when "starting"
-      # Fires at starts_at; a reschedule moves that time, so only deliver if the
-      # booking's CURRENT start is near now (the re-enqueued job covers the new time).
-      booking.starts_at.between?(30.minutes.ago, 30.minutes.from_now)
+      # Fires when clock-in opens; a reschedule moves that time, so only deliver if
+      # the booking's CURRENT opening is near now (the re-enqueued job covers the new time).
+      booking.access_opens_at.between?(15.minutes.ago, 15.minutes.from_now)
     when "window_ended"
       booking.ends_at.between?(30.minutes.ago, 30.minutes.from_now)
     else
@@ -92,7 +92,7 @@ class BookingReminderJob < ApplicationJob
     when "day_before"   then "#{svc} is tomorrow, #{when_local}."
     when "day_of"       then "#{svc} is today at #{when_local}."
     when "dispatch"     then "#{svc} at #{when_local}. Check your schedule."
-    when "starting"     then "#{svc} at #{when_local} starts now. Clock in when you arrive."
+    when "starting"     then "#{svc} at #{when_local} starts in #{Booking::ACCESS_LEAD_MIN} minutes. You can clock in and navigate now."
     when "window_ended" then "#{svc} at #{when_local} should be wrapping up. Clock out to mark it done."
     end
   end

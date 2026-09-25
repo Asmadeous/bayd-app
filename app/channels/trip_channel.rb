@@ -8,6 +8,7 @@ class TripChannel < ApplicationCable::Channel
     # Only the booking's own customer may watch it, and only for an active booking.
     return reject unless booking && booking.user_id == current_user.id
     return reject unless booking.status.in?(%w[confirmed in_progress])
+    return reject unless booking.access_open? # tracking opens Booking::ACCESS_LEAD_MIN before the start
 
     stream_from self.class.stream_name(booking)
   end

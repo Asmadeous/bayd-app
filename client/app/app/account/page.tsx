@@ -218,6 +218,7 @@ export default function AccountScreen() {
         <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
           <MenuRow href="/app/bookings" icon={CalendarDays} label="Bookings" />
           <MenuRow href="/app/messages" icon={MessageCircle} label="Messages" />
+          <MenuRow href="/app/support" icon={Mail} label="Support chat" />
           <MenuRow href="/app/orders" icon={ShoppingBag} label="Orders" />
           <MenuRow href="/app/transactions" icon={ReceiptText} label="Transactions" />
           <MenuRow href="/app/gift-cards" icon={Gift} label="Gift Cards" />

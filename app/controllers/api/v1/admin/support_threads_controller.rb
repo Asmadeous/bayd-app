@@ -20,6 +20,7 @@ module Api
         def reply
           thread = SupportThread.find(params[:id])
           message = thread.post!(body: params[:body].to_s.strip, from_staff: true, sender: current_user)
+          notify_customer(thread, message)
           render json: SupportMessageSerializer.render_as_hash(message), status: :created
         end
 
@@ -29,6 +30,21 @@ module Api
           render json: AdminSupportThreadSerializer.render_as_hash(thread)
         rescue ArgumentError
           render json: { error: "Status must be open or closed." }, status: :unprocessable_entity
+        end
+
+        private
+
+        # A signed-in customer's thread also shows in the app; push the reply there.
+        # Guests only see replies in the website bubble.
+        def notify_customer(thread, message)
+          return unless thread.user
+
+          PushService.push(
+            user: thread.user,
+            title: "Beauty @ Your Door replied",
+            body: message.body.truncate(140),
+            data: { kind: "support_message", path: "/app/support" }
+          )
         end
       end
     end

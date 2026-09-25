@@ -3,6 +3,7 @@ module Api
     module Admin
       class EmployeesController < BaseController
         include ImageUploadValidation
+        include BookingDateRange
 
         def index
           records, meta = paginate(EmployeeProfile.includes(:user, :partner, :services, :service_areas))
@@ -70,6 +71,23 @@ module Api
         def analytics
           ep = EmployeeProfile.includes(:user).find(params[:id])
           render json: EmployeeAnalytics.new(ep, period: params[:period]).as_json
+        end
+
+        # The tech's bookable hours per day over a calendar range (company-zone
+        # dates, same rules as the booking lists). Comes from
+        # EmployeeProfile#bookable_windows_for, the same source the booking engine
+        # uses, so the admin calendar shades exactly what customers can book.
+        def bookable_windows
+          profile = find_profile
+          from, to = parse_date_range!
+
+          zone = BusinessHours.zone
+          windows = (from..to).to_h do |date|
+            [ date.iso8601, profile.bookable_windows_for(date).map { |ws, we|
+              { start: ws.in_time_zone(zone).strftime("%H:%M"), end: we.in_time_zone(zone).strftime("%H:%M") }
+            } ]
+          end
+          render json: { employee_id: profile.id, windows: windows }
         end
 
         private

@@ -48,6 +48,15 @@ RSpec.describe "Website support chat", type: :request do
     end
   end
 
+  it "pushes an admin reply to a signed-in customer's phone" do
+    customer = create(:user)
+    start_chat(headers: auth_header(customer))
+    thread = SupportThread.last
+
+    expect(PushService).to receive(:push).with(hash_including(user: customer, data: hash_including(path: "/app/support")))
+    post "/api/v1/admin/support_threads/#{thread.id}/reply", params: { body: "Yes!" }, headers: auth_header(admin), as: :json
+  end
+
   it "links the thread to a signed-in customer" do
     customer = create(:user)
     start_chat(headers: auth_header(customer))

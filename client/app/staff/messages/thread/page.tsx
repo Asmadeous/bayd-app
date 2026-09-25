@@ -7,6 +7,7 @@ import { ChevronLeft, Send } from "lucide-react"
 
 import api from "@/lib/api"
 import { useChat } from "@/lib/cable/use-chat"
+import { useToast } from "@/lib/app-ui/app-ui-provider"
 import type { Conversation } from "@/lib/cable/chat-types"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { formatBookingTime } from "@/lib/booking-time"
@@ -49,6 +50,8 @@ function MessageThread() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
   }, [messages, otherTyping])
 
+  const { toast } = useToast()
+
   async function onSend() {
     const body = draft.trim()
     if (!body || sending) return
@@ -57,8 +60,9 @@ function MessageThread() {
     setTyping(false)
     try {
       await send(body)
-    } catch {
+    } catch (e) {
       setDraft(body) // restore on failure so the tech can retry
+      toast({ title: "Message not sent", description: sendError(e), variant: "error" })
     } finally {
       setSending(false)
     }
@@ -168,4 +172,10 @@ function ThreadHeader({ name, status, onBack }: { name: string; status: string; 
       </div>
     </header>
   )
+}
+
+// The API explains why a send was refused (e.g. customer-technician messaging
+// only opens 30 minutes before the appointment); show that instead of failing silently.
+function sendError(e: unknown) {
+  return (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Message not sent. Please try again."
 }

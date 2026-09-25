@@ -10,15 +10,17 @@ import {
   Plus,
 } from "lucide-react"
 
-import { useEmployeeProfile, useEmployeeSchedule } from "@/lib/hooks/use-employee"
+import { MonthAgenda } from "@/components/calendar/month-agenda"
+import { useCalendarState } from "@/lib/hooks/use-calendar-state"
+import { useEmployeeProfile, useEmployeeSchedule, useEmployeeScheduleRange } from "@/lib/hooks/use-employee"
 import { useLocationSharing } from "@/lib/native/use-location-sharing"
-import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
+import { bookingDateKey, formatBookingDate, formatBookingTime, formatDateKey, todayKey } from "@/lib/booking-time"
 import { staffScreenClass, cardClass, eyebrowClass, mutedClass, staffTheme } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
 import { StaffBookingCard } from "../staff-booking-card"
 
 export default function StaffScheduleScreen() {
-  const [tab, setTab] = useState<"upcoming" | "past">("upcoming")
+  const [tab, setTab] = useState<"upcoming" | "past" | "calendar">("upcoming")
   const { data: profile } = useEmployeeProfile()
   // Active schedule always drives the metrics + next-appointment card.
   const { data: activeData } = useEmployeeSchedule(1)
@@ -93,7 +95,7 @@ export default function StaffScheduleScreen() {
 
         {/* Upcoming / Past toggle */}
         <div className="flex rounded-xl bg-black/[0.04] p-1">
-          {(["upcoming", "past"] as const).map((key) => (
+          {(["upcoming", "past", "calendar"] as const).map((key) => (
             <button
               key={key}
               type="button"
@@ -109,6 +111,9 @@ export default function StaffScheduleScreen() {
         </div>
 
         {/* Appointments for the selected tab */}
+        {tab === "calendar" ? (
+          <StaffCalendarTab />
+        ) : (
         <div>
           <div className="mb-2 flex items-center justify-between">
             <h2 className={eyebrowClass}>{tab === "past" ? "Past bookings" : "Assigned appointments"}</h2>
@@ -139,7 +144,47 @@ export default function StaffScheduleScreen() {
             </ul>
           )}
         </div>
+        )}
       </div>
+    </div>
+  )
+}
+
+// Month view of the tech's jobs (past and cancelled included): tap a day to see
+// its jobs with the normal job cards (clock in/out, charge, navigate), or add a
+// manual booking on a future day. No reschedule/cancel for staff.
+function StaffCalendarTab() {
+  const state = useCalendarState("month")
+  const { data = [], isLoading } = useEmployeeScheduleRange(state.from, state.to)
+  const [selected, setSelected] = useState(() => todayKey())
+  const dayList = data
+    .filter((b) => bookingDateKey(b.starts_at) === selected)
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+
+  return (
+    <div className="space-y-4">
+      <MonthAgenda state={state} bookings={data} selected={selected} onSelect={setSelected} />
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-extrabold">
+          {formatDateKey(selected, { weekday: "long", month: "long", day: "numeric" })}
+        </h2>
+        {selected >= todayKey() ? (
+          <Link href={`/staff/schedule/new?date=${selected}`} className="rounded-full bg-[#14100F] px-4 py-2 text-xs font-bold text-white">
+            Add booking
+          </Link>
+        ) : null}
+      </div>
+      {isLoading ? (
+        <div className="h-36 animate-pulse rounded-2xl bg-black/5" />
+      ) : dayList.length === 0 ? (
+        <p className={`${cardClass} px-4 py-6 text-center text-sm ${mutedClass}`}>No jobs this day.</p>
+      ) : (
+        <ul className="space-y-3">
+          {dayList.map((b) => (
+            <StaffBookingCard key={b.id} booking={b} />
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

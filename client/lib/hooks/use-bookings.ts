@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import type { Meeting } from "@/lib/hooks/use-meetings"
 import type { PaymentMethod } from "@/lib/payment-methods"
@@ -15,6 +15,8 @@ export interface Booking {
   total: string
   outstanding_balance: string
   paid_methods: PaymentMethod[]
+  // When messaging / tracking / clock-in / navigation open (30 min before start).
+  access_opens_at: string | null
   notes: string | null
   cancellation_reason: string | null
   has_review: boolean
@@ -90,6 +92,16 @@ export function useBookings(page = 1) {
   return useQuery({
     queryKey: ["bookings", page],
     queryFn: () => api.get<PagedResponse<Booking>>("/bookings", { params: { page } }).then((r) => r.data),
+  })
+}
+
+// Calendar: every booking of the signed-in customer in [from, to] (company-zone
+// dates). Keeps the previous range on screen while the next one loads.
+export function useBookingsRange(from: string, to: string) {
+  return useQuery({
+    queryKey: ["bookings", "range", from, to],
+    placeholderData: keepPreviousData,
+    queryFn: () => api.get<{ data: Booking[] }>("/bookings", { params: { from, to } }).then((r) => r.data.data),
   })
 }
 

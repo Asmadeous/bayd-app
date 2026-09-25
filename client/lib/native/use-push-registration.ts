@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Capacitor } from "@capacitor/core"
 
 import api from "@/lib/api"
@@ -13,6 +14,11 @@ import { useAuthStore } from "@/lib/stores/auth-store"
 // listener first, then call register().
 export function usePushRegistration() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const router = useRouter()
+  const routerRef = useRef(router)
+  useEffect(() => {
+    routerRef.current = router
+  }, [router])
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform() || !isAuthenticated) return
@@ -67,6 +73,8 @@ export function usePushRegistration() {
       const foregroundListener = await PushNotifications.addListener(
         "pushNotificationReceived",
         async (notification) => {
+          // Already looking at this chat: the message shows in the thread itself.
+          if (isCurrentPath(notification.data?.path)) return
           try {
             const { LocalNotifications } = await import("@capacitor/local-notifications")
             await LocalNotifications.schedule({
@@ -86,10 +94,26 @@ export function usePushRegistration() {
         },
       )
 
+      // Tapping a notification opens the screen the backend named in data.path
+      // (e.g. the chat thread). Covers both the system banner (app in background
+      // or closed) and the local re-display above (app in foreground).
+      const openPath = (path: unknown) => {
+        if (typeof path === "string" && path.startsWith("/")) routerRef.current.push(path)
+      }
+      const tapListener = await PushNotifications.addListener("pushNotificationActionPerformed", (action) =>
+        openPath(action.notification.data?.path),
+      )
+      const { LocalNotifications } = await import("@capacitor/local-notifications")
+      const localTapListener = await LocalNotifications.addListener("localNotificationActionPerformed", (action) =>
+        openPath(action.notification.extra?.path),
+      )
+
       removeListeners = () => {
         registration.remove()
         errorListener.remove()
         foregroundListener.remove()
+        tapListener.remove()
+        localTapListener.remove()
       }
 
       const perm = await PushNotifications.requestPermissions()
@@ -106,4 +130,9 @@ export function usePushRegistration() {
       }
     }
   }, [isAuthenticated])
+}
+
+function isCurrentPath(path: unknown) {
+  if (typeof path !== "string" || typeof window === "undefined") return false
+  return `${window.location.pathname}${window.location.search}` === path
 }

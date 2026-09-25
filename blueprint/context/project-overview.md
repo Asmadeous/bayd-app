@@ -51,6 +51,20 @@ the SimplyBook.me integration (being removed).
 4. **Staff/admin mobile app** - purpose-built Capacitor app, role-conditional,
    Square Tap to Pay NFC POS, background live location, clock-in/out, jobs,
    availability editing. Same sharing model. NOT a wrapped website.
+5. **Auth, reminders, group hardening** - phone OTP login (Infobip), booking
+   reminders via Solid Queue, a group-booking wiring audit, optional passkeys
+   (WebAuthn).
+6. **Editable booking calendar** - a List | Calendar toggle on every bookings
+   screen (list stays default), managing appointments under each role's
+   existing rules. Staff get view + existing actions only (no reschedule or
+   cancel); "delete" means cancel, bookings are never hard-deleted.
+   - 6a. Backend + dashboard calendars: `from`/`to` date range on the customer,
+     staff, and admin booking lists; fix admin booking `show`; remove admin hard
+     delete; company-zone day bucketing; shared month/week/day calendar with a
+     detail sheet and tap-empty-slot create on all three dashboards.
+   - 6b. App calendars: customer app Bookings + staff app Schedule, reusing 6a.
+   - 6c. Admin tools: drag-to-reschedule (same availability + double-booking
+     checks) and a tech availability/blackout overlay.
 
 ## Data model
 
@@ -129,7 +143,8 @@ derivable from code.
 Existing Next.js customer web app defines the visual language (booking flow +
 dashboards). Key surfaces: `/book` (service → tech → available time → add-ons →
 pay), customer dashboard (bookings, reschedule/cancel), staff dashboard, admin
-dashboard. Mobile apps reuse this where possible.
+dashboard. Mobile apps reuse this where possible. Every bookings screen gets
+a List | Calendar toggle (roadmap 6).
 
 ## Deployment
 

@@ -86,7 +86,7 @@ class EmployeeProfile < ApplicationRecord
       return [ window_on(date, override.start_time, override.end_time) ] if override.partial_day?
     end
 
-    availability_schedules.where(day_of_week: date.wday)
+    availability_schedules.where(day_of_week: date.wday).order(:start_time)
                           .map { |s| window_on(date, s.start_time, s.end_time) }
   end
 

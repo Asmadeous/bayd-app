@@ -7,6 +7,13 @@ class BookingSerializer < Blueprinter::Base
          :booked_for_name, :booked_for_phone, :overtime_amount,
          :service_latitude, :service_longitude, :reschedule_count, :parent_booking_id
 
+  # When messaging, live tracking, clock-in and navigation open for this booking
+  # (Booking::ACCESS_LEAD_MIN before the start). The apps lock those actions
+  # until then; the API enforces it regardless.
+  field :access_opens_at do |booking|
+    booking.access_opens_at
+  end
+
   field :outstanding_balance do |booking|
     booking.outstanding_balance
   end

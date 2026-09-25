@@ -18,6 +18,10 @@ class TimeClock
     raise Error, "already clocked in" if employee_profile.shifts.status_open.exists?
     raise Error, "not your booking" unless booking.employee_profile_id == employee_profile.id
     raise Error, "already clocked in for this booking" if booking.shifts.status_open.exists?
+    unless booking.access_open?(at)
+      raise Error, "The appointment window hasn't started yet. You can clock in from #{booking.access_opens_label} " \
+                   "(#{Booking::ACCESS_LEAD_MIN} minutes before the appointment)."
+    end
 
     within_geofence!(booking, latitude, longitude)
 

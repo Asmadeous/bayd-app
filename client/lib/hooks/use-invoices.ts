@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
 
 export interface InvoiceLineItem {
+  kind?: "service" | "addon" | "travel" | "overtime" | "product" | "gift_card"
   description: string
   quantity: number
   unit_price: number
@@ -23,12 +24,50 @@ export interface Invoice {
   currency: string
   payment_method: string | null
   line_items: InvoiceLineItem[]
+  // Snapshot captured at issue time; empty on invoices issued before it existed.
+  details: InvoiceDetails
   notes: string | null
   issued_at: string | null
   paid_at: string | null
   created_at: string
   has_pdf: boolean
   customer: { id: number; name: string; email: string }
+}
+
+export interface InvoiceAddress {
+  line1: string
+  line2?: string
+  city?: string
+  province?: string
+  postal_code?: string
+  buzz_code?: string
+}
+
+export interface InvoiceDetails {
+  business?: { name: string; tagline?: string; phone?: string; email?: string; website?: string; address?: string; hst_number?: string }
+  bill_to?: { name: string; email?: string; phone?: string }
+  booked_for?: { name?: string; phone?: string }
+  service_address?: InvoiceAddress
+  shipping_address?: InvoiceAddress
+  appointment?: {
+    reference?: string
+    service?: string
+    category?: string
+    date?: string
+    start_time?: string
+    end_time?: string
+    duration_minutes?: number
+    timezone?: string
+    technician?: string
+    technician_title?: string
+    client_type?: string
+    party_size?: number
+    status?: string
+  }
+  payments?: { date?: string; method: string; reference?: string; amount: number }[]
+  tip?: number
+  amount_paid?: number
+  balance_due?: number
 }
 
 interface Paged<T> {

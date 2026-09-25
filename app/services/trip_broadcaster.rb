@@ -13,9 +13,11 @@ class TripBroadcaster
   end
 
   # The tech's next appointment that's active and not finished — the one a customer
-  # would be watching for arrival. Nearest upcoming start wins.
+  # would be watching for arrival. Nearest upcoming start wins. Nothing is shared
+  # before that booking's tracking window opens.
   def self.upcoming_booking_for(employee_profile)
     employee_profile.bookings
+                    .access_open
                     .where(status: %w[confirmed in_progress])
                     .where("ends_at > ?", Time.current)
                     .order(:starts_at)

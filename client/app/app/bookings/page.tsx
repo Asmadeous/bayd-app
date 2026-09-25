@@ -3,14 +3,17 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
-import { CalendarDays, Clock3, MessageCircle, Navigation, Star, Video } from "lucide-react"
+import { CalendarDays, Clock3, Lock, MessageCircle, Navigation, Star, Video } from "lucide-react"
 
 import api from "@/lib/api"
-import { useBookings, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
+import { useBookings, useBookingsRange, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
+import { useCalendarState } from "@/lib/hooks/use-calendar-state"
+import { useBookingAccess, windowNotStartedMessage } from "@/lib/booking-access"
+import { MonthAgenda } from "@/components/calendar/month-agenda"
 import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
 import { useStartMeeting } from "@/lib/hooks/use-meetings"
 import type { Conversation } from "@/lib/cable/chat-types"
-import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
+import { bookingDateKey, formatBookingDate, formatBookingTime, formatDateKey, todayKey } from "@/lib/booking-time"
 import { appScreenClass } from "../app-theme"
 import { AppHeader } from "../app-header"
 import { RescheduleSheet } from "./reschedule-sheet"
@@ -20,7 +23,7 @@ const ACTIVE = ["pending", "confirmed", "in_progress"]
 
 export default function BookingsScreen() {
   const { data, isLoading } = useBookings(1)
-  const [tab, setTab] = useState<"upcoming" | "past">("upcoming")
+  const [tab, setTab] = useState<"upcoming" | "past" | "calendar">("upcoming")
   // "Now" captured once at mount via a lazy initializer so render stays pure.
   const [now] = useState(() => Date.now())
 
@@ -36,15 +39,15 @@ export default function BookingsScreen() {
     }
   }, [data, now])
 
-  const list = tab === "upcoming" ? upcoming : past
+  const list = tab === "upcoming" ? upcoming : tab === "past" ? past : []
 
   return (
     <div className={appScreenClass}>
       <AppHeader title="My bookings" />
 
       <div className="px-5">
-        <div className="mb-4 grid grid-cols-2 gap-2 rounded-full bg-black/5 p-1">
-          {(["upcoming", "past"] as const).map((t) => (
+        <div className="mb-4 grid grid-cols-3 gap-2 rounded-full bg-black/5 p-1">
+          {(["upcoming", "past", "calendar"] as const).map((t) => (
             <button
               key={t}
               type="button"
@@ -58,7 +61,9 @@ export default function BookingsScreen() {
           ))}
         </div>
 
-        {isLoading ? (
+        {tab === "calendar" ? (
+          <CalendarTab now={now} />
+        ) : isLoading ? (
           <div className="space-y-3">
             {[0, 1].map((i) => (
               <div key={i} className="h-32 animate-pulse rounded-2xl bg-black/5" />
@@ -78,6 +83,50 @@ export default function BookingsScreen() {
   )
 }
 
+// Month view of the customer's bookings: tap a day to see that day's
+// appointments with the same cards (reschedule / cancel / message / meet) as the
+// list, or book a future day.
+function CalendarTab({ now }: { now: number }) {
+  const state = useCalendarState("month")
+  const { data = [], isLoading } = useBookingsRange(state.from, state.to)
+  const [selected, setSelected] = useState(() => todayKey())
+  const dayList = data
+    .filter((b) => bookingDateKey(b.starts_at) === selected)
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+
+  return (
+    <div className="space-y-4">
+      <MonthAgenda state={state} bookings={data} selected={selected} onSelect={setSelected} />
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-extrabold text-[#101217]">
+          {formatDateKey(selected, { weekday: "long", month: "long", day: "numeric" })}
+        </h2>
+        {selected >= todayKey() ? (
+          <Link href={`/app/book?date=${selected}`} className="rounded-full bg-[#101217] px-4 py-2 text-xs font-bold text-white">
+            Book this day
+          </Link>
+        ) : null}
+      </div>
+      {isLoading ? (
+        <div className="h-32 animate-pulse rounded-2xl bg-black/5" />
+      ) : dayList.length === 0 ? (
+        <p className="rounded-2xl bg-black/[0.03] px-4 py-6 text-center text-sm text-[#101217]/55">No appointments this day.</p>
+      ) : (
+        <ul className="space-y-3">
+          {dayList.map((b) => (
+            <BookingCard
+              key={b.id}
+              booking={b}
+              cancellable={ACTIVE.includes(b.status) && new Date(b.starts_at).getTime() >= now}
+              now={now}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 function BookingCard({ booking, cancellable, now }: { booking: Booking; cancellable: boolean; now: number }) {
   const techName = booking.employee_profile.name || "Your technician"
   const { toast } = useToast()
@@ -85,6 +134,7 @@ function BookingCard({ booking, cancellable, now }: { booking: Booking; cancella
   const [rescheduling, setRescheduling] = useState(false)
   const [reviewing, setReviewing] = useState(false)
   const cancelBooking = useCancelBooking()
+  const access = useBookingAccess(booking)
   // Self-reschedule is capped at 2 per booking (backend enforces; hide when spent).
   const canReschedule = booking.reschedule_count < 2 && ["pending", "confirmed"].includes(booking.status)
   // Self-cancel: only pending/confirmed and at least 24h before the start (the
@@ -142,9 +192,27 @@ function BookingCard({ booking, cancellable, now }: { booking: Booking; cancella
 
       {cancellable && booking.meeting_recommended && <MeetAction booking={booking} />}
 
-      {cancellable && booking.employee_profile.user_id ? <MessageTechAction techUserId={booking.employee_profile.user_id} /> : null}
+      {/* Messaging and live tracking open 30 minutes before the appointment. */}
+      {cancellable && booking.employee_profile.user_id && access.active && !access.open ? (
+        <button
+          type="button"
+          onClick={() =>
+            toast({
+              title: "Not open yet",
+              description: windowNotStartedMessage(access.opensLabel, "message and track your technician"),
+              variant: "error",
+            })
+          }
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-black/[0.04] py-2.5 text-xs font-semibold text-[#101217]/60"
+        >
+          <Lock className="size-3.5" aria-hidden />
+          Message &amp; tracking open at {access.opensLabel}
+        </button>
+      ) : null}
 
-      {cancellable && ["confirmed", "in_progress"].includes(booking.status) && (
+      {cancellable && access.open && booking.employee_profile.user_id ? <MessageTechAction techUserId={booking.employee_profile.user_id} /> : null}
+
+      {cancellable && access.open && ["confirmed", "in_progress"].includes(booking.status) && (
         <Link
           href={`/app/bookings/track?id=${booking.id}`}
           className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-[#101217] py-2.5 text-sm font-bold text-white"

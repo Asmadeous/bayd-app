@@ -5,8 +5,7 @@ RSpec.describe TripChannel, type: :channel do
   let(:tech)     { create(:employee_profile) }
   let(:service)  { create(:service, duration_minutes: 60) }
 
-  def booking(status: "confirmed", user: customer)
-    start = 30.minutes.from_now
+  def booking(status: "confirmed", user: customer, start: 20.minutes.from_now)
     Booking.create!(user: user, service: service, employee_profile: tech,
                     starts_at: start, ends_at: start + 60.minutes, status: status,
                     subtotal: 1, travel_fee: 0, total: 1,
@@ -24,6 +23,13 @@ RSpec.describe TripChannel, type: :channel do
   it "rejects a customer who does not own the booking" do
     b = booking
     stub_connection current_user: create(:user)
+    subscribe(booking_id: b.id)
+    expect(subscription).to be_rejected
+  end
+
+  it "rejects tracking more than #{Booking::ACCESS_LEAD_MIN} minutes before the start" do
+    b = booking(start: 2.hours.from_now)
+    stub_connection current_user: customer
     subscribe(booking_id: b.id)
     expect(subscription).to be_rejected
   end

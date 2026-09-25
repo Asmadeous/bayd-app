@@ -7,6 +7,7 @@ import { Suspense } from "react"
 import { ChevronLeft, MapPin, Navigation } from "lucide-react"
 
 import { useBooking } from "@/lib/hooks/use-bookings"
+import { useBookingAccess } from "@/lib/booking-access"
 import { useTrip } from "@/lib/cable/use-trip"
 import { appScreenClass } from "../../app-theme"
 
@@ -30,10 +31,13 @@ function TrackView() {
   const bookingId = Number(params.get("id")) || null
 
   const { data: booking, isLoading } = useBooking(bookingId ?? 0)
+  // Tracking opens 30 minutes before the start (the API refuses earlier); the
+  // subscription only starts once it's open, so it connects the moment it does.
+  const access = useBookingAccess(booking ?? { status: "cancelled", access_opens_at: null, starts_at: "" })
   // Pure websocket - the tech's live position streams in over TripChannel. No
   // polling: we don't need history, only where they are now. null until the
   // tech's app sends its first GPS ping while en route.
-  const position = useTrip(bookingId)
+  const position = useTrip(access.open ? bookingId : null)
 
   const destLat = booking?.service_latitude ? Number(booking.service_latitude) : null
   const destLng = booking?.service_longitude ? Number(booking.service_longitude) : null
@@ -60,6 +64,8 @@ function TrackView() {
           <Empty message="We couldn't find that booking." />
         ) : !trackable ? (
           <Empty message="Tracking opens once your appointment is confirmed and on the way." />
+        ) : !access.open ? (
+          <Empty message={`Live tracking opens at ${access.opensLabel}, 30 minutes before your appointment.`} />
         ) : destLat == null || destLng == null ? (
           <Empty message="This booking has no mapped address to track toward." />
         ) : (

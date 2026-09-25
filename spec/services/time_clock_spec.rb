@@ -16,6 +16,22 @@ RSpec.describe TimeClock, type: :service do
                     service_latitude: client_lat, service_longitude: client_lng)
   end
 
+  describe ".clock_in window" do
+    it "refuses clock-in more than #{Booking::ACCESS_LEAD_MIN} minutes before the start" do
+      b = booking(starts_at: 2.hours.from_now)
+      expect {
+        described_class.clock_in(tech, booking: b, latitude: client_lat, longitude: client_lng)
+      }.to raise_error(TimeClock::Error, /window hasn't started yet. You can clock in from .*30 minutes before/)
+      expect(b.reload.status).to eq("confirmed")
+    end
+
+    it "allows clock-in inside the window" do
+      b = booking(starts_at: 20.minutes.from_now)
+      described_class.clock_in(tech, booking: b, latitude: client_lat, longitude: client_lng)
+      expect(b.reload.status).to eq("in_progress")
+    end
+  end
+
   describe ".clock_in geofence" do
     it "blocks clock-in beyond 150 m of the client" do
       b = booking

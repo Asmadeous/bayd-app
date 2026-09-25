@@ -4,6 +4,14 @@ RSpec.describe "Conversations + messages", type: :request do
   let(:alice) { create(:user, email: "alice@example.com") }
   let(:bob)   { create(:user, email: "bob@baydspa.ca", role: :employee) }
   let(:admin) { create(:user, email: "admin@baydspa.ca", role: :admin) }
+  let(:bob_profile) { create(:employee_profile, user: bob) }
+  let(:service) { create(:service, duration_minutes: 60, price: 80) }
+
+  # Customer <-> tech messaging needs a shared booking inside its window.
+  def book(starts_at:, status: "confirmed")
+    Booking.create!(user: alice, employee_profile: bob_profile, service: service, status: status,
+                    starts_at: starts_at, ends_at: starts_at + 1.hour, subtotal: 80, travel_fee: 0, total: 80)
+  end
 
   def auth_header(user)
     token = JWT.encode({ sub: user.id, role: user.role, exp: 30.days.from_now.to_i },
@@ -42,6 +50,7 @@ RSpec.describe "Conversations + messages", type: :request do
 
   describe "POST /conversations" do
     it "finds or creates the conversation with another user" do
+      book(starts_at: 20.minutes.from_now)
       expect {
         post "/api/v1/conversations", params: { user_id: bob.id }, headers: auth_header(alice), as: :json
       }.to change(Conversation, :count).by(1)
@@ -72,6 +81,7 @@ RSpec.describe "Conversations + messages", type: :request do
     end
 
     it "posts a message as a participant" do
+      book(starts_at: 20.minutes.from_now)
       expect {
         post "/api/v1/conversations/#{convo.id}/messages", params: { body: "hey" }, headers: auth_header(alice), as: :json
       }.to change { convo.messages.count }.by(1)
@@ -109,6 +119,54 @@ RSpec.describe "Conversations + messages", type: :request do
       stranger = create(:user, email: "x@example.com")
       post "/api/v1/conversations/#{convo.id}/messages/read", headers: auth_header(stranger), as: :json
       expect(response).to have_http_status(:forbidden)
+    end
+  end
+
+  describe "customer <-> technician window" do
+    let(:convo) { Conversation.between(alice, bob) }
+
+    def say(user, body = "hi")
+      post "/api/v1/conversations/#{convo.id}/messages", params: { body: body }, headers: auth_header(user), as: :json
+    end
+
+    it "blocks both sides more than #{Booking::ACCESS_LEAD_MIN} minutes before the appointment" do
+      book(starts_at: 2.hours.from_now)
+
+      say(alice)
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body).to include("code" => "contact_window_closed")
+      expect(response.parsed_body["error"]).to include("Your appointment window hasn't started yet", "message your technician")
+
+      say(bob)
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body["error"]).to include("message your client")
+
+      post "/api/v1/conversations", params: { user_id: bob.id }, headers: auth_header(alice), as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "opens #{Booking::ACCESS_LEAD_MIN} minutes before and stays open while in progress" do
+      booking = book(starts_at: 25.minutes.from_now)
+      say(alice)
+      expect(response).to have_http_status(:created)
+
+      booking.update_columns(status: "in_progress", starts_at: 10.minutes.ago)
+      say(bob)
+      expect(response).to have_http_status(:created)
+    end
+
+    it "closes once the booking is completed or cancelled" do
+      booking = book(starts_at: 10.minutes.ago)
+      booking.update_columns(status: "completed")
+      say(alice)
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body["error"]).to include("only open from 30 minutes before an appointment")
+    end
+
+    it "never limits admins or customer-to-customer chats" do
+      convo_admin = Conversation.between(alice, admin)
+      post "/api/v1/conversations/#{convo_admin.id}/messages", params: { body: "help" }, headers: auth_header(alice), as: :json
+      expect(response).to have_http_status(:created)
     end
   end
 end

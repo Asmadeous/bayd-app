@@ -1,10 +1,47 @@
+<% d = @invoice.details || {} %>
+<% appt = d["appointment"] %>
+<% addr = d["service_address"] %>
 <h1 style="font-size:20px; margin:16px 0 8px;">Invoice <%= @invoice.invoice_number %></h1>
 
 <p style="font-size:15px; line-height:1.6; color:#4f535a;">
-  Hi <%= @user.first_name.presence || "there" %>, thanks for your purchase. Your
-  invoice for <strong><%= number_to_currency(@invoice.total) %> <%= @invoice.currency %></strong>
+  Hi <%= @user.first_name.presence || "there" %>, thank you for choosing Beauty @ Your Door.
+  Your invoice for <strong><%= number_to_currency(@invoice.total) %> <%= @invoice.currency %></strong>
   is attached as a PDF.
 </p>
+
+<% if appt %>
+  <table cellpadding="0" cellspacing="0" style="width:100%; font-size:14px; color:#101217; margin:12px 0;">
+    <% [
+      ["Service", appt["service"]],
+      ["Date", appt["date"]],
+      ["Time", [appt["start_time"], appt["end_time"]].compact.join(" - ").presence],
+      ["Technician", appt["technician"]],
+      ["Address", addr && [addr["line1"], addr["line2"], addr["city"], addr["postal_code"]].compact.join(", ")],
+      ["Booking ref.", appt["reference"]]
+    ].each do |label, value| %>
+      <% next if value.blank? %>
+      <tr>
+        <td style="padding:3px 12px 3px 0; color:#5f6268; width:110px;"><%= label %></td>
+        <td style="padding:3px 0;"><%= value %></td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>
+
+<table cellpadding="0" cellspacing="0" style="width:100%; font-size:14px; color:#101217; margin:12px 0; border-top:1px solid #e6e2dc;">
+  <% @invoice.line_items.each do |li| %>
+    <tr>
+      <td style="padding:6px 0;"><%= li["description"] %><%= " x#{li['quantity']}" if li["quantity"].to_i > 1 %></td>
+      <td style="padding:6px 0; text-align:right;"><%= number_to_currency(li["amount"]) %></td>
+    </tr>
+  <% end %>
+  <tr><td style="padding:6px 0; color:#5f6268; border-top:1px solid #e6e2dc;">HST included</td><td style="padding:6px 0; text-align:right; color:#5f6268; border-top:1px solid #e6e2dc;"><%= number_to_currency(@invoice.tax) %></td></tr>
+  <tr><td style="padding:6px 0; font-weight:bold;">Total</td><td style="padding:6px 0; text-align:right; font-weight:bold;"><%= number_to_currency(@invoice.total) %> <%= @invoice.currency %></td></tr>
+  <% if d.key?("balance_due") %>
+    <tr><td style="padding:6px 0; color:#5f6268;">Paid<%= " (#{@invoice.payment_method})" if @invoice.payment_method.present? %></td><td style="padding:6px 0; text-align:right; color:#5f6268;"><%= number_to_currency(d["amount_paid"]) %></td></tr>
+    <tr><td style="padding:6px 0; font-weight:bold; color:<%= d["balance_due"].to_f.positive? ? "#c96c83" : "#3f7e47" %>;">Balance due</td><td style="padding:6px 0; text-align:right; font-weight:bold;"><%= number_to_currency(d["balance_due"]) %></td></tr>
+  <% end %>
+</table>
 
 <p style="font-size:14px; color:#4f535a;">
   You can also view and download all your invoices anytime from your dashboard.

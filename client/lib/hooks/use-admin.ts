@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import type { EmployeeProfile } from "@/lib/hooks/use-employee"
@@ -105,6 +105,18 @@ export function useAdminBookings(params?: { status?: string; employee_id?: numbe
   })
 }
 
+// Calendar: every booking in [from, to], optionally one tech's.
+export function useAdminBookingsRange(from: string, to: string, employeeId?: number) {
+  return useQuery({
+    queryKey: ["admin-bookings", "range", from, to, employeeId ?? "all"],
+    placeholderData: keepPreviousData,
+    queryFn: () =>
+      api
+        .get<{ data: Booking[] }>("/admin/bookings", { params: { from, to, employee_id: employeeId } })
+        .then((r) => r.data.data),
+  })
+}
+
 export function useUpdateBooking() {
   const qc = useQueryClient()
   return useMutation({
@@ -126,11 +138,28 @@ export function useAdminRescheduleBooking() {
   })
 }
 
+// A tech's bookable hours per company-zone day ("HH:MM" pairs; [] = off or
+// blacked out), for shading the admin calendar.
+export type BookableWindows = Record<string, { start: string; end: string }[]>
+
+export function useAdminBookableWindows(employeeId: number | undefined, from: string, to: string) {
+  return useQuery({
+    queryKey: ["admin-bookable-windows", employeeId, from, to],
+    enabled: !!employeeId,
+    placeholderData: keepPreviousData,
+    queryFn: () =>
+      api
+        .get<{ windows: BookableWindows }>(`/admin/employees/${employeeId}/bookable_windows`, { params: { from, to } })
+        .then((r) => r.data.windows),
+  })
+}
+
 // ── Employees ───────────────────────────────────────────────────────────────
 
-export function useAdminEmployees(page = 1) {
+export function useAdminEmployees(page = 1, enabled = true) {
   return useQuery({
     queryKey: ["admin-employees", page],
+    enabled,
     queryFn: () => api.get<PagedResponse<EmployeeProfile>>("/admin/employees", { params: { page } }).then((r) => r.data),
   })
 }

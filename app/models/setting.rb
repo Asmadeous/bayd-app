@@ -7,7 +7,11 @@ class Setting < ApplicationRecord
   DEFAULTS = {
     "group_deposit_pct" => "25", # % of the total collected upfront for group bookings
     "group_deposit_min" => "50", # minimum group deposit in $ (floor on the % above)
-    "no_show_fee"       => "0"   # flat $ charged to a no-show's card on file (0 = off)
+    "no_show_fee"       => "0",  # flat $ charged to a no-show's card on file (0 = off)
+    # Printed on every invoice when set. A Canadian invoice needs the GST/HST
+    # registration number; blank prints nothing rather than a made-up one.
+    "invoice_hst_number"       => "",
+    "invoice_business_address" => ""
   }.freeze
 
   def self.get(key)

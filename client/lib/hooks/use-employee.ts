@@ -1,12 +1,14 @@
 "use client"
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import type { OfflinePaymentMethod } from "@/lib/payment-methods"
 
 interface EmployeeProfile {
   id: number
+  // First name, from the serializer's global (customer-safe) fields.
+  name: string | null
   title: string | null
   bio: string | null
   photo_url: string | null
@@ -101,6 +103,18 @@ export function useToggleShift() {
 // Staff-operated card checkout for a booking: returns a hosted-checkout link for
 // the balance. The tech opens it and enters the CLIENT'S card there (the payment
 // is the customer's, staff just runs the terminal). No card-on-file auto-charge.
+// Calendar: the tech's own jobs in [from, to], any status (past and cancelled
+// included). Shares the "employee-schedule" key prefix so every schedule
+// mutation refreshes it too.
+export function useEmployeeScheduleRange(from: string, to: string) {
+  return useQuery({
+    queryKey: ["employee-schedule", "range", from, to],
+    placeholderData: keepPreviousData,
+    queryFn: () =>
+      api.get<{ data: Booking[] }>("/employee/schedule", { params: { from, to } }).then((r) => r.data.data),
+  })
+}
+
 export function useChargeBooking() {
   return useMutation({
     mutationFn: (bookingId: number) =>
