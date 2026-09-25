@@ -4,14 +4,16 @@ import { useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { Capacitor } from "@capacitor/core"
 
+import { nativeSplashHidden, SPLASH_BACKGROUND, SPLASH_DONE_EVENT } from "@/lib/native/animated-splash"
+
 // The crossover luminance where black text stops out-contrasting white text
 // (WCAG: sqrt(1.05 * 0.05) - 0.05). Above it a screen wants dark status bar
 // icons, below it light ones. A plain 0.5 midpoint gets mid-tones like the
 // brand pink (#C96C83, L≈0.25) wrong.
 const DARK_ICON_THRESHOLD = 0.179
 
-// Asks the shell to re-sample the status bar colour. For screen changes that
-// don't change the route: the launch splash fading out, the app lock opening.
+// Asks the shell to re-sample the status bar colour for a screen change that
+// doesn't change the route, like the app lock opening.
 const STATUS_BAR_SYNC_EVENT = "bayd:status-bar-sync"
 
 export function requestStatusBarSync() {
@@ -73,6 +75,12 @@ export function useNativeShell() {
       // clock). The bar is a real bar - what it needed was not transparency but
       // the right COLOUR, which the per-route effect below keeps in step with
       // whatever screen is showing.
+      // On iOS the native splash is drawn inside the WebView, so resizing the
+      // WebView while it shows drags it down under an unpainted (black) bar.
+      if (Capacitor.getPlatform() === "ios") {
+        await nativeSplashHidden
+        await StatusBar.setBackgroundColor({ color: SPLASH_BACKGROUND }).catch(() => {})
+      }
       await StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {})
       // The native splash is hidden by AnimatedSplash (it hands off to the web
       // splash animation), not here - hiding it here would flash before the overlay.
@@ -91,16 +99,15 @@ export function useNativeShell() {
     return () => cleanup?.()
   }, [])
 
-  // Re-match the bar to the screen on every navigation, and on request (see
-  // requestStatusBarSync): the splash and the lock screen sit over the route, so
-  // sampling only on navigation would pin the bar to their colour. Runs after paint so the
-  // new screen's background is the one being sampled.
+  // Re-match the bar to the screen on every navigation, and again when the
+  // launch splash leaves (while it is up, the pink overlay is what gets
+  // sampled). Runs after paint so the new screen's background is the one read.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
 
     let cancelled = false
     let frame = 0
-    const sync = () => {
+    const match = () => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
         const sampled = topBackground()
@@ -116,12 +123,23 @@ export function useNativeShell() {
       })
     }
 
-    sync()
-    window.addEventListener(STATUS_BAR_SYNC_EVENT, sync)
+    // The exit event lands while the faded-out overlay is still in the DOM, and
+    // it would be sampled again, so wait for it to actually be removed.
+    const matchAfterSplash = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() =>
+        document.querySelector("[data-launch-splash]") ? matchAfterSplash() : match(),
+      )
+    }
+
+    match()
+    window.addEventListener(SPLASH_DONE_EVENT, matchAfterSplash)
+    window.addEventListener(STATUS_BAR_SYNC_EVENT, match)
     return () => {
       cancelled = true
       cancelAnimationFrame(frame)
-      window.removeEventListener(STATUS_BAR_SYNC_EVENT, sync)
+      window.removeEventListener(SPLASH_DONE_EVENT, matchAfterSplash)
+      window.removeEventListener(STATUS_BAR_SYNC_EVENT, match)
     }
   }, [pathname])
 }
