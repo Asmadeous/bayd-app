@@ -17,7 +17,23 @@ import { BubbleLoader } from "@/components/bubble-loader"
 // launch reads as one continuous screen. The box is shifted up by half the status
 // bar because this WebView starts below the bar. Keep splash-lockup.png and the
 // bubble offset in step with the native drawable if either changes.
+//
+// iOS draws that same lockup (LaunchScreen.storyboard, SplashLockup) centred in
+// the SAFE AREA instead, and so does this overlay there. That centre stays put
+// when the WebView later drops below the status bar (use-native-shell.ts waits
+// for nativeSplashHidden before doing it, because the native splash view lives
+// inside the WebView and would be dragged down with it).
 const HOLD_MS = 2200
+// Hide the native frame anyway if the lockup never reports loaded.
+const HIDE_FALLBACK_MS = 1500
+
+export const SPLASH_BACKGROUND = "#C96C83"
+export const SPLASH_DONE_EVENT = "bayd:splash-done"
+
+let resolveNativeSplashHidden = () => {}
+export const nativeSplashHidden = new Promise<void>((resolve) => {
+  resolveNativeSplashHidden = resolve
+})
 
 const DRIFT = [
   "left-[12%] size-3 [--rise-duration:6.5s] [animation-delay:0.2s]",
@@ -29,33 +45,48 @@ const DRIFT = [
 ]
 
 export function AnimatedSplash() {
-  const [native] = useState(() => Capacitor.isNativePlatform())
+  const [platform] = useState(() => Capacitor.getPlatform())
+  const native = platform !== "web"
   const [visible, setVisible] = useState(native)
+  const [lockupPainted, setLockupPainted] = useState(false)
 
   useEffect(() => {
     if (!native) return
+    const timer = setTimeout(() => setVisible(false), HOLD_MS)
+    return () => clearTimeout(timer)
+  }, [native])
 
-    // Hand off on the next frame, once this overlay has painted, so the screen
-    // never flashes between the two.
-    const raf = requestAnimationFrame(async () => {
+  // Only drop the native frame once the lockup image is decoded and two frames
+  // have gone by. Hiding on the first frame after mount revealed the overlay
+  // with no lockup yet, or the bare white page behind it.
+  useEffect(() => {
+    if (!native) return
+
+    const hide = async () => {
       const mod = await import("@capacitor/splash-screen").catch(() => null)
       await mod?.SplashScreen.hide({ fadeOutDuration: 0 }).catch(() => {})
-    })
-
-    const timer = setTimeout(() => setVisible(false), HOLD_MS)
-    return () => {
-      cancelAnimationFrame(raf)
-      clearTimeout(timer)
+      resolveNativeSplashHidden()
     }
-  }, [native])
+
+    if (!lockupPainted) {
+      const fallback = setTimeout(hide, HIDE_FALLBACK_MS)
+      return () => clearTimeout(fallback)
+    }
+
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => void hide())
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [native, lockupPainted])
 
   if (!native) return null
 
   return (
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={() => window.dispatchEvent(new Event(SPLASH_DONE_EVENT))}>
       {visible && (
         <motion.div
           key="animated-splash"
+          data-launch-splash
           className="fixed inset-0 z-[9999] overflow-hidden bg-[#C96C83]"
           exit={{ opacity: 0 }}
           transition={{ duration: 0.45, ease: "easeInOut" }}
@@ -69,7 +100,13 @@ export function AnimatedSplash() {
             ))}
           </div>
 
-          <div className="absolute inset-0 flex -translate-y-[calc(env(safe-area-inset-top)/2)] items-center justify-center">
+          <div
+            className={
+              platform === "ios"
+                ? "absolute inset-x-0 top-[env(safe-area-inset-top)] bottom-[env(safe-area-inset-bottom)] flex items-center justify-center"
+                : "absolute inset-0 flex -translate-y-[calc(env(safe-area-inset-top)/2)] items-center justify-center"
+            }
+          >
             <motion.div
               aria-hidden
               className="pointer-events-none absolute size-80 rounded-full bg-white/15 blur-3xl"
@@ -82,6 +119,12 @@ export function AnimatedSplash() {
                 alt="Beauty @ Your Door"
                 className="size-full"
                 height={1152}
+                onLoad={(e) => {
+                  e.currentTarget
+                    .decode()
+                    .catch(() => {})
+                    .finally(() => setLockupPainted(true))
+                }}
                 priority
                 src="/images/brand/splash-lockup.png"
                 unoptimized

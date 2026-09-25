@@ -4,6 +4,8 @@ import { useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { Capacitor } from "@capacitor/core"
 
+import { nativeSplashHidden, SPLASH_BACKGROUND, SPLASH_DONE_EVENT } from "@/lib/native/animated-splash"
+
 // The crossover luminance where black text stops out-contrasting white text
 // (WCAG: sqrt(1.05 * 0.05) - 0.05). Above it a screen wants dark status bar
 // icons, below it light ones. A plain 0.5 midpoint gets mid-tones like the
@@ -65,6 +67,12 @@ export function useNativeShell() {
       // clock). The bar is a real bar - what it needed was not transparency but
       // the right COLOUR, which the per-route effect below keeps in step with
       // whatever screen is showing.
+      // On iOS the native splash is drawn inside the WebView, so resizing the
+      // WebView while it shows drags it down under an unpainted (black) bar.
+      if (Capacitor.getPlatform() === "ios") {
+        await nativeSplashHidden
+        await StatusBar.setBackgroundColor({ color: SPLASH_BACKGROUND }).catch(() => {})
+      }
       await StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {})
       // The native splash is hidden by AnimatedSplash (it hands off to the web
       // splash animation), not here - hiding it here would flash before the overlay.
@@ -83,28 +91,45 @@ export function useNativeShell() {
     return () => cleanup?.()
   }, [])
 
-  // Re-match the bar to the screen on every navigation. Runs after paint so the
-  // new screen's background is the one being sampled.
+  // Re-match the bar to the screen on every navigation, and again when the
+  // launch splash leaves (while it is up, the pink overlay is what gets
+  // sampled). Runs after paint so the new screen's background is the one read.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
 
     let cancelled = false
-    const frame = requestAnimationFrame(() => {
-      const sampled = topBackground()
-      if (!sampled) return
-      ;(async () => {
-        const { StatusBar, Style } = await import("@capacitor/status-bar")
-        if (cancelled) return
-        // Style.Dark = light text (for dark backgrounds); Style.Light = dark text.
-        const style = sampled.luminance > DARK_ICON_THRESHOLD ? Style.Light : Style.Dark
-        await StatusBar.setStyle({ style }).catch(() => {})
-        await StatusBar.setBackgroundColor({ color: sampled.color }).catch(() => {})
-      })()
-    })
+    let frame = 0
+    const match = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const sampled = topBackground()
+        if (!sampled) return
+        ;(async () => {
+          const { StatusBar, Style } = await import("@capacitor/status-bar")
+          if (cancelled) return
+          // Style.Dark = light text (for dark backgrounds); Style.Light = dark text.
+          const style = sampled.luminance > DARK_ICON_THRESHOLD ? Style.Light : Style.Dark
+          await StatusBar.setStyle({ style }).catch(() => {})
+          await StatusBar.setBackgroundColor({ color: sampled.color }).catch(() => {})
+        })()
+      })
+    }
 
+    // The exit event lands while the faded-out overlay is still in the DOM, and
+    // it would be sampled again, so wait for it to actually be removed.
+    const matchAfterSplash = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() =>
+        document.querySelector("[data-launch-splash]") ? matchAfterSplash() : match(),
+      )
+    }
+
+    match()
+    window.addEventListener(SPLASH_DONE_EVENT, matchAfterSplash)
     return () => {
       cancelled = true
       cancelAnimationFrame(frame)
+      window.removeEventListener(SPLASH_DONE_EVENT, matchAfterSplash)
     }
   }, [pathname])
 }
