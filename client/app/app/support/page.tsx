@@ -59,8 +59,8 @@ export default function SupportScreen() {
                   m.from_staff ? "bg-white text-[#101217]" : "bg-[#c96c83] text-white",
                 )}
               >
-                {m.from_staff && m.sender_name ? (
-                  <span className="mb-0.5 block text-[0.65rem] font-bold uppercase tracking-[0.08em] text-[#a36f4d]">{m.sender_name}</span>
+                {m.from_staff ? (
+                  <span className="mb-0.5 block text-[0.65rem] font-bold uppercase tracking-[0.08em] text-[#a36f4d]">B.A.Y.D team</span>
                 ) : null}
                 {m.body}
               </div>

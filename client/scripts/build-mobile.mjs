@@ -30,8 +30,8 @@ if (!VALID.includes(which)) {
 //   employee -> app/staff   (self-contained New booking form, no app/book)
 //   admin    -> app/admin
 const APP_ROUTES = {
-  customer: { dir: "app", entry: "/app", reusesBook: true },
-  employee: { dir: "staff", entry: "/staff", reusesBook: false },
+  customer: { dir: "app", entry: "/app/home", reusesBook: true },
+  employee: { dir: "staff", entry: "/staff/schedule", reusesBook: false },
   admin: { dir: "admin", entry: "/admin", reusesBook: false },
 };
 const appRoute = APP_ROUTES[which];
@@ -66,7 +66,9 @@ if (appRoute.reusesBook) KEEP.add("book");
 // needs a server to answer with a 307 - under output: "export" there is none,
 // so the prerender throws and index.html is written out as an empty error
 // shell (<html id="__next_error__">). Capacitor opens index.html, so the app
-// would come up blank and never reach the entry route.
+// would come up blank and never reach the entry route. The entry is the final
+// landing screen, not /app or /staff: those redirect() again, and following that
+// hop reloaded the whole page, mounting the launch splash twice (it jumped).
 const MOBILE_ROOT_PAGE = `"use client"
 
 import { useEffect } from "react"

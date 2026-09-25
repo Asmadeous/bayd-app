@@ -2,6 +2,8 @@
 
 import { useSubscriptions } from "@/lib/hooks/use-subscriptions"
 import { cardClass, mutedClass } from "../app-theme"
+import { Repeat } from "lucide-react"
+import { EmptyState } from "../empty-state"
 import { SectionScreen } from "../section-screen"
 
 const STATUS_STYLE: Record<string, string> = {
@@ -18,7 +20,7 @@ export default function AppSubscriptionsScreen() {
       {isLoading ? (
         <ListSkeleton />
       ) : subs.length === 0 ? (
-        <Empty text="No subscriptions yet." />
+        <EmptyState icon={Repeat} title="No repeat bookings" text="Choose Repeat when you book to keep a regular appointment." action={{ label: "Book a service", href: "/app/book" }} />
       ) : (
         <ul className="space-y-3 pb-6">
           {subs.map((s) => (
@@ -55,6 +57,3 @@ function ListSkeleton() {
   )
 }
 
-function Empty({ text }: { text: string }) {
-  return <p className={`rounded-3xl bg-white p-8 text-center text-sm shadow-sm ${mutedClass}`}>{text}</p>
-}

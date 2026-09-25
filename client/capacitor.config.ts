@@ -35,14 +35,21 @@ const config: CapacitorConfig = {
   android: dir ? { path: `android${dir}` } : undefined,
   ios: dir ? { path: `ios${dir}` } : undefined,
   plugins: {
-    // The NATIVE splash is the static cream brand splash shown while the WebView
-    // boots. We hide it manually (launchAutoHide: false) once the web layer is
-    // ready and hand off to the ANIMATED web splash (AnimatedSplash), which uses
-    // the SAME cream background + brand logo so there's no colour flip or seam
-    // between the two. See providers.tsx (AnimatedSplash overlay).
+    // The NATIVE splash is the static brand splash (white door on brand pink)
+    // shown while the WebView boots. We hide it manually (launchAutoHide: false)
+    // once the web layer is ready and hand off to the ANIMATED web splash
+    // (AnimatedSplash), which uses the SAME pink background + white door so
+    // there's no colour flip or seam between the two. See providers.tsx.
+    // Pushes that arrive while the app is open are re-shown as local
+    // notifications (use-push-registration.ts). Without these they fall back to
+    // Android's generic "i" icon instead of the BAYD mark.
+    LocalNotifications: {
+      smallIcon: "ic_stat_bayd",
+      iconColor: "#C96C83",
+    },
     SplashScreen: {
       launchAutoHide: false,
-      backgroundColor: "#F6F1EC",
+      backgroundColor: "#C96C83",
       showSpinner: false,
     },
   },

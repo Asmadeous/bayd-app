@@ -8,15 +8,24 @@ import { CalendarDays, Home, ShoppingBag, User, type LucideIcon } from "lucide-r
 import { cn } from "@/lib/utils"
 import { hapticTap } from "@/lib/native/haptics"
 
-type Tab = { label: string; href: string; icon: LucideIcon }
+type Tab = { label: string; href: string; icon: LucideIcon; also?: string[] }
 
 // The app tabs - phone-native fixed bottom bar. Bookings lives in Account (not a
 // tab); Book uses the calendar icon.
 const tabs: Tab[] = [
-  { label: "Home", href: "/app/home", icon: Home },
+  { label: "Home", href: "/app/home", icon: Home, also: ["/app/notifications"] },
   { label: "Book", href: "/app/book", icon: CalendarDays },
   { label: "Shop", href: "/app/shop", icon: ShoppingBag },
-  { label: "Account", href: "/app/account", icon: User },
+  // Screens opened from Account keep its tab lit so you always know where you are.
+  {
+    label: "Account",
+    href: "/app/account",
+    icon: User,
+    also: [
+      "/app/bookings", "/app/messages", "/app/support", "/app/orders", "/app/transactions",
+      "/app/gift-cards", "/app/loyalty", "/app/subscriptions", "/app/addresses",
+    ],
+  },
 ]
 
 export function BottomNav() {
@@ -48,7 +57,7 @@ export function BottomNav() {
     >
       <ul className="mx-auto flex max-w-md items-stretch justify-around px-2">
         {tabs.map((tab) => {
-          const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`)
+          const active = [tab.href, ...(tab.also ?? [])].some((r) => pathname === r || pathname.startsWith(`${r}/`))
           const Icon = tab.icon
           return (
             <li key={tab.href} className="flex-1">

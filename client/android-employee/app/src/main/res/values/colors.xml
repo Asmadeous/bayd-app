@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand pink: notification accent and the launch screen background. -->
+    <color name="bayd_brand_pink">#C96C83</color>
+</resources>

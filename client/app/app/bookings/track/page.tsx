@@ -10,11 +10,12 @@ import { useBooking } from "@/lib/hooks/use-bookings"
 import { useBookingAccess } from "@/lib/booking-access"
 import { useTrip } from "@/lib/cable/use-trip"
 import { appScreenClass } from "../../app-theme"
+import { BubbleLoader } from "@/components/bubble-loader"
 
 // Leaflet touches window; load the map client-only.
 const TripMap = dynamic(() => import("../trip-map").then((m) => m.TripMap), {
   ssr: false,
-  loading: () => <div className="h-[45dvh] w-full animate-pulse rounded-2xl bg-black/5" />,
+  loading: () => <MapLoading />,
 })
 
 export default function TrackScreen() {
@@ -59,7 +60,7 @@ function TrackView() {
 
       <div className="space-y-4 px-5">
         {isLoading ? (
-          <div className="h-[45dvh] w-full animate-pulse rounded-2xl bg-black/5" />
+          <MapLoading />
         ) : !booking ? (
           <Empty message="We couldn't find that booking." />
         ) : !trackable ? (
@@ -119,5 +120,13 @@ function TrackView() {
 function Empty({ message }: { message: string }) {
   return (
     <div className="rounded-2xl bg-white p-6 text-center text-sm text-[#101217]/60 shadow-sm">{message}</div>
+  )
+}
+
+function MapLoading() {
+  return (
+    <div className="grid h-[45dvh] w-full place-items-center rounded-2xl bg-black/5">
+      <BubbleLoader label="Loading the map" />
+    </div>
   )
 }

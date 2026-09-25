@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query"
 
 import api from "@/lib/api"
 import { cardClass, mutedClass } from "../app-theme"
+import { ShoppingBag } from "lucide-react"
+import { EmptyState } from "../empty-state"
 import { SectionScreen } from "../section-screen"
 
 interface Order {
@@ -32,7 +34,7 @@ export default function AppOrdersScreen() {
       {isLoading ? (
         <ListSkeleton />
       ) : orders.length === 0 ? (
-        <Empty text="No orders yet." />
+        <EmptyState icon={ShoppingBag} title="No orders yet" text="Products you order are tracked here from payment to delivery." action={{ label: "Browse the shop", href: "/app/shop" }} />
       ) : (
         <ul className="space-y-3 pb-6">
           {orders.map((o) => {
@@ -75,6 +77,3 @@ function ListSkeleton() {
   )
 }
 
-function Empty({ text }: { text: string }) {
-  return <p className={`rounded-3xl bg-white p-8 text-center text-sm shadow-sm ${mutedClass}`}>{text}</p>
-}

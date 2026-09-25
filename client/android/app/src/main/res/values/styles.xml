@@ -16,7 +16,13 @@
     </style>
 
 
+    <!-- Android 12+ draws its own launch screen from these two items; without
+         them it falls back to a dark background with the icon in a badge. Brand
+         pink + the loading-screen lockup (splash_lockup: door, name, resting bubbles)
+         is the first frame of the web AnimatedSplash that follows. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/bayd_brand_pink</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_lockup</item>
     </style>
 </resources>

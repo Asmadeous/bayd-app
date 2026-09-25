@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { X } from "lucide-react"
+import { FileText, X } from "lucide-react"
 
 import { InvoiceBreakdown } from "@/components/invoice/invoice-breakdown"
 import { useInvoices, type Invoice } from "@/lib/hooks/use-invoices"
 import { cardClass, mutedClass } from "../app-theme"
+import { EmptyState } from "../empty-state"
 import { SectionScreen } from "../section-screen"
 
 const STATUS_STYLE: Record<string, string> = {
@@ -25,7 +26,7 @@ export default function AppTransactionsScreen() {
       {isLoading ? (
         <ListSkeleton />
       ) : invoices.length === 0 ? (
-        <Empty text="No transactions yet." />
+        <EmptyState icon={FileText} title="No transactions yet" text="Receipts for your bookings and orders appear here." />
       ) : (
         <ul className="space-y-3 pb-6">
           {invoices.map((inv) => {
@@ -43,7 +44,7 @@ export default function AppTransactionsScreen() {
                   </span>
                   <span className="text-sm font-extrabold">${Number(inv.total).toFixed(2)}</span>
                 </div>
-                <p className="mt-2 text-sm font-bold">{inv.source_label}</p>
+                <p className="mt-2 text-sm font-bold">{invoiceTitle(inv)}</p>
                 <p className={`mt-0.5 text-xs ${mutedClass}`}>
                   {inv.invoice_number} · {when.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                 </p>
@@ -94,6 +95,9 @@ function ListSkeleton() {
   )
 }
 
-function Empty({ text }: { text: string }) {
-  return <p className={`rounded-3xl bg-white p-8 text-center text-sm shadow-sm ${mutedClass}`}>{text}</p>
+// What was bought, not just "Booking": the service from the invoice snapshot, or
+// the first line item on invoices issued before the snapshot existed.
+function invoiceTitle(inv: Invoice) {
+  const service = inv.details?.appointment?.service ?? (inv.kind === "booking" ? inv.line_items[0]?.description.split(" · ")[0] : undefined)
+  return service || inv.source_label
 }

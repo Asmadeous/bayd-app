@@ -626,7 +626,7 @@ export function BookingFlow({
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#c96c83]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#c96c83]">
             <Sparkles className="size-3.5" /> Appointment
           </span>
-          <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Book Appointment</h1>
+          <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Book an appointment</h1>
           <p className="mt-1 text-sm font-medium text-[#5f6268]">
             {dashboardMode
               ? "Your details are prefilled from your account. Review them, choose a service, and confirm your appointment."
@@ -973,7 +973,7 @@ export function BookingFlow({
               type="email"
             />
             <p className="-mt-2 text-xs font-medium text-[#8a8d93]">
-              Enter an email or a phone number — at least one is required so we can reach you.
+              Add an email or a phone number so we can reach you.
             </p>
             {phone.trim() && !email.trim() ? (
               <p className="-mt-1 text-xs font-semibold text-[#c96c83]">

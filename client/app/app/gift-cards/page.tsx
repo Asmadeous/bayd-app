@@ -1,24 +1,25 @@
 "use client"
 
 import { useGiftCards } from "@/lib/hooks/use-gift-cards"
-import { mutedClass } from "../app-theme"
+import { Gift } from "lucide-react"
+import { EmptyState } from "../empty-state"
 import { SectionScreen } from "../section-screen"
 
 export default function AppGiftCardsScreen() {
   const { data: cards = [], isLoading } = useGiftCards()
 
   return (
-    <SectionScreen title="Gift Cards">
+    <SectionScreen title="Gift cards">
       {isLoading ? (
         <ListSkeleton />
       ) : cards.length === 0 ? (
-        <Empty text="You haven't purchased any gift cards." />
+        <EmptyState icon={Gift} title="No gift cards yet" text="Gift cards you buy show up here with their code and balance." action={{ label: "Shop gift cards", href: "/app/shop?tab=gift-cards" }} />
       ) : (
         <ul className="space-y-3 pb-6">
           {cards.map((c) => (
             <li key={c.id} className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#c96c83] to-[#a9526a] p-5 text-white shadow-[0_12px_30px_-14px_rgba(201,108,131,0.7)]">
               <div className="flex items-center justify-between">
-                <span className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/70">Gift Card</span>
+                <span className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/70">Gift card</span>
                 <span className={`rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase ${c.active ? "bg-white/20" : "bg-black/20"}`}>
                   {c.active ? "Active" : "Inactive"}
                 </span>
@@ -54,6 +55,3 @@ function ListSkeleton() {
   )
 }
 
-function Empty({ text }: { text: string }) {
-  return <p className={`rounded-3xl bg-white p-8 text-center text-sm shadow-sm ${mutedClass}`}>{text}</p>
-}

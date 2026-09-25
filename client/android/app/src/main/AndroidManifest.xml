@@ -28,6 +28,18 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+        <!-- Status-bar icon + accent for pushes shown while the app is in the
+             background (FCM draws those). Must be a white-on-transparent drawable;
+             pushes shown in the foreground use the same icon via the
+             LocalNotifications config in capacitor.config.ts. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_bayd"
+        />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/bayd_brand_pink"
+        />
     </application>
 
     <!-- Permissions -->

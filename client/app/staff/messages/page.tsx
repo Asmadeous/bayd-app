@@ -73,8 +73,8 @@ function ConversationRow({ conversation: c }: { conversation: Conversation }) {
             )}
           </span>
           <span className="mt-0.5 flex items-center justify-between gap-2">
-            <span className={`truncate text-sm capitalize ${mutedClass}`}>
-              {c.other_participant?.role ?? "team"}
+            <span className={`truncate text-sm ${mutedClass}`}>
+              {roleLabel(c.other_participant?.role)}
             </span>
             {c.unread_count > 0 && (
               <span className="grid min-w-5 shrink-0 place-items-center rounded-full bg-[#C96C83] px-1.5 text-xs font-bold text-white">
@@ -86,4 +86,10 @@ function ConversationRow({ conversation: c }: { conversation: Conversation }) {
       </Link>
     </li>
   )
+}
+
+function roleLabel(role?: string) {
+  if (role === "employee") return "Technician"
+  if (role === "customer") return "Client"
+  return "B.A.Y.D team"
 }

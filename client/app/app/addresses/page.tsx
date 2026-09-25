@@ -1,10 +1,11 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Check } from "lucide-react"
+import { Check, MapPin } from "lucide-react"
 
 import api from "@/lib/api"
 import { cardClass, mutedClass } from "../app-theme"
+import { EmptyState } from "../empty-state"
 import { SectionScreen } from "../section-screen"
 
 interface Address {
@@ -15,7 +16,7 @@ interface Address {
   city: string
   province: string
   postal_code: string
-  is_default: boolean
+  default: boolean
 }
 
 export default function AppAddressesScreen() {
@@ -34,7 +35,7 @@ export default function AppAddressesScreen() {
       {isLoading ? (
         <ListSkeleton />
       ) : addresses.length === 0 ? (
-        <Empty text="No saved addresses yet." />
+        <EmptyState icon={MapPin} title="No saved addresses" text="Addresses you book at are saved here for next time." action={{ label: "Book a service", href: "/app/book" }} />
       ) : (
         <ul className="space-y-3 pb-6">
           {addresses.map((a) => (
@@ -45,7 +46,7 @@ export default function AppAddressesScreen() {
                   <p className="text-sm">{a.line1}{a.line2 ? `, ${a.line2}` : ""}</p>
                   <p className={`text-sm ${mutedClass}`}>{a.city}, {a.province} {a.postal_code}</p>
                 </div>
-                {a.is_default ? (
+                {a.default ? (
                   <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#c96c83]/12 px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-[#c96c83]">
                     <Check className="size-3" aria-hidden /> Default
                   </span>
@@ -78,6 +79,3 @@ function ListSkeleton() {
   )
 }
 
-function Empty({ text }: { text: string }) {
-  return <p className={`rounded-3xl bg-white p-8 text-center text-sm shadow-sm ${mutedClass}`}>{text}</p>
-}

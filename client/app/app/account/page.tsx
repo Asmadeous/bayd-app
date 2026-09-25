@@ -221,7 +221,7 @@ export default function AccountScreen() {
           <MenuRow href="/app/support" icon={Mail} label="Support chat" />
           <MenuRow href="/app/orders" icon={ShoppingBag} label="Orders" />
           <MenuRow href="/app/transactions" icon={ReceiptText} label="Transactions" />
-          <MenuRow href="/app/gift-cards" icon={Gift} label="Gift Cards" />
+          <MenuRow href="/app/gift-cards" icon={Gift} label="Gift cards" />
           <MenuRow href="/app/loyalty" icon={Star} label="Loyalty" />
           <MenuRow href="/app/subscriptions" icon={Repeat2} label="Subscriptions" />
           <MenuRow href="/app/addresses" icon={MapPin} label="Addresses" last />

@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useMemo, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { Minus, Plus, ShoppingBag, X } from "lucide-react"
 
@@ -53,8 +53,18 @@ interface CheckoutResponse {
 }
 
 export default function ShopScreen() {
+  return (
+    <Suspense>
+      <Shop />
+    </Suspense>
+  )
+}
+
+function Shop() {
   const { items, addItem } = useCartStore()
-  const [tab, setTab] = useState<"products" | "gift-cards">("products")
+  // ?tab=gift-cards opens straight on gift cards (linked from the Gift cards screen).
+  const initialTab = useSearchParams().get("tab") === "gift-cards" ? "gift-cards" : "products"
+  const [tab, setTab] = useState<"products" | "gift-cards">(initialTab)
   const [cartOpen, setCartOpen] = useState(false)
   const [category, setCategory] = useState<string | null>(null)
   const [detail, setDetail] = useState<ApiProduct | null>(null)
@@ -117,7 +127,7 @@ export default function ShopScreen() {
               tab === t ? "bg-[#101217] text-white" : "text-[#101217]/55"
             }`}
           >
-            {t === "products" ? "Products" : "Gift Cards"}
+            {t === "products" ? "Products" : "Gift cards"}
           </button>
         ))}
       </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { MessageCircle, ArrowRight, Bell, CalendarDays, Clock3, MapPin, ShoppingBag, Sparkles } from "lucide-react"
+import { MessageCircle, ArrowRight, Bell, CalendarDays, ChevronRight, Clock3, ShoppingBag, Sparkles, User } from "lucide-react"
 
 import { useBookings, type Booking } from "@/lib/hooks/use-bookings"
 import { useNotifications } from "@/lib/hooks/use-notifications"
@@ -62,9 +62,20 @@ export default function HomeScreen() {
             <QuickAction href="/app/book" icon={Sparkles} label="Book a service" hint="Pick a time" tone="blush" />
             <QuickAction href="/app/shop" icon={ShoppingBag} label="Shop products" hint="Delivered" tone="paper" />
             <QuickAction href="/app/bookings" icon={CalendarDays} label="My bookings" hint="Upcoming & past" tone="paper" />
-            <QuickAction href="/app/account" icon={MapPin} label="My account" hint="Profile & lock" tone="paper" />
-            <QuickAction href="/app/support" icon={MessageCircle} label="Chat with us" hint="Questions & help" tone="paper" />
+            <QuickAction href="/app/account" icon={User} label="My account" hint="Profile & lock" tone="paper" />
           </div>
+          <Link
+            href="/app/support"
+            onClick={() => hapticTap()}
+            className={`mt-3 flex items-center gap-4 p-5 transition-transform active:scale-[0.98] ${cardClass}`}
+          >
+            <MessageCircle className="size-6 shrink-0 text-[#C96C83]" aria-hidden />
+            <span className="flex-1">
+              <span className="block text-[0.95rem] font-bold leading-tight">Chat with us</span>
+              <span className={`mt-0.5 block text-xs ${mutedClass}`}>Questions about a service or booking</span>
+            </span>
+            <ChevronRight className="size-5 text-[#14100F]/30" aria-hidden />
+          </Link>
         </section>
       </div>
     </div>
@@ -168,8 +179,8 @@ function QuickAction({
       onClick={() => hapticTap()}
       className={
         blush
-          ? "flex flex-col gap-6 rounded-3xl bg-gradient-to-br from-[#C96C83] to-[#A9526A] p-5 text-white shadow-[0_12px_30px_-14px_rgba(201,108,131,0.7)]"
-          : `flex flex-col gap-6 p-5 ${cardClass}`
+          ? "flex flex-col gap-6 rounded-3xl bg-gradient-to-br from-[#C96C83] to-[#A9526A] p-5 text-white shadow-[0_12px_30px_-14px_rgba(201,108,131,0.7)] transition-transform active:scale-[0.98]"
+          : `flex flex-col gap-6 p-5 transition-transform active:scale-[0.98] ${cardClass}`
       }
     >
       <Icon className={`size-6 ${blush ? "text-white" : "text-[#C96C83]"}`} aria-hidden />

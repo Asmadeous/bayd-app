@@ -9,10 +9,11 @@ import { useEmployeeBooking } from "@/lib/hooks/use-employee"
 import { useBookingAccess } from "@/lib/booking-access"
 import { useLivePosition } from "@/lib/native/use-live-position"
 import { openPaymentUrl } from "@/lib/native/open-external"
+import { BubbleLoader } from "@/components/bubble-loader"
 
 const StaffNavMap = dynamic(() => import("../staff-nav-map").then((m) => m.StaffNavMap), {
   ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse bg-black/5" />,
+  loading: () => <MapLoading />,
 })
 
 export default function NavigateScreen() {
@@ -84,7 +85,7 @@ function NavigateView() {
 
       <div className="relative flex-1 overflow-hidden">
         {isLoading ? (
-          <div className="h-full w-full animate-pulse bg-black/5" />
+          <MapLoading />
         ) : locked ? (
           <div className="grid h-full place-items-center px-8 text-center text-sm text-[#14100F]/60">
             Navigation opens at {access.opensLabel}, 30 minutes before the appointment.
@@ -136,6 +137,14 @@ function NavigateView() {
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+function MapLoading() {
+  return (
+    <div className="grid h-full w-full place-items-center bg-black/5">
+      <BubbleLoader label="Loading the map" />
     </div>
   )
 }

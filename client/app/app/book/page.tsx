@@ -7,6 +7,7 @@ import { BookingFlow, type SavedAddress } from "@/app/book/page"
 import api from "@/lib/api"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { appScreenClass } from "../app-theme"
+import { BubbleLoader } from "@/components/bubble-loader"
 
 // The app's Book tab renders the EXACT same BookingFlow the website /book and the
 // customer dashboard use (in dashboardMode, so it prefills the signed-in user +
@@ -26,7 +27,7 @@ export default function BookScreen() {
   if (isLoading) {
     return (
       <div className={appScreenClass}>
-        <p className="px-5 pt-8 text-sm text-[#14100F]/55">Preparing booking form…</p>
+        <BubbleLoader className="pt-24" label="Preparing your booking" />
       </div>
     )
   }

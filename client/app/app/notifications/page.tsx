@@ -2,6 +2,8 @@
 
 import { useMarkNotificationRead, useNotifications } from "@/lib/hooks/use-notifications"
 import { cardClass, mutedClass } from "../app-theme"
+import { Bell } from "lucide-react"
+import { EmptyState } from "../empty-state"
 import { SectionScreen } from "../section-screen"
 
 export default function AppNotificationsScreen() {
@@ -14,7 +16,7 @@ export default function AppNotificationsScreen() {
       {isLoading ? (
         <ListSkeleton />
       ) : items.length === 0 ? (
-        <Empty text="You're all caught up." />
+        <EmptyState icon={Bell} title="You're all caught up" text="Booking updates and reminders will appear here." />
       ) : (
         <ul className="space-y-2 pb-6">
           {items.map((n) => {
@@ -61,6 +63,3 @@ function ListSkeleton() {
   )
 }
 
-function Empty({ text }: { text: string }) {
-  return <p className={`rounded-3xl bg-white p-8 text-center text-sm shadow-sm ${mutedClass}`}>{text}</p>
-}

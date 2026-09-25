@@ -6,6 +6,7 @@ import { Suspense } from "react"
 import { ChevronLeft } from "lucide-react"
 
 import { useBooking } from "@/lib/hooks/use-bookings"
+import { BubbleLoader } from "@/components/bubble-loader"
 
 // The Jitsi embed touches the DOM/iframe; load it client-only.
 const JitsiCall = dynamic(() => import("@/components/jitsi-call").then((m) => m.JitsiCall), {
@@ -64,8 +65,8 @@ function CallView() {
 
 function CallLoading() {
   return (
-    <div className="grid h-full w-full place-items-center bg-black text-sm text-white/60">
-      Connecting to your call…
+    <div className="grid h-full w-full place-items-center bg-black">
+      <BubbleLoader tone="light" label="Connecting to your call" />
     </div>
   )
 }
