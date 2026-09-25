@@ -10,6 +10,9 @@ import { Capacitor } from "@capacitor/core"
 // brand pink (#C96C83, L≈0.25) wrong.
 const DARK_ICON_THRESHOLD = 0.179
 
+// Fired by AnimatedSplash once it has faded out.
+export const SPLASH_DONE_EVENT = "bayd:splash-done"
+
 function relativeLuminance(r: number, g: number, b: number) {
   const lin = (c: number) => {
     const v = c / 255
@@ -83,28 +86,37 @@ export function useNativeShell() {
     return () => cleanup?.()
   }, [])
 
-  // Re-match the bar to the screen on every navigation. Runs after paint so the
+  // Re-match the bar to the screen on every navigation, and again when the launch
+  // splash leaves: while it is up it is what sits under the bar, so the first
+  // sample would otherwise pin the bar to splash pink. Runs after paint so the
   // new screen's background is the one being sampled.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
 
     let cancelled = false
-    const frame = requestAnimationFrame(() => {
-      const sampled = topBackground()
-      if (!sampled) return
-      ;(async () => {
-        const { StatusBar, Style } = await import("@capacitor/status-bar")
-        if (cancelled) return
-        // Style.Dark = light text (for dark backgrounds); Style.Light = dark text.
-        const style = sampled.luminance > DARK_ICON_THRESHOLD ? Style.Light : Style.Dark
-        await StatusBar.setStyle({ style }).catch(() => {})
-        await StatusBar.setBackgroundColor({ color: sampled.color }).catch(() => {})
-      })()
-    })
+    let frame = 0
+    const sync = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const sampled = topBackground()
+        if (!sampled) return
+        ;(async () => {
+          const { StatusBar, Style } = await import("@capacitor/status-bar")
+          if (cancelled) return
+          // Style.Dark = light text (for dark backgrounds); Style.Light = dark text.
+          const style = sampled.luminance > DARK_ICON_THRESHOLD ? Style.Light : Style.Dark
+          await StatusBar.setStyle({ style }).catch(() => {})
+          await StatusBar.setBackgroundColor({ color: sampled.color }).catch(() => {})
+        })()
+      })
+    }
 
+    sync()
+    window.addEventListener(SPLASH_DONE_EVENT, sync)
     return () => {
       cancelled = true
       cancelAnimationFrame(frame)
+      window.removeEventListener(SPLASH_DONE_EVENT, sync)
     }
   }, [pathname])
 }

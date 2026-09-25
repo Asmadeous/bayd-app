@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "motion/react"
 import { Capacitor } from "@capacitor/core"
 
 import { BubbleLoader } from "@/components/bubble-loader"
+import { SPLASH_DONE_EVENT } from "@/lib/native/use-native-shell"
 
 // The loading screen that plays on native app launch (iOS + Android, both apps).
 // No-ops on the web.
@@ -52,7 +53,7 @@ export function AnimatedSplash() {
   if (!native) return null
 
   return (
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={() => window.dispatchEvent(new Event(SPLASH_DONE_EVENT))}>
       {visible && (
         <motion.div
           key="animated-splash"

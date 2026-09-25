@@ -7,7 +7,7 @@ import { CalendarDays, Clock3, MessageCircle, User, type LucideIcon } from "luci
 import { cn } from "@/lib/utils"
 import { hapticTap } from "@/lib/native/haptics"
 
-type Tab = { label: string; href: string; icon: LucideIcon }
+type Tab = { label: string; href: string; icon: LucideIcon; also?: string[] }
 
 // Staff app tabs. Schedule is home; Shifts is the clock/history; Messages is
 // live chat with clients; Profile rounds it out. Reviews, Gift cards and New
@@ -17,7 +17,8 @@ const tabs: Tab[] = [
   { label: "Schedule", href: "/staff/schedule", icon: CalendarDays },
   { label: "Shifts", href: "/staff/shifts", icon: Clock3 },
   { label: "Messages", href: "/staff/messages", icon: MessageCircle },
-  { label: "Profile", href: "/staff/profile", icon: User },
+  // Screens opened from Profile keep its tab lit so you always know where you are.
+  { label: "Profile", href: "/staff/profile", icon: User, also: ["/staff/earnings", "/staff/reviews", "/staff/gift-cards"] },
 ]
 
 export function StaffNav() {
@@ -29,7 +30,7 @@ export function StaffNav() {
     >
       <ul className="mx-auto flex max-w-md items-stretch justify-around px-2">
         {tabs.map((tab) => {
-          const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`)
+          const active = [tab.href, ...(tab.also ?? [])].some((r) => pathname === r || pathname.startsWith(`${r}/`))
           const Icon = tab.icon
           return (
             <li key={tab.href} className="flex-1">

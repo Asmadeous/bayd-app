@@ -98,6 +98,6 @@ function ListSkeleton() {
 // What was bought, not just "Booking": the service from the invoice snapshot, or
 // the first line item on invoices issued before the snapshot existed.
 function invoiceTitle(inv: Invoice) {
-  const service = inv.details?.appointment?.service ?? (inv.kind === "booking" ? inv.line_items[0]?.description.split(" · ")[0] : undefined)
+  const service = inv.details?.appointment?.service ?? (inv.kind === "booking" ? inv.line_items[0]?.description.split(/ · | — /)[0] : undefined)
   return service || inv.source_label
 }
