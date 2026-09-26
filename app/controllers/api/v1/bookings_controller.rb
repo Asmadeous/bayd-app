@@ -12,6 +12,9 @@ module Api
           return render json: { data: BookingSerializer.render_as_hash(ranged) }
         end
 
+        # when=upcoming|past: the app's two lists, split here so paging can't hide
+        # an upcoming appointment behind older ones.
+        scope = upcoming_or_past(scope, params[:when]) if params[:when].present?
         records, meta = paginate(scope)
         render json: { data: BookingSerializer.render_as_hash(records), pagination: meta }
       end
@@ -87,6 +90,13 @@ module Api
       end
 
       private
+
+      def upcoming_or_past(scope, which)
+        upcoming = scope.where(status: Booking::ACCESS_STATUSES).where(starts_at: Time.current..)
+        return upcoming.reorder(:starts_at) if which == "upcoming"
+
+        scope.where.not(id: upcoming.select(:id)).reorder(starts_at: :desc)
+      end
 
       def reschedule_error_message(reason)
         {

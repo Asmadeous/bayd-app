@@ -61,7 +61,7 @@ export default function SignInScreen() {
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-[#14100F] px-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(3.5rem+env(safe-area-inset-top))] text-[#F6F1EC]">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-[#14100F] px-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(3.5rem+var(--top-inset))] text-[#F6F1EC]">
       <div
         aria-hidden
         className="pointer-events-none absolute -top-24 right-[-20%] size-72 rounded-full bg-[#C96C83]/25 blur-3xl"

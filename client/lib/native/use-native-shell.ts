@@ -82,6 +82,12 @@ export function useNativeShell() {
         await StatusBar.setBackgroundColor({ color: SPLASH_BACKGROUND }).catch(() => {})
       }
       await StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {})
+      // Android's WebView still reports the status bar's height as a safe-area
+      // inset after it moves below the bar, which doubled the gap above every
+      // screen's header.
+      if (Capacitor.getPlatform() === "android") {
+        document.documentElement.style.setProperty("--top-inset", "0px")
+      }
       // The native splash is hidden by AnimatedSplash (it hands off to the web
       // splash animation), not here - hiding it here would flash before the overlay.
 

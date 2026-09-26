@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import api from "@/lib/api"
@@ -18,6 +18,7 @@ export interface SupportThreadView {
   name: string
   unread_count: number
   messages: SupportMessage[]
+  pagination?: { next_page: number | null }
 }
 
 // The visitor's thread token is their only credential for the chat, so it lives
@@ -54,7 +55,7 @@ export function useSupportChat(open: boolean) {
     retry: false,
     queryFn: () =>
       api
-        .get<SupportThreadView>(`/support/threads/${storedToken}`, { params: open ? { mark_read: true } : undefined })
+        .get<SupportThreadView>(`/support/threads/${storedToken}`, { params: { page: 1, mark_read: open || undefined } })
         .then((r) => r.data),
   })
 
@@ -83,10 +84,37 @@ export function useSupportChat(open: boolean) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["support-thread", token] }),
   })
 
+  // The thread opens on its newest messages (the poll re-reads that page); older
+  // ones load on demand and stay above.
+  const [earlier, setEarlier] = useState<SupportMessage[]>([])
+  const [earlierPage, setEarlierPage] = useState<number | null | undefined>(undefined)
+  const [loadingEarlier, setLoadingEarlier] = useState(false)
+
   const reset = useCallback(() => {
     writeToken(null)
     setToken(null)
+    setEarlier([])
+    setEarlierPage(undefined)
   }, [])
 
-  return { token, thread, start, send, reset }
+  const nextEarlier = earlierPage === undefined ? (thread.data?.pagination?.next_page ?? null) : earlierPage
+
+  const messages = useMemo(() => {
+    const latest = thread.data?.messages ?? []
+    return [...earlier.filter((m) => !latest.some((l) => l.id === m.id)), ...latest]
+  }, [earlier, thread.data])
+
+  const loadEarlier = useCallback(async () => {
+    if (!token || !nextEarlier || loadingEarlier) return
+    setLoadingEarlier(true)
+    try {
+      const { data } = await api.get<SupportThreadView>(`/support/threads/${token}`, { params: { page: nextEarlier } })
+      setEarlier((prev) => [...data.messages.filter((m) => !prev.some((p) => p.id === m.id)), ...prev])
+      setEarlierPage(data.pagination?.next_page ?? null)
+    } finally {
+      setLoadingEarlier(false)
+    }
+  }, [token, nextEarlier, loadingEarlier])
+
+  return { token, thread, messages, hasEarlier: !!nextEarlier, loadingEarlier, loadEarlier, start, send, reset }
 }

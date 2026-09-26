@@ -28,7 +28,7 @@ module Api
       def show
         thread = find_thread
         thread.mark_read_by_visitor! if ActiveModel::Type::Boolean.new.cast(params[:mark_read])
-        render json: render_thread(thread)
+        render json: render_thread(thread, page: params[:page])
       end
 
       def create_message
@@ -44,13 +44,14 @@ module Api
 
       def find_thread = SupportThread.find_by!(token: params[:token].to_s)
 
-      def render_thread(thread)
-        {
-          status: thread.status,
-          name: thread.name,
-          unread_count: thread.unread_for_visitor,
-          messages: SupportMessageSerializer.render_as_hash(thread.messages.includes(:sender))
-        }
+      # With ?page, messages come newest page first (each page oldest-first), like
+      # chat; without it, the whole thread (the website widget).
+      def render_thread(thread, page: nil)
+        base = { status: thread.status, name: thread.name, unread_count: thread.unread_for_visitor }
+        return base.merge(messages: SupportMessageSerializer.render_as_hash(thread.messages.includes(:sender))) if page.blank?
+
+        records, meta = paginate(thread.messages.reorder(created_at: :desc).includes(:sender))
+        base.merge(messages: SupportMessageSerializer.render_as_hash(records.to_a.reverse), pagination: meta)
       end
 
       # Links the thread to the customer when the widget sends their token; a

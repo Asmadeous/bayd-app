@@ -3,18 +3,24 @@
 # tech clocks in; nothing fires when they never clock in at all - this is that
 # missing signal.
 #
-# It only NOTIFIES (tech + admins) and flags for a human. It deliberately does
-# NOT auto-transition to `missed`: auto-blaming on a timer would punish a tech
-# whose phone died mid-shift. A person decides the final status.
+# Past the grace window it notifies the tech + admins. If nobody has clocked in
+# AUTO_MISS_AFTER after the booking should have ended, it marks the booking
+# missed so it doesn't sit as "confirmed" forever. Missed tells the customer and
+# offers a rebook, and never charges them. An admin can still change the status
+# (e.g. the tech did the job but never clocked in).
 #
 # Idempotent - it runs every few minutes over the same rows, so it sends one
 # `booking_overdue` notification per (recipient, booking) and never re-notifies.
 class OverdueBookingSweepJob < ApplicationJob
   queue_as :default
 
+  # Room for a late clock-in, or for an admin to step in, before it's missed.
+  AUTO_MISS_AFTER = 2.hours
+
   def perform
     cutoff = Time.current - TimeClock::GRACE_MIN.minutes
     overdue_bookings(cutoff).find_each { |booking| flag(booking) }
+    overdue_bookings(cutoff).where(ends_at: ...(Time.current - AUTO_MISS_AFTER)).find_each { |booking| mark_missed(booking) }
   end
 
   private
@@ -33,6 +39,12 @@ class OverdueBookingSweepJob < ApplicationJob
     notify_admins(booking)
   rescue StandardError => e
     Rails.logger.warn("[OverdueBookingSweepJob] booking #{booking.id} failed: #{e.message}")
+  end
+
+  def mark_missed(booking)
+    booking.update!(status: :missed)
+  rescue StandardError => e
+    Rails.logger.warn("[OverdueBookingSweepJob] booking #{booking.id} not marked missed: #{e.message}")
   end
 
   def notify_tech(booking)

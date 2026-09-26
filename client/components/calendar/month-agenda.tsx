@@ -8,7 +8,7 @@ import type { Booking } from "@/lib/hooks/use-bookings"
 import type { CalendarState } from "@/lib/hooks/use-calendar-state"
 import { cn } from "@/lib/utils"
 
-const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"]
+const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
 
 const DOT: Record<Booking["status"], string> = {
   pending: "bg-[#D4A843]",
@@ -61,8 +61,8 @@ export function MonthAgenda({
         </button>
       </div>
       <div className="grid grid-cols-7 text-center">
-        {WEEKDAYS.map((d, i) => (
-          <span key={i} className="pb-1 text-[0.65rem] font-bold text-[#14100F]/40">
+        {WEEKDAYS.map((d) => (
+          <span key={d} className="pb-1 text-[0.65rem] font-bold text-[#14100F]/40">
             {d}
           </span>
         ))}

@@ -30,7 +30,8 @@ class NotificationService
 
     # Push — lock-screen notification to the user's devices (best-effort; no-op
     # when FCM isn't configured). Never breaks the in-app path.
-    PushService.push(user: user, title: title, body: body.to_s, data: { kind: kind, booking_id: booking&.id }.compact)
+    PushService.push(user: user, title: title, body: body.to_s,
+                     data: { kind: kind, booking_id: booking&.id, path: push_path(user, booking) }.compact)
 
     # SMS — text the confirmation/reminder to the user's phone (customer or staff).
     # Queued + best-effort: no-op when the user has no phone or Infobip is unset.
@@ -40,5 +41,14 @@ class NotificationService
   rescue => e
     Rails.logger.error("[NotificationService] #{kind} failed for user #{user.id}: #{e.message}")
     notification
+  end
+
+  # Where tapping the push opens in the app: a booking notification opens that
+  # booking's page (the job for staff, the appointment for customers); anything
+  # else just opens the app.
+  def self.push_path(user, booking)
+    return unless booking
+
+    user.customer? ? "/app/bookings/view?id=#{booking.id}" : "/staff/schedule/job?id=#{booking.id}"
   end
 end

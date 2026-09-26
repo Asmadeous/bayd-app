@@ -66,7 +66,7 @@ function NavigateView() {
 
   return (
     <div className="fixed inset-0 z-[70] flex flex-col bg-[#F4F2EF]">
-      <header className="flex items-center gap-3 px-4 pb-3 pt-[calc(1rem+env(safe-area-inset-top))]">
+      <header className="flex items-center gap-3 px-4 pb-3 pt-[calc(1rem+var(--top-inset))]">
         <button
           type="button"
           onClick={() => router.replace("/staff/schedule")}
@@ -130,7 +130,7 @@ function NavigateView() {
           <button
             type="button"
             onClick={openExternal}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-black/15 bg-white py-3 text-sm font-bold text-[#14100F]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#C96C83]/10 py-3 text-sm font-bold text-[#9E4A60] transition-colors active:bg-[#C96C83]/20"
           >
             <Navigation className="size-4" aria-hidden />
             Open turn-by-turn in Maps

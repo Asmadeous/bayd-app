@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
+import { usePagedList } from "@/lib/hooks/use-paged-list"
 
 export interface Shift {
   id: number
@@ -76,6 +77,14 @@ export function useCurrentShift() {
     queryKey: ["current-shift"],
     queryFn: () => api.get<Shift | null>("/employee/current_shift").then((r) => r.data),
   })
+}
+
+// The tech's shifts, newest first, a page at a time for "Load more"; `first`
+// carries the all-time totals.
+export function useShiftsList() {
+  return usePagedList<Shift, PagedShifts>(["shifts", "list"], (page) =>
+    api.get<PagedShifts>("/employee/shifts", { params: { page } }).then((r) => r.data),
+  )
 }
 
 export function useShifts(page = 1) {

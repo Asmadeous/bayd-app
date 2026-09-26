@@ -30,7 +30,7 @@ export default function StaffWelcomeScreen() {
   const canSubmit = email.trim().length > 0 && password.length > 0
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-[#14100F] px-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(3.5rem+env(safe-area-inset-top))] text-[#F4F2EF]">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-[#14100F] px-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(3.5rem+var(--top-inset))] text-[#F4F2EF]">
       <div
         aria-hidden
         className="pointer-events-none absolute -top-24 right-[-20%] size-72 rounded-full bg-[#C96C83]/20 blur-3xl"

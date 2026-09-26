@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react"
 import { usePathname } from "next/navigation"
 import { MessageCircle, Send, X } from "lucide-react"
 
+import { LoadEarlier } from "@/components/load-earlier"
 import { useSupportChat } from "@/lib/hooks/use-support-chat"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { cn } from "@/lib/utils"
@@ -25,10 +26,19 @@ export function SupportChatBubble() {
   const chat = useSupportChat(open && !hidden)
   const unread = open ? 0 : (chat.thread.data?.unread_count ?? 0)
 
+  // On phones the booking page pins its summary + Continue bar (which opens into
+  // the full summary) to the bottom; a floating button there covers both.
+  const onBooking = pathname?.startsWith("/book") || pathname?.startsWith("/dashboard/customer/book")
+
   if (hidden) return null
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+    <div
+      className={cn(
+        "fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6",
+        onBooking && "max-lg:hidden",
+      )}
+    >
       {open ? <ChatPanel chat={chat} onClose={() => setOpen(false)} /> : null}
       <button
         type="button"
@@ -49,18 +59,19 @@ export function SupportChatBubble() {
 }
 
 function ChatPanel({ chat, onClose }: { chat: ReturnType<typeof useSupportChat>; onClose: () => void }) {
-  const { token, thread, start, send, reset } = chat
+  const { token, thread, messages, hasEarlier, loadingEarlier, loadEarlier, start, send, reset } = chat
   const user = useAuthStore((s) => s.user)
   const [name, setName] = useState(() => [user?.first_name, user?.last_name].filter(Boolean).join(" "))
   const [email, setEmail] = useState(() => user?.email ?? "")
   const [draft, setDraft] = useState("")
   const [error, setError] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
-  const messages = thread.data?.messages ?? []
+  const newestId = messages[messages.length - 1]?.id
 
+  // Follow the newest message (not older history loaded above it).
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
-  }, [messages.length])
+  }, [newestId])
 
   function errorOf(e: unknown) {
     const d = (e as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
@@ -99,6 +110,7 @@ function ChatPanel({ chat, onClose }: { chat: ReturnType<typeof useSupportChat>;
       </header>
 
       <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-3" aria-live="polite">
+        <LoadEarlier hasEarlier={hasEarlier} loading={loadingEarlier} loadEarlier={loadEarlier} scrollRef={listRef} />
         {!token ? (
           <p className="rounded-xl bg-white px-3 py-2.5 text-sm text-[#4f535a]">
             Hi! Leave your name and email so we can follow up, then send us your question. No account needed.

@@ -26,19 +26,34 @@ class InvoiceBuilder
     end
   end
 
+  # Re-snapshot an existing booking invoice after money lands on the booking
+  # (a staff charge, a webhook, an overtime charge): payments, amount paid,
+  # balance due, method and paid/unpaid status. Keeps the invoice number.
+  def refresh(invoice)
+    return unless @source.is_a?(Booking)
+
+    invoice.update!(invoice_attributes(@source.user, booking_lines, @source.total, taxable: true))
+  end
+
   private
 
   def invoice_for(user, kind, lines, gross, taxable:)
     return unless user
 
-    gross = gross.to_f.round(2)
-    tax = taxable ? (gross - gross / (1 + Invoice::HST_RATE)).round(2) : 0.0
-    paid_in_full = balance_due(gross) <= 0
-
     Invoice.create!(
       user: user,
       invoiceable: @source,
       kind: kind,
+      **invoice_attributes(user, lines, gross, taxable: taxable)
+    )
+  end
+
+  def invoice_attributes(user, lines, gross, taxable:)
+    gross = gross.to_f.round(2)
+    tax = taxable ? (gross - gross / (1 + Invoice::HST_RATE)).round(2) : 0.0
+    paid_in_full = balance_due(gross) <= 0
+
+    {
       subtotal: (gross - tax).round(2),
       tax: tax,
       total: gross,
@@ -49,7 +64,7 @@ class InvoiceBuilder
       paid_at: paid_in_full ? (last_paid_at || Time.current) : nil,
       line_items: lines,
       details: details_for(user, gross)
-    )
+    }
   end
 
   # ── Line items ──────────────────────────────────────────────────────────────

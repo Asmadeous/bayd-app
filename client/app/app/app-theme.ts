@@ -18,7 +18,7 @@ export const appTheme = {
 
 // Page shell: full-height warm paper, room for the bottom tab bar. The TOP
 // safe-area inset belongs to whatever renders first inside the shell (AppHeader,
-// SectionScreen, or the screen's own pt-[calc(...+env(safe-area-inset-top))]) -
+// SectionScreen, or the screen's own pt-[calc(...+var(--top-inset))]) -
 // adding it here too would double-count the notch and push every screen down.
 export const appScreenClass =
   "min-h-dvh bg-[#F6F1EC] text-[#14100F] pb-[calc(4.5rem+env(safe-area-inset-bottom))]"

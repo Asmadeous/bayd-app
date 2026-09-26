@@ -36,7 +36,7 @@ function CallView() {
 
   return (
     <div className="fixed inset-0 z-[70] flex flex-col bg-black">
-      <header className="flex items-center gap-3 px-4 pb-2 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+      <header className="flex items-center gap-3 px-4 pb-2 pt-[calc(0.75rem+var(--top-inset))]">
         <button
           type="button"
           onClick={leave}

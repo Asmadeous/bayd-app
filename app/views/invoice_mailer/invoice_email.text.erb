@@ -1,6 +1,6 @@
 <% d = @invoice.details || {} %>
 <% appt = d["appointment"] %>
-Invoice <%= @invoice.invoice_number %>
+<%= @invoice.status_paid? ? "Paid receipt" : "Invoice" %> <%= @invoice.invoice_number %> (<%= @invoice.status_paid? ? "PAID" : "UNPAID" %>)
 
 Hi <%= @user.first_name.presence || "there" %>, thank you for choosing Beauty @ Your Door.
 Your invoice for <%= number_to_currency(@invoice.total) %> <%= @invoice.currency %> is attached as a PDF.

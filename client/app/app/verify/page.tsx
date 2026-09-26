@@ -119,7 +119,7 @@ function Verify() {
   const verifying = verifyEmailCode.isPending || verifyPhoneCode.isPending
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#14100F] px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] text-[#F6F1EC]">
+    <div className="flex min-h-dvh flex-col bg-[#14100F] px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(1rem+var(--top-inset))] text-[#F6F1EC]">
       <button
         type="button"
         onClick={() => router.replace("/app/welcome")}

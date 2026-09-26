@@ -15,6 +15,32 @@ RSpec.describe NotificationService, type: :service do
     )
   end
 
+  describe "where tapping the push opens" do
+    let(:tech_user) { create(:user, email: "tech.push@baydspa.ca", role: :employee) }
+    let(:booking) do
+      Booking.create!(user: user, service: create(:service), employee_profile: create(:employee_profile, user: tech_user),
+                      starts_at: 1.day.from_now, ends_at: 1.day.from_now + 1.hour, status: "confirmed",
+                      subtotal: 50, travel_fee: 0, total: 50)
+    end
+
+    before { allow(PushService).to receive(:push) }
+
+    it "opens the job's page for staff" do
+      described_class.deliver(user: tech_user, kind: "booking_reminder_day_of", title: "Starts soon", booking: booking)
+      expect(PushService).to have_received(:push).with(hash_including(data: hash_including(path: "/staff/schedule/job?id=#{booking.id}")))
+    end
+
+    it "opens the appointment's page for customers" do
+      described_class.deliver(user: user, kind: "booking_reminder_day_of", title: "Starts soon", booking: booking)
+      expect(PushService).to have_received(:push).with(hash_including(data: hash_including(path: "/app/bookings/view?id=#{booking.id}")))
+    end
+
+    it "sends no page when there's no booking" do
+      described_class.deliver(user: user, kind: "review_request", title: "Rate us")
+      expect(PushService).to have_received(:push).with(hash_including(data: hash_excluding(:path)))
+    end
+  end
+
   it "still returns the notification if the push blows up (best-effort)" do
     allow(PushService).to receive(:push).and_raise(StandardError, "fcm down")
     notification = described_class.deliver(user: user, kind: "review_request", title: "x")

@@ -12,7 +12,7 @@ export function SectionScreen({ title, children }: { title: string; children: Re
   const router = useRouter()
   return (
     <div className={appScreenClass}>
-      <header className="flex items-center gap-3 px-4 pb-2 pt-[calc(1.25rem+env(safe-area-inset-top))]">
+      <header className="flex items-center gap-3 px-4 pb-2 pt-[calc(1.25rem+var(--top-inset))]">
         <button
           type="button"
           onClick={() => router.back()}

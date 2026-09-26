@@ -65,5 +65,20 @@ RSpec.describe "Employee per-booking clock + charge gate", type: :request do
       expect(response).to have_http_status(:ok)
       expect(b.reload.overtime_amount.to_f).to eq(25.0)
     end
+
+    it "with collect=false only adds it to the bill, charging nothing yet" do
+      b = booking(status: "completed")
+      expect_any_instance_of(BookingPaymentService).not_to receive(:collect)
+
+      post "/api/v1/employee/bookings/#{b.id}/overtime",
+           params: { amount: 25, collect: false }, headers: auth_header(tech_user), as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)["mode"]).to eq("added")
+      b.reload
+      expect(b.overtime_amount.to_f).to eq(25.0)
+      expect(b.total.to_f).to eq(105.0)
+      expect(b.outstanding_balance.to_f).to eq(105.0)
+    end
   end
 end

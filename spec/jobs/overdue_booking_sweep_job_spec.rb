@@ -49,6 +49,37 @@ RSpec.describe OverdueBookingSweepJob, type: :job do
       .not_to change(Notification, :count)
   end
 
+  describe "marking long-overdue bookings missed" do
+    include ActiveJob::TestHelper
+
+    # Started 60 min ago => ended just now. The mark lands AUTO_MISS_AFTER later.
+    let(:ended_long_ago) { booking_started(60 + described_class::AUTO_MISS_AFTER.in_minutes.to_i + 5) }
+    let(:ended_recently) { booking_started(60 + described_class::AUTO_MISS_AFTER.in_minutes.to_i - 5) }
+
+    it "marks it missed once it ended long enough ago with no clock-in, and tells the customer" do
+      booking = ended_long_ago
+
+      perform_enqueued_jobs { described_class.perform_now }
+
+      expect(booking.reload.status).to eq("missed")
+      expect(Notification.exists?(user: customer, booking: booking, kind: "booking_missed")).to be(true)
+      expect(booking.payments).to be_empty
+    end
+
+    it "leaves it confirmed while still inside the window" do
+      booking = ended_recently
+      described_class.perform_now
+      expect(booking.reload.status).to eq("confirmed")
+    end
+
+    it "leaves it alone when the tech clocked in" do
+      booking = ended_long_ago
+      open_shift_for(booking)
+      described_class.perform_now
+      expect(booking.reload.status).to eq("confirmed")
+    end
+  end
+
   it "notifies only once across repeated runs (idempotent)" do
     booking_started(TimeClock::GRACE_MIN + 5)
 

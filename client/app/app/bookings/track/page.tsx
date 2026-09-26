@@ -46,7 +46,7 @@ function TrackView() {
 
   return (
     <div className={appScreenClass}>
-      <header className="flex items-center gap-3 px-4 pb-3 pt-[calc(1rem+env(safe-area-inset-top))]">
+      <header className="flex items-center gap-3 px-4 pb-3 pt-[calc(1rem+var(--top-inset))]">
         <button
           type="button"
           onClick={() => router.back()}

@@ -4,24 +4,26 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { X } from "lucide-react"
 
+import { DateStrip } from "@/components/booking/date-strip"
+import { TimeGroups } from "@/components/booking/time-groups"
+import { BubbleLoader } from "@/components/bubble-loader"
 import api from "@/lib/api"
+import { formatDateKey, todayKey } from "@/lib/booking-time"
 import { useRescheduleBooking, type Booking } from "@/lib/hooks/use-bookings"
-import { cardClass, inputClass, labelClass, mutedClass } from "../app-theme"
+import { cardClass, mutedClass } from "../app-theme"
 
 interface AvailabilityResult {
   slots: string[]
   mapped: boolean
 }
 
-const TODAY = new Date().toISOString().split("T")[0]
-
-// App-native reschedule: same flow as the website RescheduleDialog. Pick a date,
-// fetch the SAME tech's open slots for that service+date from /availability (which
-// already subtracts bookings + travel), and let the customer choose only a real
-// free time. The backend re-validates hours/travel/double-book and enforces the
+// App-native reschedule, with the same date strip and Morning / Afternoon /
+// Evening times as booking. Pick a date, fetch the SAME tech's open slots for that
+// service+date from /availability (which already subtracts bookings + travel),
+// and let the customer choose only a real free time. The backend re-validates hours/travel/double-book and enforces the
 // 24h cutoff + 2-reschedule cap. Customers never type a raw time.
 export function RescheduleSheet({ booking, onClose }: { booking: Booking; onClose: () => void }) {
-  const [date, setDate] = useState("")
+  const [date, setDate] = useState(() => todayKey())
   const [time, setTime] = useState("")
   const [error, setError] = useState<string | null>(null)
   const reschedule = useRescheduleBooking()
@@ -56,9 +58,9 @@ export function RescheduleSheet({ booking, onClose }: { booking: Booking; onClos
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] flex items-end bg-black/40" onClick={onClose}>
       <div
-        className={`w-full rounded-t-3xl bg-[#F6F1EC] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] ${cardClass}`}
+        className={`max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl bg-[#F6F1EC] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] ${cardClass}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
@@ -78,42 +80,22 @@ export function RescheduleSheet({ booking, onClose }: { booking: Booking; onClos
           </p>
         ) : null}
 
-        <label className={labelClass}>New date</label>
-        <input
-          type="date"
-          min={TODAY}
-          value={date}
-          onChange={(e) => { setDate(e.target.value); setTime("") }}
-          className={inputClass}
-        />
+        <DateStrip value={date} onChange={(d) => { setDate(d); setTime("") }} />
+        <p className={`mt-1 text-center text-xs ${mutedClass}`}>Times are shown in Eastern time.</p>
 
-        {date ? (
-          <div className="mt-4">
-            <label className={labelClass}>Open times</label>
-            {availability.isLoading ? (
-              <p className={`text-sm ${mutedClass}`}>Loading open times…</p>
-            ) : slots.length === 0 ? (
-              <p className={`text-sm ${mutedClass}`}>No open times that day — try another date.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {slots.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setTime(s)}
-                    className={`rounded-xl border px-3 py-2 text-sm font-bold transition-colors ${
-                      time === s
-                        ? "border-[#C96C83] bg-[#C96C83]/10 text-[#C96C83]"
-                        : "border-black/15 bg-white text-[#14100F]/60"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : null}
+        <h3 className="mt-4 border-t border-black/10 pt-4 text-base font-black tracking-tight">
+          {date === todayKey() ? "Today, " : ""}
+          {formatDateKey(date, { weekday: "long", month: "short", day: "numeric" })}
+        </h3>
+        <div className="mt-3">
+          {availability.isLoading ? (
+            <BubbleLoader className="py-4" label="Finding open times" />
+          ) : slots.length === 0 ? (
+            <p className={`text-sm ${mutedClass}`}>No open times that day. Try another date.</p>
+          ) : (
+            <TimeGroups times={slots} selected={time} onPick={setTime} />
+          )}
+        </div>
 
         <button
           type="button"

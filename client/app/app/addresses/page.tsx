@@ -55,7 +55,7 @@ export default function AppAddressesScreen() {
                     type="button"
                     onClick={() => setDefault.mutate(a.id)}
                     disabled={setDefault.isPending}
-                    className="shrink-0 rounded-full border border-black/15 px-3 py-1 text-xs font-semibold disabled:opacity-50"
+                    className="shrink-0 rounded-full bg-[#C96C83]/10 px-3 py-1.5 text-xs font-bold text-[#9E4A60] disabled:opacity-50"
                   >
                     Set default
                   </button>

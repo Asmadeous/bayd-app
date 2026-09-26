@@ -2,13 +2,12 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
 import { ChevronLeft, Send } from "lucide-react"
 
-import api from "@/lib/api"
+import { LoadEarlier } from "@/components/load-earlier"
 import { useChat } from "@/lib/cable/use-chat"
+import { useConversation } from "@/lib/hooks/use-conversations"
 import { useToast } from "@/lib/app-ui/app-ui-provider"
-import type { Conversation } from "@/lib/cable/chat-types"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { formatBookingTime } from "@/lib/booking-time"
 import { appScreenClass, mutedClass } from "../../app-theme"
@@ -30,26 +29,27 @@ function MessageThread() {
   const conversationId = Number(params.get("id")) || 0
   const currentUserId = useAuthStore((s) => s.user?.id ?? 0)
 
-  const { data: conversations = [] } = useQuery<Conversation[]>({
-    queryKey: ["conversations"],
-    queryFn: () => api.get<Conversation[]>("/conversations").then((r) => r.data),
-  })
-  const conversation = conversations.find((c) => c.id === conversationId) ?? null
+  const { data: conversation = null } = useConversation(conversationId)
   const name =
     [conversation?.other_participant?.first_name, conversation?.other_participant?.last_name]
       .filter(Boolean)
       .join(" ") || "B.A.Y.D"
 
-  const { messages, otherTyping, otherOnline, send, setTyping } = useChat(conversationId, currentUserId)
+  const { messages, hasEarlier, loadingEarlier, loadEarlier, otherTyping, otherOnline, send, setTyping } = useChat(
+    conversationId,
+    currentUserId,
+  )
+  const newestId = messages[messages.length - 1]?.id
 
   const [draft, setDraft] = useState("")
   const [sending, setSending] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Keep the newest message in view as history loads and new ones arrive.
+  // Follow the newest message (not older history loaded above it).
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
-  }, [messages, otherTyping])
+  }, [newestId, otherTyping])
 
   // setTyping auto-stops after a pause (handled in useChat), so just fire it on
   // keystroke - typing true while there's text, false when the box is emptied.
@@ -81,7 +81,7 @@ function MessageThread() {
   if (!conversationId) {
     return (
       <div className={appScreenClass}>
-        <ThreadHeader name="Messages" status="" onBack={() => router.push("/app/messages")} />
+        <ThreadHeader name="Messages" status="" onBack={() => router.push("/app/chat")} />
         <p className={`px-5 text-sm ${mutedClass}`}>Conversation not found.</p>
       </div>
     )
@@ -91,14 +91,15 @@ function MessageThread() {
     // Fixed to the viewport height (h-dvh, NOT min-h) so the message list scrolls
     // internally and the composer stays pinned at the bottom instead of being
     // pushed below the fold as messages fill the column.
-    <div className="fixed inset-0 flex flex-col bg-[#F6F1EC] pt-[env(safe-area-inset-top)]">
+    <div className="fixed inset-0 flex flex-col bg-[#F6F1EC] pt-[var(--top-inset)]">
       <ThreadHeader
         name={name}
         status={otherTyping ? "typing…" : otherOnline ? "online" : ""}
-        onBack={() => router.push("/app/messages")}
+        onBack={() => router.push("/app/chat")}
       />
 
       <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
+        <LoadEarlier hasEarlier={hasEarlier} loading={loadingEarlier} loadEarlier={loadEarlier} scrollRef={scrollRef} />
         {grouped.length === 0 ? (
           <p className={`py-10 text-center text-sm ${mutedClass}`}>
             Say hello - messages you send reach {name}.

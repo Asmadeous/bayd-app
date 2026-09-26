@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
+import { usePagedList } from "@/lib/hooks/use-paged-list"
 
 export interface InvoiceLineItem {
   kind?: "service" | "addon" | "travel" | "overtime" | "product" | "gift_card"
@@ -81,6 +82,13 @@ export function useInvoices(page = 1, kind?: string) {
     queryFn: () =>
       api.get<Paged<Invoice>>("/invoices", { params: { page, kind: kind || undefined } }).then((r) => r.data),
   })
+}
+
+// The customer's invoices, a page at a time for "Load more".
+export function useInvoicesList() {
+  return usePagedList<Invoice>(["invoices", "list"], (page) =>
+    api.get<Paged<Invoice>>("/invoices", { params: { page } }).then((r) => r.data),
+  )
 }
 
 // Authenticated PDF download (sends JWT via axios, then triggers a browser save).

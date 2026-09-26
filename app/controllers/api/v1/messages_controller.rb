@@ -6,8 +6,15 @@ module Api
     class MessagesController < ApplicationController
       before_action :set_conversation
 
+      # latest=1: page 1 is the newest messages and later pages go back in time
+      # (each page still oldest-first), so opening a long chat shows the latest.
       def index
-        records, meta = paginate(@conversation.messages.chronological)
+        if params[:latest].present?
+          records, meta = paginate(@conversation.messages.order(created_at: :desc))
+          records = records.to_a.reverse
+        else
+          records, meta = paginate(@conversation.messages.chronological)
+        end
         render json: { data: MessageSerializer.render_as_hash(records), pagination: meta }
       end
 

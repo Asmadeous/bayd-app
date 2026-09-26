@@ -22,7 +22,7 @@ import { StaffBookingActions } from "@/components/dashboard/staff-booking-action
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { useToast } from "@/components/bayd-toast-provider"
 import { Button } from "@/components/ui/button"
-import { useEmployeeProfile, useEmployeeSchedule, useToggleShift } from "@/lib/hooks/use-employee"
+import { useEmployeeProfile, useEmployeeSchedule, useEmployeeScheduleList, useToggleShift } from "@/lib/hooks/use-employee"
 import { employeeDashboardSteps } from "@/lib/tours/employee-tour"
 
 type ScheduleView = "list" | "calendar" | "past"
@@ -38,9 +38,11 @@ export default function EmployeeDashboardPage() {
   const [view, setView] = useState<ScheduleView>(
     initialView === "calendar" ? "calendar" : initialView === "past" ? "past" : "list",
   )
-  // Job history (completed/cancelled/no-show), loaded only when the Past view is open.
-  const { data: pastData, isLoading: isPastLoading } = useEmployeeSchedule(1, view === "past" ? "past" : undefined)
-  const pastBookings = pastData?.data ?? []
+  // The two lists, a page at a time ("Load more"). Job history (completed /
+  // cancelled / no-show) loads only when the Past view is open.
+  const activeList = useEmployeeScheduleList(undefined, { enabled: view === "list" })
+  const pastList = useEmployeeScheduleList("past", { enabled: view === "past" })
+  const { items: pastBookings, isLoading: isPastLoading } = pastList
 
   const bookings = data?.data ?? []
   const upcoming = bookings
@@ -48,9 +50,9 @@ export default function EmployeeDashboardPage() {
     .sort((a, b) => getTime(a.starts_at) - getTime(b.starts_at))
   const inProgress = bookings.filter((b) => b.status === "in_progress")
   const nextBooking = upcoming[0]
-  const listBookings = bookings
-    .slice()
-    .sort((a, b) => getTime(a.starts_at) - getTime(b.starts_at))
+  // All active jobs, not just the first page: the server total, less those in service.
+  const upcomingCount = (data?.pagination.total_count ?? 0) - inProgress.length
+  const listBookings = activeList.items
 
   useEffect(() => {
     if (isProfileError) {
@@ -160,7 +162,7 @@ export default function EmployeeDashboardPage() {
           label="On shift"
           value={profile?.on_shift ? "Yes" : "No"}
         />
-        <MetricCard icon={CalendarDays} label="Upcoming" value={upcoming.length} />
+        <MetricCard icon={CalendarDays} label="Upcoming" value={upcomingCount} />
         <MetricCard icon={Clock3} label="In progress" value={inProgress.length} />
         <MetricCard icon={CheckCircle2} label="Total bookings" value={bookings.length} />
       </div>
@@ -194,7 +196,7 @@ export default function EmployeeDashboardPage() {
       </DashboardToolbar>
 
       <div data-tour="employee-schedule">
-        {isLoading ? (
+        {isLoading || (view === "list" && activeList.isLoading) ? (
           <DashboardPanel>
             <p className="text-sm text-[#5f6268]">Loading schedule...</p>
           </DashboardPanel>
@@ -219,6 +221,7 @@ export default function EmployeeDashboardPage() {
                   key={booking.id}
                 />
               ))}
+              <WebLoadMore list={pastList} />
             </DashboardPanel>
           )
         ) : view === "calendar" ? (
@@ -239,6 +242,7 @@ export default function EmployeeDashboardPage() {
                 key={booking.id}
               />
             ))}
+            <WebLoadMore list={activeList} />
           </DashboardPanel>
         )}
       </div>
@@ -272,4 +276,13 @@ function getTime(value: string) {
 function getApiErrorMessage(error: unknown, fallback: string) {
   const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
   return data?.error ?? data?.errors?.join(", ") ?? fallback
+}
+
+function WebLoadMore({ list }: { list: { hasMore: boolean; loadingMore: boolean; loadMore: () => void } }) {
+  if (!list.hasMore) return null
+  return (
+    <Button className="w-full" disabled={list.loadingMore} onClick={list.loadMore} variant="outline">
+      {list.loadingMore ? "Loading..." : "Load more"}
+    </Button>
+  )
 }

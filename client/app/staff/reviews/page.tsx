@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { Star } from "lucide-react"
 
+import { LoadMore } from "@/components/load-more"
 import api from "@/lib/api"
+import { usePagedList } from "@/lib/hooks/use-paged-list"
 import { staffScreenClass, cardClass, eyebrowClass, mutedClass } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
 
@@ -17,20 +17,17 @@ interface Review {
 }
 interface PagedReviews {
   data: Review[]
-  pagination: { current_page: number; total_pages: number; next_page: number | null }
+  average_rating: string | number | null
+  pagination: { current_page: number; total_pages: number; next_page: number | null; total_count?: number }
 }
 
 export default function StaffReviewsScreen() {
-  const [page, setPage] = useState(1)
-  const { data, isLoading } = useQuery<PagedReviews>({
-    queryKey: ["employee-reviews", page],
-    queryFn: () => api.get<PagedReviews>("/employee/reviews", { params: { page } }).then((r) => r.data),
-  })
-  const reviews = data?.data ?? []
-  const pagination = data?.pagination
-  const average = reviews.length
-    ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
-    : null
+  const { items: reviews, first, isLoading, hasMore, loadingMore, loadMore } = usePagedList<Review, PagedReviews>(
+    ["employee-reviews", "list"],
+    (page) => api.get<PagedReviews>("/employee/reviews", { params: { page } }).then((r) => r.data),
+  )
+  // Over every review (from the server), not just the ones loaded so far.
+  const average = first?.average_rating != null ? Number(first.average_rating).toFixed(1) : null
 
   return (
     <div className={staffScreenClass}>
@@ -40,7 +37,7 @@ export default function StaffReviewsScreen() {
         {average && (
           <div className={`${cardClass} flex items-center justify-between p-4`}>
             <div>
-              <p className={eyebrowClass}>Average (this page)</p>
+              <p className={eyebrowClass}>Average rating</p>
               <p className="mt-1 text-3xl font-black leading-none">{average}</p>
             </div>
             <Stars rating={Math.round(Number(average))} size="size-6" />
@@ -60,7 +57,8 @@ export default function StaffReviewsScreen() {
             <p className={`text-sm ${mutedClass}`}>Reviews clients leave will appear here.</p>
           </div>
         ) : (
-          <ul className="space-y-3">
+          <>
+            <ul className="space-y-3">
             {reviews.map((r) => {
               const name = [r.user.first_name, r.user.last_name].filter(Boolean).join(" ") || "A client"
               return (
@@ -76,20 +74,11 @@ export default function StaffReviewsScreen() {
                 </li>
               )
             })}
-          </ul>
+            </ul>
+            <LoadMore hasMore={hasMore} loading={loadingMore} onLoad={loadMore} />
+          </>
         )}
 
-        {pagination && pagination.total_pages > 1 && (
-          <div className="flex items-center justify-center gap-4 pt-1">
-            <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-xl border border-black/15 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40">
-              Prev
-            </button>
-            <span className={`text-sm font-semibold ${mutedClass}`}>{page} / {pagination.total_pages}</span>
-            <button type="button" disabled={!pagination.next_page} onClick={() => setPage((p) => p + 1)} className="rounded-xl border border-black/15 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40">
-              Next
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )

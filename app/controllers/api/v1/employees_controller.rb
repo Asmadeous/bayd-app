@@ -51,14 +51,16 @@ module Api
       # nothing for a staff user.
       def booking
         record = profile.bookings.includes(:user, :service, :address, :partner, :tips, :shifts).find(params[:id])
-        render json: BookingSerializer.render_as_hash(record, view: :full)
+        render json: BookingSerializer.render_as_hash(record, view: :job)
       end
 
       def reviews
         records, meta = paginate(
           profile.reviews.includes(:user, :employee_profile).order(created_at: :desc)
         )
-        render json: { data: ReviewSerializer.render_as_hash(records), pagination: meta }
+        # The average is over every review, not just this page.
+        average = profile.reviews.average(:rating)&.round(1)
+        render json: { data: ReviewSerializer.render_as_hash(records), average_rating: average, pagination: meta }
       end
 
       # ── Earnings / transactions ─────────────────────────────────────────────
@@ -125,6 +127,10 @@ module Api
         if booking.completed? || booking.cancelled?
           return render json: { error: "This booking is already #{booking.status}." }, status: :unprocessable_entity
         end
+        # It charges the client a fee, so never before the appointment's time.
+        if Time.current < booking.starts_at
+          return render json: { error: "You can mark a no-show once the appointment time has started." }, status: :unprocessable_entity
+        end
 
         booking.update!(status: :no_show)
         render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
@@ -175,6 +181,12 @@ module Api
           total:           booking.total + amount,
           notes:           [ booking.notes.presence, "Overtime +$#{amount}#{reason.present? ? " (#{reason})" : ''}" ].compact.join("\n")
         )
+
+        # collect=false (the app's Charge flow): only add it to the bill, and the
+        # tech then takes the whole balance with the payment method they pick.
+        if params[:collect].to_s == "false"
+          return render json: { mode: "added", booking: BookingSerializer.render_as_hash(booking.reload, view: :full) }
+        end
 
         result = BookingPaymentService.new(booking).collect(amount: amount, note: "Overtime BKG-#{booking.id}")
         if result.success?
@@ -327,6 +339,26 @@ module Api
         render json: { error: "That technician already has a booking at that time." }, status: :conflict
       end
 
+      # Client lookup for the staff booking form: customers matching a name,
+      # email or phone, so the form can fill their details and saved address
+      # instead of the tech retyping them. Needs 3+ characters; at most 8 hits.
+      def clients
+        q = params[:q].to_s.strip
+        return render json: [] if q.length < 3
+
+        like = "%#{User.sanitize_sql_like(q.downcase)}%"
+        scope = User.customer.where(
+          "LOWER(email) LIKE :q OR LOWER(CONCAT_WS(' ', first_name, last_name)) LIKE :q", q: like
+        )
+        digits = q.gsub(/\D/, "")
+        if digits.length >= 3
+          scope = scope.or(User.customer.where("regexp_replace(phone, '\\D', '', 'g') LIKE ?", "%#{digits}%"))
+        end
+
+        users = scope.includes(:addresses).order(updated_at: :desc).limit(8)
+        render json: users.map { |u| client_json(u) }
+      end
+
       # ── Gift-card top-up at the customer (POS/cash) ─────────────────────────
       # Staff look up a customer's card by code and add funds; payment is taken
       # in person, so "mark paid" credits the balance immediately.
@@ -343,6 +375,18 @@ module Api
       end
 
       private
+
+      def client_json(user)
+        address = user.addresses.min_by { |a| [ a.default ? 0 : 1, -a.created_at.to_i ] }
+        {
+          id: user.id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          phone: user.phone,
+          address: address && address.slice(:line1, :line2, :city, :province, :postal_code, :is_apartment, :buzz_code)
+        }
+      end
 
       # The tech the booking is for: the acting tech by default; an explicit
       # employee_id is honoured (admins can book anyone; a tech only themselves).

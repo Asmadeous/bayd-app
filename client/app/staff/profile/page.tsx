@@ -43,7 +43,7 @@ export default function StaffProfileScreen() {
   }, [])
 
   const user = profile?.user
-  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Your profile"
+  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || profile?.name || "Your profile"
   const titleVal = title ?? profile?.title ?? ""
   const bioVal = bio ?? profile?.bio ?? ""
 
@@ -186,7 +186,7 @@ export default function StaffProfileScreen() {
                   setTitle(null)
                   setBio(null)
                 }}
-                className="flex-1 rounded-xl border border-black/10 bg-white py-3 text-sm font-bold"
+                className="flex-1 rounded-xl bg-black/[0.06] py-3 text-sm font-bold transition-colors active:bg-black/10"
               >
                 Cancel
               </button>

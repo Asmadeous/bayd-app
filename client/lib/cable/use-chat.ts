@@ -9,6 +9,10 @@ import { isChatMessage, type ChatEvent, type ChatMessage } from "@/lib/cable/cha
 
 interface UseChat {
   messages: ChatMessage[]
+  // Older history is paged: the thread opens on the newest messages.
+  hasEarlier: boolean
+  loadingEarlier: boolean
+  loadEarlier: () => Promise<void>
   otherTyping: boolean
   otherOnline: boolean
   send: (body: string) => Promise<void>
@@ -20,17 +24,23 @@ interface UseChat {
 // thread read on open. `currentUserId` distinguishes my events from the other's.
 export function useChat(conversationId: number, currentUserId: number): UseChat {
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [earlierPage, setEarlierPage] = useState<number | null>(null)
+  const [loadingEarlier, setLoadingEarlier] = useState(false)
   const [otherTyping, setOtherTyping] = useState(false)
   const [otherOnline, setOtherOnline] = useState(false)
   const subRef = useRef<Subscription | null>(null)
 
-  // Load history + mark read.
+  // Load the newest page of history + mark read.
   useEffect(() => {
     let active = true
     api
-      .get<{ data: ChatMessage[] }>(`/conversations/${conversationId}/messages`)
+      .get<{ data: ChatMessage[]; pagination: { next_page: number | null } }>(`/conversations/${conversationId}/messages`, {
+        params: { latest: 1 },
+      })
       .then((r) => {
-        if (active) setMessages(r.data.data)
+        if (!active) return
+        setMessages(r.data.data)
+        setEarlierPage(r.data.pagination?.next_page ?? null)
       })
       .catch(() => {})
     api.post(`/conversations/${conversationId}/messages/read`).catch(() => {})
@@ -77,6 +87,22 @@ export function useChat(conversationId: number, currentUserId: number): UseChat 
     }
   }, [conversationId, currentUserId])
 
+  // Older messages, prepended in reading order.
+  const loadEarlier = useCallback(async () => {
+    if (!earlierPage || loadingEarlier) return
+    setLoadingEarlier(true)
+    try {
+      const { data } = await api.get<{ data: ChatMessage[]; pagination: { next_page: number | null } }>(
+        `/conversations/${conversationId}/messages`,
+        { params: { latest: 1, page: earlierPage } },
+      )
+      setMessages((prev) => [...data.data.filter((m) => !prev.some((p) => p.id === m.id)), ...prev])
+      setEarlierPage(data.pagination?.next_page ?? null)
+    } finally {
+      setLoadingEarlier(false)
+    }
+  }, [conversationId, earlierPage, loadingEarlier])
+
   const send = useCallback(
     async (body: string) => {
       const trimmed = body.trim()
@@ -117,5 +143,14 @@ export function useChat(conversationId: number, currentUserId: number): UseChat 
     }
   }, [])
 
-  return { messages, otherTyping, otherOnline, send, setTyping }
+  return {
+    messages,
+    hasEarlier: earlierPage != null,
+    loadingEarlier,
+    loadEarlier,
+    otherTyping,
+    otherOnline,
+    send,
+    setTyping,
+  }
 }

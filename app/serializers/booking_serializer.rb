@@ -94,4 +94,30 @@ class BookingSerializer < Blueprinter::Base
       end
     end
   end
+
+  # ── Job view (the assigned tech's single-job screen) ──────────────────────
+  # Everything :full has, plus who the client is (name, visits so far) and the
+  # clock record. Only for one booking at a time (the counts would be N+1 on a
+  # list).
+  view :job do
+    include_view :full
+
+    field :client do |booking|
+      user = booking.user
+      next unless user
+
+      {
+        user_id: user.id, # to open a chat with them
+        name: [ user.first_name, user.last_name ].compact.join(" ").presence,
+        completed_visits: user.bookings.where(status: "completed").where.not(id: booking.id).count
+      }
+    end
+
+    field :visit do |booking|
+      shift = booking.shifts.max_by(&:clock_in_at)
+      next unless shift
+
+      { clock_in_at: shift.clock_in_at, clock_out_at: shift.clock_out_at, distance_km: shift.distance_km }
+    end
+  end
 end

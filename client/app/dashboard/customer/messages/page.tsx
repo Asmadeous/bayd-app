@@ -8,20 +8,17 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { Button } from "@/components/ui/button"
-import api from "@/lib/api"
+import { LoadEarlier } from "@/components/load-earlier"
 import { useChat } from "@/lib/cable/use-chat"
+import { useConversationsList } from "@/lib/hooks/use-conversations"
 import { useToast } from "@/components/bayd-toast-provider"
 import type { Conversation } from "@/lib/cable/chat-types"
 import { useAuthStore } from "@/lib/stores/auth-store"
 
 export default function CustomerMessagesPage() {
   const currentUserId = useAuthStore((s) => s.user?.id ?? 0)
-  const [conversations, setConversations] = useState<Conversation[]>([])
+  const { items: conversations, hasMore, loadingMore, loadMore } = useConversationsList()
   const [active, setActive] = useState<Conversation | null>(null)
-
-  useEffect(() => {
-    api.get<Conversation[]>("/conversations").then((r) => setConversations(r.data)).catch(() => {})
-  }, [])
 
   return (
     <DashboardPage>
@@ -58,6 +55,13 @@ export default function CustomerMessagesPage() {
                 </li>
               )
             })}
+            {hasMore ? (
+              <li className="pt-3">
+                <Button className="w-full" disabled={loadingMore} onClick={loadMore} variant="outline">
+                  {loadingMore ? "Loading..." : "Load more"}
+                </Button>
+              </li>
+            ) : null}
           </ul>
         )}
       </DashboardPanel>
@@ -74,13 +78,19 @@ function ChatThread({
   currentUserId: number
   onBack: () => void
 }) {
-  const { messages, otherTyping, otherOnline, send, setTyping } = useChat(conversation.id, currentUserId)
+  const { messages, hasEarlier, loadingEarlier, loadEarlier, otherTyping, otherOnline, send, setTyping } = useChat(
+    conversation.id,
+    currentUserId,
+  )
+  const newestId = messages[messages.length - 1]?.id
+  const listRef = useRef<HTMLDivElement>(null)
   const [draft, setDraft] = useState("")
   const endRef = useRef<HTMLDivElement>(null)
 
+  // Follow the newest message (not older history loaded above it).
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, otherTyping])
+  }, [newestId, otherTyping])
 
   const { toast } = useToast()
   const name = [conversation.other_participant?.first_name, conversation.other_participant?.last_name]
@@ -111,7 +121,8 @@ function ChatThread({
         </span>
       </div>
 
-      <div className="flex-1 space-y-2 overflow-y-auto py-2">
+      <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto py-2">
+        <LoadEarlier hasEarlier={hasEarlier} loading={loadingEarlier} loadEarlier={loadEarlier} scrollRef={listRef} />
         {messages.map((m) => {
           const mine = m.sender_id === currentUserId
           return (

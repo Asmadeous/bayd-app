@@ -81,7 +81,7 @@ export async function openHelcimPay(checkoutToken: string): Promise<HelcimResult
     closeBtn.setAttribute("aria-label", "Close payment")
     closeBtn.textContent = "✕"
     closeBtn.style.cssText = [
-      "position:fixed", "top:calc(env(safe-area-inset-top) + 12px)", "right:16px",
+      "position:fixed", "top:calc(var(--top-inset) + 12px)", "right:16px",
       "z-index:2147483647", "width:40px", "height:40px", "border-radius:9999px",
       "border:none", "background:rgba(20,16,15,0.75)", "color:#fff",
       "font-size:20px", "line-height:40px", "cursor:pointer",

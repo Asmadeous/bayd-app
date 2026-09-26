@@ -3,29 +3,27 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
-import { CalendarDays, Home, ShoppingBag, User, type LucideIcon } from "lucide-react"
+import { Briefcase, CalendarDays, MessageCircle, ShoppingBag, User, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { hapticTap } from "@/lib/native/haptics"
 
 type Tab = { label: string; href: string; icon: LucideIcon; also?: string[] }
 
-// The app tabs - phone-native fixed bottom bar. Bookings lives in Account (not a
-// tab); Book uses the calendar icon.
+// The app tabs - phone-native fixed bottom bar. Booking starts from Book now on
+// the Bookings tab. Screens opened from a tab keep that tab lit, so you always
+// know where you are.
 const tabs: Tab[] = [
-  { label: "Home", href: "/app/home", icon: Home, also: ["/app/notifications"] },
-  { label: "Book", href: "/app/book", icon: CalendarDays },
-  { label: "Shop", href: "/app/shop", icon: ShoppingBag },
-  // Screens opened from Account keep its tab lit so you always know where you are.
+  { label: "Bookings", href: "/app/home", icon: CalendarDays, also: ["/app/notifications", "/app/bookings", "/app/book"] },
   {
-    label: "Account",
-    href: "/app/account",
-    icon: User,
-    also: [
-      "/app/bookings", "/app/messages", "/app/support", "/app/orders", "/app/transactions",
-      "/app/gift-cards", "/app/loyalty", "/app/subscriptions", "/app/addresses",
-    ],
+    label: "Management",
+    href: "/app/manage",
+    icon: Briefcase,
+    also: ["/app/orders", "/app/transactions", "/app/gift-cards", "/app/loyalty"],
   },
+  { label: "Shop", href: "/app/shop", icon: ShoppingBag },
+  { label: "Chat", href: "/app/chat", icon: MessageCircle, also: ["/app/messages", "/app/support"] },
+  { label: "Profile", href: "/app/account", icon: User, also: ["/app/subscriptions", "/app/addresses"] },
 ]
 
 export function BottomNav() {
@@ -36,6 +34,8 @@ export function BottomNav() {
   useEffect(() => {
     let lastY = window.scrollY
     function onScroll() {
+      // Book pins its Continue bar right above the tabs, so the tabs stay put there.
+      if (window.location.pathname.startsWith("/app/book")) return setHidden(false)
       const y = window.scrollY
       // Ignore tiny jitters; require a small delta to toggle.
       if (Math.abs(y - lastY) < 8) return

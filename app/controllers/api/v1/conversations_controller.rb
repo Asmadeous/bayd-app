@@ -5,7 +5,20 @@ module Api
     class ConversationsController < ApplicationController
       def index
         convos = Conversation.for_user(current_user).newest_first
+        # With ?page the list comes in pages; without it, everything (older clients).
+        if params[:page].present?
+          records, meta = paginate(convos)
+          return render json: { data: ConversationSerializer.render_as_hash(records, current_user: current_user), pagination: meta }
+        end
+
         render json: ConversationSerializer.render_as_hash(convos, current_user: current_user)
+      end
+
+      # One of your own conversations (a thread screen's header). Anyone else's is
+      # a 404, so ids can't be probed.
+      def show
+        convo = Conversation.for_user(current_user).find(params[:id])
+        render json: ConversationSerializer.render_as_hash(convo, current_user: current_user)
       end
 
       # Open (or reuse) the conversation with another user.

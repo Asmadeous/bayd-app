@@ -14,7 +14,7 @@ type Tab = { label: string; href: string; icon: LucideIcon; also?: string[] }
 // booking are reachable from Profile / Schedule (every dashboard surface stays
 // present, just not all as tabs).
 const tabs: Tab[] = [
-  { label: "Schedule", href: "/staff/schedule", icon: CalendarDays },
+  { label: "Schedule", href: "/staff/schedule", icon: CalendarDays, also: ["/staff/notifications"] },
   { label: "Shifts", href: "/staff/shifts", icon: Clock3 },
   { label: "Messages", href: "/staff/messages", icon: MessageCircle },
   // Screens opened from Profile keep its tab lit so you always know where you are.

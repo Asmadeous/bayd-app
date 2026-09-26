@@ -41,7 +41,7 @@ export function ReviewSheet({ booking, onClose }: { booking: Booking; onClose: (
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] flex items-end bg-black/40" onClick={onClose}>
       <div
         className={`w-full rounded-t-3xl bg-[#F6F1EC] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] ${cardClass}`}
         onClick={(e) => e.stopPropagation()}

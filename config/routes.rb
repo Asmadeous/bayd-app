@@ -56,6 +56,7 @@ Rails.application.routes.draw do
       resources :addresses
       resources :reviews, only: %i[index create]
       get "loyalty", to: "loyalty#show"
+      get "loyalty/transactions", to: "loyalty#transactions"
 
       # Invoices / transactions (customer)
       resources :invoices, only: %i[index show] do
@@ -188,6 +189,8 @@ Rails.application.routes.draw do
         post   "bookings/:id/record_payment", to: "employees#record_payment"
         # Staff-initiated manual booking (force-book, skips eligibility gates)
         post   "bookings",               to: "employees#create_booking"
+        # Client lookup for that booking form (name / email / phone).
+        get    "clients",                to: "employees#clients"
         # Bookable-hours: the tech's own weekly template + date overrides.
         resources :availability_schedules, only: %i[index create update destroy]
         resources :availability_overrides, only: %i[index create update destroy]
@@ -196,7 +199,7 @@ Rails.application.routes.draw do
       end
 
       # Direct messaging (customer↔staff, staff↔admin). Any authenticated user.
-      resources :conversations, only: %i[index create] do
+      resources :conversations, only: %i[index show create] do
         resources :messages, only: %i[index create] do
           post :read, on: :collection
         end

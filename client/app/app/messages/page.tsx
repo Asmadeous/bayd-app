@@ -1,51 +1,56 @@
 "use client"
 
 import Link from "next/link"
-import { useQuery } from "@tanstack/react-query"
 import { MessageCircle } from "lucide-react"
 
-import api from "@/lib/api"
+import { LoadMore } from "@/components/load-more"
+import { useConversationsList } from "@/lib/hooks/use-conversations"
 import type { Conversation } from "@/lib/cable/chat-types"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
-import { appScreenClass, cardClass, mutedClass } from "../app-theme"
-import { AppHeader } from "../app-header"
+import { cardClass, mutedClass } from "../app-theme"
+import { SectionScreen } from "../section-screen"
 
-// The customer's conversation list - purpose-built mobile screen on the shared
-// GET /conversations contract. Tapping a row opens the live thread.
 export default function MessagesScreen() {
-  const { data: conversations = [], isLoading } = useQuery<Conversation[]>({
-    queryKey: ["conversations"],
-    queryFn: () => api.get<Conversation[]>("/conversations").then((r) => r.data),
-  })
+  return (
+    <SectionScreen title="Messages">
+      <MessagesList />
+    </SectionScreen>
+  )
+}
+
+// The customer's conversations (with their technicians), on the shared
+// GET /conversations contract. Tapping a row opens the live thread. Shown in
+// the Chat tab.
+export function MessagesList() {
+  const { items: conversations, isLoading, hasMore, loadingMore, loadMore } = useConversationsList()
 
   return (
-    <div className={appScreenClass}>
-      <AppHeader title="Messages" subtitle="Chat with your technician and the B.A.Y.D team." />
-
-      <div className="px-5">
-        {isLoading ? (
-          <div className="space-y-3">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="h-20 animate-pulse rounded-2xl bg-black/5" />
-            ))}
-          </div>
-        ) : conversations.length === 0 ? (
-          <div className={`${cardClass} flex flex-col items-center gap-2 p-8 text-center`}>
-            <MessageCircle className="size-8 text-[#c96c83]" aria-hidden />
-            <p className="font-bold">No conversations yet</p>
-            <p className={`text-sm ${mutedClass}`}>
-              Open a booking and tap Message to reach your technician.
-            </p>
-          </div>
-        ) : (
+    <>
+      {isLoading ? (
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-20 animate-pulse rounded-2xl bg-black/5" />
+          ))}
+        </div>
+      ) : conversations.length === 0 ? (
+        <div className={`${cardClass} flex flex-col items-center gap-2 p-8 text-center`}>
+          <MessageCircle className="size-8 text-[#c96c83]" aria-hidden />
+          <p className="font-bold">No conversations yet</p>
+          <p className={`text-sm ${mutedClass}`}>
+            Open a booking and tap Message to reach your technician.
+          </p>
+        </div>
+      ) : (
+        <>
           <ul className="space-y-3">
             {conversations.map((c) => (
               <ConversationRow key={c.id} conversation={c} />
             ))}
           </ul>
-        )}
-      </div>
-    </div>
+          <LoadMore className="mt-3" hasMore={hasMore} loading={loadingMore} onLoad={loadMore} />
+        </>
+      )}
+    </>
   )
 }
 

@@ -5,11 +5,12 @@ import { Gift } from "lucide-react"
 import { EmptyState } from "../empty-state"
 import { SectionScreen } from "../section-screen"
 
-export default function AppGiftCardsScreen() {
+// The list itself, shown on its own screen and inside Management.
+export function GiftCardsList() {
   const { data: cards = [], isLoading } = useGiftCards()
 
   return (
-    <SectionScreen title="Gift cards">
+    <>
       {isLoading ? (
         <ListSkeleton />
       ) : cards.length === 0 ? (
@@ -41,6 +42,14 @@ export default function AppGiftCardsScreen() {
           ))}
         </ul>
       )}
+    </>
+  )
+}
+
+export default function AppGiftCardsScreen() {
+  return (
+    <SectionScreen title="Gift cards">
+      <GiftCardsList />
     </SectionScreen>
   )
 }

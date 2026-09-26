@@ -3,11 +3,18 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { CalendarDays, Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User, X } from "lucide-react"
+import { Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
+import { AppointmentSummary, SummaryBar, type SummaryLine } from "@/components/booking/appointment-summary"
+import { DateStrip } from "@/components/booking/date-strip"
+import { formatTime, TimeGroups } from "@/components/booking/time-groups"
+import { BubbleLoader } from "@/components/bubble-loader"
+import { ClientLookup } from "@/components/booking/client-lookup"
+import { useCreateStaffBooking, type StaffClient } from "@/lib/hooks/use-employee"
+import { formatDateKey, todayKey } from "@/lib/booking-time"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
 import api from "@/lib/api"
 import { openPaymentUrl } from "@/lib/native/open-external"
@@ -32,7 +39,6 @@ const CLIENT_TYPES: { key: ClientType; label: string; hint: string }[] = [
 ]
 
 const PROVINCES = ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"]
-const TODAY = new Date().toISOString().split("T")[0]
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
 // Canadian postal code (space optional). Same rule the backend enforces.
 const CA_POSTAL = /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPRSTV-Z]\d$/i
@@ -93,7 +99,7 @@ const field =
 const lbl = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 const card = "rounded-2xl border border-black/10 bg-white p-5 sm:p-6"
 
-const STEPS = ["Details", "Service", "Staff", "Date", "Payment"] as const
+const STEPS = ["Details", "Service", "Staff", "Add-ons", "Date", "Payment"] as const
 
 export default function PublicBookPage() {
   // BookingFlow calls useSearchParams(), which requires a Suspense boundary or
@@ -107,13 +113,24 @@ export default function PublicBookPage() {
 
 export function BookingFlow({
   dashboardMode = false,
+  inApp = false,
   initialAddress = null,
+  staffBooking,
 }: {
   dashboardMode?: boolean
+  // In the customer app, which has a fixed tab bar the pinned nav must clear.
+  inApp?: boolean
   initialAddress?: SavedAddress | null
+  // Staff app: a tech booking a client onto their own schedule. Same steps as a
+  // customer, except the client is looked up or typed in, there's no Staff step,
+  // and the last step creates the booking instead of taking payment.
+  staffBooking?: { employeeId: number }
 }) {
   const searchParams = useSearchParams()
-  const { user } = useAuthStore()
+  const staffMode = !!staffBooking
+  const { user: signedIn } = useAuthStore()
+  // The signed-in person is the tech in staff mode, never the client.
+  const user = staffMode ? null : signedIn
   const geo = useQuery<GeoResult>({
     queryKey: ["geo"],
     queryFn: () => api.get<GeoResult>("/geo").then((r) => r.data),
@@ -130,9 +147,10 @@ export function BookingFlow({
   const [partySize, setPartySize] = useState(2)
   const [categoryFilter, setCategoryFilter] = useState<string>("all") // "all" | category_name
   const [serviceId, setServiceId] = useState(searchParams.get("service") ?? "")
-  const [staff, setStaff] = useState<string>("any") // "any" | providerId
-  const [date, setDate] = useState(searchParams.get("date") ?? "")
-  const [time, setTime] = useState("10:00")
+  const [staff, setStaff] = useState<string>(staffBooking ? String(staffBooking.employeeId) : "any") // "any" | providerId
+  const [pickedClient, setPickedClient] = useState<StaffClient | null>(null)
+  const [date, setDate] = useState(() => searchParams.get("date") ?? todayKey())
+  const [time, setTime] = useState("")
   // Prefill from the account whenever the customer is SIGNED IN - not just in
   // dashboard mode. A logged-in user booking from the public /book page shouldn't
   // have to retype details we already have. Dashboard mode still layers a chosen
@@ -190,8 +208,13 @@ export function BookingFlow({
 
   // Kids see only kids services; everyone else sees the regular menu.
   const menu = useMemo(
-    () => services.filter((s) => (clientType === "kids" ? s.kids_only : !s.kids_only)),
-    [services, clientType],
+    () =>
+      services.filter(
+        (s) =>
+          (clientType === "kids" ? s.kids_only : !s.kids_only) &&
+          (!staffBooking || (s.providers ?? []).some((p) => p.id === staffBooking.employeeId)),
+      ),
+    [services, clientType, staffBooking],
   )
   // Distinct categories present in the current menu, for the filter chips.
   const categories = useMemo(() => {
@@ -217,35 +240,46 @@ export function BookingFlow({
   const selected = services.find((s) => String(s.id) === serviceId)
   const providers = selected?.providers ?? []
 
-  // Add-ons: the chosen tech's OTHER services (available only once a concrete
-  // tech is picked). Fetched from /team/:id, which returns their service list.
-  type TechService = { id: number; name: string; duration_minutes: number; price: string; category_name: string | null }
-  const techServices = useQuery<{ services: TechService[] }>({
-    queryKey: ["tech-services", staff],
-    queryFn: () => api.get<{ services: TechService[] }>(`/team/${staff}`).then((r) => r.data),
-    enabled: staff !== "any" && !!serviceId && clientType !== "group",
-    staleTime: 5 * 60 * 1000,
-  })
-  // Lashes is a siloed category — the lash tech does only lashes and no other tech
-  // does lashes, so a lash service and a non-lash service have no common provider
-  // and can't share a visit. So only offer add-ons on the SAME side of the lash
-  // line: lashes-with-lashes, everything-else-with-everything-else (mirrors the
-  // AddonBooker#compatible_category? backend guard).
+  const perPerson = (s: ApiService) => Number(s.prices?.[clientType] ?? s.price)
+
+  // Add-ons: other services done back-to-back in the same visit by the same
+  // tech. With a chosen tech, that tech's services; with "any", services at least
+  // one of this service's techs also does (the slot pick then binds a tech who
+  // does everything). Lashes is siloed (the lash tech does only lashes), so only
+  // offer add-ons on the same side of that line, mirroring AddonBooker.
   const isLashes = (name: string | null) => (name ?? "").toLowerCase() === "lashes"
   const primaryIsLashes = isLashes(selected?.category_name ?? null)
-  const addonOptions = (techServices.data?.services ?? [])
-    .filter((s) => String(s.id) !== serviceId)
-    .filter((s) => isLashes(s.category_name) === primaryIsLashes)
-  // Selected add-ons that are still valid options for the current primary + tech.
-  const validAddonIds = addonOptions.filter((s) => addonIds.includes(s.id)).map((s) => s.id)
-  const addonTotal = addonOptions.filter((s) => addonIds.includes(s.id)).reduce((sum, s) => sum + Number(s.price), 0)
-  // Full visit length = primary service + any selected add-ons (they extend the
-  // same back-to-back appointment). Drives the "start - end" slot labels.
-  const apptMinutes =
-    (selected?.duration_minutes ?? 0) +
-    addonOptions.filter((s) => addonIds.includes(s.id)).reduce((sum, s) => sum + s.duration_minutes, 0)
+  const techIds = staff === "any" ? providers.map((p) => p.id) : [Number(staff)]
+  const performs = (s: ApiService, techId: number) => (s.providers ?? []).some((p) => p.id === techId)
+  const addonOptions =
+    clientType === "group" || !selected
+      ? []
+      : menu.filter(
+          (s) =>
+            String(s.id) !== serviceId &&
+            !s.requires_consultation &&
+            isLashes(s.category_name) === primaryIsLashes &&
+            techIds.some((id) => performs(s, id)),
+        )
+  // Add-ons grouped by category (the main service's own category first) so the
+  // list scans like the service menu instead of one long run.
+  const addonGroups = Array.from(
+    addonOptions.reduce((map, s) => {
+      const key = s.category_name ?? "Other"
+      map.set(key, [...(map.get(key) ?? []), s])
+      return map
+    }, new Map<string, ApiService[]>()),
+  ).sort(([a], [b]) => Number(b === selected?.category_name) - Number(a === selected?.category_name))
+  const chosenAddons = addonOptions.filter((s) => addonIds.includes(s.id))
+  const validAddonIds = chosenAddons.map((s) => s.id)
+  // Techs who can do the main service AND every chosen add-on.
+  const eligibleTechIds = techIds.filter((id) => chosenAddons.every((a) => performs(a, id)))
+  const canAddAddon = (s: ApiService) => techIds.some((id) => [...chosenAddons, s].every((a) => performs(a, id)))
+  const addonTotal = chosenAddons.reduce((sum, s) => sum + perPerson(s), 0)
+  // Full visit length = main service + add-ons (they extend the same visit).
+  const apptMinutes = (selected?.duration_minutes ?? 0) + chosenAddons.reduce((sum, s) => sum + s.duration_minutes, 0)
+  const skipAddons = addonOptions.length === 0
 
-  const perPerson = (s: ApiService) => Number(s.prices?.[clientType] ?? s.price)
   // Group total = per-person price × number of people.
   const totalFor = (s: ApiService) => (clientType === "group" ? perPerson(s) * partySize : perPerson(s))
   const price = selected ? totalFor(selected) : null
@@ -303,7 +337,9 @@ export function BookingFlow({
   })
   const anyMapped = anyAvailability.data?.mapped === true
   const byTime = anyAvailability.data?.by_time ?? {}
-  const anyTimes = Object.keys(byTime)
+  const freeFor = (t: string) =>
+    (byTime[t] ?? []).filter((f) => !validAddonIds.length || eligibleTechIds.includes(f.employee_id))
+  const anyTimes = Object.keys(byTime).filter((t) => freeFor(t).length > 0)
   const nextAvailableDate = anyAvailability.data?.next_available_date ?? null
 
   // "Real slot mode" = the tech has a bookable schedule. True when a chosen
@@ -378,6 +414,10 @@ export function BookingFlow({
 
   function chooseService(id: number) {
     setServiceId(String(id))
+    if (staffMode) {
+      setStep(3) // the tech is booking themself: no Staff step
+      return
+    }
     const provs = services.find((s) => s.id === id)?.providers ?? []
     setStaff(provs.length === 1 ? String(provs[0].id) : "any") // auto-pick when only one tech
     setStep(2)
@@ -389,28 +429,82 @@ export function BookingFlow({
     setTime(t)
     if (employeeId != null) setStaff(String(employeeId))
     else if (staff === "any") {
-      const free = byTime[t]?.[0]?.employee_id
+      const free = freeFor(t)[0]?.employee_id
       if (free != null) setStaff(String(free))
     }
   }
 
+  // Add-ons is skipped when there's nothing to add (groups, or no other services).
+  // Staff mode also skips the Staff step (2).
+  function goNext() {
+    setStep((s) => {
+      const next = staffMode && s === 1 ? 3 : s + 1
+      return next === 3 && skipAddons ? 4 : next
+    })
+  }
+  function goBack() {
+    setStep((s) => {
+      const prev = s === 4 && skipAddons ? 2 : s - 1
+      return staffMode && prev === 2 ? 1 : prev
+    })
+  }
+
+  function pickClient(c: StaffClient) {
+    setPickedClient(c)
+    setName([c.first_name, c.last_name].filter(Boolean).join(" "))
+    setEmail(c.email ?? "")
+    setPhone(c.phone ?? "")
+    if (c.address) {
+      setLine1(c.address.line1)
+      setUnit(c.address.line2 ?? "")
+      setCity(c.address.city)
+      setProvince(c.address.province)
+      setPostal(c.address.postal_code)
+      setIsApartment(c.address.is_apartment)
+      setBuzzCode(c.address.buzz_code ?? "")
+    }
+  }
+
+  function clearClient() {
+    setPickedClient(null)
+    for (const set of [setName, setEmail, setPhone, setLine1, setUnit, setCity, setPostal, setBuzzCode]) set("")
+    setIsApartment(false)
+  }
+
   const isTimeValid = TIME_PATTERN.test(time)
+  const summaryLines: SummaryLine[] = selected
+    ? [
+        {
+          name: selected.name,
+          detail: `with ${staff === "any" ? "any available technician" : staffLabel}${clientType === "group" ? ` · ${partySize} people` : ""}`,
+          price: selected.requires_consultation ? null : price,
+        },
+        ...chosenAddons.map((a) => ({ name: a.name, detail: `Add-on · ${a.duration_minutes} min`, price: perPerson(a) })),
+      ]
+    : []
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
   // At least one of email/phone is required, not both — a customer without an
   // inbox can still book by phone (staff/notifications reach them by call/SMS).
   // If an email IS given it must be well-formed; a bare phone number is fine.
   const contactValid = email.trim() ? emailValid : !!phone.trim()
   const postalFormatOk = CA_POSTAL.test(postal.trim())
+  // A typed phone needs a full 10-digit number (country code optional).
+  const phoneDigits = phone.replace(/\D/g, "")
+  const phoneOk = !phone.trim() || phoneDigits.length === 10 || (phoneDigits.length === 11 && phoneDigits.startsWith("1"))
+  // Staff book for someone else, so the client's name is required.
+  const nameOk = !staffMode || name.trim().length >= 2
   const stepValid = [
     // Details: a contact method + all address fields + a Canadian postal
     // format. The realness/Canada check runs against the backend on Continue.
-    contactValid && !!line1.trim() && !!city.trim() && postalFormatOk,
+    nameOk && contactValid && phoneOk && !!line1.trim() && !!city.trim() && postalFormatOk,
     !!serviceId, // Service
     !!staff, // Staff (auto or picked; "any" is valid)
+    true, // Add-ons (optional)
     // Date & time. In slot mode the picked time must be a real fetched slot (for
     // the chosen tech, or any tech in "any"/auto-shift mode) so a stale time can't
     // slip through; otherwise any valid HH:MM from the free input is fine.
-    !!date && isTimeValid && (!slotMode || slots.includes(time) || anyTimes.includes(time)),
+    // Staff may also book outside their open slots ("Other time").
+    !!date && isTimeValid && (staffMode || !slotMode || slots.includes(time) || anyTimes.includes(time)),
     true, // Payment (pay-after is always valid)
   ]
 
@@ -443,6 +537,42 @@ export function BookingFlow({
       setAddressError("Couldn't verify your address just now. Please try again.")
     } finally {
       setVerifyingAddress(false)
+    }
+  }
+
+  const createStaffBooking = useCreateStaffBooking()
+  async function submitStaff() {
+    setError(null)
+    const [first, ...rest] = name.trim().split(/\s+/)
+    try {
+      await createStaffBooking.mutateAsync({
+        service_id: Number(serviceId),
+        starts_at: `${date}T${time}:00`,
+        customer: {
+          email: email.trim() || undefined,
+          first_name: first || undefined,
+          last_name: rest.join(" ") || undefined,
+          phone: phone.trim() || undefined,
+        },
+        client_type: clientType,
+        party_size: clientType === "group" ? partySize : 1,
+        address: {
+          line1: line1.trim(),
+          line2: unit.trim() || undefined,
+          city: city.trim(),
+          province,
+          postal_code: postal.trim(),
+          is_apartment: isApartment,
+          buzz_code: isApartment ? buzzCode.trim() || undefined : undefined,
+        },
+        notes: notes.trim() || undefined,
+        addon_service_ids: validAddonIds.length ? validAddonIds : undefined,
+      })
+      setBookedMsg("It's on your schedule as a confirmed booking.")
+      setView("booked")
+    } catch (err: unknown) {
+      const d = (err as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
+      setError(d?.error ?? d?.errors?.join(", ") ?? "Could not create the booking. Please try again.")
     }
   }
 
@@ -506,7 +636,7 @@ export function BookingFlow({
       // and shows only feasible slots — send the customer back to re-pick.
       if (res?.data?.code === "no_availability") {
         setTime("")
-        setStep(3)
+        setStep(4)
         setError("That time just became unavailable for travel reasons. Please pick another open slot.")
         return
       }
@@ -514,11 +644,19 @@ export function BookingFlow({
     }
   }
 
+  const summaryWhen =
+    step >= 4 && stepValid[4]
+      ? { date: formatDateKey(date, { weekday: "long", month: "short", day: "numeric" }), time: `${slotRange(time, apptMinutes)} ET` }
+      : null
+  const summary = (
+    <AppointmentSummary lines={summaryLines} when={summaryWhen} onEditService={step > 1 ? () => setStep(1) : undefined} />
+  )
+
   // ── Non-Canada block ────────────────────────────────────────────────────────
   if (geo.data && !geo.data.allowed) {
     return (
       <Shell dashboardMode={dashboardMode}>
-        <div className={cn(card, "text-center")}>
+        <div className={cn(card, "mx-auto max-w-2xl text-center")}>
           <MapPin className="mx-auto mb-3 size-8 text-[#c96c83]" />
           <h1 className="text-xl font-black tracking-tight">We serve Canada only</h1>
           <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#5f6268]">
@@ -533,20 +671,20 @@ export function BookingFlow({
   if (view === "booked") {
     return (
       <Shell dashboardMode={dashboardMode}>
-        <div className={cn(card, "text-center")}>
+        <div className={cn(card, "mx-auto max-w-2xl text-center")}>
           <CheckCircle2 className="mx-auto mb-3 size-9 text-emerald-600" />
-          <h1 className="text-xl font-black tracking-tight">You&apos;re booked!</h1>
+          <h1 className="text-xl font-black tracking-tight">{staffMode ? "Booking created" : "You\u2019re booked!"}</h1>
           <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#5f6268]">
             {bookedMsg || "Your appointment is confirmed."}{" "}
-            {email.trim() || phone.trim() ? (
+            {!staffMode && (email.trim() || phone.trim()) ? (
               <>
                 We&apos;ll reach you at{" "}
                 <span className="font-bold text-[#101217]">{email.trim() || phone.trim()}</span>.
               </>
             ) : null}
           </p>
-          <Link href={dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block rounded-xl bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
-            {dashboardMode ? "Back to dashboard" : "Back to home"}
+          <Link href={staffMode ? "/staff/schedule" : dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block rounded-xl bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
+            {staffMode ? "Back to schedule" : dashboardMode ? "Back to dashboard" : "Back to home"}
           </Link>
         </div>
       </Shell>
@@ -556,7 +694,7 @@ export function BookingFlow({
   if (view === "follow_up") {
     return (
       <Shell dashboardMode={dashboardMode}>
-        <div className={cn(card, "text-center")}>
+        <div className={cn(card, "mx-auto max-w-2xl text-center")}>
           <Phone className="mx-auto mb-3 size-9 text-[#c96c83]" />
           <h1 className="text-xl font-black tracking-tight">Request received — we&apos;ll call to confirm</h1>
           <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#5f6268]">
@@ -584,7 +722,7 @@ export function BookingFlow({
   if (view === "consultation") {
     return (
       <Shell dashboardMode={dashboardMode}>
-        <div className={cn(card, "text-center")}>
+        <div className={cn(card, "mx-auto max-w-2xl text-center")}>
           <Phone className="mx-auto mb-3 size-9 text-[#c96c83]" />
           <h1 className="text-xl font-black tracking-tight">We&apos;ll call you</h1>
           <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#5f6268]">
@@ -626,17 +764,21 @@ export function BookingFlow({
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#c96c83]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#c96c83]">
             <Sparkles className="size-3.5" /> Appointment
           </span>
-          <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Book an appointment</h1>
+          <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">{staffMode ? "New booking" : "Book an appointment"}</h1>
           <p className="mt-1 text-sm font-medium text-[#5f6268]">
-            {dashboardMode
+            {staffMode
+              ? "Find the client or add their details, then pick the service and time."
+              : dashboardMode
               ? "Your details are prefilled from your account. Review them, choose a service, and confirm your appointment."
               : "No account needed — just your email or phone number. You can book without paying now and settle up after your service."}
           </p>
         </div>
 
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8">
+      <div className="min-w-0">
       {/* Stepper */}
       <div className="mb-6 flex items-center gap-2">
-        {STEPS.map((label, i) => (
+        {(staffMode ? ["Client", "Service", "", "Add-ons", "Date", "Confirm"] : [...STEPS]).map((label, i) => label ? (
           <div key={label} className="flex flex-1 items-center gap-2">
             <div
               className={cn(
@@ -648,14 +790,14 @@ export function BookingFlow({
                     : "border-black/15 bg-white text-[#a7abb2]",
               )}
             >
-              {i < step ? <Check className="size-3.5" /> : i + 1}
+              {i < step ? <Check className="size-3.5" /> : staffMode && i > 2 ? i : i + 1}
             </div>
-            <span className={cn("hidden text-xs font-bold sm:block", i === step ? "text-[#101217]" : "text-[#a7abb2]")}>
+            <span className={cn("hidden whitespace-nowrap text-xs font-bold sm:block", i === step ? "text-[#101217]" : "text-[#a7abb2]")}>
               {label}
             </span>
             {i < STEPS.length - 1 ? <div className="h-px flex-1 bg-black/10" /> : null}
           </div>
-        ))}
+        ) : null)}
       </div>
 
       {/* Step 2 — Service (with age selector) */}
@@ -724,10 +866,10 @@ export function BookingFlow({
               surprise later — the add-on picker appears after choosing a tech. */}
           <p className="mb-3 flex items-center gap-1.5 border-l-2 border-[#c96c83] bg-[#c96c83]/[0.06] px-3 py-2 text-xs font-medium text-[#5f6268]">
             <span aria-hidden>💡</span>
-            Pick your main service now — you can add extra services (like a paraffin or French finish) to the same visit after choosing your technician.
+            Pick the main service now. Extra services (like a paraffin or French finish) can be added to the same visit next.
           </p>
 
-          <div className="grid max-h-[30rem] gap-4 overflow-y-auto pr-1">
+          <div className="grid gap-4">
             {Array.from(grouped.entries()).map(([category, list]) => {
               return (
                 <div key={category}>
@@ -803,179 +945,208 @@ export function BookingFlow({
         </div>
       ) : null}
 
-      {/* Step 4 — Date & time. When the chosen tech has a bookable schedule we
-          show their real open slots; otherwise a free date/time input. */}
+      {/* Add-ons: Square's "Add more to your appointment?" */}
       {step === 3 ? (
         <div className={card}>
-          {selected ? (
-            <p className="mb-4 text-sm font-semibold text-[#101217]">
-              {selected.name} · {staffLabel}
-            </p>
-          ) : null}
+          <h2 className="text-lg font-black tracking-tight">Add more to your appointment?</h2>
+          <p className="mt-1 text-sm font-medium text-[#5f6268]">
+            Done back-to-back in the same visit{staff === "any" ? "" : ` by ${staffLabel}`}. Optional.
+          </p>
+          <div className="mt-4 grid gap-2">
+            {selected ? (
+              <div className="flex items-center gap-3 rounded-xl border border-[#c96c83] bg-[#c96c83]/[0.06] p-3">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-bold">{selected.name}</span>
+                  <span className="block text-xs font-medium text-[#8a8d93]">
+                    {price != null ? `$${price.toFixed(2)}` : "Quote"} · {selected.duration_minutes} min
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-[#c96c83]">
+                  <Check className="size-3.5" aria-hidden /> Added
+                </span>
+              </div>
+            ) : null}
+            {addonOptions.length === 0 ? (
+              <p className="py-2 text-sm font-medium text-[#8a8d93]">Nothing else can be added to this service.</p>
+            ) : null}
+            {addonGroups.map(([category, list]) => (
+              <div key={category} className="pt-2">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#a7abb2]">{category}</p>
+                <div className="grid gap-2">
+            {list.map((a) => {
+              const added = addonIds.includes(a.id)
+              const blocked = !added && !canAddAddon(a)
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  disabled={blocked}
+                  aria-pressed={added}
+                  onClick={() => setAddonIds((ids) => (added ? ids.filter((x) => x !== a.id) : [...ids, a.id]))}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors",
+                    added ? "border-[#c96c83] bg-[#c96c83]/[0.06]" : "border-black/10 bg-white hover:border-black/25",
+                    blocked && "cursor-not-allowed opacity-45 hover:border-black/10",
+                  )}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold">{a.name}</span>
+                    <span className="block text-xs font-medium text-[#8a8d93]">
+                      +${perPerson(a).toFixed(2)} · +{a.duration_minutes} min
+                      {blocked ? " · not with your other picks" : ""}
+                    </span>
+                  </span>
+                  {added ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-[#c96c83]">
+                      <Check className="size-3.5" aria-hidden /> Added
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-black/[0.05] px-3 py-1 text-xs font-bold">Add</span>
+                  )}
+                </button>
+              )
+            })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
-          <label className={lbl}><CalendarDays className="mr-1 inline size-3.5" /> Date</label>
-          <input
-            type="date"
-            min={TODAY}
-            className={field}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
+      {/* Date & time: Square-style week strip + Morning / Afternoon / Evening.
+          When the tech has no bookable schedule, a free time input instead. */}
+      {step === 4 ? (
+        <div className={card}>
+          <DateStrip value={date} onChange={(d) => { setDate(d); setTime("") }} />
+          <p className="mt-1 text-center text-xs font-medium text-[#8a8d93]">Times are shown in Eastern time.</p>
 
-          {/* Slot picker. Three real-availability modes + a free-time fallback. */}
-          {slotMode ? (
-            (availability.isFetching || anyAvailability.isFetching) ? (
-              <p className="mt-4 text-sm font-medium text-[#8a8d93]">Loading open times…</p>
-            ) : staff === "any" ? (
-              // ── "Any available" — merged open times across all techs ──────────
-              <div className="mt-4">
-                <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Available times</label>
-                {anyTimes.length === 0 ? (
-                  <NextDayPrompt
-                    nextDate={nextAvailableDate}
-                    onJump={(d) => { setDate(d); setTime("") }}
-                  />
+          <h2 className="mt-5 border-t border-black/10 pt-5 text-base font-black tracking-tight">
+            {date === todayKey() ? "Today, " : ""}
+            {formatDateKey(date, { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
+          </h2>
+
+          <div className="mt-4">
+            {slotMode ? (
+              (availability.isFetching || anyAvailability.isFetching) ? (
+                <BubbleLoader className="py-6" label="Finding open times" />
+              ) : staff === "any" ? (
+                anyTimes.length === 0 ? (
+                  <NextDayPrompt nextDate={nextAvailableDate} onJump={(d) => { setDate(d); setTime("") }} />
                 ) : (
                   <>
-                    <div className="flex flex-wrap gap-2">
-                      {anyTimes.map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => pickSlotWithTech(s)}
-                          className={cn(
-                            "rounded-xl border px-3 py-2 text-sm font-bold transition-colors",
-                            time === s ? "border-[#c96c83] bg-[#c96c83]/10 text-[#c96c83]"
-                              : "border-black/15 bg-white text-[#5f6268] hover:border-black/30",
-                          )}
-                        >
-                          {slotRange(s, apptMinutes)}
-                        </button>
-                      ))}
-                    </div>
-                    {time && byTime[time]?.length ? (
+                    <TimeGroups times={anyTimes} selected={time} onPick={(t) => pickSlotWithTech(t)} />
+                    {time && freeFor(time).length ? (
                       <p className="mt-3 text-xs font-medium text-[#8a8d93]">
-                        {byTime[time].length > 1
-                          ? `${byTime[time].length} technicians free at ${time} — we'll assign ${byTime[time][0].name ?? "one"}.`
-                          : `${byTime[time][0].name ?? "A technician"} is free at ${time}.`}
+                        {freeFor(time).length > 1
+                          ? `${freeFor(time).length} technicians free at ${formatTime(time)}. We'll assign ${freeFor(time)[0].name ?? "one"}.`
+                          : `${freeFor(time)[0].name ?? "A technician"} is free at ${formatTime(time)}.`}
                       </p>
                     ) : null}
                   </>
-                )}
-              </div>
-            ) : chosenTechFull ? (
-              // ── Chosen tech is full → auto-shift: offer whoever IS free ───────
-              <div className="mt-4">
-                <div className="border border-amber-300 bg-amber-50 p-3">
-                  <p className="text-sm font-bold text-amber-900">{staffLabel} is fully booked on this date.</p>
-                  <p className="mt-1 text-sm font-medium text-amber-800">Pick another day, or book one of these available technicians:</p>
-                </div>
-                <div className="mt-3 space-y-3">
-                  {(anyAvailability.data?.providers ?? [])
-                    .filter((p) => p.slots.length > 0)
-                    .map((p) => (
-                      <div key={p.employee_id}>
-                        <p className="mb-1.5 text-xs font-bold text-[#101217]">{p.name ?? "Technician"}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {p.slots.map((s) => (
-                            <button
-                              key={`${p.employee_id}-${s}`}
-                              type="button"
-                              onClick={() => pickSlotWithTech(s, p.employee_id)}
-                              className={cn(
-                                "rounded-xl border px-3 py-2 text-sm font-bold transition-colors",
-                                time === s && String(p.employee_id) === staff
-                                  ? "border-[#c96c83] bg-[#c96c83]/10 text-[#c96c83]"
-                                  : "border-black/15 bg-white text-[#5f6268] hover:border-black/30",
-                              )}
-                            >
-                              {slotRange(s, apptMinutes)}
-                            </button>
-                          ))}
+                )
+              ) : chosenTechFull && !staffMode ? (
+                // Chosen tech is full: offer whoever is free instead.
+                <div>
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-3">
+                    <p className="text-sm font-bold text-amber-900">{staffLabel} is fully booked on this date.</p>
+                    <p className="mt-1 text-sm font-medium text-amber-800">Pick another day, or book one of these technicians:</p>
+                  </div>
+                  <div className="mt-4 space-y-5">
+                    {(anyAvailability.data?.providers ?? [])
+                      .filter((p) => p.slots.length > 0 && (!validAddonIds.length || eligibleTechIds.includes(p.employee_id)))
+                      .map((p) => (
+                        <div key={p.employee_id}>
+                          <p className="mb-2 text-sm font-black">{p.name ?? "Technician"}</p>
+                          <TimeGroups
+                            times={p.slots}
+                            selected={String(p.employee_id) === staff ? time : ""}
+                            onPick={(t) => pickSlotWithTech(t, p.employee_id)}
+                          />
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                  </div>
                 </div>
-              </div>
+              ) : slots.length === 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-[#8a8d93]">No open times for {staffLabel} on this date.</p>
+                  <NextDayPrompt nextDate={nextAvailableDate} onJump={(d) => { setDate(d); setTime("") }} />
+                  {providers.length > 1 && !staffMode ? (
+                    <button
+                      type="button"
+                      onClick={() => { setStaff("any"); setTime("") }}
+                      className="text-sm font-bold text-[#c96c83] underline-offset-2 hover:underline"
+                    >
+                      Or see all available technicians
+                    </button>
+                  ) : null}
+                </div>
+              ) : (
+                <TimeGroups times={slots} selected={time} onPick={setTime} />
+              )
             ) : (
-              // ── Specific tech with their own open times ───────────────────────
-              <div className="mt-4">
-                <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Available times</label>
-                {slots.length === 0 ? (
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-[#8a8d93]">
-                      No open times for {staffLabel} on this date.
-                    </p>
-                    <NextDayPrompt
-                      nextDate={nextAvailableDate}
-                      onJump={(d) => { setDate(d); setTime("") }}
-                    />
-                    {providers.length > 1 ? (
-                      <button
-                        type="button"
-                        onClick={() => { setStaff("any"); setTime("") }}
-                        className="text-sm font-bold text-[#c96c83] underline-offset-2 hover:underline"
-                      >
-                        Or see all available technicians
-                      </button>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {slots.map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setTime(s)}
-                        className={cn(
-                          "rounded-xl border px-3 py-2 text-sm font-bold transition-colors",
-                          time === s ? "border-[#c96c83] bg-[#c96c83]/10 text-[#c96c83]"
-                            : "border-black/15 bg-white text-[#5f6268] hover:border-black/30",
-                        )}
-                      >
-                        {slotRange(s, apptMinutes)}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div>
+                <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Time</label>
+                <input type="time" className={field} value={time} onChange={(e) => setTime(e.target.value)} />
+                <p className="mt-3 text-xs font-medium text-[#8a8d93]">Hours: Mon–Sat, 9:00 AM – 7:30 PM (Eastern).</p>
               </div>
-            )
-          ) : (
-            <div className="mt-4">
-              <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Time</label>
-              <input type="time" className={field} value={time} onChange={(e) => setTime(e.target.value)} />
-              <p className="mt-3 text-xs font-medium text-[#8a8d93]">Hours: Mon–Sat, 9:00 AM – 7:30 PM (Eastern).</p>
-            </div>
-          )}
+            )}
+            {slotMode && staffMode ? (
+              <label className="mt-5 block border-t border-black/10 pt-4">
+                <span className={lbl}>Other time (outside your open slots)</span>
+                <input type="time" className={field} value={time} onChange={(e) => setTime(e.target.value)} />
+              </label>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
       {/* Step 1 — Details */}
       {step === 0 ? (
         <div className={card}>
-          <label className={lbl}><User className="mr-1 inline size-3.5" /> Your details</label>
+          {staffMode ? (
+            <div className="mb-5">
+              <label className={lbl}><User className="mr-1 inline size-3.5" /> Find the client</label>
+              <ClientLookup picked={pickedClient} onPick={pickClient} onClear={clearClient} />
+            </div>
+          ) : null}
+          <label className={lbl}><User className="mr-1 inline size-3.5" /> {staffMode ? "Client details" : "Your details"}</label>
           <div className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
               <input
-                className={field}
+                className={cn(field, staffMode && name.trim() && !nameOk ? "border-red-400" : "")}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={staffMode ? "Full name *" : "Full name"}
+                autoComplete={staffMode ? "off" : "name"}
+              />
+              <input
+                className={cn(field, !phoneOk ? "border-red-400" : "")}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder={email.trim() ? "Phone" : "Phone *"}
                 inputMode="tel"
+                autoComplete={staffMode ? "off" : "tel"}
               />
             </div>
+            {!phoneOk ? (
+              <p className="-mt-2 text-xs font-semibold text-red-600">Enter a 10-digit phone number, e.g. 647 555 0199.</p>
+            ) : null}
             <input
               className={field}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={phone.trim() ? "Email" : "Email *"}
               type="email"
+              autoComplete={staffMode ? "off" : "email"}
             />
-            <p className="-mt-2 text-xs font-medium text-[#8a8d93]">
-              Add an email or a phone number so we can reach you.
-            </p>
-            {phone.trim() && !email.trim() ? (
+            {email.trim() && !emailValid ? (
+              <p className="-mt-2 text-xs font-semibold text-red-600">That email doesn&apos;t look right.</p>
+            ) : (
+              <p className="-mt-2 text-xs font-medium text-[#8a8d93]">
+                Add an email or a phone number so we can reach {staffMode ? "them" : "you"}.
+              </p>
+            )}
+            {!staffMode && phone.trim() && !email.trim() ? (
               <p className="-mt-1 text-xs font-semibold text-[#c96c83]">
                 Add an email to confirm your booking instantly — without one, we&apos;ll call you to confirm.
               </p>
@@ -1020,10 +1191,10 @@ export function BookingFlow({
                 <input className={field} value={buzzCode} onChange={(e) => setBuzzCode(e.target.value)} placeholder="Buzz code (to reach you)" />
               </div>
             ) : null}
-            <textarea className={cn(field, "h-20 py-2")} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes for your technician (optional)" />
+            <textarea className={cn(field, "h-20 py-2")} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={staffMode ? "Notes (optional)" : "Notes for your technician (optional)"} />
           </div>
 
-          {postal.trim().length >= 3 && coverage.data ? (
+          {!staffMode && postal.trim().length >= 3 && coverage.data ? (
             notServiced ? (
               <div className="mt-4 border border-amber-300 bg-amber-50 p-4">
                 <p className="text-sm font-bold text-amber-900">Just outside our usual area</p>
@@ -1049,76 +1220,23 @@ export function BookingFlow({
       ) : null}
 
       {/* Step 5 — Payment */}
-      {step === 4 ? (
+      {step === 5 && staffMode ? (
         <div className={card}>
-          {/* Summary */}
-          <div className="mb-5 border-b border-black/10 pb-4">
-            <p className="text-sm font-bold text-[#101217]">{selected?.name}</p>
-            <p className="text-xs font-medium text-[#8a8d93]">
-              {staffLabel} · {date} at {time}
-              {clientType === "group" ? ` · ${partySize} people` : ""}
-            </p>
-            <p className="mt-2 text-lg font-black text-[#101217]">
-              {price != null ? `$${((price ?? 0) + addonTotal).toFixed(2)}` : "Quote"}
-              <span className="ml-1 text-xs font-medium text-[#8a8d93]">total{addonTotal > 0 ? " (incl. add-ons)" : ""}</span>
-            </p>
-            {clientType === "group" ? (
-              <p className="mt-1 text-sm font-semibold text-[#c96c83]">
-                Pay a deposit (${depositEstimate.toFixed(2)}) or the full ${(price ?? 0).toFixed(2)} to confirm.
-              </p>
-            ) : null}
-          </div>
+          <h2 className="text-lg font-black tracking-tight">Confirm the booking</h2>
+          <p className="mt-1 text-sm font-medium text-[#5f6268]">
+            For <span className="font-bold text-[#101217]">{name.trim()}</span> at {line1.trim()}, {city.trim()}. It goes
+            straight onto your schedule as confirmed; take payment on the day from the booking card.
+          </p>
+          {error ? <p className="mt-3 text-sm font-bold text-red-600">{error}</p> : null}
+        </div>
+      ) : null}
 
-          {/* Service add-ons — other services THIS tech performs, added to the
-              same visit (back-to-back), one combined charge. Single bookings only. */}
-          {addonOptions.length > 0 ? (
-            <div className="mb-4">
-              <label className={lbl}>Add another service (optional)</label>
-              <p className="-mt-1 mb-2 text-xs font-medium text-[#8a8d93]">
-                {staffLabel} can also do these in the same visit.
-              </p>
-              {/* Dropdown: pick one to add. Chosen ones show as removable chips
-                  below, so the list stays collapsed instead of a wall of rows. */}
-              <select
-                className={field}
-                value=""
-                onChange={(e) => {
-                  const id = Number(e.target.value)
-                  if (id) setAddonIds((ids) => (ids.includes(id) ? ids : [...ids, id]))
-                }}
-              >
-                <option value="">Add a service…</option>
-                {addonOptions
-                  .filter((a) => !addonIds.includes(a.id))
-                  .map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} — +${Number(a.price).toFixed(2)} · +{a.duration_minutes} min
-                    </option>
-                  ))}
-              </select>
-              {validAddonIds.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {addonOptions
-                    .filter((a) => addonIds.includes(a.id))
-                    .map((a) => (
-                      <span
-                        key={a.id}
-                        className="inline-flex items-center gap-2 rounded-full border border-[#c96c83] bg-[#c96c83]/10 py-1.5 pl-3 pr-1.5 text-sm font-bold text-[#c96c83]"
-                      >
-                        {a.name} +${Number(a.price).toFixed(2)}
-                        <button
-                          type="button"
-                          aria-label={`Remove ${a.name}`}
-                          onClick={() => setAddonIds((ids) => ids.filter((x) => x !== a.id))}
-                          className="grid size-5 place-items-center rounded-full bg-[#c96c83] text-white"
-                        >
-                          <X className="size-3" />
-                        </button>
-                      </span>
-                    ))}
-                </div>
-              ) : null}
-            </div>
+      {step === 5 && !staffMode ? (
+        <div className={card}>
+          {clientType === "group" ? (
+            <p className="mb-5 text-sm font-semibold text-[#c96c83]">
+              Pay a deposit (${depositEstimate.toFixed(2)}) or the full ${(price ?? 0).toFixed(2)} to confirm.
+            </p>
           ) : null}
 
           <label className={lbl}>Add a tip (optional)</label>
@@ -1229,18 +1347,37 @@ export function BookingFlow({
         </div>
       ) : null}
 
-      {/* Nav */}
-      <div className="mt-5 flex items-start gap-3">
+      {/* Nav. On phones it pins to the bottom with the summary bar above it (in
+          the app, just above the tab bar); wide screens show the summary beside. */}
+      <div
+        className={cn(
+          "sticky z-30 -mx-4 mt-5 border-t border-black/10 bg-[#f4f1eb]/95 px-4 pt-3 backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none",
+          staffMode
+            ? "bottom-[calc(4.25rem+env(safe-area-inset-bottom))] pb-3"
+            : inApp
+              ? "bottom-[calc(4.5rem+env(safe-area-inset-bottom))] pb-3"
+              : "bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]",
+        )}
+      >
+      {selected ? (
+        <SummaryBar
+          className="mb-3 lg:hidden"
+          lines={summaryLines}
+          when={summaryWhen}
+          onEditService={step > 1 ? () => setStep(1) : undefined}
+        />
+      ) : null}
+      <div className="flex items-start gap-3">
         {step > 0 ? (
           <button
             type="button"
-            onClick={() => setStep((s) => s - 1)}
+            onClick={goBack}
             className="inline-flex h-12 items-center gap-1 rounded-xl border border-black/15 bg-white px-4 text-sm font-bold text-[#101217]"
           >
             <ChevronLeft className="size-4" /> Back
           </button>
         ) : null}
-        {step === 0 && notServiced ? (
+        {step === 0 && notServiced && !staffMode ? (
           // Out of area — offer a consultation call instead of proceeding to booking.
           <button
             type="button"
@@ -1254,10 +1391,19 @@ export function BookingFlow({
           <button
             type="button"
             disabled={!stepValid[step] || (step === 0 && verifyingAddress)}
-            onClick={() => (step === 0 ? verifyAddressThenAdvance() : setStep((s) => s + 1))}
+            onClick={() => (step === 0 ? verifyAddressThenAdvance() : goNext())}
             className="h-12 flex-1 rounded-xl bg-[#101217] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
           >
             {step === 0 && verifyingAddress ? "Verifying address…" : "Continue"}
+          </button>
+        ) : staffMode ? (
+          <button
+            type="button"
+            disabled={createStaffBooking.isPending}
+            onClick={submitStaff}
+            className="h-12 flex-1 rounded-xl bg-[#c96c83] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
+          >
+            {createStaffBooking.isPending ? "Creating…" : "Create booking"}
           </button>
         ) : clientType === "group" ? (
           // Group: mandatory payment — deposit or full, both go to checkout.
@@ -1301,6 +1447,11 @@ export function BookingFlow({
             </button>
           </div>
         )}
+      </div>
+      </div>
+
+      </div>
+        <div className="hidden lg:sticky lg:top-24 lg:block">{summary}</div>
       </div>
 
         {dashboardMode ? null : <p className="mt-4 text-center text-xs font-medium text-[#8a8d93]">
@@ -1393,7 +1544,7 @@ function StaffOption({
 function Shell({ children, dashboardMode = false }: { children: React.ReactNode; dashboardMode?: boolean }) {
   return (
     <main className={dashboardMode ? "text-[#101217]" : "min-h-screen bg-[#f4f1eb] text-[#101217]"}>
-      <div className={dashboardMode ? "mx-auto w-full max-w-2xl" : "mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-14"}>{children}</div>
+      <div className={dashboardMode ? "mx-auto w-full max-w-2xl lg:max-w-5xl" : "mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-14 lg:max-w-5xl"}>{children}</div>
     </main>
   )
 }

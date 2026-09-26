@@ -27,11 +27,11 @@ if (!VALID.includes(which)) {
 // only that app's tree (plus the required root shell) and stashes everything
 // else, then swaps the marketing root page for a redirect into the app.
 //   customer -> app/app     (Book tab reuses app/book's BookingFlow)
-//   employee -> app/staff   (self-contained New booking form, no app/book)
+//   employee -> app/staff   (New booking reuses app/book's BookingFlow in staff mode)
 //   admin    -> app/admin
 const APP_ROUTES = {
   customer: { dir: "app", entry: "/app/home", reusesBook: true },
-  employee: { dir: "staff", entry: "/staff/schedule", reusesBook: false },
+  employee: { dir: "staff", entry: "/staff/schedule", reusesBook: true },
   admin: { dir: "admin", entry: "/admin", reusesBook: false },
 };
 const appRoute = APP_ROUTES[which];
@@ -52,9 +52,9 @@ const KEEP = new Set([
   "apple-icon.png",
   // page.tsx is swapped, not kept as-is (see below).
 ]);
-// app/book exports BookingFlow, which the customer Book tab imports + renders
-// (dashboardMode). Keep it only for apps that use it: it drags in the website's
-// components/layout chrome, so it must not reach the staff or admin bundles.
+// app/book exports BookingFlow, which the customer Book tab and the staff New
+// booking screen render (dashboardMode / staff mode). Keep it only for apps that
+// use it: it pulls in the website's header/footer code, so admin stays without.
 // The bare /book route it adds is harmless (nothing links to it).
 if (appRoute.reusesBook) KEEP.add("book");
 

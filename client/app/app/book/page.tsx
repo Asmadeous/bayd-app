@@ -1,7 +1,9 @@
 "use client"
 
 import { Suspense } from "react"
+import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
+import { ChevronLeft } from "lucide-react"
 
 import { BookingFlow, type SavedAddress } from "@/app/book/page"
 import api from "@/lib/api"
@@ -9,12 +11,13 @@ import { useAuthStore } from "@/lib/stores/auth-store"
 import { appScreenClass } from "../app-theme"
 import { BubbleLoader } from "@/components/bubble-loader"
 
-// The app's Book tab renders the EXACT same BookingFlow the website /book and the
+// The app's Book screen renders the EXACT same BookingFlow the website /book and the
 // customer dashboard use (in dashboardMode, so it prefills the signed-in user +
 // their saved address). One component => the app booking is a spitting image of
 // the site, with every field: coverage check, client type, group size, apartment
 // + buzzer, province, add-ons, tip, gift card, recurring - nothing stripped.
 export default function BookScreen() {
+  const router = useRouter()
   const { isAuthenticated } = useAuthStore()
   const { data: addresses = [], isLoading } = useQuery<SavedAddress[]>({
     queryKey: ["addresses"],
@@ -37,9 +40,18 @@ export default function BookScreen() {
       {/* Top padding clears the status bar; BookingFlow renders its own content.
           It calls useSearchParams() - needs a Suspense boundary or the static
           export build fails. */}
-      <div className="px-4 pt-[calc(1.25rem+env(safe-area-inset-top))]">
+      <div className="px-4 pt-[calc(1.25rem+var(--top-inset))]">
+        {/* Opened from Book now on Bookings, so it needs a way back. */}
+        <button
+          type="button"
+          onClick={() => router.back()}
+          aria-label="Back"
+          className="mb-2 grid size-10 place-items-center rounded-full bg-white shadow-sm"
+        >
+          <ChevronLeft className="size-5" aria-hidden />
+        </button>
         <Suspense>
-          <BookingFlow dashboardMode initialAddress={initialAddress} />
+          <BookingFlow dashboardMode inApp initialAddress={initialAddress} />
         </Suspense>
       </div>
     </div>

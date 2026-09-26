@@ -11,5 +11,12 @@ class ProductCategorySerializer < Blueprinter::Base
     end
   end
 
+  # Products on sale here, subcategories included (the shop hides empty chips).
+  # Counted from the preloaded associations the index includes.
+  field :product_count do |category|
+    sellable = ->(cat) { cat.products.count { |p| p.active && p.stock_quantity.to_i.positive? } }
+    sellable.call(category) + category.subcategories.sum { |sub| sellable.call(sub) }
+  end
+
   association :subcategories, blueprint: self
 end

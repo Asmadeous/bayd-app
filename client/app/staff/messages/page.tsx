@@ -1,10 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { useQuery } from "@tanstack/react-query"
 import { MessageCircle } from "lucide-react"
 
-import api from "@/lib/api"
+import { LoadMore } from "@/components/load-more"
+import { useConversationsList } from "@/lib/hooks/use-conversations"
 import type { Conversation } from "@/lib/cable/chat-types"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
 import { staffScreenClass, cardClass, mutedClass } from "../staff-theme"
@@ -13,10 +13,7 @@ import { StaffHeader } from "../staff-header"
 // A technician's conversation list - purpose-built mobile screen on the shared
 // GET /conversations contract. Tapping a row opens the live thread.
 export default function StaffMessagesScreen() {
-  const { data: conversations = [], isLoading } = useQuery<Conversation[]>({
-    queryKey: ["conversations"],
-    queryFn: () => api.get<Conversation[]>("/conversations").then((r) => r.data),
-  })
+  const { items: conversations, isLoading, hasMore, loadingMore, loadMore } = useConversationsList()
 
   return (
     <div className={staffScreenClass}>
@@ -38,11 +35,14 @@ export default function StaffMessagesScreen() {
             </p>
           </div>
         ) : (
-          <ul className="space-y-3">
+          <>
+            <ul className="space-y-3">
             {conversations.map((c) => (
               <ConversationRow key={c.id} conversation={c} />
             ))}
-          </ul>
+            </ul>
+            <LoadMore className="mt-3" hasMore={hasMore} loading={loadingMore} onLoad={loadMore} />
+          </>
         )}
       </div>
     </div>

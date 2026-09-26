@@ -1,15 +1,25 @@
 "use client"
 
-import { useLoyalty } from "@/lib/hooks/use-account"
+import { LoadMore } from "@/components/load-more"
+import { useLoyalty, useLoyaltyHistory } from "@/lib/hooks/use-account"
 import { cardClass, displayClass, eyebrowClass, mutedClass } from "../app-theme"
 import { SectionScreen } from "../section-screen"
 
 export default function AppLoyaltyScreen() {
-  const { data, isLoading } = useLoyalty()
-  const history = data?.loyalty_transactions ?? []
-
   return (
     <SectionScreen title="Loyalty">
+      <LoyaltyPanel />
+    </SectionScreen>
+  )
+}
+
+// Points balance and history. Shown in the Management tab.
+export function LoyaltyPanel() {
+  const { data, isLoading } = useLoyalty()
+  const { items: history, isLoading: historyLoading, hasMore, loadingMore, loadMore } = useLoyaltyHistory()
+
+  return (
+    <>
       {isLoading ? (
         <div className="h-32 animate-pulse rounded-3xl bg-black/[0.04]" />
       ) : (
@@ -21,7 +31,9 @@ export default function AppLoyaltyScreen() {
 
           <div>
             <h2 className={`mb-2 ${eyebrowClass}`}>History</h2>
-            {history.length === 0 ? (
+            {historyLoading ? (
+              <div className="h-24 animate-pulse rounded-3xl bg-black/[0.04]" />
+            ) : history.length === 0 ? (
               <p className={`rounded-3xl bg-white p-6 text-center text-sm shadow-sm ${mutedClass}`}>No points activity yet.</p>
             ) : (
               <ul className="space-y-2">
@@ -40,9 +52,10 @@ export default function AppLoyaltyScreen() {
                 ))}
               </ul>
             )}
+            <LoadMore className="mt-3" hasMore={hasMore} loading={loadingMore} onLoad={loadMore} />
           </div>
         </div>
       )}
-    </SectionScreen>
+    </>
   )
 }

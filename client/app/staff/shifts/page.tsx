@@ -1,18 +1,16 @@
 "use client"
 
-import { useState } from "react"
 import { Route } from "lucide-react"
 
-import { useShifts, type Shift } from "@/lib/hooks/use-time-clock"
+import { LoadMore } from "@/components/load-more"
+import { useShiftsList, type Shift } from "@/lib/hooks/use-time-clock"
 import { staffScreenClass, cardClass, eyebrowClass, mutedClass, staffTheme } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
 
 export default function StaffShiftsScreen() {
-  const [page, setPage] = useState(1)
-  const { data, isLoading } = useShifts(page)
-  const shifts = data?.data ?? []
-  const totals = data?.totals
-  const pagination = data?.pagination
+  const { items: shifts, first, isLoading, hasMore, loadingMore, loadMore } = useShiftsList()
+  const totals = first?.totals
+  const pagination = first?.pagination
 
   return (
     <div className={staffScreenClass}>
@@ -23,12 +21,10 @@ export default function StaffShiftsScreen() {
 
       <div className="space-y-4 px-5">
         {/* Totals */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Stat label="Shifts" value={pagination?.total_count ?? 0} />
           <Stat label="Hours" value={formatHours(totals?.hours_worked)} />
           <Stat label="On-time" value={formatRate(totals?.on_time_rate)} accent />
-        </div>
-        <div className="grid grid-cols-1 gap-3">
           <Stat label="Distance" value={formatDistance(totals?.distance_km)} />
         </div>
 
@@ -45,36 +41,16 @@ export default function StaffShiftsScreen() {
             <p className={`text-sm ${mutedClass}`}>Clock in from Schedule to start tracking.</p>
           </div>
         ) : (
-          <ul className="space-y-3">
-            {shifts.map((s) => (
-              <ShiftRow key={s.id} shift={s} />
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-3">
+              {shifts.map((s) => (
+                <ShiftRow key={s.id} shift={s} />
+              ))}
+            </ul>
+            <LoadMore hasMore={hasMore} loading={loadingMore} onLoad={loadMore} />
+          </>
         )}
 
-        {pagination && pagination.total_pages > 1 && (
-          <div className="flex items-center justify-center gap-4 pt-1">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="rounded-xl border border-black/15 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40"
-            >
-              Prev
-            </button>
-            <span className={`text-sm font-semibold ${mutedClass}`}>
-              {page} / {pagination.total_pages}
-            </span>
-            <button
-              type="button"
-              disabled={!pagination.next_page}
-              onClick={() => setPage((p) => p + 1)}
-              className="rounded-xl border border-black/15 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40"
-            >
-              Next
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -84,21 +60,17 @@ function ShiftRow({ shift }: { shift: Shift }) {
   const open = shift.status === "open"
   return (
     <li className={`${cardClass} p-4`}>
+      {/* Only an open shift needs a badge; every other row is a finished one. */}
       <div className="flex items-center justify-between gap-2">
-        <p className="font-extrabold">{dt(shift.clock_in_at)}</p>
-        <span
-          className="rounded-full px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em]"
-          style={
-            open
-              ? { background: `${staffTheme.live}1f`, color: "#3f7e47" }
-              : { background: "rgba(0,0,0,0.06)", color: "rgba(20,16,15,0.55)" }
-          }
-        >
-          {open ? "On shift" : "Closed"}
-        </span>
+        <p className="font-extrabold">{day(shift.clock_in_at)}</p>
+        {open ? (
+          <span className="rounded-full bg-[#4E9A57]/12 px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em] text-[#3f7e47]">
+            On shift
+          </span>
+        ) : null}
       </div>
       <p className={`mt-1 text-sm ${mutedClass}`}>
-        {open ? "In progress" : `${dt(shift.clock_in_at)} → ${dt(shift.clock_out_at)}`} ·{" "}
+        {open ? `Since ${clock(shift.clock_in_at)}` : span(shift.clock_in_at, shift.clock_out_at)} ·{" "}
         {duration(shift.duration_seconds)}
       </p>
 
@@ -133,12 +105,23 @@ function Stat({ label, value, accent }: { label: string; value: string | number;
   )
 }
 
-function dt(s: string | null) {
+function day(s: string | null) {
   if (!s) return "-"
-  const date = new Date(s)
-  return Number.isNaN(date.getTime())
-    ? "-"
-    : date.toLocaleString("en-US", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
+  const d = new Date(s)
+  return Number.isNaN(d.getTime()) ? "-" : d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+}
+
+function clock(s: string | null) {
+  if (!s) return "-"
+  const d = new Date(s)
+  return Number.isNaN(d.getTime()) ? "-" : d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+}
+
+// "7:28 PM – 9:10 PM", or with the end day when a shift ran past midnight.
+function span(from: string | null, to: string | null) {
+  if (!from || !to) return clock(from)
+  const sameDay = new Date(from).toDateString() === new Date(to).toDateString()
+  return `${clock(from)} – ${sameDay ? "" : `${day(to)}, `}${clock(to)}`
 }
 
 function duration(secs: unknown) {

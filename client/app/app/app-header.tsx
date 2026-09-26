@@ -15,7 +15,7 @@ export function AppHeader({
   action?: React.ReactNode
 }) {
   return (
-    <header className="flex items-end justify-between gap-3 px-5 pb-4 pt-[calc(1.25rem+env(safe-area-inset-top))]">
+    <header className="flex items-end justify-between gap-3 px-5 pb-4 pt-[calc(1.25rem+var(--top-inset))]">
       <div className="min-w-0">
         <h1 className={`${displayClass} truncate text-[2rem] leading-[1.05] tracking-[-0.01em]`}>
           {title}

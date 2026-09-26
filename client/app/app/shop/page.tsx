@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useMemo, useState } from "react"
+import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { Minus, Plus, ShoppingBag, X } from "lucide-react"
@@ -8,6 +8,8 @@ import { Minus, Plus, ShoppingBag, X } from "lucide-react"
 import { Capacitor } from "@capacitor/core"
 
 import api from "@/lib/api"
+import { LoadMore } from "@/components/load-more"
+import { usePagedList } from "@/lib/hooks/use-paged-list"
 import { openHelcimPay } from "@/lib/helcim-pay"
 import { openPaymentUrl } from "@/lib/native/open-external"
 import { assetUrl } from "@/lib/asset-url"
@@ -43,7 +45,17 @@ interface ApiProduct {
 
 interface ApiProductsResponse {
   data: ApiProduct[]
+  pagination: { next_page: number | null }
 }
+
+interface ApiCategory {
+  id: number
+  name: string
+  product_count?: number
+}
+
+// Two per row, so pages of 24 fill whole rows.
+const PAGE_SIZE = 24
 
 interface CheckoutResponse {
   gateway: "helcim" | "square"
@@ -66,28 +78,25 @@ function Shop() {
   const initialTab = useSearchParams().get("tab") === "gift-cards" ? "gift-cards" : "products"
   const [tab, setTab] = useState<"products" | "gift-cards">(initialTab)
   const [cartOpen, setCartOpen] = useState(false)
-  const [category, setCategory] = useState<string | null>(null)
+  const [categoryId, setCategoryId] = useState<number | null>(null)
   const [detail, setDetail] = useState<ApiProduct | null>(null)
 
-  const { data, isLoading } = useQuery<ApiProductsResponse>({
-    queryKey: ["shop-products"],
-    queryFn: () => api.get<ApiProductsResponse>("/products").then((r) => r.data),
-  })
-  const allProducts = useMemo(() => data?.data ?? [], [data])
-
-  const categories = useMemo(() => {
-    const seen: string[] = []
-    for (const p of allProducts) {
-      const c = p.category ?? "Other"
-      if (!seen.includes(c)) seen.push(c)
-    }
-    return seen
-  }, [allProducts])
-
-  const products = useMemo(
-    () => (category ? allProducts.filter((p) => (p.category ?? "Other") === category) : allProducts),
-    [allProducts, category],
+  // Products a page at a time ("Load more"), filtered by category on the server
+  // so paging and the chips agree.
+  const { items: products, isLoading, hasMore, loadingMore, loadMore } = usePagedList<ApiProduct, ApiProductsResponse>(
+    ["shop-products", categoryId],
+    (page) =>
+      api
+        .get<ApiProductsResponse>("/products", { params: { page, per_page: PAGE_SIZE, category_id: categoryId ?? undefined } })
+        .then((r) => r.data),
   )
+  const { data: categoryData = [] } = useQuery<ApiCategory[]>({
+    queryKey: ["product-categories"],
+    queryFn: () => api.get<ApiCategory[]>("/product_categories").then((r) => r.data),
+    staleTime: 10 * 60 * 1000,
+  })
+  // Hide empty categories (until the API sends counts, show them all).
+  const categories = categoryData.filter((c) => c.product_count == null || c.product_count > 0)
 
   const count = items.reduce((n, i) => n + i.quantity, 0)
 
@@ -138,9 +147,9 @@ function Shop() {
         <>
           {categories.length > 1 && (
             <div className="mb-3 flex gap-2 overflow-x-auto px-5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <FilterChip label="All" active={category === null} onClick={() => setCategory(null)} />
+              <FilterChip label="All" active={categoryId === null} onClick={() => setCategoryId(null)} />
               {categories.map((c) => (
-                <FilterChip key={c} label={c} active={category === c} onClick={() => setCategory(c)} />
+                <FilterChip key={c.id} label={c.name} active={categoryId === c.id} onClick={() => setCategoryId(c.id)} />
               ))}
             </div>
           )}
@@ -153,11 +162,14 @@ function Shop() {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {products.map((p) => (
-                  <ProductCard key={p.id} product={p} onOpen={() => setDetail(p)} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  {products.map((p) => (
+                    <ProductCard key={p.id} product={p} onOpen={() => setDetail(p)} />
+                  ))}
+                </div>
+                <LoadMore className="mt-4" hasMore={hasMore} loading={loadingMore} onLoad={loadMore} label="Load more products" />
+              </>
             )}
           </div>
         </>

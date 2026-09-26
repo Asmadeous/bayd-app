@@ -2,6 +2,7 @@
 
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
+import { usePagedList } from "@/lib/hooks/use-paged-list"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import type { OfflinePaymentMethod } from "@/lib/payment-methods"
 
@@ -74,12 +75,31 @@ export function useEmployeeProfile(options?: { enabled?: boolean }) {
 // A single one of the tech's OWN bookings — for the navigate / call screens.
 // The customer GET /bookings/:id is scoped to the customer and returns nothing
 // for a staff user, so staff must use this employee-scoped endpoint.
+// A single job for the Job screen: the booking plus who the client is and the
+// clock record (only this endpoint sends them).
+export type EmployeeJob = Booking & {
+  client?: { user_id: number; name: string | null; completed_visits: number } | null
+  visit?: { clock_in_at: string | null; clock_out_at: string | null; distance_km: string | number | null } | null
+  payment_status?: "unpaid" | "deposit_paid" | "paid" | "refunded" | null
+  booked_for_name?: string | null
+}
+
 export function useEmployeeBooking(id: number) {
   return useQuery({
     queryKey: ["employee-booking", id],
-    queryFn: () => api.get<Booking>(`/employee/bookings/${id}`).then((r) => r.data),
+    queryFn: () => api.get<EmployeeJob>(`/employee/bookings/${id}`).then((r) => r.data),
     enabled: !!id,
   })
+}
+
+// The tech's jobs: active (soonest first) or past (latest first), a page at a
+// time for "Load more".
+export function useEmployeeScheduleList(filter?: "past", options: { enabled?: boolean } = {}) {
+  return usePagedList<Booking>(
+    ["employee-schedule", "list", filter ?? "active"],
+    (page) => api.get<PagedResponse<Booking>>("/employee/schedule", { params: { page, filter } }).then((r) => r.data),
+    options,
+  )
 }
 
 export function useEmployeeSchedule(page = 1, filter?: "past") {
@@ -146,6 +166,20 @@ export function useMarkMissed() {
   })
 }
 
+// The client wasn't there. The API only allows it from the appointment's start
+// time, and it charges the no-show fee to their card on file.
+export function useMarkNoShow() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (bookingId: number) =>
+      api.post<Booking>(`/employee/bookings/${bookingId}/no_show`).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["employee-schedule"] })
+      qc.invalidateQueries({ queryKey: ["employee-booking"] })
+    },
+  })
+}
+
 export function useUpdateProfile() {
   const qc = useQueryClient()
   return useMutation({
@@ -169,7 +203,7 @@ export function useUpdateProfile() {
 export interface StaffBookingInput {
   service_id: number
   starts_at: string // ISO datetime
-  customer: { email: string; first_name?: string; phone?: string }
+  customer: { email?: string; first_name?: string; last_name?: string; phone?: string }
   client_type?: string
   party_size?: number
   addon_service_ids?: number[]
@@ -184,6 +218,34 @@ export interface StaffBookingInput {
   }
   notes?: string
   employee_id?: number
+}
+
+export interface StaffClient {
+  id: number
+  first_name: string | null
+  last_name: string | null
+  email: string | null
+  phone: string | null
+  address: {
+    line1: string
+    line2: string | null
+    city: string
+    province: string
+    postal_code: string
+    is_apartment: boolean
+    buzz_code: string | null
+  } | null
+}
+
+// Existing customers matching a name, email or phone (3+ characters), for the
+// staff booking form to fill in.
+export function useStaffClientLookup(q: string) {
+  return useQuery({
+    queryKey: ["staff-clients", q],
+    queryFn: () => api.get<StaffClient[]>("/employee/clients", { params: { q } }).then((r) => r.data),
+    enabled: q.trim().length >= 3,
+    staleTime: 30 * 1000,
+  })
 }
 
 // Staff-initiated manual booking (force-book). Creates a booking directly for

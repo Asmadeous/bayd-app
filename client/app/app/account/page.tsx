@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { CalendarDays, Check, ChevronRight, Gift, Lock, LogOut, Mail, MapPin, MessageCircle, Phone, ReceiptText, Repeat2, ShoppingBag, Star, User } from "lucide-react"
+import { Check, ChevronRight, Lock, LogOut, Mail, MapPin, Phone, Repeat2, User } from "lucide-react"
 
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useAuthStore } from "@/lib/stores/auth-store"
@@ -102,7 +102,7 @@ export default function AccountScreen() {
 
   return (
     <div className={appScreenClass}>
-      <AppHeader title="Account" />
+      <AppHeader title="Profile" />
 
       <div className="space-y-5 px-5">
         <section className="rounded-2xl bg-[#101217] p-5 text-white">
@@ -216,13 +216,6 @@ export default function AccountScreen() {
         </section>
 
         <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
-          <MenuRow href="/app/bookings" icon={CalendarDays} label="Bookings" />
-          <MenuRow href="/app/messages" icon={MessageCircle} label="Messages" />
-          <MenuRow href="/app/support" icon={Mail} label="Support chat" />
-          <MenuRow href="/app/orders" icon={ShoppingBag} label="Orders" />
-          <MenuRow href="/app/transactions" icon={ReceiptText} label="Transactions" />
-          <MenuRow href="/app/gift-cards" icon={Gift} label="Gift cards" />
-          <MenuRow href="/app/loyalty" icon={Star} label="Loyalty" />
           <MenuRow href="/app/subscriptions" icon={Repeat2} label="Subscriptions" />
           <MenuRow href="/app/addresses" icon={MapPin} label="Addresses" last />
         </section>

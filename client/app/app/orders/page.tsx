@@ -1,8 +1,9 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
 
 import api from "@/lib/api"
+import { LoadMore } from "@/components/load-more"
+import { usePagedList } from "@/lib/hooks/use-paged-list"
 import { cardClass, mutedClass } from "../app-theme"
 import { ShoppingBag } from "lucide-react"
 import { EmptyState } from "../empty-state"
@@ -22,21 +23,21 @@ interface Paged<T> {
   pagination: { current_page: number; total_pages: number; next_page: number | null }
 }
 
-export default function AppOrdersScreen() {
-  const { data, isLoading } = useQuery<Paged<Order>>({
-    queryKey: ["orders", 1],
-    queryFn: () => api.get<Paged<Order>>("/orders", { params: { page: 1 } }).then((r) => r.data),
-  })
-  const orders = data?.data ?? []
+// The list itself, shown on its own screen and inside Management.
+export function OrdersList() {
+  const { items: orders, isLoading, hasMore, loadingMore, loadMore } = usePagedList<Order>(["orders", "list"], (page) =>
+    api.get<Paged<Order>>("/orders", { params: { page } }).then((r) => r.data),
+  )
 
   return (
-    <SectionScreen title="Orders">
+    <>
       {isLoading ? (
         <ListSkeleton />
       ) : orders.length === 0 ? (
         <EmptyState icon={ShoppingBag} title="No orders yet" text="Products you order are tracked here from payment to delivery." action={{ label: "Browse the shop", href: "/app/shop" }} />
       ) : (
-        <ul className="space-y-3 pb-6">
+        <>
+          <ul className="space-y-3 pb-6">
           {orders.map((o) => {
             const when = new Date(o.created_at)
             return (
@@ -61,8 +62,18 @@ export default function AppOrdersScreen() {
               </li>
             )
           })}
-        </ul>
+          </ul>
+          <LoadMore className="mb-6" hasMore={hasMore} loading={loadingMore} onLoad={loadMore} />
+        </>
       )}
+    </>
+  )
+}
+
+export default function AppOrdersScreen() {
+  return (
+    <SectionScreen title="Orders">
+      <OrdersList />
     </SectionScreen>
   )
 }

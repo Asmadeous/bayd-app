@@ -1,28 +1,28 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
-import { MessageCircle, ArrowRight, Bell, CalendarDays, ChevronRight, Clock3, ShoppingBag, Sparkles, User } from "lucide-react"
+import { ArrowRight, Bell, CalendarDays, Clock3, Plus } from "lucide-react"
 
-import { useBookings, type Booking } from "@/lib/hooks/use-bookings"
+import { useBookingsList, type Booking } from "@/lib/hooks/use-bookings"
 import { useNotifications } from "@/lib/hooks/use-notifications"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { hapticTap } from "@/lib/native/haptics"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
+import { BookingsPanel } from "../bookings/page"
 import { appScreenClass, cardClass, displayClass, eyebrowClass, mutedClass } from "../app-theme"
 
 export default function HomeScreen() {
   const { user } = useAuthStore()
-  const { data, isLoading } = useBookings(1)
-  const [now] = useState(() => Date.now())
+  // The soonest upcoming booking (the server sorts upcoming soonest first).
+  const { items, isLoading } = useBookingsList("upcoming")
+  const upcoming = items[0] ?? null
 
   const firstName = user?.first_name?.trim() || "there"
-  const upcoming = nextUpcoming(data?.data ?? [], now)
 
   return (
     <div className={appScreenClass}>
       {/* Warm gradient header band - the app's signature. */}
-      <div className="relative overflow-hidden px-5 pb-8 pt-[calc(2rem+env(safe-area-inset-top))]">
+      <div className="relative overflow-hidden px-5 pb-8 pt-[calc(2rem+var(--top-inset))]">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 opacity-90"
@@ -34,13 +34,24 @@ export default function HomeScreen() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className={eyebrowClass}>Beauty, at your door</p>
-            <h1 className={`${displayClass} mt-2 text-[2.6rem] leading-[1.02] tracking-[-0.02em]`}>
+            <h1 className={`${displayClass} mt-2 text-[2.2rem] leading-[1.05] tracking-[-0.02em]`}>
               Hello,
               <br />
-              <span className="italic text-[#C96C83]">{firstName}</span>
+              <span className="text-[#C96C83]">{firstName}</span>
             </h1>
           </div>
-          <NotificationBell />
+          <div className="flex shrink-0 items-center gap-2">
+            <NotificationBell />
+            {/* Booking starts here (there's no Book tab). */}
+            <Link
+              href="/app/book"
+              onClick={() => hapticTap()}
+              aria-label="Book now"
+              className="grid size-11 shrink-0 place-items-center rounded-full bg-[#14100F] text-white"
+            >
+              <Plus className="size-5" aria-hidden />
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -57,25 +68,8 @@ export default function HomeScreen() {
         </section>
 
         <section>
-          <h2 className={`mb-3 ${eyebrowClass}`}>What would you like to do?</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <QuickAction href="/app/book" icon={Sparkles} label="Book a service" hint="Pick a time" tone="blush" />
-            <QuickAction href="/app/shop" icon={ShoppingBag} label="Shop products" hint="Delivered" tone="paper" />
-            <QuickAction href="/app/bookings" icon={CalendarDays} label="My bookings" hint="Upcoming & past" tone="paper" />
-            <QuickAction href="/app/account" icon={User} label="My account" hint="Profile & lock" tone="paper" />
-          </div>
-          <Link
-            href="/app/support"
-            onClick={() => hapticTap()}
-            className={`mt-3 flex items-center gap-4 p-5 transition-transform active:scale-[0.98] ${cardClass}`}
-          >
-            <MessageCircle className="size-6 shrink-0 text-[#C96C83]" aria-hidden />
-            <span className="flex-1">
-              <span className="block text-[0.95rem] font-bold leading-tight">Chat with us</span>
-              <span className={`mt-0.5 block text-xs ${mutedClass}`}>Questions about a service or booking</span>
-            </span>
-            <ChevronRight className="size-5 text-[#14100F]/30" aria-hidden />
-          </Link>
+          <h2 className={`mb-3 ${eyebrowClass}`}>My bookings</h2>
+          <BookingsPanel />
         </section>
       </div>
     </div>
@@ -84,7 +78,7 @@ export default function HomeScreen() {
 
 function NotificationBell() {
   const { data } = useNotifications(1)
-  const unread = (data?.data ?? []).filter((n) => !n.read_at).length
+  const unread = data?.unread_count ?? 0
 
   return (
     <Link
@@ -103,20 +97,12 @@ function NotificationBell() {
   )
 }
 
-function nextUpcoming(bookings: Booking[], now: number): Booking | null {
-  return (
-    bookings
-      .filter((b) => ["pending", "confirmed", "in_progress"].includes(b.status) && new Date(b.starts_at).getTime() >= now)
-      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0] ?? null
-  )
-}
-
 function NextBookingCard({ booking }: { booking: Booking }) {
   const techName = booking.employee_profile.name || "your technician"
 
   return (
     <Link
-      href="/app/bookings"
+      href={`/app/bookings/view?id=${booking.id}`}
       onClick={() => hapticTap()}
       className="block overflow-hidden rounded-3xl bg-[#14100F] p-5 text-[#F6F1EC] shadow-[0_16px_40px_-16px_rgba(20,16,15,0.5)]"
     >
@@ -143,51 +129,9 @@ function NextBookingCard({ booking }: { booking: Booking }) {
 
 function EmptyNext() {
   return (
-    <Link
-      href="/app/book"
-      onClick={() => hapticTap()}
-      className={`flex items-center justify-between gap-4 p-6 ${cardClass}`}
-    >
-      <div>
-        <p className={`${displayClass} text-xl`}>Nothing booked yet</p>
-        <p className={`mt-1 text-sm ${mutedClass}`}>Your next treatment is a tap away.</p>
-      </div>
-      <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#C96C83] text-white shadow-lg shadow-[#C96C83]/25">
-        <Sparkles className="size-5" aria-hidden />
-      </span>
-    </Link>
-  )
-}
-
-function QuickAction({
-  href,
-  icon: Icon,
-  label,
-  hint,
-  tone,
-}: {
-  href: string
-  icon: typeof Sparkles
-  label: string
-  hint: string
-  tone: "blush" | "paper"
-}) {
-  const blush = tone === "blush"
-  return (
-    <Link
-      href={href}
-      onClick={() => hapticTap()}
-      className={
-        blush
-          ? "flex flex-col gap-6 rounded-3xl bg-gradient-to-br from-[#C96C83] to-[#A9526A] p-5 text-white shadow-[0_12px_30px_-14px_rgba(201,108,131,0.7)] transition-transform active:scale-[0.98]"
-          : `flex flex-col gap-6 p-5 transition-transform active:scale-[0.98] ${cardClass}`
-      }
-    >
-      <Icon className={`size-6 ${blush ? "text-white" : "text-[#C96C83]"}`} aria-hidden />
-      <div>
-        <span className="block text-[0.95rem] font-bold leading-tight">{label}</span>
-        <span className={`mt-0.5 block text-xs ${blush ? "text-white/70" : mutedClass}`}>{hint}</span>
-      </div>
-    </Link>
+    <div className={`p-6 ${cardClass}`}>
+      <p className={`${displayClass} text-xl`}>No appointments available</p>
+      <p className={`mt-1 text-sm ${mutedClass}`}>Tap + to book one.</p>
+    </div>
   )
 }

@@ -2,67 +2,58 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useMemo, useState } from "react"
-import { CalendarDays, Clock3, Lock, MessageCircle, Navigation, Star, Video } from "lucide-react"
+import { useState } from "react"
+import { Lock, MessageCircle, Navigation, Star, Video } from "lucide-react"
 
 import api from "@/lib/api"
-import { useBookings, useBookingsRange, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
-import { useCalendarState } from "@/lib/hooks/use-calendar-state"
+import { useBookingsList, useBookingsRange, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
 import { useBookingAccess, windowNotStartedMessage } from "@/lib/booking-access"
-import { MonthAgenda } from "@/components/calendar/month-agenda"
+import { BookingRow } from "@/components/calendar/booking-row"
+import { LoadMore } from "@/components/load-more"
+import { DateStrip, weekRange } from "@/components/booking/date-strip"
+import { ViewSwitch, WhenFilter, type BookingView } from "@/components/calendar/view-switch"
 import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
 import { useStartMeeting } from "@/lib/hooks/use-meetings"
 import type { Conversation } from "@/lib/cable/chat-types"
-import { bookingDateKey, formatBookingDate, formatBookingTime, formatDateKey, todayKey } from "@/lib/booking-time"
+import { bookingDateKey, formatBookingDate, formatDateKey, todayKey } from "@/lib/booking-time"
 import { appScreenClass } from "../app-theme"
 import { AppHeader } from "../app-header"
 import { RescheduleSheet } from "./reschedule-sheet"
 import { ReviewSheet } from "./review-sheet"
 
-const ACTIVE = ["pending", "confirmed", "in_progress"]
+export const ACTIVE = ["pending", "confirmed", "in_progress"]
 
 export default function BookingsScreen() {
-  const { data, isLoading } = useBookings(1)
-  const [tab, setTab] = useState<"upcoming" | "past" | "calendar">("upcoming")
-  // "Now" captured once at mount via a lazy initializer so render stays pure.
-  const [now] = useState(() => Date.now())
-
-  const { upcoming, past } = useMemo(() => {
-    const all = data?.data ?? []
-    return {
-      upcoming: all
-        .filter((b) => ACTIVE.includes(b.status) && new Date(b.starts_at).getTime() >= now)
-        .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()),
-      past: all
-        .filter((b) => !ACTIVE.includes(b.status) || new Date(b.starts_at).getTime() < now)
-        .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime()),
-    }
-  }, [data, now])
-
-  const list = tab === "upcoming" ? upcoming : tab === "past" ? past : []
-
   return (
     <div className={appScreenClass}>
       <AppHeader title="My bookings" />
-
       <div className="px-5">
-        <div className="mb-4 grid grid-cols-3 gap-2 rounded-full bg-black/5 p-1">
-          {(["upcoming", "past", "calendar"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`rounded-full py-2 text-sm font-semibold capitalize transition-colors ${
-                tab === t ? "bg-[#101217] text-white" : "text-[#101217]/55"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+        <BookingsPanel />
+      </div>
+    </div>
+  )
+}
+
+// The customer's bookings: Upcoming / Past, shown as a list or a calendar.
+// Rendered on Home and on this screen.
+export function BookingsPanel() {
+  const [tab, setTab] = useState<"upcoming" | "past">("upcoming")
+  const [view, setView] = useState<BookingView>("list")
+  const upcoming = useBookingsList("upcoming", { enabled: view === "list" && tab === "upcoming" })
+  const past = useBookingsList("past", { enabled: view === "list" && tab === "past" })
+  const { items: list, isLoading, hasMore, loadingMore, loadMore } = tab === "upcoming" ? upcoming : past
+
+  return (
+    <div>
+        {/* A calendar shows every day, so upcoming / past only applies to the
+            list. */}
+        <div className="mb-4 flex items-center gap-3">
+          {view === "calendar" ? <div className="flex-1" /> : <WhenFilter value={tab} onChange={setTab} />}
+          <ViewSwitch value={view} onChange={setView} />
         </div>
 
-        {tab === "calendar" ? (
-          <CalendarTab now={now} />
+        {view === "calendar" ? (
+          <CalendarTab />
         ) : isLoading ? (
           <div className="space-y-3">
             {[0, 1].map((i) => (
@@ -72,63 +63,70 @@ export default function BookingsScreen() {
         ) : list.length === 0 ? (
           <EmptyBookings tab={tab} />
         ) : (
-          <ul className="space-y-3">
-            {list.map((b) => (
-              <BookingCard key={b.id} booking={b} cancellable={tab === "upcoming"} now={now} />
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-3">
+              {list.map((b) => (
+                <BookingRow key={b.id} booking={b} who={b.employee_profile.name} href={`/app/bookings/view?id=${b.id}`} />
+              ))}
+            </ul>
+            <LoadMore className="mt-3" hasMore={hasMore} loading={loadingMore} onLoad={loadMore} />
+          </>
         )}
-      </div>
     </div>
   )
 }
 
-// Month view of the customer's bookings: tap a day to see that day's
-// appointments with the same cards (reschedule / cancel / message / meet) as the
-// list, or book a future day.
-function CalendarTab({ now }: { now: number }) {
-  const state = useCalendarState("month")
-  const { data = [], isLoading } = useBookingsRange(state.from, state.to)
-  const [selected, setSelected] = useState(() => todayKey())
-  const dayList = data
-    .filter((b) => bookingDateKey(b.starts_at) === selected)
-    .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+// Calendar view: the booking week strip (expands to the month) with a dot on days
+// that have bookings. Tapping a day with one appointment opens it; with several,
+// opens that day's list; an empty day offers to book it.
+function CalendarTab() {
+  const router = useRouter()
+  const [emptyDay, setEmptyDay] = useState<string | null>(null)
+  const [range, setRange] = useState(() => weekRange(todayKey()))
+  const { data = [] } = useBookingsRange(range.from, range.to)
+  const marks = new Set(data.map((b) => bookingDateKey(b.starts_at)))
+
+  function openDay(day: string) {
+    const onDay = data.filter((b) => bookingDateKey(b.starts_at) === day)
+    if (onDay.length === 1) router.push(`/app/bookings/view?id=${onDay[0].id}`)
+    else if (onDay.length > 1) router.push(`/app/bookings/day?date=${day}`)
+    else setEmptyDay(day)
+  }
 
   return (
     <div className="space-y-4">
-      <MonthAgenda state={state} bookings={data} selected={selected} onSelect={setSelected} />
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-extrabold text-[#101217]">
-          {formatDateKey(selected, { weekday: "long", month: "long", day: "numeric" })}
-        </h2>
-        {selected >= todayKey() ? (
-          <Link href={`/app/book?date=${selected}`} className="rounded-full bg-[#101217] px-4 py-2 text-xs font-bold text-white">
-            Book this day
-          </Link>
-        ) : null}
+      <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <DateStrip
+          value={emptyDay ?? todayKey()}
+          onChange={openDay}
+          allowPast
+          marks={marks}
+          onVisibleRangeChange={(from, to) => setRange({ from, to })}
+        />
       </div>
-      {isLoading ? (
-        <div className="h-32 animate-pulse rounded-2xl bg-black/5" />
-      ) : dayList.length === 0 ? (
-        <p className="rounded-2xl bg-black/[0.03] px-4 py-6 text-center text-sm text-[#101217]/55">No appointments this day.</p>
+      {emptyDay ? (
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-black/[0.03] px-4 py-4">
+          <p className="text-sm text-[#101217]/60">
+            No appointments on {formatDateKey(emptyDay, { weekday: "long", month: "short", day: "numeric" })}.
+          </p>
+          {emptyDay >= todayKey() ? (
+            <Link href={`/app/book?date=${emptyDay}`} className="shrink-0 rounded-full bg-[#101217] px-4 py-2 text-xs font-bold text-white">
+              Book this day
+            </Link>
+          ) : null}
+        </div>
       ) : (
-        <ul className="space-y-3">
-          {dayList.map((b) => (
-            <BookingCard
-              key={b.id}
-              booking={b}
-              cancellable={ACTIVE.includes(b.status) && new Date(b.starts_at).getTime() >= now}
-              now={now}
-            />
-          ))}
-        </ul>
+        <p className="text-center text-xs text-[#101217]/50">Tap a day to open it. Dots mark your appointments.</p>
       )}
     </div>
   )
 }
 
-function BookingCard({ booking, cancellable, now }: { booking: Booking; cancellable: boolean; now: number }) {
-  const techName = booking.employee_profile.name || "Your technician"
+// What a customer can do with an appointment: join the video call, message and
+// track the tech (from 30 minutes before), reschedule or cancel (up to 24h
+// before), and rate it once done. Shared by the booking card and the
+// appointment screen.
+export function AppointmentActions({ booking, cancellable, now }: { booking: Booking; cancellable: boolean; now: number }) {
   const { toast } = useToast()
   const confirm = useConfirm()
   const [rescheduling, setRescheduling] = useState(false)
@@ -164,32 +162,7 @@ function BookingCard({ booking, cancellable, now }: { booking: Booking; cancella
   }
 
   return (
-    <li className="rounded-2xl bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <span
-          className={`rounded-full px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] ${statusStyle(
-            booking.status,
-          )}`}
-        >
-          {booking.status.replace("_", " ")}
-        </span>
-        <span className="text-sm font-extrabold">${Number(booking.total).toFixed(2)}</span>
-      </div>
-
-      <p className="mt-3 text-lg font-extrabold">{booking.service.name}</p>
-      <div className="mt-1.5 space-y-1 text-sm text-[#101217]/60">
-        <p className="flex items-center gap-2">
-          <CalendarDays className="size-4 text-[#c96c83]" aria-hidden />
-          {formatBookingDate(booking.starts_at)}
-          {" · "}
-          {formatBookingTime(booking.starts_at)}
-        </p>
-        <p className="flex items-center gap-2">
-          <Clock3 className="size-4 text-[#c96c83]" aria-hidden />
-          {booking.service.duration_minutes} min with {techName}
-        </p>
-      </div>
-
+    <>
       {cancellable && booking.meeting_recommended && <MeetAction booking={booking} />}
 
       {/* Messaging and live tracking open 30 minutes before the appointment. */}
@@ -230,7 +203,7 @@ function BookingCard({ booking, cancellable, now }: { booking: Booking; cancella
             <button
               type="button"
               onClick={() => setRescheduling(true)}
-              className="block w-full rounded-lg border border-black/15 py-2 text-center text-sm font-semibold"
+              className="block w-full rounded-lg bg-[#C96C83]/10 py-2.5 text-center text-sm font-bold text-[#9E4A60] transition-colors active:bg-[#C96C83]/20"
             >
               Reschedule
             </button>
@@ -264,7 +237,7 @@ function BookingCard({ booking, cancellable, now }: { booking: Booking; cancella
 
       {rescheduling && <RescheduleSheet booking={booking} onClose={() => setRescheduling(false)} />}
       {reviewing && <ReviewSheet booking={booking} onClose={() => setReviewing(false)} />}
-    </li>
+    </>
   )
 }
 
@@ -325,7 +298,7 @@ function MessageTechAction({ techUserId }: { techUserId: number }) {
       router.push(`/app/messages/thread?id=${data.id}`)
     } catch {
       // Fall back to the list; any existing thread still shows there.
-      router.push("/app/messages")
+      router.push("/app/chat")
     } finally {
       setLoading(false)
     }
@@ -344,7 +317,7 @@ function MessageTechAction({ techUserId }: { techUserId: number }) {
   )
 }
 
-function statusStyle(status: string) {
+export function statusStyle(status: string) {
   switch (status) {
     case "confirmed":
       return "bg-[#c96c83]/12 text-[#c96c83]"
@@ -363,19 +336,9 @@ function statusStyle(status: string) {
 }
 
 function EmptyBookings({ tab }: { tab: "upcoming" | "past" }) {
-  if (tab === "past") {
-    return <p className="rounded-2xl bg-white p-6 text-center text-sm text-[#101217]/50">No past appointments yet.</p>
-  }
   return (
-    <Link
-      href="/app/book"
-      className="flex items-center justify-between rounded-2xl border border-dashed border-black/15 bg-white/50 p-5"
-    >
-      <div>
-        <p className="font-bold">Nothing booked</p>
-        <p className="mt-0.5 text-sm text-[#101217]/50">Tap to book a service.</p>
-      </div>
-      <span className="rounded-full bg-[#c96c83] px-3 py-1.5 text-sm font-bold text-white">Book</span>
-    </Link>
+    <p className="rounded-2xl bg-white p-6 text-center text-sm font-semibold text-[#101217]/55">
+      {tab === "past" ? "No past appointments" : "No appointments available"}
+    </p>
   )
 }

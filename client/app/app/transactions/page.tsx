@@ -4,7 +4,8 @@ import { useState } from "react"
 import { FileText, X } from "lucide-react"
 
 import { InvoiceBreakdown } from "@/components/invoice/invoice-breakdown"
-import { useInvoices, type Invoice } from "@/lib/hooks/use-invoices"
+import { useInvoicesList, type Invoice } from "@/lib/hooks/use-invoices"
+import { LoadMore } from "@/components/load-more"
 import { cardClass, mutedClass } from "../app-theme"
 import { EmptyState } from "../empty-state"
 import { SectionScreen } from "../section-screen"
@@ -16,19 +17,20 @@ const STATUS_STYLE: Record<string, string> = {
   refunded: "bg-[#8f3f4b]/12 text-[#8f3f4b]",
 }
 
-export default function AppTransactionsScreen() {
-  const { data, isLoading } = useInvoices(1)
-  const invoices = data?.data ?? []
+// The list itself, shown on its own screen and inside Management.
+export function TransactionsList() {
+  const { items: invoices, isLoading, hasMore, loadingMore, loadMore } = useInvoicesList()
   const [open, setOpen] = useState<Invoice | null>(null)
 
   return (
-    <SectionScreen title="Transactions">
+    <>
       {isLoading ? (
         <ListSkeleton />
       ) : invoices.length === 0 ? (
         <EmptyState icon={FileText} title="No transactions yet" text="Receipts for your bookings and orders appear here." />
       ) : (
-        <ul className="space-y-3 pb-6">
+        <>
+          <ul className="space-y-3 pb-6">
           {invoices.map((inv) => {
             const when = new Date(inv.issued_at ?? inv.created_at)
             return (
@@ -52,9 +54,19 @@ export default function AppTransactionsScreen() {
               </li>
             )
           })}
-        </ul>
+          </ul>
+          <LoadMore className="mb-6" hasMore={hasMore} loading={loadingMore} onLoad={loadMore} />
+        </>
       )}
       {open ? <InvoiceSheet invoice={open} onClose={() => setOpen(null)} /> : null}
+    </>
+  )
+}
+
+export default function AppTransactionsScreen() {
+  return (
+    <SectionScreen title="Transactions">
+      <TransactionsList />
     </SectionScreen>
   )
 }

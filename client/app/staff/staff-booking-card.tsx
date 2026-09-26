@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { CalendarDays, Check, Clock3, Lock, MapPin, CreditCard, Navigation, Video } from "lucide-react"
+import { CalendarDays, Check, Clock3, Lock, MapPin, CreditCard, MessageCircle, Navigation, Video } from "lucide-react"
 
 import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
@@ -10,7 +10,7 @@ import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
 import { useBookingAccess, windowNotStartedMessage } from "@/lib/booking-access"
 import { useStartMeeting } from "@/lib/hooks/use-meetings"
 import { useClockIn, useClockOut } from "@/lib/hooks/use-time-clock"
-import { useChargeBooking, useMarkMissed, useRecordPayment } from "@/lib/hooks/use-employee"
+import { useChargeBooking, useMarkMissed, useMarkNoShow, useRecordPayment } from "@/lib/hooks/use-employee"
 import { CHARGE_METHODS, paymentMethodLabel, type OfflinePaymentMethod } from "@/lib/payment-methods"
 import { openPaymentUrl } from "@/lib/native/open-external"
 import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
@@ -25,15 +25,9 @@ import { cardClass, bookingStatusStyle, mutedClass, staffTheme } from "./staff-t
 //                 gated - a tech can't charge before they've started the job)
 //   in_progress-> a live service TIMER + CLOCK OUT (no charge yet)
 //   completed  -> the CHARGE page (overtime/settle) appears so they can bill
-export function StaffBookingCard({ booking }: { booking: Booking }) {
-  const router = useRouter()
-  const canNavigate = !!booking.service_latitude && !!booking.service_longitude
-  const inProgress = booking.status === "in_progress"
-  const done = booking.status === "completed"
-  const preArrival = booking.status === "confirmed"
-  const isPast = ["completed", "cancelled", "no_show", "missed"].includes(booking.status)
-  const access = useBookingAccess(booking)
-
+// `history` (the Past tab): a read-only record. A job whose time is over can still
+// read "confirmed" if nobody clocked in, and must not offer clock in / navigate.
+export function StaffBookingCard({ booking, history = false }: { booking: Booking; history?: boolean }) {
   return (
     <li className={`${cardClass} p-4`}>
       <div className="flex items-center justify-between gap-2">
@@ -80,49 +74,93 @@ export function StaffBookingCard({ booking }: { booking: Booking }) {
         </div>
       )}
 
+      <JobActions booking={booking} history={history} />
+    </li>
+  )
+}
+
+// The job's buttons, in order of weight: Clock in (locked with its opening time
+// until 30 minutes before; the API refuses earlier) or Clock out, then Navigate
+// and the video call, then "Can't attend"; Charge once it's done. `history`
+// (time passed with no clock-in) shows a note instead of actions.
+const SECONDARY_COLS = ["hidden", "grid-cols-1", "grid-cols-2", "grid-cols-3"]
+
+export function JobActions({
+  booking,
+  history = false,
+  showFinancials = true,
+  clientUserId,
+}: {
+  booking: Booking
+  history?: boolean
+  // The Job screen has its own Payment section.
+  showFinancials?: boolean
+  // Lets the tech open a chat with the client (the Job screen has it).
+  clientUserId?: number
+}) {
+  const router = useRouter()
+  const [now] = useState(() => Date.now())
+  const canNavigate = !!booking.service_latitude && !!booking.service_longitude
+  const inProgress = !history && booking.status === "in_progress"
+  const done = !history && booking.status === "completed"
+  const preArrival = !history && booking.status === "confirmed"
+  const isPast = ["completed", "cancelled", "no_show", "missed"].includes(booking.status)
+  const access = useBookingAccess(booking)
+  const secondaryCount =
+    (canNavigate && access.open ? 1 : 0) + (clientUserId && access.open ? 1 : 0) + (preArrival ? 1 : 0)
+
+  return (
+    <>
       {/* In service -> live timer */}
       {inProgress && booking.clocked_in_at && <RunningTimer since={booking.clocked_in_at} />}
 
-      {/* Pre-arrival actions: navigate + call as equal-width halves, then clock in.
-          Navigate and clock-in open 30 minutes before the start (the API refuses
-          an earlier clock-in). */}
-      {preArrival && (
-        <div className={`mt-3 grid gap-2 ${canNavigate && access.open ? "grid-cols-2" : "grid-cols-1"}`}>
-          <JoinCallButton booking={booking} />
+      {/* One main action per card: Clock in (shown locked, with its opening
+          time, until 30 minutes before the start; the API refuses earlier), or
+          Clock out while in service. Navigate and the video call sit under it as
+          secondary buttons, then "Can't attend" in red. */}
+      {preArrival && !access.open && <LockedWindow opensLabel={access.opensLabel} />}
+      {((preArrival && access.open) || inProgress) && <ClockButton booking={booking} />}
+
+      {/* Secondary: in-app navigation and messaging the client (both from 30
+          minutes before, and still while in service), and the video call. */}
+      {(preArrival || inProgress) && (
+        <div className={`mt-2 grid gap-2 ${SECONDARY_COLS[secondaryCount]}`}>
           {canNavigate && access.open && (
             <button
               type="button"
               onClick={() => router.push(`/staff/schedule/navigate?id=${booking.id}`)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-black/15 bg-white px-3 py-2.5 text-sm font-semibold text-[#14100F]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#C96C83]/10 px-3 py-2.5 text-sm font-bold text-[#9E4A60] transition-colors active:bg-[#C96C83]/20"
             >
               <Navigation className="size-4 text-[#C96C83]" aria-hidden /> Navigate
             </button>
           )}
+          {clientUserId && access.open ? <MessageClientButton clientUserId={clientUserId} /> : null}
+          {preArrival ? <JoinCallButton booking={booking} /> : null}
         </div>
       )}
-
-      {preArrival && !access.open && (
-        <LockedWindow opensLabel={access.opensLabel} />
-      )}
-
-      {/* Clock in (pre-arrival, once open) or Clock out (in service) - the primary action. */}
-      {((preArrival && access.open) || inProgress) && <ClockButton booking={booking} />}
 
       {/* Pre-arrival only: self-report that you can't attend (missed). The client
           is never charged; they're notified and offered a reschedule. */}
       {preArrival && <MarkMissedButton booking={booking} />}
 
+      {/* From the appointment's start: the client wasn't there (charges the
+          no-show fee). */}
+      {(preArrival || inProgress) && now >= new Date(booking.starts_at).getTime() ? (
+        <MarkNoShowButton booking={booking} />
+      ) : null}
+
+      {history && ["confirmed", "pending", "in_progress"].includes(booking.status) ? (
+        <p className="mt-3 rounded-lg bg-black/[0.04] px-3 py-2 text-sm text-[#14100F]/60">
+          {booking.status === "in_progress" ? "Never clocked out." : "No clock-in was recorded for this appointment."}
+        </p>
+      ) : null}
+
       {/* Past bookings (history): show the money summary, not action buttons. */}
-      {isPast && <PastFinancials booking={booking} />}
+      {isPast && showFinancials && <PastFinancials booking={booking} />}
 
       {/* A just-completed job (in the active list) can still be charged. */}
-      {done && (
-        <>
-          <ChargeButton booking={booking} />
-          <OvertimeCharge bookingId={booking.id} />
-        </>
-      )}
-    </li>
+      {done && <ChargeButton booking={booking} />}
+    </>
   )
 }
 
@@ -229,31 +267,42 @@ function PastFinancials({ booking }: { booking: Booking }) {
 // webhook marks it paid, and we refresh when the browser closes. Cash, Interac e-Transfer,
 // and cheque are collected in person, so confirming marks it paid with that
 // method. Once settled, the card shows how it was paid instead.
+// Taking payment once the job is done, in one flow: tap Charge, say whether the
+// service ran over (overtime is added to the bill), then pick how the client
+// pays. Card opens the card form on the tech's device; cash, e-Transfer and
+// cheque are recorded as paid.
 function ChargeButton({ booking }: { booking: Booking }) {
   const { toast } = useToast()
   const confirm = useConfirm()
   const qc = useQueryClient()
   const charge = useChargeBooking()
   const record = useRecordPayment()
-  const [open, setOpen] = useState(false)
+  const [step, setStep] = useState<"closed" | "overtime" | "amount" | "method">("closed")
+  const [overtime, setOvertime] = useState("")
   const due = Number(booking.outstanding_balance)
-  const busy = charge.isPending || record.isPending
 
-  if (due <= 0) {
-    if (!booking.paid_methods?.length) return null
-    return (
-      <p className="mt-3 flex items-center justify-center gap-1.5 rounded-xl bg-[#4E9A57]/10 py-2.5 text-sm font-bold text-[#3f7e47]">
-        <Check className="size-4" aria-hidden />
-        Paid · {booking.paid_methods.map(paymentMethodLabel).join(" + ")}
-      </p>
-    )
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["employee-schedule"] })
+    qc.invalidateQueries({ queryKey: ["employee-booking"] })
   }
+
+  const addOvertime = useMutation({
+    mutationFn: (amount: number) =>
+      api.post(`/employee/bookings/${booking.id}/overtime`, { amount, collect: false }).then((r) => r.data),
+    onSuccess: () => {
+      refresh()
+      setOvertime("")
+      setStep("method")
+    },
+    onError: (e: unknown) => toast({ title: "Couldn't add the overtime", description: apiError(e), variant: "error" }),
+  })
+  const busy = charge.isPending || record.isPending || addOvertime.isPending
 
   async function chargeCard() {
     try {
       const { url } = await charge.mutateAsync(booking.id)
-      void openPaymentUrl(url, () => qc.invalidateQueries({ queryKey: ["employee-schedule"] }))
-      setOpen(false)
+      void openPaymentUrl(url, refresh)
+      setStep("closed")
     } catch (e: unknown) {
       toast({ title: "Couldn't start the checkout", description: apiError(e), variant: "error" })
     }
@@ -270,39 +319,129 @@ function ChargeButton({ booking }: { booking: Booking }) {
     if (!ok) return
     try {
       await record.mutateAsync({ bookingId: booking.id, method })
-      setOpen(false)
+      setStep("closed")
       toast({ title: "Marked paid", description: `$${due.toFixed(2)} by ${label}.`, variant: "success" })
     } catch (e: unknown) {
       toast({ title: "Couldn't mark paid", description: apiError(e), variant: "error" })
     }
   }
 
+  function submitOvertime() {
+    const amount = Number(overtime)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast({ title: "Enter the overtime amount", description: "It must be more than $0.", variant: "error" })
+      return
+    }
+    addOvertime.mutate(amount)
+  }
+
+  // Paid in full: say so, and still allow overtime found afterwards.
+  if (due <= 0 && step === "closed") {
+    if (!booking.paid_methods?.length) return null
+    return (
+      <div className="mt-3">
+        <p className="flex items-center justify-center gap-1.5 rounded-xl bg-[#4E9A57]/10 py-2.5 text-sm font-bold text-[#3f7e47]">
+          <Check className="size-4" aria-hidden />
+          Paid · {booking.paid_methods.map(paymentMethodLabel).join(" + ")}
+        </p>
+        <button
+          type="button"
+          onClick={() => setStep("amount")}
+          className="mt-2 w-full rounded-lg bg-black/[0.05] py-2.5 text-sm font-bold text-[#14100F]"
+        >
+          Add overtime
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="mt-3">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        disabled={busy}
-        aria-expanded={open}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#14100F] py-3 text-sm font-bold text-white disabled:opacity-50"
-      >
-        <CreditCard className="size-4" aria-hidden />
-        {charge.isPending ? "Opening card form…" : busy ? "Working…" : `Charge · $${due.toFixed(2)}`}
-      </button>
-      {open && (
-        <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label="Payment method">
-          {CHARGE_METHODS.map((m) => (
-            <button
-              key={m.value}
-              type="button"
-              disabled={busy}
-              onClick={() => (m.value === "card" ? chargeCard() : recordOffline(m.value))}
-              className="rounded-lg border border-black/15 bg-white px-3 py-2.5 text-left disabled:opacity-50"
-            >
-              <span className="block text-sm font-bold text-[#14100F]">{m.label}</span>
-              <span className="block text-[0.7rem] leading-tight text-[#14100F]/55">{m.hint}</span>
-            </button>
-          ))}
+      {step === "closed" ? (
+        <button
+          type="button"
+          onClick={() => setStep("overtime")}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#14100F] py-3 text-sm font-bold text-white"
+        >
+          <CreditCard className="size-4" aria-hidden />
+          Charge · ${due.toFixed(2)}
+        </button>
+      ) : (
+        <div className="rounded-xl bg-black/[0.04] p-3">
+          {step === "overtime" ? (
+            <>
+              <p className="text-sm font-bold">Did the service run over time?</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStep("method")}
+                  className="rounded-lg bg-white py-2.5 text-sm font-bold text-[#14100F]"
+                >
+                  No
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep("amount")}
+                  className="rounded-lg bg-[#C96C83]/15 py-2.5 text-sm font-bold text-[#9E4A60]"
+                >
+                  Yes, add overtime
+                </button>
+              </div>
+            </>
+          ) : step === "amount" ? (
+            <>
+              <label className="text-sm font-bold" htmlFor={`overtime-${booking.id}`}>Overtime amount</label>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-[#8a8d93]">$</span>
+                  <input
+                    id={`overtime-${booking.id}`}
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="decimal"
+                    value={overtime}
+                    onChange={(e) => setOvertime(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-black/10 bg-white pl-7 pr-3 text-base text-[#14100F] outline-none focus:border-[#C96C83]"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={submitOvertime}
+                  disabled={busy || !overtime}
+                  className="h-11 shrink-0 rounded-xl bg-[#14100F] px-4 text-sm font-bold text-white disabled:opacity-40"
+                >
+                  {addOvertime.isPending ? "Adding…" : "Add"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-bold">How is the client paying ${due.toFixed(2)}?</p>
+              <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label="Payment method">
+                {CHARGE_METHODS.map((m) => (
+                  <button
+                    key={m.value}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => (m.value === "card" ? chargeCard() : recordOffline(m.value))}
+                    className="rounded-lg bg-white px-3 py-2.5 text-left transition-colors active:bg-black/5 disabled:opacity-50"
+                  >
+                    <span className="block text-sm font-bold text-[#14100F]">{m.label}</span>
+                    <span className="block text-[0.7rem] leading-tight text-[#14100F]/55">{m.hint}</span>
+                  </button>
+                ))}
+              </div>
+              {charge.isPending ? <p className="mt-2 text-center text-xs text-[#14100F]/55">Opening the card form…</p> : null}
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => setStep("closed")}
+            className="mt-2 w-full py-1.5 text-center text-xs font-semibold text-[#14100F]/55"
+          >
+            Cancel
+          </button>
         </div>
       )}
     </div>
@@ -324,10 +463,11 @@ function LockedWindow({ opensLabel }: { opensLabel: string }) {
       onClick={() =>
         toast({ title: "Not open yet", description: windowNotStartedMessage(opensLabel, "clock in and navigate"), variant: "error" })
       }
-      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-black/[0.04] py-3 text-sm font-semibold text-[#14100F]/60"
+      aria-label={`Clock in, opens ${opensLabel}`}
+      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#4E9A57]/15 py-3 text-sm font-bold text-[#2F6B37]"
     >
       <Lock className="size-4" aria-hidden />
-      Clock in &amp; navigate open at {opensLabel}
+      Clock in · opens {opensLabel}
     </button>
   )
 }
@@ -441,9 +581,74 @@ function MarkMissedButton({ booking }: { booking: Booking }) {
       type="button"
       onClick={go}
       disabled={markMissed.isPending}
-      className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-black/10 bg-white px-3 py-2.5 text-sm font-semibold text-[#8f3f4b] disabled:opacity-50"
+      className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#8f3f4b]/10 px-3 py-2.5 text-sm font-bold text-[#8f3f4b] transition-colors active:bg-[#8f3f4b]/20 disabled:opacity-50"
     >
       {markMissed.isPending ? "…" : "Can't attend"}
+    </button>
+  )
+}
+
+function MarkNoShowButton({ booking }: { booking: Booking }) {
+  const { toast } = useToast()
+  const confirm = useConfirm()
+  const markNoShow = useMarkNoShow()
+
+  async function go() {
+    const ok = await confirm({
+      title: "Client didn't show?",
+      message: `Mark ${booking.customer_name ?? "the client"} as a no-show. The no-show fee is charged to their card on file and they're told they missed it. This can't be undone.`,
+      confirmLabel: "Mark no-show",
+      cancelLabel: "Back",
+      tone: "danger",
+    })
+    if (!ok) return
+    try {
+      await markNoShow.mutateAsync(booking.id)
+      toast({ title: "Marked as a no-show", variant: "success" })
+    } catch (e: unknown) {
+      toast({ title: "Couldn't mark the no-show", description: apiError(e), variant: "error" })
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={go}
+      disabled={markNoShow.isPending}
+      className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#8f3f4b]/10 px-3 py-2.5 text-sm font-bold text-[#8f3f4b] transition-colors active:bg-[#8f3f4b]/20 disabled:opacity-50"
+    >
+      {markNoShow.isPending ? "…" : "Client didn't show"}
+    </button>
+  )
+}
+
+// Opens (or reuses) the chat with the client. The API refuses before the 30-minute
+// window, same as the customer side.
+function MessageClientButton({ clientUserId }: { clientUserId: number }) {
+  const router = useRouter()
+  const { toast } = useToast()
+  const [opening, setOpening] = useState(false)
+
+  async function open() {
+    setOpening(true)
+    try {
+      const { data } = await api.post<{ id: number }>("/conversations", { user_id: clientUserId })
+      router.push(`/staff/messages/thread?id=${data.id}`)
+    } catch (e: unknown) {
+      toast({ title: "Couldn't open the chat", description: apiError(e), variant: "error" })
+    } finally {
+      setOpening(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={open}
+      disabled={opening}
+      className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#C96C83]/10 px-3 py-2.5 text-sm font-bold text-[#9E4A60] transition-colors active:bg-[#C96C83]/20 disabled:opacity-50"
+    >
+      <MessageCircle className="size-4 text-[#C96C83]" aria-hidden /> {opening ? "Opening…" : "Message"}
     </button>
   )
 }
@@ -472,83 +677,11 @@ function JoinCallButton({ booking }: { booking: Booking }) {
       type="button"
       onClick={go}
       disabled={startMeeting.isPending}
-      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#C96C83] px-3 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#C96C83]/10 px-3 py-2.5 text-sm font-bold text-[#9E4A60] transition-colors active:bg-[#C96C83]/20 disabled:opacity-50"
     >
-      <Video className="size-4" aria-hidden />
+      <Video className="size-4 text-[#C96C83]" aria-hidden />
       {startMeeting.isPending ? "…" : scheduled ? "Join call" : "Start call"}
     </button>
   )
 }
 
-// Overtime charge - service ran over the allocated time. Posts to the same
-// employee endpoint; a link result means a payment link was sent to the customer.
-function OvertimeCharge({ bookingId }: { bookingId: number }) {
-  const qc = useQueryClient()
-  const [amount, setAmount] = useState("")
-  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
-
-  const overtime = useMutation({
-    mutationFn: () =>
-      api
-        .post<{ mode: string; url?: string }>(`/employee/bookings/${bookingId}/overtime`, {
-          amount: Number(amount),
-        })
-        .then((r) => r.data),
-    onSuccess: (data) => {
-      setAmount("")
-      qc.invalidateQueries({ queryKey: ["employee-schedule"] })
-      setMsg({
-        type: "success",
-        text: data.mode === "link" ? "Charge added - link sent to the customer." : "Overtime charged.",
-      })
-    },
-    onError: (error: unknown) => {
-      const d = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
-      setMsg({ type: "error", text: d?.error ?? d?.errors?.join(", ") ?? "Could not add the charge." })
-    },
-  })
-
-  function submit() {
-    const v = Number(amount)
-    if (!Number.isFinite(v) || v <= 0) {
-      setMsg({ type: "error", text: "Enter an amount greater than 0." })
-      return
-    }
-    overtime.mutate()
-  }
-
-  return (
-    <div className="mt-3 border-t border-black/[0.06] pt-3">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-[#8a8d93]">
-            $
-          </span>
-          <input
-            type="number"
-            min="0"
-            step="1"
-            inputMode="decimal"
-            placeholder="Overtime amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="h-11 w-full rounded-xl border border-black/10 bg-white pl-7 pr-3 text-base text-[#14100F] outline-none focus:border-[#C96C83]"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={submit}
-          disabled={overtime.isPending || !amount}
-          className="h-11 shrink-0 rounded-xl bg-[#14100F] px-4 text-sm font-bold text-white disabled:opacity-40"
-        >
-          {overtime.isPending ? "…" : "Charge"}
-        </button>
-      </div>
-      {msg && (
-        <p className={`mt-2 text-xs font-medium ${msg.type === "success" ? "text-[#3f7e47]" : "text-[#b3453f]"}`}>
-          {msg.text}
-        </p>
-      )}
-    </div>
-  )
-}

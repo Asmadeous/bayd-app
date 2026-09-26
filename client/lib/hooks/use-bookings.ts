@@ -2,6 +2,7 @@
 
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
+import { usePagedList } from "@/lib/hooks/use-paged-list"
 import type { Meeting } from "@/lib/hooks/use-meetings"
 import type { PaymentMethod } from "@/lib/payment-methods"
 
@@ -93,6 +94,17 @@ export function useBookings(page = 1) {
     queryKey: ["bookings", page],
     queryFn: () => api.get<PagedResponse<Booking>>("/bookings", { params: { page } }).then((r) => r.data),
   })
+}
+
+// The customer's upcoming (soonest first) or past (latest first) bookings, a
+// page at a time for "Load more". Split on the server so paging can't hide an
+// upcoming appointment.
+export function useBookingsList(which: "upcoming" | "past", options: { enabled?: boolean } = {}) {
+  return usePagedList<Booking>(
+    ["bookings", which],
+    (page) => api.get<PagedResponse<Booking>>("/bookings", { params: { when: which, page } }).then((r) => r.data),
+    options,
+  )
 }
 
 // Calendar: every booking of the signed-in customer in [from, to] (company-zone

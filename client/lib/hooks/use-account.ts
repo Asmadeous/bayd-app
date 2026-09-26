@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
+import { usePagedList } from "@/lib/hooks/use-paged-list"
 
 // ── Loyalty ───────────────────────────────────────────────────────────────────
 
@@ -24,6 +25,15 @@ export function useLoyalty() {
     queryKey: ["loyalty"],
     queryFn: () => api.get<LoyaltyAccount>("/loyalty").then((r) => r.data),
   })
+}
+
+// Points history, newest first, a page at a time for "Load more".
+export function useLoyaltyHistory() {
+  return usePagedList<LoyaltyTransaction>(["loyalty", "history"], (page) =>
+    api
+      .get<{ data: LoyaltyTransaction[]; pagination: { next_page: number | null } }>("/loyalty/transactions", { params: { page } })
+      .then((r) => r.data),
+  )
 }
 
 // ── Referral ──────────────────────────────────────────────────────────────────
