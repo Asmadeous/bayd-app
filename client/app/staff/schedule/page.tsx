@@ -53,7 +53,6 @@ export default function StaffScheduleScreen() {
     <div className={staffScreenClass}>
       <StaffHeader
         greeting={firstName}
-        title="Schedule"
         subtitle={
           onShift
             ? "You're clocked in and live."

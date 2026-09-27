@@ -7,8 +7,9 @@ import { displayClass, mutedClass } from "./staff-theme"
 
 // Lightweight staff screen header: heavy title + optional subtitle and a
 // right-side action. App-native, used at the top of each staff tab. Screens
-// opened from another screen (not a tab) pass `back` for a way back, and the
-// home tab passes `greeting` (the tech's name) for a "Hello, ..." line.
+// opened from another screen (not a tab) pass `back` for a way back. The home
+// tab passes `greeting` (the tech's name) instead of a title: "Hello, <name>",
+// on one line unless the name is long.
 export function StaffHeader({
   title,
   subtitle,
@@ -16,7 +17,7 @@ export function StaffHeader({
   back,
   greeting,
 }: {
-  title: string
+  title?: string
   subtitle?: string
   action?: React.ReactNode
   back?: boolean
@@ -36,12 +37,13 @@ export function StaffHeader({
         </button>
       )}
       <div className="min-w-0 flex-1">
-        {greeting && (
-          <p className={`${displayClass} mb-1 truncate text-xl`}>
+        {greeting ? (
+          <h1 className={`${displayClass} break-words text-[2.2rem] leading-[1.05] tracking-[-0.02em]`}>
             Hello, <span className="text-[#C96C83]">{greeting}</span>
-          </p>
+          </h1>
+        ) : (
+          <h1 className={`${displayClass} truncate text-[1.9rem] leading-[1.05]`}>{title}</h1>
         )}
-        <h1 className={`${displayClass} truncate text-[1.9rem] leading-[1.05]`}>{title}</h1>
         {subtitle && <p className={`mt-1 truncate text-sm ${mutedClass}`}>{subtitle}</p>}
       </div>
       {action}

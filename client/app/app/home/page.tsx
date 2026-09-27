@@ -32,12 +32,11 @@ export default function HomeScreen() {
           }}
         />
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className={eyebrowClass}>Beauty, at your door</p>
-            <h1 className={`${displayClass} mt-2 text-[2.2rem] leading-[1.05] tracking-[-0.02em]`}>
-              Hello,
-              <br />
-              <span className="text-[#C96C83]">{firstName}</span>
+            {/* One line; a long name wraps onto the next. */}
+            <h1 className={`${displayClass} mt-2 break-words text-[2.2rem] leading-[1.05] tracking-[-0.02em]`}>
+              Hello, <span className="text-[#C96C83]">{firstName}</span>
             </h1>
           </div>
           <div className="flex shrink-0 items-center gap-2">
