@@ -1,10 +1,10 @@
 "use client"
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User } from "lucide-react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
@@ -128,6 +128,21 @@ export function BookingFlow({
 }) {
   const searchParams = useSearchParams()
   const staffMode = !!staffBooking
+  // In the apps the actions are a solid bar fixed to the screen bottom, running
+  // under the floating tab bar so the page never shows through around it. The
+  // spacer keeps the end of the step clear of the bar at whatever height the bar
+  // has on this phone (it grows with the pay-later button).
+  const pinnedBar = staffMode || inApp
+  const router = useRouter()
+  const actionsSpacerRef = useRef<HTMLDivElement>(null)
+  const pinActionsBar = useCallback((bar: HTMLDivElement | null) => {
+    if (!bar) return
+    const observer = new ResizeObserver(() => {
+      if (actionsSpacerRef.current) actionsSpacerRef.current.style.height = `${bar.offsetHeight}px`
+    })
+    observer.observe(bar)
+    return () => observer.disconnect()
+  }, [])
   const { user: signedIn } = useAuthStore()
   // The signed-in person is the tech in staff mode, never the client.
   const user = staffMode ? null : signedIn
@@ -186,6 +201,7 @@ export function BookingFlow({
   const [notes, setNotes] = useState("")
   const [tip, setTip] = useState("") // optional gratuity in dollars
   const [giftCard, setGiftCard] = useState("")
+  const [giftCardOpen, setGiftCardOpen] = useState(false)
   // Auto-renewal: repeat this booking on a schedule. The backend seeds a
   // Subscription from the first booking and SubscriptionSchedulerJob books the
   // next one automatically; auto-charge bills the card on file each time.
@@ -300,12 +316,13 @@ export function BookingFlow({
   const slotCount = clientType === "group" ? partySize : 1
   const canQuerySlots = !!serviceId && staff !== "any" && !!date
   const availability = useQuery<AvailabilityResult>({
-    queryKey: ["availability", serviceId, staff, date, slotCount, custLat, custLng, postal.trim()],
+    queryKey: ["availability", serviceId, staff, date, slotCount, validAddonIds, custLat, custLng, postal.trim()],
     queryFn: () =>
       api
         .get<AvailabilityResult>("/availability", {
           params: {
             service_id: Number(serviceId), employee_id: Number(staff), date, count: slotCount,
+            addon_service_ids: validAddonIds.length ? validAddonIds : undefined,
             latitude: custLat ?? undefined, longitude: custLng ?? undefined,
             postal_code: postal.trim() || undefined,
           },
@@ -321,12 +338,13 @@ export function BookingFlow({
   // the customer's chosen tech has no open time on the date.
   const canQueryAny = !!serviceId && !!date
   const anyAvailability = useQuery<AnyAvailabilityResult>({
-    queryKey: ["availability-any", serviceId, date, slotCount, custLat, custLng, postal.trim()],
+    queryKey: ["availability-any", serviceId, date, slotCount, validAddonIds, custLat, custLng, postal.trim()],
     queryFn: () =>
       api
         .get<AnyAvailabilityResult>("/availability/any", {
           params: {
             service_id: Number(serviceId), date, count: slotCount,
+            addon_service_ids: validAddonIds.length ? validAddonIds : undefined,
             latitude: custLat ?? undefined, longitude: custLng ?? undefined,
             postal_code: postal.trim() || undefined,
           },
@@ -476,7 +494,7 @@ export function BookingFlow({
     ? [
         {
           name: selected.name,
-          detail: `with ${staff === "any" ? "any available technician" : staffLabel}${clientType === "group" ? ` · ${partySize} people` : ""}`,
+          detail: `with ${staff === "any" ? "any available technician" : staffLabel} · ${selected.duration_minutes} min${clientType === "group" ? ` · ${partySize} people` : ""}`,
           price: selected.requires_consultation ? null : price,
         },
         ...chosenAddons.map((a) => ({ name: a.name, detail: `Add-on · ${a.duration_minutes} min`, price: perPerson(a) })),
@@ -646,7 +664,11 @@ export function BookingFlow({
 
   const summaryWhen =
     step >= 4 && stepValid[4]
-      ? { date: formatDateKey(date, { weekday: "long", month: "short", day: "numeric" }), time: `${slotRange(time, apptMinutes)} ET` }
+      ? {
+          date: formatDateKey(date, { weekday: "long", month: "short", day: "numeric" }),
+          time: `${slotRange(time, apptMinutes)} ET`,
+          short: `${formatDateKey(date, { weekday: "short", month: "short", day: "numeric" })} · ${slotRange(time, apptMinutes)}`,
+        }
       : null
   const summary = (
     <AppointmentSummary lines={summaryLines} when={summaryWhen} onEditService={step > 1 ? () => setStep(1) : undefined} />
@@ -655,7 +677,7 @@ export function BookingFlow({
   // ── Non-Canada block ────────────────────────────────────────────────────────
   if (geo.data && !geo.data.allowed) {
     return (
-      <Shell dashboardMode={dashboardMode}>
+      <Shell dashboardMode={dashboardMode} onBack={pinnedBar ? () => router.back() : undefined}>
         <div className={cn(card, "mx-auto max-w-2xl text-center")}>
           <MapPin className="mx-auto mb-3 size-8 text-[#c96c83]" />
           <h1 className="text-xl font-black tracking-tight">We serve Canada only</h1>
@@ -670,7 +692,7 @@ export function BookingFlow({
 
   if (view === "booked") {
     return (
-      <Shell dashboardMode={dashboardMode}>
+      <Shell dashboardMode={dashboardMode} onBack={pinnedBar ? () => router.back() : undefined}>
         <div className={cn(card, "mx-auto max-w-2xl text-center")}>
           <CheckCircle2 className="mx-auto mb-3 size-9 text-emerald-600" />
           <h1 className="text-xl font-black tracking-tight">{staffMode ? "Booking created" : "You\u2019re booked!"}</h1>
@@ -693,7 +715,7 @@ export function BookingFlow({
 
   if (view === "follow_up") {
     return (
-      <Shell dashboardMode={dashboardMode}>
+      <Shell dashboardMode={dashboardMode} onBack={pinnedBar ? () => router.back() : undefined}>
         <div className={cn(card, "mx-auto max-w-2xl text-center")}>
           <Phone className="mx-auto mb-3 size-9 text-[#c96c83]" />
           <h1 className="text-xl font-black tracking-tight">Request received — we&apos;ll call to confirm</h1>
@@ -721,7 +743,7 @@ export function BookingFlow({
 
   if (view === "consultation") {
     return (
-      <Shell dashboardMode={dashboardMode}>
+      <Shell dashboardMode={dashboardMode} onBack={pinnedBar ? () => router.back() : undefined}>
         <div className={cn(card, "mx-auto max-w-2xl text-center")}>
           <Phone className="mx-auto mb-3 size-9 text-[#c96c83]" />
           <h1 className="text-xl font-black tracking-tight">We&apos;ll call you</h1>
@@ -759,7 +781,7 @@ export function BookingFlow({
   return (
     <>
       {dashboardMode ? null : <SiteHeader />}
-      <Shell dashboardMode={dashboardMode}>
+      <Shell dashboardMode={dashboardMode} onBack={pinnedBar ? (step > 0 ? goBack : () => router.back()) : undefined}>
         <div className="mb-5">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#c96c83]/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#c96c83]">
             <Sparkles className="size-3.5" /> Appointment
@@ -1264,15 +1286,22 @@ export function BookingFlow({
             </div>
           </div>
 
-          <label className={lbl}>Gift card (optional)</label>
-          <input className={field} value={giftCard} onChange={(e) => setGiftCard(e.target.value)} placeholder="Gift card code" />
-          <p className="mt-1.5 text-xs font-medium text-[#8a8d93]">Applied first; any remaining balance is collected at checkout.</p>
-
-          {tip && Number(tip) > 0 ? (
-            <p className="mt-3 text-sm font-semibold text-[#101217]">
-              Total with tip: <span className="text-[#c96c83]">${((price ?? 0) + addonTotal + (Number(tip) || 0)).toFixed(2)}</span>
-            </p>
-          ) : null}
+          {giftCardOpen || giftCard ? (
+            <>
+              <label className={lbl}>Gift card</label>
+              <input
+                className={field}
+                value={giftCard}
+                onChange={(e) => setGiftCard(e.target.value)}
+                placeholder="Gift card code"
+                autoFocus={giftCardOpen && !giftCard}
+              />
+            </>
+          ) : (
+            <button type="button" onClick={() => setGiftCardOpen(true)} className="text-sm font-bold text-[#c96c83]">
+              Have a gift card?
+            </button>
+          )}
 
           {/* Auto-renewal — repeat this booking on a schedule (single bookings only). */}
           {clientType !== "group" ? (
@@ -1284,12 +1313,7 @@ export function BookingFlow({
                   onChange={(e) => setRecurring(e.target.checked)}
                   className="mt-0.5 size-4 accent-[#c96c83]"
                 />
-                <span>
-                  <span className="block text-sm font-bold text-[#101217]">Repeat this booking automatically</span>
-                  <span className="mt-0.5 block text-xs font-medium text-[#8a8d93]">
-                    We&apos;ll rebook the same service on a schedule so you never have to remember.
-                  </span>
-                </span>
+                <span className="text-sm font-bold text-[#101217]">Repeat this booking automatically</span>
               </label>
 
               {recurring ? (
@@ -1327,39 +1351,25 @@ export function BookingFlow({
             </div>
           ) : null}
 
-          {/* Book-without-paying explainer (regular bookings only; groups must deposit). */}
-          {clientType !== "group" ? (
-            <div className="mt-5 rounded-2xl border border-[#c96c83]/30 bg-[#c96c83]/5 p-4">
-              <p className="text-sm font-bold text-[#101217]">Prefer to pay later? You don&apos;t have to pay now.</p>
-              <p className="mt-1 text-sm font-medium text-[#5f6268]">
-                Tap <span className="font-bold text-[#101217]">&ldquo;Book now, pay after the visit&rdquo;</span> to
-                confirm — no card required. Your technician arrives, and you settle up after the service
-                (card, or your card on file). We send your confirmation to{" "}
-                <span className="font-bold text-[#101217]">{email.trim() || phone.trim() || "your contact info"}</span>.
-              </p>
-              <p className="mt-2 text-xs font-medium text-[#8a8d93]">
-                Or tap &ldquo;Pay now&rdquo; to pay securely online in advance — your choice.
-              </p>
-            </div>
-          ) : null}
-
           {error ? <p className="mt-3 text-sm font-bold text-red-600">{error}</p> : null}
         </div>
       ) : null}
 
       {/* Nav. On phones it pins to the bottom with the summary bar above it (in
-          the app, just above the tab bar); wide screens show the summary beside. */}
+          the apps, a fixed bar); wide screens show the summary beside. */}
+      {pinnedBar ? <div ref={actionsSpacerRef} aria-hidden className="mt-5 lg:hidden" /> : null}
       <div
+        ref={pinnedBar ? pinActionsBar : undefined}
         className={cn(
-          "sticky z-30 -mx-4 mt-5 border-t border-black/10 bg-[#f4f1eb]/95 px-4 pt-3 backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none",
-          staffMode
-            ? "bottom-[calc(5rem+env(safe-area-inset-bottom))] pb-3"
-            : inApp
-              ? "bottom-[calc(5rem+env(safe-area-inset-bottom))] pb-3"
-              : "bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]",
+          "z-30 border-t border-black/10 pt-3 lg:static lg:border-0 lg:bg-transparent lg:p-0",
+          pinnedBar
+            ? "fixed inset-x-0 bottom-0 bg-[#f4f1eb] px-4 pb-[calc(5.75rem+env(safe-area-inset-bottom))] lg:mt-5"
+            : "sticky bottom-0 -mx-4 mt-5 bg-[#f4f1eb]/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur sm:-mx-6 sm:px-6 lg:mx-0 lg:backdrop-blur-none",
         )}
       >
-      {selected ? (
+      <div className="mx-auto w-full max-w-2xl lg:max-w-none">
+      {/* The apps show no summary; the website on phones keeps the bar. */}
+      {selected && !pinnedBar ? (
         <SummaryBar
           className="mb-3 lg:hidden"
           lines={summaryLines}
@@ -1368,7 +1378,7 @@ export function BookingFlow({
         />
       ) : null}
       <div className="flex items-start gap-3">
-        {step > 0 ? (
+        {step > 0 && !pinnedBar ? (
           <button
             type="button"
             onClick={goBack}
@@ -1427,26 +1437,27 @@ export function BookingFlow({
           </div>
         ) : (
           // Regular: pay now (→ checkout) is the primary action; booking and
-          // paying after the visit is the secondary path.
-          <div className="flex flex-1 flex-col gap-2">
-            <button
-              type="button"
-              disabled={createBooking.isPending}
-              onClick={() => submit("pay_now")}
-              className="h-12 w-full rounded-xl bg-[#c96c83] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
-            >
-              {createBooking.isPending ? "…" : `Pay now $${((price ?? 0) + addonTotal + (Number(tip) || 0)).toFixed(2)}`}
-            </button>
-            <button
-              type="button"
-              disabled={createBooking.isPending}
-              onClick={() => submit("proceed")}
-              className="h-12 w-full rounded-xl border border-[#101217]/20 bg-white text-sm font-bold text-[#101217] disabled:opacity-40"
-            >
-              {createBooking.isPending ? "…" : "Book now, pay after the visit"}
-            </button>
-          </div>
+          // paying after the visit is the secondary path, below the row.
+          <button
+            type="button"
+            disabled={createBooking.isPending}
+            onClick={() => submit("pay_now")}
+            className="h-12 flex-1 rounded-xl bg-[#c96c83] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
+          >
+            {createBooking.isPending ? "…" : `Pay now $${((price ?? 0) + addonTotal + (Number(tip) || 0)).toFixed(2)}`}
+          </button>
         )}
+      </div>
+      {step === STEPS.length - 1 && !staffMode && clientType !== "group" ? (
+        <button
+          type="button"
+          disabled={createBooking.isPending}
+          onClick={() => submit("proceed")}
+          className="mt-2 h-12 w-full rounded-xl border border-[#101217]/20 bg-white text-sm font-bold text-[#101217] disabled:opacity-40"
+        >
+          {createBooking.isPending ? "…" : "Book now, pay after the visit"}
+        </button>
+      ) : null}
       </div>
       </div>
 
@@ -1541,10 +1552,31 @@ function StaffOption({
   )
 }
 
-function Shell({ children, dashboardMode = false }: { children: React.ReactNode; dashboardMode?: boolean }) {
+// `onBack` (apps only) is the flow's one back button, at the top of every screen.
+function Shell({
+  children,
+  dashboardMode = false,
+  onBack,
+}: {
+  children: React.ReactNode
+  dashboardMode?: boolean
+  onBack?: () => void
+}) {
   return (
     <main className={dashboardMode ? "text-[#101217]" : "min-h-screen bg-[#f4f1eb] text-[#101217]"}>
-      <div className={dashboardMode ? "mx-auto w-full max-w-2xl lg:max-w-5xl" : "mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-14 lg:max-w-5xl"}>{children}</div>
+      <div className={dashboardMode ? "mx-auto w-full max-w-2xl lg:max-w-5xl" : "mx-auto w-full max-w-2xl px-4 py-10 sm:px-6 sm:py-14 lg:max-w-5xl"}>
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back"
+            className="mb-2 grid size-10 place-items-center rounded-full bg-white shadow-sm"
+          >
+            <ChevronLeft className="size-5" aria-hidden />
+          </button>
+        ) : null}
+        {children}
+      </div>
     </main>
   )
 }

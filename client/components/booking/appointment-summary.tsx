@@ -7,6 +7,8 @@ import { CalendarDays, ChevronDown, Pencil, Sparkles, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type SummaryLine = { name: string; detail?: string; price: number | null }
+// `short` is the one-line form for the phone bar ("Mon, Sep 28 · 9:15 AM - 10:45 AM").
+export type SummaryWhen = { date: string; time: string; short?: string }
 
 // The running "Appointment summary" beside the booking steps, like Square's.
 // Prices are tax-inclusive; the invoice breaks out HST.
@@ -17,7 +19,7 @@ export function AppointmentSummary({
   className,
   bare = false,
 }: {
-  when?: { date: string; time: string } | null
+  when?: SummaryWhen | null
   lines: SummaryLine[]
   onEditService?: () => void
   className?: string
@@ -58,15 +60,20 @@ export function AppointmentSummary({
                   {line.detail ? <p className="text-sm font-medium text-[#8a8d93]">{line.detail}</p> : null}
                 </div>
                 <span className="text-sm font-bold">{line.price == null ? "Quote" : `$${line.price.toFixed(2)}`}</span>
-                {i === 0 && onEditService ? (
-                  <button
-                    type="button"
-                    onClick={onEditService}
-                    aria-label="Change service"
-                    className="-mr-1 grid size-7 place-items-center rounded-full text-[#8a8d93] hover:bg-black/[0.05] hover:text-[#101217]"
-                  >
-                    <Pencil className="size-3.5" aria-hidden />
-                  </button>
+                {/* Other rows keep the pencil's space so the prices line up. */}
+                {onEditService ? (
+                  i === 0 ? (
+                    <button
+                      type="button"
+                      onClick={onEditService}
+                      aria-label="Change service"
+                      className="-mr-1 grid size-7 shrink-0 place-items-center rounded-full text-[#8a8d93] hover:bg-black/[0.05] hover:text-[#101217]"
+                    >
+                      <Pencil className="size-3.5" aria-hidden />
+                    </button>
+                  ) : (
+                    <span aria-hidden className="-mr-1 size-7 shrink-0" />
+                  )
                 ) : null}
               </li>
             ))}
@@ -92,7 +99,7 @@ export function SummaryBar({
   onEditService,
   className,
 }: {
-  when?: { date: string; time: string } | null
+  when?: SummaryWhen | null
   lines: SummaryLine[]
   onEditService?: () => void
   className?: string
@@ -119,8 +126,8 @@ export function SummaryBar({
       >
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-bold">{lines.map((l) => l.name).join(" + ")}</span>
-          <span className="block truncate text-sm font-medium text-[#8a8d93]">
-            {when ? `${when.date} · ${when.time}` : "No time picked yet"}
+          <span className="block text-sm font-medium text-[#8a8d93]">
+            {when ? (when.short ?? `${when.date} · ${when.time}`) : "No time picked yet"}
           </span>
         </span>
         <span className="text-sm font-black">{quote ? "Quote" : `$${total.toFixed(2)}`}</span>
