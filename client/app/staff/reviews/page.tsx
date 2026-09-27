@@ -31,7 +31,7 @@ export default function StaffReviewsScreen() {
 
   return (
     <div className={staffScreenClass}>
-      <StaffHeader back title="Reviews" subtitle="What your clients said." />
+      <StaffHeader back title="Reviews" />
 
       <div className="space-y-4 px-5">
         {average && (
@@ -68,7 +68,7 @@ export default function StaffReviewsScreen() {
                     <Stars rating={r.rating} size="size-4" />
                   </div>
                   {r.body && <p className={`mt-1.5 text-sm ${mutedClass}`}>{r.body}</p>}
-                  <p className="mt-2 text-xs text-[#14100F]/40">
+                  <p className="mt-2 text-sm text-[#14100F]/40">
                     {new Date(r.created_at).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}
                   </p>
                 </li>

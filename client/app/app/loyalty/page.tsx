@@ -2,18 +2,21 @@
 
 import { LoadMore } from "@/components/load-more"
 import { useLoyalty, useLoyaltyHistory } from "@/lib/hooks/use-account"
-import { cardClass, displayClass, eyebrowClass, mutedClass } from "../app-theme"
-import { SectionScreen } from "../section-screen"
+import { appScreenClass, cardClass, displayClass, eyebrowClass, mutedClass } from "../app-theme"
+import { AppHeader } from "../app-header"
 
 export default function AppLoyaltyScreen() {
   return (
-    <SectionScreen title="Loyalty">
-      <LoyaltyPanel />
-    </SectionScreen>
+    <div className={appScreenClass}>
+      <AppHeader back title="Loyalty" />
+      <div className="px-5">
+        <LoyaltyPanel />
+      </div>
+    </div>
   )
 }
 
-// Points balance and history. Shown in the Management tab.
+// Points balance and history.
 export function LoyaltyPanel() {
   const { data, isLoading } = useLoyalty()
   const { items: history, isLoading: historyLoading, hasMore, loadingMore, loadMore } = useLoyaltyHistory()
@@ -25,7 +28,7 @@ export function LoyaltyPanel() {
       ) : (
         <div className="space-y-5 pb-6">
           <div className="rounded-3xl bg-[#14100F] p-6 text-white shadow-[0_16px_40px_-16px_rgba(20,16,15,0.5)]">
-            <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/50">Points balance</p>
+            <p className="text-[0.8125rem] font-bold uppercase tracking-[0.16em] text-white/50">Points balance</p>
             <p className={`${displayClass} mt-1 text-5xl`}>{data?.points_balance ?? 0}</p>
           </div>
 
@@ -41,7 +44,7 @@ export function LoyaltyPanel() {
                   <li key={t.id} className={`flex items-center justify-between p-4 ${cardClass}`}>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold capitalize">{t.description || t.kind}</p>
-                      <p className={`text-xs ${mutedClass}`}>
+                      <p className={`text-sm ${mutedClass}`}>
                         {new Date(t.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                       </p>
                     </div>

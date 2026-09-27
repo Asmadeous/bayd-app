@@ -109,7 +109,7 @@ export default function SignUpScreen() {
           <SignupConsent className="text-white/50" linkClassName="text-white/80" />
         </div>
 
-        <p className="mt-auto pt-8 text-center text-xs text-white/45">
+        <p className="mt-auto pt-8 text-center text-sm text-white/45">
           Already have an account?{" "}
           <Link href="/app/signin" className="font-bold text-[#C96C83]">
             Sign in

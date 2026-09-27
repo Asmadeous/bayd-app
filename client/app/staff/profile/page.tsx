@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { BadgeCheck, Gift, HandCoins, Lock, LogOut, Mail, MapPin, Phone, Star } from "lucide-react"
+import { BadgeCheck, Lock, LogOut, Mail, MapPin, Phone } from "lucide-react"
 
 import { useEmployeeProfile, useUpdateProfile } from "@/lib/hooks/use-employee"
 import { useAuth } from "@/lib/hooks/use-auth"
@@ -14,6 +13,7 @@ import { ImagePicker } from "@/components/image-picker"
 import { DeleteAccountButton } from "@/components/account/delete-account"
 import { LegalLinks } from "@/components/legal/legal-links"
 import { ChangePasswordForm } from "@/components/change-password-form"
+import { ToggleRow } from "@/components/toggle-row"
 import { staffScreenClass, cardClass, eyebrowClass, inputClass, labelClass, mutedClass } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
 
@@ -22,9 +22,9 @@ const STAFF_REDIRECT = { afterAuth: "/staff/schedule", afterLogout: "/staff/welc
 // Staff profile - a purpose-built mobile screen on useEmployeeProfile +
 // useUpdateProfile (the same title/bio/photo the desktop staff profile edits;
 // base location, services and availability are admin-managed, not editable here).
-// Also the home for Reviews, Gift cards, and sign out.
+// Also holds app lock and sign out; past jobs, Earnings, Reviews, Shifts and
+// Fuel live on the Manage tab. Changing the password is part of Edit profile.
 export default function StaffProfileScreen() {
-  const router = useRouter()
   const { toast } = useToast()
   const confirm = useConfirm()
   const { logout } = useAuth(STAFF_REDIRECT)
@@ -194,6 +194,16 @@ export default function StaffProfileScreen() {
               </button>
             </div>
           </div>
+        ) : null}
+
+        {editing ? (
+          <section className={`${cardClass} p-4`}>
+            <p className={eyebrowClass}>Change password</p>
+            <p className={`mb-3 mt-1 text-sm ${mutedClass}`}>
+              Enter your current password and choose a new one. You&apos;ll stay signed in.
+            </p>
+            <ChangePasswordForm />
+          </section>
         ) : (
           <div className={`${cardClass} p-4`}>
             <p className={eyebrowClass}>About</p>
@@ -212,7 +222,7 @@ export default function StaffProfileScreen() {
               {details.map((d) => (
                 <div key={d.label} className="flex items-center gap-3 py-2.5">
                   <d.icon className="size-4 shrink-0 text-[#C96C83]" aria-hidden />
-                  <dt className="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.06em] text-[#14100F]/45">
+                  <dt className="w-24 shrink-0 text-sm font-semibold uppercase tracking-[0.06em] text-[#14100F]/45">
                     {d.label}
                   </dt>
                   <dd className="min-w-0 flex-1 truncate text-sm font-medium text-[#14100F]">{d.value}</dd>
@@ -220,48 +230,22 @@ export default function StaffProfileScreen() {
               ))}
             </dl>
             {profile?.partner_name && (
-              <p className={`mt-3 border-t border-black/[0.06] pt-3 text-xs ${mutedClass}`}>
+              <p className={`mt-3 border-t border-black/[0.06] pt-3 text-sm ${mutedClass}`}>
                 Partnered with {profile.partner_name}
               </p>
             )}
           </section>
         )}
 
-        {/* More - surfaces that aren't bottom-nav tabs. */}
         <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
-          <MenuRow href="/staff/earnings" icon={HandCoins} label="Earnings" />
-          <MenuRow href="/staff/reviews" icon={Star} label="Reviews" />
-          <MenuRow href="/staff/gift-cards" icon={Gift} label="Gift cards" last />
-        </section>
-
-        {/* Security - optional biometric app-lock (native devices only). */}
-        {bioAvailable && (
-          <section className={`${cardClass} p-4`}>
-            <p className={eyebrowClass}>Security</p>
-            <p className={`mb-3 mt-1 text-sm ${mutedClass}`}>
-              Lock the app with your fingerprint, face, or device PIN.
-            </p>
-            <button
-              type="button"
-              onClick={toggleBiometric}
-              disabled={bioBusy}
-              className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 ${
-                bioOn ? "bg-[#14100F] text-white" : "border border-black/15 text-[#14100F]"
-              }`}
-            >
-              <Lock className="size-4" aria-hidden />
-              {bioBusy ? "Follow your device…" : bioOn ? "App lock is on - tap to turn off" : "Enable app lock"}
-            </button>
-          </section>
-        )}
-
-        {/* Change password - staff have a password login (customers are OTP). */}
-        <section className={`${cardClass} p-4`}>
-          <p className={eyebrowClass}>Change password</p>
-          <p className={`mb-3 mt-1 text-sm ${mutedClass}`}>
-            Enter your current password and choose a new one. You&apos;ll stay signed in.
-          </p>
-          <ChangePasswordForm />
+          <ToggleRow
+            icon={Lock}
+            label="App lock"
+            checked={bioOn}
+            disabled={!bioAvailable || bioBusy}
+            onToggle={toggleBiometric}
+            last
+          />
         </section>
 
         <button
@@ -285,28 +269,4 @@ export default function StaffProfileScreen() {
       </div>
     </div>
   )
-
-  function MenuRow({
-    href,
-    icon: Icon,
-    label,
-    last,
-  }: {
-    href: string
-    icon: typeof Star
-    label: string
-    last?: boolean
-  }) {
-    return (
-      <button
-        type="button"
-        onClick={() => router.push(href)}
-        className={`flex w-full items-center gap-3 px-4 py-3.5 text-left ${last ? "" : "border-b border-black/[0.06]"}`}
-      >
-        <Icon className="size-5 text-[#C96C83]" aria-hidden />
-        <span className="flex-1 text-sm font-semibold">{label}</span>
-        <span className="text-[#14100F]/30">›</span>
-      </button>
-    )
-  }
 }

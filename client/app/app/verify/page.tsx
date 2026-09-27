@@ -130,7 +130,7 @@ function Verify() {
       </button>
 
       <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
-        <p className="text-[0.7rem] font-bold uppercase tracking-[0.2em] text-[#C96C83]">
+        <p className="text-[0.8125rem] font-bold uppercase tracking-[0.2em] text-[#C96C83]">
           Verify it&apos;s you
         </p>
         <h1 className="mt-2 text-[2rem] font-black leading-[1.1] tracking-tight">

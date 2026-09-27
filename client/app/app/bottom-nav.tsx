@@ -10,7 +10,8 @@ import { hapticTap } from "@/lib/native/haptics"
 
 type Tab = { label: string; href: string; icon: LucideIcon; also?: string[] }
 
-// The app tabs - phone-native fixed bottom bar. Booking starts from Book now on
+// The app tabs - a floating rounded bar above the screen edge; every tab keeps
+// its label and the active one sits in a pink pill. Booking starts from Book now on
 // the Bookings tab. Screens opened from a tab keep that tab lit, so you always
 // know where you are.
 const tabs: Tab[] = [
@@ -19,7 +20,7 @@ const tabs: Tab[] = [
     label: "Management",
     href: "/app/manage",
     icon: Briefcase,
-    also: ["/app/orders", "/app/transactions", "/app/gift-cards", "/app/loyalty"],
+    also: ["/app/past", "/app/orders", "/app/transactions", "/app/gift-cards", "/app/loyalty"],
   },
   { label: "Shop", href: "/app/shop", icon: ShoppingBag },
   { label: "Chat", href: "/app/chat", icon: MessageCircle, also: ["/app/messages", "/app/support"] },
@@ -51,11 +52,11 @@ export function BottomNav() {
     <nav
       aria-label="Primary"
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 border-t border-black/10 bg-[#f4f1eb]/95 backdrop-blur-xl transition-transform duration-300 pb-[env(safe-area-inset-bottom)]",
-        hidden && "translate-y-full",
+        "pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] transition-transform duration-300",
+        hidden && "translate-y-[150%]",
       )}
     >
-      <ul className="mx-auto flex max-w-md items-stretch justify-around px-2">
+      <ul className="pointer-events-auto mx-auto flex max-w-md items-stretch rounded-[1.75rem] border border-black/10 bg-white/95 px-1 py-1.5 shadow-[0_8px_24px_rgba(20,16,15,0.12)] backdrop-blur-xl">
         {tabs.map((tab) => {
           const active = [tab.href, ...(tab.also ?? [])].some((r) => pathname === r || pathname.startsWith(`${r}/`))
           const Icon = tab.icon
@@ -66,12 +67,19 @@ export function BottomNav() {
                 onClick={() => hapticTap()}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-[4.5rem] flex-col items-center justify-center gap-1 text-[0.62rem] font-semibold uppercase tracking-[0.08em] transition-colors",
-                  active ? "text-[#c96c83]" : "text-[#101217]/45",
+                  "flex h-14 flex-col items-center justify-center gap-0.5 text-[0.75rem] font-semibold transition-colors",
+                  active ? "text-[#9E4A60]" : "text-[#101217]/50",
                 )}
               >
-                <Icon aria-hidden="true" className={cn("size-[1.35rem]", active && "stroke-[2.4]")} />
-                {tab.label}
+                <span
+                  className={cn(
+                    "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
+                    active && "bg-[#C96C83]/15",
+                  )}
+                >
+                  <Icon aria-hidden="true" className={cn("size-[1.3rem]", active && "stroke-[2.4]")} />
+                </span>
+                <span className="max-w-full truncate px-0.5">{tab.label}</span>
               </Link>
             </li>
           )

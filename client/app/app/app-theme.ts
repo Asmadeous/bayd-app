@@ -13,7 +13,7 @@ export const appTheme = {
   rose: "#F0C8D3",
   plum: "#4A2C38",
   gold: "#C9A45C",
-  tabBarHeight: "4.5rem",
+  tabBarHeight: "5rem",
 } as const
 
 // Page shell: full-height warm paper, room for the bottom tab bar. The TOP
@@ -21,7 +21,7 @@ export const appTheme = {
 // SectionScreen, or the screen's own pt-[calc(...+var(--top-inset))]) -
 // adding it here too would double-count the notch and push every screen down.
 export const appScreenClass =
-  "min-h-dvh bg-[#F6F1EC] text-[#14100F] pb-[calc(4.5rem+env(safe-area-inset-bottom))]"
+  "min-h-dvh bg-[#F6F1EC] text-[#14100F] pb-[calc(6.5rem+env(safe-area-inset-bottom))]"
 
 // Display heading style: matches the Book flow's headings (Plus Jakarta Sans,
 // heavy weight, tight tracking) so every screen title reads the same as Book.
@@ -34,10 +34,10 @@ export const cardClass =
 
 // Small uppercase section label (eyebrow).
 export const eyebrowClass =
-  "text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#14100F]/40"
+  "text-[0.8125rem] font-bold uppercase tracking-[0.12em] text-[#14100F]/60"
 
 // Muted body text.
-export const mutedClass = "text-[#14100F]/55"
+export const mutedClass = "text-[#14100F]/65"
 
 // A form input / textarea: warm surface, hairline border, blush focus ring.
 export const inputClass =
@@ -45,4 +45,4 @@ export const inputClass =
 
 // A small uppercase field label.
 export const labelClass =
-  "mb-2 block text-[0.68rem] font-bold uppercase tracking-[0.16em] text-[#14100F]/45"
+  "mb-2 block text-[0.8125rem] font-bold uppercase tracking-[0.1em] text-[#14100F]/60"

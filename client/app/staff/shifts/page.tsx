@@ -15,8 +15,8 @@ export default function StaffShiftsScreen() {
   return (
     <div className={staffScreenClass}>
       <StaffHeader
+        back
         title="Shifts"
-        subtitle="Clock-in history and hours."
       />
 
       <div className="space-y-4 px-5">
@@ -64,7 +64,7 @@ function ShiftRow({ shift }: { shift: Shift }) {
       <div className="flex items-center justify-between gap-2">
         <p className="font-extrabold">{day(shift.clock_in_at)}</p>
         {open ? (
-          <span className="rounded-full bg-[#4E9A57]/12 px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em] text-[#3f7e47]">
+          <span className="rounded-full bg-[#4E9A57]/12 px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.08em] text-[#3f7e47]">
             On shift
           </span>
         ) : null}
@@ -75,13 +75,13 @@ function ShiftRow({ shift }: { shift: Shift }) {
       </p>
 
       <div className="mt-3 flex gap-3">
-        <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/[0.04] px-2.5 py-1.5 text-xs font-semibold">
+        <span className="inline-flex items-center gap-1.5 rounded-lg bg-black/[0.04] px-2.5 py-1.5 text-sm font-semibold">
           <Route className="size-3.5 text-[#C96C83]" aria-hidden />
           {formatDistance(shift.distance_km)}
         </span>
         {!open && (
           <span
-            className="inline-flex items-center rounded-lg px-2.5 py-1.5 text-xs font-semibold"
+            className="inline-flex items-center rounded-lg px-2.5 py-1.5 text-sm font-semibold"
             style={
               shift.arrived_late
                 ? { background: "rgba(143,63,75,0.1)", color: "#8f3f4b" }

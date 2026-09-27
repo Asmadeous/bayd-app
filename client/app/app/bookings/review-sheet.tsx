@@ -77,7 +77,7 @@ export function ReviewSheet({ booking, onClose }: { booking: Booking; onClose: (
           className={`resize-none ${inputClass}`}
         />
 
-        <p className={`mt-3 text-xs ${mutedClass}`}>Reviews are published after a quick check by our team.</p>
+        <p className={`mt-3 text-sm ${mutedClass}`}>Reviews are published after a quick check by our team.</p>
 
         <button
           type="button"

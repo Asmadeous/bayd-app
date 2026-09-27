@@ -48,7 +48,7 @@ function CallView() {
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-white/90">Work-scope call</p>
           {booking?.service?.name && (
-            <p className="truncate text-xs text-white/50">{booking.service.name}</p>
+            <p className="truncate text-sm text-white/50">{booking.service.name}</p>
           )}
         </div>
       </header>

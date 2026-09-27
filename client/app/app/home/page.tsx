@@ -31,14 +31,13 @@ export default function HomeScreen() {
               "radial-gradient(120% 80% at 100% 0%, rgba(240,200,211,0.55), transparent 55%), radial-gradient(90% 70% at 0% 0%, rgba(201,108,131,0.18), transparent 60%)",
           }}
         />
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className={eyebrowClass}>Beauty, at your door</p>
-            {/* One line; a long name wraps onto the next. */}
-            <h1 className={`${displayClass} mt-2 break-words text-[2.2rem] leading-[1.05] tracking-[-0.02em]`}>
-              Hello, <span className="text-[#C96C83]">{firstName}</span>
-            </h1>
-          </div>
+        <p className={eyebrowClass}>Beauty, at your door</p>
+        {/* The buttons sit on the greeting's line, not the eyebrow's. */}
+        <div className="mt-2 flex items-center justify-between gap-3">
+          {/* One line; a long name wraps onto the next. */}
+          <h1 className={`${displayClass} min-w-0 break-words text-[2.2rem] leading-tight tracking-[-0.02em]`}>
+            Hello, <span className="text-[#C96C83]">{firstName}</span>
+          </h1>
           <div className="flex shrink-0 items-center gap-2">
             <NotificationBell />
             {/* Booking starts here (there's no Book tab). */}
@@ -88,7 +87,7 @@ function NotificationBell() {
     >
       <Bell className="size-5 text-[#14100F]" aria-hidden />
       {unread > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-[#C96C83] px-1 text-[0.62rem] font-bold text-white">
+        <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-[#C96C83] px-1 text-[0.75rem] font-bold text-white">
           {unread > 9 ? "9+" : unread}
         </span>
       )}
@@ -106,7 +105,7 @@ function NextBookingCard({ booking }: { booking: Booking }) {
       className="block overflow-hidden rounded-3xl bg-[#14100F] p-5 text-[#F6F1EC] shadow-[0_16px_40px_-16px_rgba(20,16,15,0.5)]"
     >
       <div className="flex items-center justify-between">
-        <span className="rounded-full bg-[#C96C83] px-3 py-1 text-[0.62rem] font-bold uppercase tracking-[0.14em]">
+        <span className="rounded-full bg-[#C96C83] px-3 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.14em]">
           {booking.status.replace("_", " ")}
         </span>
         <ArrowRight className="size-4 text-[#F6F1EC]/50" aria-hidden />

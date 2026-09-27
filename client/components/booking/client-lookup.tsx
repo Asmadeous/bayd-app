@@ -61,7 +61,7 @@ export function ClientLookup({
         lookup.isFetching && results.length === 0 ? (
           <BubbleLoader className="py-4" />
         ) : results.length === 0 ? (
-          <p className="mt-2 text-xs font-medium text-[#8a8d93]">No existing client matches. Enter their details below.</p>
+          <p className="mt-2 text-sm font-medium text-[#8a8d93]">No existing client matches. Enter their details below.</p>
         ) : (
           <ul className="mt-2 divide-y divide-black/5 overflow-hidden rounded-xl border border-black/10 bg-white">
             {results.map((c) => (
@@ -76,7 +76,7 @@ export function ClientLookup({
                   className="block w-full px-4 py-3 text-left transition-colors active:bg-black/[0.03]"
                 >
                   <span className="block text-sm font-bold">{fullName(c)}</span>
-                  <span className="block truncate text-xs font-medium text-[#8a8d93]">
+                  <span className="block truncate text-sm font-medium text-[#8a8d93]">
                     {[c.email, c.phone, c.address && `${c.address.line1}, ${c.address.city}`].filter(Boolean).join(" · ")}
                   </span>
                 </button>
@@ -85,7 +85,7 @@ export function ClientLookup({
           </ul>
         )
       ) : (
-        <p className="mt-2 text-xs font-medium text-[#8a8d93]">Type 3 or more letters to search. New client? Fill in the form below.</p>
+        <p className="mt-2 text-sm font-medium text-[#8a8d93]">Type 3 or more letters to search. New client? Fill in the form below.</p>
       )}
     </div>
   )

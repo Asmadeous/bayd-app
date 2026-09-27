@@ -15,7 +15,7 @@ class ChatMessagePushJob < ApplicationJob
     PushService.push(
       user: recipient,
       title: "New message from #{message.sender.first_name.presence || 'Beauty @ Your Door'}",
-      body: message.body.truncate(140),
+      body: message.body.presence&.truncate(140) || "Sent a photo",
       data: { kind: "chat_message", conversation_id: message.conversation_id, path: thread_path(recipient, message.conversation_id) }
     )
   end

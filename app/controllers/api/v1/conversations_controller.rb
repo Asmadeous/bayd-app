@@ -5,6 +5,7 @@ module Api
     class ConversationsController < ApplicationController
       def index
         convos = Conversation.for_user(current_user).newest_first
+                             .includes(participant_one: { avatar_attachment: :blob }, participant_two: { avatar_attachment: :blob })
         # With ?page the list comes in pages; without it, everything (older clients).
         if params[:page].present?
           records, meta = paginate(convos)

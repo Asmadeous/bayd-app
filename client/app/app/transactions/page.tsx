@@ -6,9 +6,9 @@ import { FileText, X } from "lucide-react"
 import { InvoiceBreakdown } from "@/components/invoice/invoice-breakdown"
 import { useInvoicesList, type Invoice } from "@/lib/hooks/use-invoices"
 import { LoadMore } from "@/components/load-more"
-import { cardClass, mutedClass } from "../app-theme"
+import { appScreenClass, cardClass, mutedClass } from "../app-theme"
 import { EmptyState } from "../empty-state"
-import { SectionScreen } from "../section-screen"
+import { AppHeader } from "../app-header"
 
 const STATUS_STYLE: Record<string, string> = {
   paid: "bg-[#c96c83]/12 text-[#c96c83]",
@@ -17,7 +17,6 @@ const STATUS_STYLE: Record<string, string> = {
   refunded: "bg-[#8f3f4b]/12 text-[#8f3f4b]",
 }
 
-// The list itself, shown on its own screen and inside Management.
 export function TransactionsList() {
   const { items: invoices, isLoading, hasMore, loadingMore, loadMore } = useInvoicesList()
   const [open, setOpen] = useState<Invoice | null>(null)
@@ -38,7 +37,7 @@ export function TransactionsList() {
                 <button type="button" onClick={() => setOpen(inv)} className={`block w-full p-4 text-left ${cardClass}`}>
                 <div className="flex items-center justify-between">
                   <span
-                    className={`rounded-full px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] ${
+                    className={`rounded-full px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.1em] ${
                       STATUS_STYLE[inv.status] ?? "bg-black/8 text-[#101217]/60"
                     }`}
                   >
@@ -47,7 +46,7 @@ export function TransactionsList() {
                   <span className="text-sm font-extrabold">${Number(inv.total).toFixed(2)}</span>
                 </div>
                 <p className="mt-2 text-sm font-bold">{invoiceTitle(inv)}</p>
-                <p className={`mt-0.5 text-xs ${mutedClass}`}>
+                <p className={`mt-0.5 text-sm ${mutedClass}`}>
                   {inv.invoice_number} · {when.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                 </p>
                 </button>
@@ -65,9 +64,12 @@ export function TransactionsList() {
 
 export default function AppTransactionsScreen() {
   return (
-    <SectionScreen title="Transactions">
-      <TransactionsList />
-    </SectionScreen>
+    <div className={appScreenClass}>
+      <AppHeader back title="Transactions" />
+      <div className="px-5">
+        <TransactionsList />
+      </div>
+    </div>
   )
 }
 
@@ -81,9 +83,9 @@ function InvoiceSheet({ invoice, onClose }: { invoice: Invoice; onClose: () => v
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-[#C96C83]">Invoice</p>
+            <p className="text-[0.8125rem] font-bold uppercase tracking-[0.16em] text-[#C96C83]">Invoice</p>
             <p className="text-lg font-extrabold">{invoice.invoice_number}</p>
-            <p className={`text-xs ${mutedClass}`}>
+            <p className={`text-sm ${mutedClass}`}>
               {invoice.source_label} · {invoice.payment_method ?? "Payment pending"}
             </p>
           </div>

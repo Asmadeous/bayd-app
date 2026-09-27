@@ -15,7 +15,7 @@ interface UseChat {
   loadEarlier: () => Promise<void>
   otherTyping: boolean
   otherOnline: boolean
-  send: (body: string) => Promise<void>
+  send: (body: string, image?: File | null) => Promise<void>
   setTyping: (typing: boolean) => void
 }
 
@@ -104,14 +104,25 @@ export function useChat(conversationId: number, currentUserId: number): UseChat 
   }, [conversationId, earlierPage, loadingEarlier])
 
   const send = useCallback(
-    async (body: string) => {
+    async (body: string, image?: File | null) => {
       const trimmed = body.trim()
-      if (!trimmed) return
+      if (!trimmed && !image) return
       // Post over REST; the endpoint returns the created message. Append it
       // IMMEDIATELY (optimistic) so the sender sees it without waiting for the
       // cable round-trip - the dedup-by-id in `received` drops the echoed
-      // broadcast, so it never appears twice.
-      const { data } = await api.post<ChatMessage>(`/conversations/${conversationId}/messages`, { body: trimmed })
+      // broadcast, so it never appears twice. A photo goes up as multipart.
+      const url = `/conversations/${conversationId}/messages`
+      let payload: FormData | { body: string } = { body: trimmed }
+      if (image) {
+        payload = new FormData()
+        payload.append("body", trimmed)
+        payload.append("image", image)
+      }
+      const { data } = await api.post<ChatMessage>(
+        url,
+        payload,
+        image ? { headers: { "Content-Type": "multipart/form-data" } } : undefined,
+      )
       setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data]))
     },
     [conversationId]

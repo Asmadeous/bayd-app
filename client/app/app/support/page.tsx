@@ -72,14 +72,14 @@ export function SupportChat({ className }: { className: string }) {
               )}
             >
               {m.from_staff ? (
-                <span className="mb-0.5 block text-[0.65rem] font-bold uppercase tracking-[0.08em] text-[#a36f4d]">B.A.Y.D team</span>
+                <span className="mb-0.5 block text-[0.8125rem] font-bold uppercase tracking-[0.08em] text-[#a36f4d]">B.A.Y.D team</span>
               ) : null}
               {m.body}
             </div>
           </div>
         ))}
         {token && thread.data?.status === "closed" ? (
-          <p className={`text-center text-xs ${mutedClass}`}>
+          <p className={`text-center text-sm ${mutedClass}`}>
             This chat was closed. Send a message to reopen it, or{" "}
             <button type="button" onClick={reset} className="font-semibold text-[#c96c83] underline">
               start a new chat

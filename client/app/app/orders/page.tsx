@@ -4,10 +4,10 @@
 import api from "@/lib/api"
 import { LoadMore } from "@/components/load-more"
 import { usePagedList } from "@/lib/hooks/use-paged-list"
-import { cardClass, mutedClass } from "../app-theme"
+import { appScreenClass, cardClass, mutedClass } from "../app-theme"
 import { ShoppingBag } from "lucide-react"
 import { EmptyState } from "../empty-state"
-import { SectionScreen } from "../section-screen"
+import { AppHeader } from "../app-header"
 
 interface Order {
   id: number
@@ -23,7 +23,6 @@ interface Paged<T> {
   pagination: { current_page: number; total_pages: number; next_page: number | null }
 }
 
-// The list itself, shown on its own screen and inside Management.
 export function OrdersList() {
   const { items: orders, isLoading, hasMore, loadingMore, loadMore } = usePagedList<Order>(["orders", "list"], (page) =>
     api.get<Paged<Order>>("/orders", { params: { page } }).then((r) => r.data),
@@ -43,12 +42,12 @@ export function OrdersList() {
             return (
               <li key={o.id} className={`p-4 ${cardClass}`}>
                 <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-[#c96c83]/12 px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-[#c96c83]">
+                  <span className="rounded-full bg-[#c96c83]/12 px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.1em] text-[#c96c83]">
                     {o.status}
                   </span>
                   <span className="text-sm font-extrabold">${Number(o.total).toFixed(2)}</span>
                 </div>
-                <p className={`mt-2 text-xs ${mutedClass}`}>
+                <p className={`mt-2 text-sm ${mutedClass}`}>
                   {when.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} · Order #{o.id}
                 </p>
                 <ul className="mt-2 space-y-0.5 text-sm">
@@ -72,9 +71,12 @@ export function OrdersList() {
 
 export default function AppOrdersScreen() {
   return (
-    <SectionScreen title="Orders">
-      <OrdersList />
-    </SectionScreen>
+    <div className={appScreenClass}>
+      <AppHeader back title="Orders" />
+      <div className="px-5">
+        <OrdersList />
+      </div>
+    </div>
   )
 }
 

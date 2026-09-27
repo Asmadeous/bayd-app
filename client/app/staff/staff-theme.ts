@@ -9,14 +9,14 @@ export const staffTheme = {
   blush: "#C96C83",
   live: "#4E9A57", // on-shift / clocked-in green
   amber: "#C98A2E",
-  tabBarHeight: "4.25rem",
+  tabBarHeight: "5rem",
 } as const
 
 // Full-height paper background, room for the bottom tab bar. The TOP safe-area
 // inset is supplied by StaffHeader or the screen itself, not here - applying it
 // in both places double-counts the notch.
 export const staffScreenClass =
-  "min-h-dvh bg-[#F4F2EF] text-[#14100F] pb-[calc(4.25rem+env(safe-area-inset-bottom))]"
+  "min-h-dvh bg-[#F4F2EF] text-[#14100F] pb-[calc(6.5rem+env(safe-area-inset-bottom))]"
 
 // Heading style - heavy, tight (matches the customer app's display so the brand
 // reads consistent across both apps).
@@ -28,15 +28,15 @@ export const cardClass =
 
 // Small uppercase section label.
 export const eyebrowClass =
-  "text-[0.66rem] font-bold uppercase tracking-[0.18em] text-[#14100F]/40"
+  "text-[0.8125rem] font-bold uppercase tracking-[0.12em] text-[#14100F]/60"
 
-export const mutedClass = "text-[#14100F]/55"
+export const mutedClass = "text-[#14100F]/65"
 
 export const inputClass =
   "w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-base text-[#14100F] outline-none transition-colors placeholder:text-[#14100F]/35 focus:border-[#C96C83]"
 
 export const labelClass =
-  "mb-1.5 block text-[0.66rem] font-bold uppercase tracking-[0.14em] text-[#14100F]/45"
+  "mb-1.5 block text-[0.8125rem] font-bold uppercase tracking-[0.1em] text-[#14100F]/60"
 
 // Status pill colors, shared by schedule + shifts.
 export function bookingStatusStyle(status: string) {

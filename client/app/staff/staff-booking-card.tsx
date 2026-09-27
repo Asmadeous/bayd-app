@@ -33,7 +33,7 @@ export function StaffBookingCard({ booking, history = false }: { booking: Bookin
     <li className={`${cardClass} p-4`}>
       <div className="flex items-center justify-between gap-2">
         <span
-          className={`rounded-full px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em] ${bookingStatusStyle(
+          className={`rounded-full px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.08em] ${bookingStatusStyle(
             booking.status,
           )}`}
         >
@@ -63,7 +63,7 @@ export function StaffBookingCard({ booking, history = false }: { booking: Bookin
       {/* Add-ons: extra services the same tech does this visit (note-only). */}
       {booking.addons?.length > 0 && (
         <div className="mt-2 rounded-lg bg-[#C96C83]/8 px-3 py-2">
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.08em] text-[#C96C83]">Add-ons</p>
+          <p className="text-[0.8125rem] font-bold uppercase tracking-[0.08em] text-[#C96C83]">Add-ons</p>
           <ul className="mt-1 space-y-0.5">
             {booking.addons.map((a) => (
               <li key={a.id} className="flex items-center justify-between text-sm">
@@ -218,7 +218,7 @@ function ClientDetails({ booking }: { booking: Booking }) {
 
       {notes && (
         <div className="rounded-lg bg-[#C98A2E]/10 px-2.5 py-1.5 text-[#8a5e12]">
-          <span className="text-[0.6rem] font-bold uppercase tracking-[0.08em]">Notes</span>
+          <span className="text-[0.8125rem] font-bold uppercase tracking-[0.08em]">Notes</span>
           <p className="mt-0.5 leading-snug">{notes}</p>
         </div>
       )}
@@ -259,7 +259,7 @@ function PastFinancials({ booking }: { booking: Booking }) {
         ))}
       </dl>
       {f.account_type === "partner" && (
-        <p className="mt-2 text-[0.65rem] font-bold uppercase tracking-[0.08em] text-[#14100F]/40">
+        <p className="mt-2 text-[0.8125rem] font-bold uppercase tracking-[0.08em] text-[#14100F]/40">
           Partner payout: {f.payout_status === "settled" ? "paid out" : "owed"}
         </p>
       )}
@@ -434,17 +434,17 @@ function ChargeButton({ booking }: { booking: Booking }) {
                     className="rounded-lg bg-white px-3 py-2.5 text-left transition-colors active:bg-black/5 disabled:opacity-50"
                   >
                     <span className="block text-sm font-bold text-[#14100F]">{m.label}</span>
-                    <span className="block text-[0.7rem] leading-tight text-[#14100F]/55">{m.hint}</span>
+                    <span className="block text-[0.8125rem] leading-tight text-[#14100F]/55">{m.hint}</span>
                   </button>
                 ))}
               </div>
-              {charge.isPending ? <p className="mt-2 text-center text-xs text-[#14100F]/55">Opening the card form…</p> : null}
+              {charge.isPending ? <p className="mt-2 text-center text-sm text-[#14100F]/55">Opening the card form…</p> : null}
             </>
           )}
           <button
             type="button"
             onClick={() => setStep("closed")}
-            className="mt-2 w-full py-1.5 text-center text-xs font-semibold text-[#14100F]/55"
+            className="mt-2 w-full py-1.5 text-center text-sm font-semibold text-[#14100F]/55"
           >
             Cancel
           </button>

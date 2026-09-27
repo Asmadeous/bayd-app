@@ -33,7 +33,7 @@ export function DeleteAccountButton({
         onClick={() => setOpen(true)}
         className={
           className ??
-          "flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-[#8f3f4b]/80"
+          "flex w-full items-center justify-center gap-2 rounded-2xl bg-[#D32F2F] py-3.5 text-sm font-bold text-white shadow-sm active:bg-[#B71C1C]"
         }
       >
         <Trash2 className="size-4" aria-hidden />
@@ -171,14 +171,14 @@ function DeleteAccountSheet({
               type="button"
               onClick={submit}
               disabled={typed.trim() !== CONFIRM_WORD || deleteAccount.isPending}
-              className="mt-4 w-full rounded-2xl bg-[#8f3f4b] py-3.5 font-bold text-white disabled:opacity-50"
+              className="mt-4 w-full rounded-2xl bg-[#D32F2F] py-3.5 font-bold text-white disabled:opacity-50"
             >
               {deleteAccount.isPending ? "Deleting…" : "Delete my account"}
             </button>
             <button type="button" onClick={onClose} className="mt-2 w-full rounded-2xl bg-white py-3 font-bold">
               Keep my account
             </button>
-            <p className="mt-3 text-center text-xs text-[#14100F]/50">This can&apos;t be undone.</p>
+            <p className="mt-3 text-center text-sm text-[#14100F]/50">This can&apos;t be undone.</p>
           </>
         )}
       </div>

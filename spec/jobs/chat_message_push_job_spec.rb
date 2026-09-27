@@ -17,6 +17,15 @@ RSpec.describe ChatMessagePushJob, type: :job do
     described_class.perform_now(message.id)
   end
 
+  it "says a photo was sent when the message has no text" do
+    message = convo.messages.new(sender: customer, body: "")
+    message.image.attach(io: file_fixture("test_avatar.png").open, filename: "photo.png")
+    message.save!
+
+    expect(PushService).to receive(:push).with(hash_including(body: "Sent a photo"))
+    described_class.perform_now(message.id)
+  end
+
   it "sends a customer to the customer app's thread" do
     message = convo.messages.create!(sender: tech, body: "On my way")
 

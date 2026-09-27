@@ -107,13 +107,13 @@ export function StaffRescheduleSheet({ booking, onClose }: { booking: Booking; o
       </p>
 
       <DateStrip value={date} onChange={pickDate} />
-      <p className={`mt-1 text-center text-xs ${mutedClass}`}>Times are shown in Eastern time.</p>
+      <p className={`mt-1 text-center text-sm ${mutedClass}`}>Times are shown in Eastern time.</p>
 
       <h3 className="mt-4 border-t border-black/10 pt-4 text-base font-black tracking-tight">
         {date === todayKey() ? "Today, " : ""}
         {formatDateKey(date, { weekday: "long", month: "short", day: "numeric" })}
       </h3>
-      <p className={`mt-1 text-xs ${mutedClass}`}>Your open times, with travel between jobs already allowed for.</p>
+      <p className={`mt-1 text-sm ${mutedClass}`}>Your open times, with travel between jobs already allowed for.</p>
       <div className="mt-3">
         {availability.isLoading ? (
           <BubbleLoader className="py-4" label="Finding your open times" />
@@ -125,11 +125,11 @@ export function StaffRescheduleSheet({ booking, onClose }: { booking: Booking; o
       </div>
 
       <label className="mt-5 block border-t border-black/10 pt-4">
-        <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-[#14100F]/60">
+        <span className="mb-1 block text-sm font-bold uppercase tracking-wide text-[#14100F]/60">
           Other time (agreed with the client)
         </span>
         <input type="time" className={field} value={time} onChange={(e) => { setTime(e.target.value); setError(null) }} />
-        <span className={`mt-1 block text-xs ${mutedClass}`}>
+        <span className={`mt-1 block text-sm ${mutedClass}`}>
           We still check business hours, travel time and your other jobs.
         </span>
       </label>
@@ -182,12 +182,12 @@ export function StaffCancelSheet({ booking, onClose }: { booking: Booking; onClo
         off your schedule and {client} and the office are told why.
         {paid > 0 ? ` ${client} has paid $${paid.toFixed(2)}; the office decides on any refund.` : ""}
       </p>
-      <p className={`mb-4 rounded-xl bg-black/[0.04] px-3 py-2 text-xs ${mutedClass}`}>
+      <p className={`mb-4 rounded-xl bg-black/[0.04] px-3 py-2 text-sm ${mutedClass}`}>
         Just can&apos;t make it yourself? Use &quot;Can&apos;t attend&quot; instead, so {client} is offered a new time.
         To change the time, use Reschedule.
       </p>
 
-      <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-[#14100F]/60">Why is it cancelled?</span>
+      <span className="mb-2 block text-sm font-bold uppercase tracking-wide text-[#14100F]/60">Why is it cancelled?</span>
       <div className="grid gap-2">
         {CANCEL_REASONS.map((r) => (
           <button
@@ -206,7 +206,7 @@ export function StaffCancelSheet({ booking, onClose }: { booking: Booking; onClo
 
       {choice ? (
         <label className="mt-4 block">
-          <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-[#14100F]/60">
+          <span className="mb-1 block text-sm font-bold uppercase tracking-wide text-[#14100F]/60">
             {choice === "Other" ? "Tell them why" : "Add a note (optional)"}
           </span>
           <textarea rows={2} className={field} value={note} onChange={(e) => { setNote(e.target.value); setError(null) }} />

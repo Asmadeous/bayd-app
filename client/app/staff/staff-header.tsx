@@ -3,49 +3,49 @@
 import { useRouter } from "next/navigation"
 import { ChevronLeft } from "lucide-react"
 
-import { displayClass, mutedClass } from "./staff-theme"
+import { displayClass } from "./staff-theme"
 
-// Lightweight staff screen header: heavy title + optional subtitle and a
-// right-side action. App-native, used at the top of each staff tab. Screens
-// opened from another screen (not a tab) pass `back` for a way back. The home
-// tab passes `greeting` (the tech's name) instead of a title: "Hello, <name>",
-// on one line unless the name is long.
+// Lightweight staff screen header: heavy title and a right-side action on one
+// line. App-native, used at the top of each staff tab. Screens opened from
+// another screen (not a tab) pass `back` for a way back. The home tab passes
+// `greeting` (the tech's name) instead of a title: "Hello, <name>", on one line
+// unless the name is long.
 export function StaffHeader({
   title,
-  subtitle,
   action,
   back,
   greeting,
 }: {
   title?: string
-  subtitle?: string
   action?: React.ReactNode
   back?: boolean
   greeting?: string
 }) {
   const router = useRouter()
   return (
-    <header className="flex items-end justify-between gap-3 px-5 pb-3 pt-[calc(1.25rem+var(--top-inset))]">
+    <header
+      className={`flex items-center justify-between gap-3 px-5 pb-3 ${
+        greeting ? "pt-[calc(2.75rem+var(--top-inset))]" : "pt-[calc(1.25rem+var(--top-inset))]"
+      }`}
+    >
       {back && (
         <button
           type="button"
           onClick={() => router.back()}
           aria-label="Back"
-          className="grid size-10 shrink-0 place-items-center self-start rounded-full bg-white shadow-sm"
+          className="grid size-10 shrink-0 place-items-center rounded-full bg-white shadow-sm"
         >
           <ChevronLeft className="size-5" aria-hidden />
         </button>
       )}
-      <div className="min-w-0 flex-1">
-        {greeting ? (
-          <h1 className={`${displayClass} break-words text-[2.2rem] leading-[1.05] tracking-[-0.02em]`}>
-            Hello, <span className="text-[#C96C83]">{greeting}</span>
-          </h1>
-        ) : (
-          <h1 className={`${displayClass} truncate text-[1.9rem] leading-[1.05]`}>{title}</h1>
-        )}
-        {subtitle && <p className={`mt-1 truncate text-sm ${mutedClass}`}>{subtitle}</p>}
-      </div>
+      {greeting ? (
+        <h1 className={`${displayClass} min-w-0 flex-1 break-words text-[2.2rem] leading-tight tracking-[-0.02em]`}>
+          Hello, <span className="text-[#C96C83]">{greeting}</span>
+        </h1>
+      ) : (
+        // truncate clips to the line box, so a tight line height cuts off g/y/p.
+        <h1 className={`${displayClass} min-w-0 flex-1 truncate text-[1.9rem] leading-tight`}>{title}</h1>
+      )}
       {action}
     </header>
   )

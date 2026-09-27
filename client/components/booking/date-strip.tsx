@@ -80,7 +80,7 @@ export function DateStrip({
 
       <div className="grid grid-cols-7 gap-1 text-center">
         {WEEKDAYS.map((d) => (
-          <span key={d} className="pb-1 text-[11px] font-bold text-[#8a8d93]">{d}</span>
+          <span key={d} className="pb-1 text-[0.8125rem] font-bold text-[#8a8d93]">{d}</span>
         ))}
         {days.map((day) => {
           const past = !allowPast && day < today

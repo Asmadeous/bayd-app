@@ -47,7 +47,7 @@ export default function AppAddressesScreen() {
                   <p className={`text-sm ${mutedClass}`}>{a.city}, {a.province} {a.postal_code}</p>
                 </div>
                 {a.default ? (
-                  <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#c96c83]/12 px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] text-[#c96c83]">
+                  <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#c96c83]/12 px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.1em] text-[#c96c83]">
                     <Check className="size-3" aria-hidden /> Default
                   </span>
                 ) : (
@@ -55,7 +55,7 @@ export default function AppAddressesScreen() {
                     type="button"
                     onClick={() => setDefault.mutate(a.id)}
                     disabled={setDefault.isPending}
-                    className="shrink-0 rounded-full bg-[#C96C83]/10 px-3 py-1.5 text-xs font-bold text-[#9E4A60] disabled:opacity-50"
+                    className="shrink-0 rounded-full bg-[#C96C83]/10 px-3 py-1.5 text-sm font-bold text-[#9E4A60] disabled:opacity-50"
                   >
                     Set default
                   </button>

@@ -156,9 +156,9 @@ export function DayTimeline({
       className="relative rounded-2xl border border-black/5 bg-white py-2 pr-2"
       style={{ height: hours.length * HOUR_PX + 16 }}
     >
-      {hours.map((h) => (
+      {[...hours, endHour].map((h) => (
         <div key={h} className="absolute left-0 right-0 flex" style={{ top: 8 + (h - startHour) * HOUR_PX }}>
-          <span className="w-14 shrink-0 -translate-y-1/2 pr-2 text-right text-[0.65rem] font-semibold text-[#14100F]/40">
+          <span className="w-14 shrink-0 -translate-y-1/2 pr-2 text-right text-[0.8125rem] font-semibold text-[#14100F]/60">
             {hourLabel(h)}
           </span>
           <span className="h-px flex-1 bg-black/[0.07]" />
@@ -172,7 +172,7 @@ export function DayTimeline({
             type="button"
             onClick={() => onSlot?.(clock(min))}
             aria-label={`Book ${formatTime(clock(min))}`}
-            className="absolute left-0 right-0 flex items-center rounded-lg px-2 text-xs font-bold text-[#14100F]/0 transition-colors active:bg-[#C96C83]/10 active:text-[#9E4A60]"
+            className="absolute left-0 right-0 flex items-center rounded-lg px-2 text-sm font-bold text-[#14100F]/0 transition-colors active:bg-[#C96C83]/10 active:text-[#9E4A60]"
             style={{ top: top(min), height: (SLOT_MIN / 60) * HOUR_PX }}
           >
             + {formatTime(clock(min))}
@@ -213,7 +213,7 @@ export function DayTimeline({
                 width: `calc(${100 / columns}% - 4px)`,
               }}
             >
-              <span className="block truncate text-xs font-extrabold text-[#14100F]">
+              <span className="block truncate text-sm font-extrabold text-[#14100F]">
                 {booking.service?.name}
                 {compact && dragging ? (
                   <span className="font-semibold text-[#14100F]/60"> · to {formatTime(clock(startMin + shift))}</span>
@@ -223,12 +223,12 @@ export function DayTimeline({
               </span>
               {!compact ? (
                 <>
-                  <span className="block truncate text-[0.7rem] font-semibold text-[#14100F]/60">
+                  <span className="block truncate text-[0.8125rem] font-semibold text-[#14100F]/60">
                     {dragging
                       ? `Move to ${formatTime(clock(startMin + shift))}`
                       : `${formatBookingTime(booking.starts_at)} – ${formatBookingTime(booking.ends_at)}`}
                   </span>
-                  {who(booking) ? <span className="block truncate text-[0.7rem] text-[#14100F]/60">{who(booking)}</span> : null}
+                  {who(booking) ? <span className="block truncate text-[0.8125rem] text-[#14100F]/60">{who(booking)}</span> : null}
                 </>
               ) : null}
             </button>

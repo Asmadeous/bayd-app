@@ -5,7 +5,7 @@ const CUSTOMER_PAGES: Record<string, string> = {
   "/book": "/app/book",
   "/dashboard/customer/book": "/app/book",
   "/dashboard/customer/bookings": "/app/home",
-  "/dashboard/customer/loyalty": "/app/manage?tab=loyalty",
+  "/dashboard/customer/loyalty": "/app/loyalty",
   "/dashboard/customer/settings": "/app/account",
 }
 

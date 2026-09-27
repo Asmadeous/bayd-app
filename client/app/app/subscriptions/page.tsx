@@ -26,15 +26,15 @@ export default function AppSubscriptionsScreen() {
           {subs.map((s) => (
             <li key={s.id} className={`p-4 ${cardClass}`}>
               <div className="flex items-center justify-between">
-                <span className={`rounded-full px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] ${STATUS_STYLE[s.status] ?? "bg-black/8 text-[#101217]/60"}`}>
+                <span className={`rounded-full px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.1em] ${STATUS_STYLE[s.status] ?? "bg-black/8 text-[#101217]/60"}`}>
                   {s.status}
                 </span>
                 {s.price && <span className="text-sm font-extrabold">${Number(s.price).toFixed(2)}</span>}
               </div>
               <p className="mt-2 text-sm font-bold">{s.service_name ?? "Subscription"}</p>
-              <p className={`mt-0.5 text-xs ${mutedClass}`}>{s.frequency_label}</p>
+              <p className={`mt-0.5 text-sm ${mutedClass}`}>{s.frequency_label}</p>
               {s.next_charge?.on && (
-                <p className={`mt-1 text-xs ${mutedClass}`}>
+                <p className={`mt-1 text-sm ${mutedClass}`}>
                   Next: {new Date(s.next_charge.on).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                   {s.next_charge.amount ? ` · $${Number(s.next_charge.amount).toFixed(2)}` : ""}
                 </p>

@@ -40,30 +40,9 @@ export function ImagePicker({
     onPick(file)
   }
 
-  // Native: open the Capacitor camera/library and convert the result to a File.
-  async function pickNative() {
-    try {
-      const { Camera: Cam, CameraResultType, CameraSource } = await import("@capacitor/camera")
-      const photo = await Cam.getPhoto({
-        quality: 85,
-        allowEditing: false,
-        resultType: CameraResultType.Uri,
-        source: CameraSource.Prompt, // let the user choose camera or gallery
-      })
-      if (!photo.webPath) return
-      const res = await fetch(photo.webPath)
-      const blob = await res.blob()
-      const ext = photo.format || "jpeg"
-      const file = new File([blob], `photo.${ext}`, { type: blob.type || `image/${ext}` })
-      setFromFile(file)
-    } catch {
-      // Cancelled or unavailable - no-op.
-    }
-  }
-
   function pick() {
     if (Capacitor.isNativePlatform()) {
-      void pickNative()
+      void pickNativePhoto().then((file) => file && setFromFile(file))
     } else {
       inputRef.current?.click()
     }
@@ -108,4 +87,27 @@ export function ImagePicker({
       />
     </div>
   )
+}
+
+// Native: open the Capacitor camera/library and convert the result to a File.
+// Resolves null when cancelled or unavailable. `width` scales the photo down on
+// the device before upload.
+export async function pickNativePhoto(options: { width?: number } = {}): Promise<File | null> {
+  try {
+    const { Camera: Cam, CameraResultType, CameraSource } = await import("@capacitor/camera")
+    const photo = await Cam.getPhoto({
+      quality: 85,
+      allowEditing: false,
+      resultType: CameraResultType.Uri,
+      source: CameraSource.Prompt, // let the user choose camera or gallery
+      width: options.width,
+    })
+    if (!photo.webPath) return null
+    const res = await fetch(photo.webPath)
+    const blob = await res.blob()
+    const ext = photo.format || "jpeg"
+    return new File([blob], `photo.${ext}`, { type: blob.type || `image/${ext}` })
+  } catch {
+    return null
+  }
 }

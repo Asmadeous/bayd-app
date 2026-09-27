@@ -1087,7 +1087,7 @@ export function BookingFlow({
               <div>
                 <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Time</label>
                 <input type="time" className={field} value={time} onChange={(e) => setTime(e.target.value)} />
-                <p className="mt-3 text-xs font-medium text-[#8a8d93]">Hours: Mon–Sat, 9:00 AM – 7:30 PM (Eastern).</p>
+                <p className="mt-3 text-xs font-medium text-[#8a8d93]">Hours: Mon–Sat, 9:00 AM – 7:00 PM (Eastern).</p>
               </div>
             )}
             {slotMode && staffMode ? (
@@ -1353,9 +1353,9 @@ export function BookingFlow({
         className={cn(
           "sticky z-30 -mx-4 mt-5 border-t border-black/10 bg-[#f4f1eb]/95 px-4 pt-3 backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none",
           staffMode
-            ? "bottom-[calc(4.25rem+env(safe-area-inset-bottom))] pb-3"
+            ? "bottom-[calc(5rem+env(safe-area-inset-bottom))] pb-3"
             : inApp
-              ? "bottom-[calc(4.5rem+env(safe-area-inset-bottom))] pb-3"
+              ? "bottom-[calc(5rem+env(safe-area-inset-bottom))] pb-3"
               : "bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]",
         )}
       >

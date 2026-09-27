@@ -50,9 +50,9 @@ export function layoutDay(bookings: Booking[]): PlacedBooking[] {
   return items
 }
 
-// Hour span for the grid: business-ish hours by default, widened to fit any
+// Hour span for the grid: business hours (9 AM to 7 PM) by default, widened to fit any
 // booking outside them.
-export function gridHours(placed: PlacedBooking[], defaultStart = 7, defaultEnd = 22) {
+export function gridHours(placed: PlacedBooking[], defaultStart = 9, defaultEnd = 19) {
   const start = Math.min(defaultStart, ...placed.map((p) => Math.floor(p.startMin / 60)))
   const end = Math.max(defaultEnd, ...placed.map((p) => Math.ceil(p.endMin / 60)))
   return { startHour: start, endHour: Math.min(24, end) }

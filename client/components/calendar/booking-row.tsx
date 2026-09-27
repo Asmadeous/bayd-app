@@ -25,7 +25,7 @@ export function BookingRow({ booking, who, href }: { booking: Booking; who?: str
         className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white p-4 shadow-[0_1px_2px_rgba(20,16,15,0.04),0_8px_24px_-12px_rgba(20,16,15,0.12)] transition-transform active:scale-[0.99]"
       >
         <div className="min-w-0 flex-1">
-          <span className={cn("rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.08em]", BADGE[booking.status])}>
+          <span className={cn("rounded-full px-2 py-0.5 text-[0.8125rem] font-bold uppercase tracking-[0.08em]", BADGE[booking.status])}>
             {booking.status.replace("_", " ")}
           </span>
           <p className="mt-1.5 truncate text-base font-extrabold">{booking.service?.name}</p>

@@ -3,65 +3,43 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import {
-  Bell,
-  CalendarDays,
-  Clock3,
-  MapPin,
-  Plus,
-} from "lucide-react"
+import { ArrowRight, Bell, CalendarDays, Clock3, MapPin, Plus } from "lucide-react"
 
 import { DateStrip, weekRange } from "@/components/booking/date-strip"
 import { BookingRow } from "@/components/calendar/booking-row"
 import { LoadMore } from "@/components/load-more"
-import { ViewSwitch, WhenFilter, type BookingView } from "@/components/calendar/view-switch"
-import { useEmployeeProfile, useEmployeeSchedule, useEmployeeScheduleList, useEmployeeScheduleRange } from "@/lib/hooks/use-employee"
+import { ViewSwitch, type BookingView } from "@/components/calendar/view-switch"
+import { useEmployeeProfile, useEmployeeScheduleList, useEmployeeScheduleRange } from "@/lib/hooks/use-employee"
 import { useNotifications } from "@/lib/hooks/use-notifications"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { hapticTap } from "@/lib/native/haptics"
 import { useLocationSharing } from "@/lib/native/use-location-sharing"
-import { bookingDateKey, todayKey } from "@/lib/booking-time"
-import { staffScreenClass, cardClass, eyebrowClass, mutedClass, staffTheme } from "../staff-theme"
+import { bookingDateKey, formatBookingDate, formatBookingTime, todayKey } from "@/lib/booking-time"
+import type { Booking } from "@/lib/hooks/use-bookings"
+import { staffScreenClass, cardClass, displayClass, eyebrowClass, mutedClass } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
 
+// Schedule is the tech's upcoming work: the next job up top, then every active
+// job as a list or calendar. Past jobs live under the Manage tab.
 export default function StaffScheduleScreen() {
-  // Which jobs (upcoming / past) is separate from how they're laid out.
-  const [when, setWhen] = useState<"upcoming" | "past">("upcoming")
   const [view, setView] = useState<BookingView>("list")
   const { data: profile } = useEmployeeProfile()
   const { user } = useAuthStore()
   const firstName = user?.first_name?.trim() || profile?.name || "there"
-  // Active schedule always drives the metrics.
-  const { data: activeData } = useEmployeeSchedule(1)
-  // The list below follows the filter (active jobs vs job history), paged.
-  const { items: listBookings, isLoading, hasMore, loadingMore, loadMore } = useEmployeeScheduleList(
-    when === "past" ? "past" : undefined,
-  )
+  const { items: listBookings, isLoading, hasMore, loadingMore, loadMore } = useEmployeeScheduleList()
+  // Active jobs come soonest first, so the first is the next one.
+  const next = listBookings[0] ?? null
   // on_shift is now DERIVED from clock-in (not a manual toggle). It drives live
-  // location + the header line, nothing dispatch-related.
+  // location, nothing dispatch-related.
   const onShift = !!profile?.on_shift
 
   // Live location broadcasts while clocked in (feeds the customer ETA).
   useLocationSharing(onShift)
 
-  // Counts over ALL active jobs, not just the first page: the total from the
-  // server, less the ones in service (never more than a couple at once).
-  const inProgressCount = (activeData?.data ?? []).filter((b) => b.status === "in_progress").length
-  const upcomingCount = (activeData?.pagination.total_count ?? 0) - inProgressCount
-
   return (
     <div className={staffScreenClass}>
       <StaffHeader
         greeting={firstName}
-        subtitle={
-          onShift
-            ? "You're clocked in and live."
-            : when === "past"
-              ? "Jobs you've done."
-              : view === "calendar"
-                ? "Your jobs by day."
-                : "Your upcoming appointments."
-        }
         // The calendar has its own Add booking (with the tapped date filled in).
         action={
           <div className="flex shrink-0 items-center gap-2">
@@ -83,20 +61,23 @@ export default function StaffScheduleScreen() {
         {/* No day-level clock: each appointment has its own Clock in/out on its
             card (geofenced to the client). Availability is your SCHEDULE. */}
 
-        {/* Metrics */}
-        {/* The next appointment is the first card in the list below, so no
-            separate "next" card or total here. */}
-        {when === "upcoming" && view !== "calendar" ? (
-          <div className="grid grid-cols-2 gap-3">
-            <Metric icon={CalendarDays} label="Upcoming" value={upcomingCount} />
-            <Metric icon={Clock3} label="In progress" value={inProgressCount} />
-          </div>
+        {view !== "calendar" ? (
+          <section>
+            <h2 className={`mb-2 ${eyebrowClass}`}>Next appointment</h2>
+            {isLoading ? (
+              <div className="h-36 animate-pulse rounded-3xl bg-black/[0.04]" />
+            ) : next ? (
+              <NextJobCard booking={next} />
+            ) : (
+              <div className={`${cardClass} p-6`}>
+                <p className={`${displayClass} text-xl`}>Nothing booked yet</p>
+                <p className={`mt-1 text-sm ${mutedClass}`}>New jobs assigned to you show up here.</p>
+              </div>
+            )}
+          </section>
         ) : null}
 
-        {/* Which jobs + how to lay them out. A calendar shows every day, so the
-            upcoming / past filter only applies to the list. */}
-        <div className="flex items-center gap-3">
-          {view === "calendar" ? <div className="flex-1" /> : <WhenFilter value={when} onChange={setWhen} />}
+        <div className="flex items-center justify-end">
           <ViewSwitch value={view} onChange={setView} />
         </div>
 
@@ -104,7 +85,7 @@ export default function StaffScheduleScreen() {
           <StaffCalendarTab />
         ) : (
         <div>
-          <h2 className={`mb-2 ${eyebrowClass}`}>{when === "past" ? "Past bookings" : "Assigned appointments"}</h2>
+          <h2 className={`mb-2 ${eyebrowClass}`}>Assigned appointments</h2>
 
           {isLoading ? (
             <div className="space-y-3">
@@ -115,12 +96,8 @@ export default function StaffScheduleScreen() {
           ) : listBookings.length === 0 ? (
             <div className={`${cardClass} flex flex-col items-center gap-2 p-8 text-center`}>
               <MapPin className="size-7 text-[#C96C83]" aria-hidden />
-              <p className="font-bold">{when === "past" ? "No past bookings" : "No appointments"}</p>
-              <p className={`text-sm ${mutedClass}`}>
-                {when === "past"
-                  ? "Completed, cancelled, and no-show jobs appear here."
-                  : "Appointments assigned to you appear here."}
-              </p>
+              <p className="font-bold">No appointments</p>
+              <p className={`text-sm ${mutedClass}`}>Appointments assigned to you appear here.</p>
             </div>
           ) : (
             <>
@@ -158,7 +135,7 @@ function StaffCalendarTab() {
           onVisibleRangeChange={(from, to) => setRange({ from, to })}
         />
       </div>
-      <p className={`px-1 text-center text-xs ${mutedClass}`}>Tap a day to open it.</p>
+      <p className={`px-1 text-center text-sm ${mutedClass}`}>Tap a day to open it.</p>
     </div>
   )
 }
@@ -176,7 +153,7 @@ function NotificationBell() {
     >
       <Bell className="size-5 text-[#14100F]" aria-hidden />
       {unread > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-[#C96C83] px-1 text-[0.62rem] font-bold text-white">
+        <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-[#C96C83] px-1 text-[0.75rem] font-bold text-white">
           {unread > 9 ? "9+" : unread}
         </span>
       )}
@@ -184,26 +161,40 @@ function NotificationBell() {
   )
 }
 
-function Metric({
-  icon: Icon,
-  label,
-  value,
-  accent,
-}: {
-  icon: typeof CalendarDays
-  label: string
-  value: string | number
-  accent?: boolean
-}) {
+function NextJobCard({ booking }: { booking: Booking }) {
+  const where = booking.address ? [booking.address.line1, booking.address.city].filter(Boolean).join(", ") : null
+  const live = booking.status === "in_progress"
+
   return (
-    <div className={`${cardClass} p-4`}>
-      <Icon
-        className="size-5"
-        style={{ color: accent ? staffTheme.live : staffTheme.blush }}
-        aria-hidden
-      />
-      <p className="mt-2 text-2xl font-black leading-none">{value}</p>
-      <p className={`mt-1 text-xs ${mutedClass}`}>{label}</p>
-    </div>
+    <Link
+      href={`/staff/schedule/job?id=${booking.id}`}
+      onClick={() => hapticTap()}
+      className="block overflow-hidden rounded-3xl bg-[#14100F] p-5 text-[#F6F1EC] shadow-[0_16px_40px_-16px_rgba(20,16,15,0.5)]"
+    >
+      <div className="flex items-center justify-between">
+        <span className="rounded-full bg-[#C96C83] px-3 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.1em]">
+          {live ? "In progress" : booking.status.replace("_", " ")}
+        </span>
+        <ArrowRight className="size-5 text-[#F6F1EC]/60" aria-hidden />
+      </div>
+      <p className={`${displayClass} mt-4 text-2xl leading-tight`}>{booking.service.name}</p>
+      {booking.customer_name ? <p className="mt-1 text-base text-[#F6F1EC]/80">{booking.customer_name}</p> : null}
+      <div className="mt-3 space-y-1.5 text-base text-[#F6F1EC]/80">
+        <p className="flex items-center gap-2.5">
+          <CalendarDays className="size-5 text-[#F0C8D3]" aria-hidden />
+          {formatBookingDate(booking.starts_at, { weekday: "long", month: "long", day: "numeric" })}
+        </p>
+        <p className="flex items-center gap-2.5">
+          <Clock3 className="size-5 text-[#F0C8D3]" aria-hidden />
+          {formatBookingTime(booking.starts_at)} · {booking.service.duration_minutes} min
+        </p>
+        {where ? (
+          <p className="flex items-center gap-2.5">
+            <MapPin className="size-5 shrink-0 text-[#F0C8D3]" aria-hidden />
+            <span className="truncate">{where}</span>
+          </p>
+        ) : null}
+      </div>
+    </Link>
   )
 }

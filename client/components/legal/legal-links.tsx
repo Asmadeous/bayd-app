@@ -19,7 +19,7 @@ async function openLegal(path: "/privacy" | "/terms") {
 export function LegalLinks({ className, linkClassName }: { className?: string; linkClassName?: string }) {
   const link = cn("font-semibold underline underline-offset-2", linkClassName)
   return (
-    <p className={cn("text-center text-xs", className)}>
+    <p className={cn("text-center text-sm", className)}>
       <button type="button" onClick={() => void openLegal("/privacy")} className={link}>
         Privacy Policy
       </button>
@@ -35,7 +35,7 @@ export function LegalLinks({ className, linkClassName }: { className?: string; l
 export function SignupConsent({ className, linkClassName }: { className?: string; linkClassName?: string }) {
   const link = cn("font-semibold underline underline-offset-2", linkClassName)
   return (
-    <p className={cn("text-center text-xs", className)}>
+    <p className={cn("text-center text-sm", className)}>
       By continuing you agree to our{" "}
       <button type="button" onClick={() => void openLegal("/terms")} className={link}>
         Terms of Service

@@ -63,7 +63,6 @@ function StaffDay() {
       <StaffHeader
         back
         title={formatDateKey(day, { weekday: "long", month: "short", day: "numeric" })}
-        subtitle={isLoading ? " " : `${jobs.length} job${jobs.length === 1 ? "" : "s"}${day === todayKey() ? " · today" : ""}`}
       />
       <div className="space-y-3 px-5 pb-6">
         {editable ? <DayHint /> : null}

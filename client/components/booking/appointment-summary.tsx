@@ -42,7 +42,7 @@ export function AppointmentSummary({
               </span>
               <div>
                 <p className="text-sm font-bold">{when.date}</p>
-                <p className="text-xs font-medium text-[#8a8d93]">{when.time}</p>
+                <p className="text-sm font-medium text-[#8a8d93]">{when.time}</p>
               </div>
             </div>
           ) : null}
@@ -55,7 +55,7 @@ export function AppointmentSummary({
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold">{line.name}</p>
-                  {line.detail ? <p className="text-xs font-medium text-[#8a8d93]">{line.detail}</p> : null}
+                  {line.detail ? <p className="text-sm font-medium text-[#8a8d93]">{line.detail}</p> : null}
                 </div>
                 <span className="text-sm font-bold">{line.price == null ? "Quote" : `$${line.price.toFixed(2)}`}</span>
                 {i === 0 && onEditService ? (
@@ -76,7 +76,7 @@ export function AppointmentSummary({
             <span className="text-sm font-bold">Total</span>
             <span className="text-base font-black">{quote ? "Quote" : `$${total.toFixed(2)}`}</span>
           </div>
-          <p className="mt-1 text-xs font-medium text-[#8a8d93]">Taxes included.</p>
+          <p className="mt-1 text-sm font-medium text-[#8a8d93]">Taxes included.</p>
         </>
       )}
     </aside>
@@ -119,7 +119,7 @@ export function SummaryBar({
       >
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-bold">{lines.map((l) => l.name).join(" + ")}</span>
-          <span className="block truncate text-xs font-medium text-[#8a8d93]">
+          <span className="block truncate text-sm font-medium text-[#8a8d93]">
             {when ? `${when.date} · ${when.time}` : "No time picked yet"}
           </span>
         </span>

@@ -62,7 +62,7 @@ export function MonthAgenda({
       </div>
       <div className="grid grid-cols-7 text-center">
         {WEEKDAYS.map((d) => (
-          <span key={d} className="pb-1 text-[0.65rem] font-bold text-[#14100F]/40">
+          <span key={d} className="pb-1 text-[0.8125rem] font-bold text-[#14100F]/40">
             {d}
           </span>
         ))}

@@ -8,6 +8,7 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { Button } from "@/components/ui/button"
+import { ChatPhoto } from "@/components/chat/chat-photos"
 import { LoadEarlier } from "@/components/load-earlier"
 import { useChat } from "@/lib/cable/use-chat"
 import { useConversationsList } from "@/lib/hooks/use-conversations"
@@ -132,6 +133,7 @@ function ChatThread({
                   mine ? "bg-[#c96c83] text-white" : "bg-black/5 text-[#101217]"
                 }`}
               >
+                {m.image_url && <ChatPhoto url={m.image_url} />}
                 {m.body}
                 {mine && m.read_at && <span className="ml-2 text-[10px] opacity-80">Read</span>}
               </div>

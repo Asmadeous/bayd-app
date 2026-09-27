@@ -15,7 +15,7 @@ export default function StaffEarningsScreen() {
 
   return (
     <div className={staffScreenClass}>
-      <StaffHeader back title="Earnings" subtitle="What you're owed and what's been paid out." />
+      <StaffHeader back title="Earnings" />
 
       <div className="space-y-4 px-5">
         {isLoading || !data ? (
@@ -46,7 +46,7 @@ function DirectEarnings({
   return (
     <>
       <section className="rounded-2xl bg-[#14100F] p-5 text-white">
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/50">Owed to you now</p>
+        <p className="text-sm font-bold uppercase tracking-[0.12em] text-white/50">Owed to you now</p>
         <p className="mt-1 text-4xl font-black tracking-tight">{money(owedNow)}</p>
         <p className="mt-1 text-sm text-white/55">Tips held + fuel, before the next payout run.</p>
       </section>
@@ -84,7 +84,7 @@ function PartnerEarnings({
   return (
     <>
       <section className="rounded-2xl bg-[#14100F] p-5 text-white">
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/50">Payout owed</p>
+        <p className="text-sm font-bold uppercase tracking-[0.12em] text-white/50">Payout owed</p>
         <p className="mt-1 text-4xl font-black tracking-tight">{money(partner.owed)}</p>
         <p className="mt-1 text-sm text-white/55">
           {partner.name} · you keep {Number(partner.share_pct).toFixed(0)}% ({Number(partner.platform_fee_pct).toFixed(0)}% platform fee).

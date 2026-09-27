@@ -67,6 +67,14 @@ class User < ApplicationRecord
     square_card_id.present?
   end
 
+  # Prefers a real uploaded avatar; falls back to the plain URL string (SSO
+  # avatars, or an admin who set one manually before uploads existed).
+  # url_helpers is called module-qualified (not mixed in) - rails_blob_url
+  # needs full routing context that a plain include/extend doesn't provide.
+  def avatar_image_url
+    avatar.attached? ? Rails.application.routes.url_helpers.rails_blob_url(avatar) : avatar_url
+  end
+
   private
 
   def email_or_phone_present

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Lock, MessageCircle, Navigation, Star, Video } from "lucide-react"
+import { History, Lock, MessageCircle, Navigation, Star, Video } from "lucide-react"
 
 import api from "@/lib/api"
 import { useBookingsList, useBookingsRange, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
@@ -11,13 +11,14 @@ import { useBookingAccess, windowNotStartedMessage } from "@/lib/booking-access"
 import { BookingRow } from "@/components/calendar/booking-row"
 import { LoadMore } from "@/components/load-more"
 import { DateStrip, weekRange } from "@/components/booking/date-strip"
-import { ViewSwitch, WhenFilter, type BookingView } from "@/components/calendar/view-switch"
+import { ViewSwitch, type BookingView } from "@/components/calendar/view-switch"
 import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
 import { useStartMeeting } from "@/lib/hooks/use-meetings"
 import type { Conversation } from "@/lib/cable/chat-types"
 import { bookingDateKey, formatBookingDate, formatDateKey, todayKey } from "@/lib/booking-time"
 import { appScreenClass } from "../app-theme"
 import { AppHeader } from "../app-header"
+import { EmptyState } from "../empty-state"
 import { RescheduleSheet } from "./reschedule-sheet"
 import { ReviewSheet } from "./review-sheet"
 
@@ -34,23 +35,21 @@ export default function BookingsScreen() {
   )
 }
 
-// The customer's bookings: Upcoming / Past, shown as a list or a calendar.
-// Rendered on Home and on this screen.
-export function BookingsPanel() {
-  const [tab, setTab] = useState<"upcoming" | "past">("upcoming")
+// The customer's bookings. Upcoming (Home and this screen) switches between a
+// list and a calendar; past bookings live under the Management tab as a list.
+export function BookingsPanel({ tab = "upcoming" }: { tab?: "upcoming" | "past" }) {
   const [view, setView] = useState<BookingView>("list")
-  const upcoming = useBookingsList("upcoming", { enabled: view === "list" && tab === "upcoming" })
-  const past = useBookingsList("past", { enabled: view === "list" && tab === "past" })
-  const { items: list, isLoading, hasMore, loadingMore, loadMore } = tab === "upcoming" ? upcoming : past
+  const { items: list, isLoading, hasMore, loadingMore, loadMore } = useBookingsList(tab, {
+    enabled: tab === "past" || view === "list",
+  })
 
   return (
     <div>
-        {/* A calendar shows every day, so upcoming / past only applies to the
-            list. */}
-        <div className="mb-4 flex items-center gap-3">
-          {view === "calendar" ? <div className="flex-1" /> : <WhenFilter value={tab} onChange={setTab} />}
-          <ViewSwitch value={view} onChange={setView} />
-        </div>
+        {tab === "upcoming" ? (
+          <div className="mb-4 flex items-center justify-end">
+            <ViewSwitch value={view} onChange={setView} />
+          </div>
+        ) : null}
 
         {view === "calendar" ? (
           <CalendarTab />
@@ -110,13 +109,13 @@ function CalendarTab() {
             No appointments on {formatDateKey(emptyDay, { weekday: "long", month: "short", day: "numeric" })}.
           </p>
           {emptyDay >= todayKey() ? (
-            <Link href={`/app/book?date=${emptyDay}`} className="shrink-0 rounded-full bg-[#101217] px-4 py-2 text-xs font-bold text-white">
+            <Link href={`/app/book?date=${emptyDay}`} className="shrink-0 rounded-full bg-[#101217] px-4 py-2 text-sm font-bold text-white">
               Book this day
             </Link>
           ) : null}
         </div>
       ) : (
-        <p className="text-center text-xs text-[#101217]/50">Tap a day to open it. Dots mark your appointments.</p>
+        <p className="text-center text-sm text-[#101217]/50">Tap a day to open it. Dots mark your appointments.</p>
       )}
     </div>
   )
@@ -176,7 +175,7 @@ export function AppointmentActions({ booking, cancellable, now }: { booking: Boo
               variant: "error",
             })
           }
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-black/[0.04] py-2.5 text-xs font-semibold text-[#101217]/60"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-black/[0.04] py-2.5 text-sm font-semibold text-[#101217]/60"
         >
           <Lock className="size-3.5" aria-hidden />
           Message &amp; tracking open at {access.opensLabel}
@@ -336,9 +335,12 @@ export function statusStyle(status: string) {
 }
 
 function EmptyBookings({ tab }: { tab: "upcoming" | "past" }) {
+  if (tab === "past") {
+    return <EmptyState icon={History} title="No past bookings" text="Completed and cancelled appointments appear here." />
+  }
   return (
     <p className="rounded-2xl bg-white p-6 text-center text-sm font-semibold text-[#101217]/55">
-      {tab === "past" ? "No past appointments" : "No appointments available"}
+      No appointments available
     </p>
   )
 }

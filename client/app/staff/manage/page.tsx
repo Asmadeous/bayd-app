@@ -1,25 +1,24 @@
 "use client"
 
 import Link from "next/link"
-import { ChevronRight, Gift, History, Package, ReceiptText, Sparkles, type LucideIcon } from "lucide-react"
+import { ChevronRight, Clock3, Fuel, HandCoins, History, Star, type LucideIcon } from "lucide-react"
 
-import { AppHeader } from "../app-header"
-import { appScreenClass } from "../app-theme"
+import { StaffHeader } from "../staff-header"
+import { staffScreenClass } from "../staff-theme"
 
 const ITEMS: { href: string; icon: LucideIcon; label: string }[] = [
-  { href: "/app/past", icon: History, label: "Past bookings" },
-  { href: "/app/orders", icon: Package, label: "Orders" },
-  { href: "/app/transactions", icon: ReceiptText, label: "Transactions" },
-  { href: "/app/gift-cards", icon: Gift, label: "Gift cards" },
-  { href: "/app/loyalty", icon: Sparkles, label: "Loyalty" },
+  { href: "/staff/past", icon: History, label: "Past jobs" },
+  { href: "/staff/shifts", icon: Clock3, label: "Shifts" },
+  { href: "/staff/earnings", icon: HandCoins, label: "Earnings" },
+  { href: "/staff/fuel", icon: Fuel, label: "Fuel & mileage" },
+  { href: "/staff/reviews", icon: Star, label: "Reviews" },
 ]
 
-// The Management tab: the customer's history and wallet in one list, the same
-// layout as the staff app's Manage tab. Each row opens its own screen.
-export default function ManageScreen() {
+// The Manage tab: the tech's work records in one place.
+export default function StaffManageScreen() {
   return (
-    <div className={appScreenClass}>
-      <AppHeader title="Management" />
+    <div className={staffScreenClass}>
+      <StaffHeader title="Manage" />
       <div className="px-5">
         <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
           {ITEMS.map((item, i) => (

@@ -13,6 +13,20 @@ RSpec.describe Message, type: :model do
     expect(build(:message, conversation: convo, sender: alice, body: "")).not_to be_valid
   end
 
+  it "allows a photo with no text" do
+    message = build(:message, conversation: convo, sender: alice, body: "")
+    message.image.attach(io: file_fixture("test_avatar.png").open, filename: "photo.png")
+    expect(message).to be_valid
+  end
+
+  it "rejects a photo over 10 MB" do
+    message = build(:message, conversation: convo, sender: alice, body: "")
+    message.image.attach(io: file_fixture("test_avatar.png").open, filename: "photo.png")
+    allow(message.image.blob).to receive(:byte_size).and_return(Message::MAX_IMAGE_SIZE + 1)
+    expect(message).not_to be_valid
+    expect(message.errors[:image]).to be_present
+  end
+
   it "rejects a sender who is not a participant" do
     stranger = create(:user)
     expect(build(:message, conversation: convo, sender: stranger, body: "hi")).not_to be_valid

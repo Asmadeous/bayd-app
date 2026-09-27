@@ -4,7 +4,9 @@ export interface ChatMessage {
   id: number
   conversation_id: number
   sender_id: number
+  // Empty for a photo-only message.
   body: string
+  image_url: string | null
   read_at: string | null
   created_at: string
 }
@@ -18,6 +20,7 @@ export interface Conversation {
     first_name: string | null
     last_name: string | null
     role: string
+    avatar_url: string | null
   } | null
   unread_count: number
 }

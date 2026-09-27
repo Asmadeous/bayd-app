@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { Check, ChevronRight, Lock, LogOut, Mail, MapPin, Phone, Repeat2, User } from "lucide-react"
+import { Check, ChevronRight, Lock, LogOut, Mail, MapPin, Repeat2, User } from "lucide-react"
 
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useAuthStore } from "@/lib/stores/auth-store"
@@ -16,6 +16,7 @@ import {
 import { hapticSuccess, hapticError } from "@/lib/native/haptics"
 import { DeleteAccountButton } from "@/components/account/delete-account"
 import { LegalLinks } from "@/components/legal/legal-links"
+import { ToggleRow } from "@/components/toggle-row"
 import { ImagePicker } from "@/components/image-picker"
 import { appScreenClass } from "../app-theme"
 import { AppHeader } from "../app-header"
@@ -104,7 +105,16 @@ export default function AccountScreen() {
 
   return (
     <div className={appScreenClass}>
-      <AppHeader title="Profile" />
+      <AppHeader
+        title="Profile"
+        action={
+          !editing ? (
+            <button type="button" onClick={() => setEditing(true)} className="text-sm font-bold text-[#14100F]">
+              Edit
+            </button>
+          ) : undefined
+        }
+      />
 
       <div className="space-y-5 px-5">
         <section className="rounded-2xl bg-[#101217] p-5 text-white">
@@ -120,24 +130,16 @@ export default function AccountScreen() {
                 <User className="size-6 text-white/70" aria-hidden />
               )}
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-lg font-extrabold">{fullName}</p>
               <p className="truncate text-sm text-white/55">{user?.email}</p>
+              <p className="truncate text-sm text-white/55">{user?.phone || "No phone on file"}</p>
             </div>
           </div>
         </section>
 
-        <section className="rounded-2xl bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-[#101217]/45">Profile</h2>
-            {!editing && (
-              <button type="button" onClick={() => setEditing(true)} className="text-sm font-semibold text-[#c96c83]">
-                Edit
-              </button>
-            )}
-          </div>
-
-          {editing ? (
+        {editing ? (
+          <section className="rounded-2xl bg-white p-4 shadow-sm">
             <div className="space-y-3">
               <ImagePicker
                 currentUrl={user?.avatar_url}
@@ -183,41 +185,17 @@ export default function AccountScreen() {
                 </button>
               </div>
             </div>
-          ) : (
-            <div className="space-y-2 text-sm">
-              <InfoRow icon={Mail} value={user?.email ?? "-"} />
-              <InfoRow icon={Phone} value={user?.phone || "No phone on file"} />
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-2xl bg-white p-4 shadow-sm">
-          <h2 className="mb-1 text-sm font-bold uppercase tracking-[0.14em] text-[#101217]/45">Security</h2>
-          {bioAvailable ? (
-            <>
-              <p className="mb-3 text-sm text-[#101217]/55">
-                Lock the app with your fingerprint, face, or device PIN.
-              </p>
-              <button
-                type="button"
-                onClick={toggleBiometric}
-                disabled={bioBusy}
-                className={`flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50 ${
-                  bioOn ? "bg-[#101217] text-white" : "border border-black/15 text-[#101217]"
-                }`}
-              >
-                <Lock className="size-4" aria-hidden />
-                {bioBusy ? "Follow your device…" : bioOn ? "App lock is on - tap to turn off" : "Enable app lock"}
-              </button>
-            </>
-          ) : (
-            <p className="text-sm text-[#101217]/55">
-              No fingerprint or face unlock is set up on this device.
-            </p>
-          )}
-        </section>
+          </section>
+        ) : null}
 
         <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
+          <ToggleRow
+            icon={Lock}
+            label="App lock"
+            checked={bioOn}
+            disabled={!bioAvailable || bioBusy}
+            onToggle={toggleBiometric}
+          />
           <MenuRow href="/app/subscriptions" icon={Repeat2} label="Subscriptions" />
           <MenuRow href="/app/addresses" icon={MapPin} label="Addresses" last />
         </section>
@@ -264,14 +242,5 @@ function MenuRow({
       <span className="flex-1 text-sm font-semibold text-[#101217]">{label}</span>
       <ChevronRight className="size-4 text-[#101217]/30" aria-hidden />
     </Link>
-  )
-}
-
-function InfoRow({ icon: Icon, value }: { icon: typeof Mail; value: string }) {
-  return (
-    <p className="flex items-center gap-2 text-[#101217]/70">
-      <Icon className="size-4 text-[#c96c83]" aria-hidden />
-      {value}
-    </p>
   )
 }

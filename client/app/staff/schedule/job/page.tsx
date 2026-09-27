@@ -78,7 +78,7 @@ function JobDetails({ job, history }: { job: EmployeeJob; history: boolean }) {
       {/* When + what, and the next thing to do */}
       <section className={`${cardClass} p-4`}>
         <div className="flex items-center justify-between gap-2">
-          <span className={`rounded-full px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em] ${bookingStatusStyle(job.status)}`}>
+          <span className={`rounded-full px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.08em] ${bookingStatusStyle(job.status)}`}>
             {job.status.replace("_", " ")}
           </span>
           <span className="text-base font-black">{money(job.total)}</span>
@@ -168,7 +168,7 @@ function JobDetails({ job, history }: { job: EmployeeJob; history: boolean }) {
       <section className={`${cardClass} p-4`}>
         <div className="flex items-center justify-between">
           <p className={eyebrowClass}>Payment</p>
-          <span className={`rounded-full px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em] ${payment.style}`}>{payment.label}</span>
+          <span className={`rounded-full px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.08em] ${payment.style}`}>{payment.label}</span>
         </div>
         <ul className="mt-2 space-y-2 text-sm">
           <Line label="Paid" hint={job.paid_methods.length ? job.paid_methods.map(paymentMethodLabel).join(" + ") : undefined} value={money(financials?.amount_paid)} />
@@ -181,7 +181,7 @@ function JobDetails({ job, history }: { job: EmployeeJob; history: boolean }) {
       {/* What the client asked for */}
       {notes ? (
         <section className="rounded-2xl bg-[#C98A2E]/10 p-4">
-          <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-[#8a5e12]">Notes from the client</p>
+          <p className="text-[0.8125rem] font-bold uppercase tracking-[0.16em] text-[#8a5e12]">Notes from the client</p>
           <p className="mt-1.5 text-sm leading-snug text-[#5c3f0d]">{notes}</p>
         </section>
       ) : null}
@@ -198,7 +198,7 @@ function JobDetails({ job, history }: { job: EmployeeJob; history: boolean }) {
         </section>
       ) : null}
 
-      <p className={`px-1 text-xs ${mutedClass}`}>
+      <p className={`px-1 text-sm ${mutedClass}`}>
         Booking #{job.id} · booked {formatBookingDate(job.created_at, { month: "short", day: "numeric", year: "numeric" })}
         {bookedBy ? ` · ${bookedBy}` : ""}
       </p>
@@ -211,7 +211,7 @@ function Line({ label, hint, value, strong }: { label?: string; hint?: string; v
     <li className="flex items-start justify-between gap-3">
       <span className="min-w-0">
         <span className="block font-semibold">{label}</span>
-        {hint ? <span className={`block text-xs ${mutedClass}`}>{hint}</span> : null}
+        {hint ? <span className={`block text-sm ${mutedClass}`}>{hint}</span> : null}
       </span>
       <span className={`shrink-0 ${strong ? "font-black text-[#8f3f4b]" : "font-bold"}`}>{value}</span>
     </li>

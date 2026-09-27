@@ -65,7 +65,7 @@ function Appointment() {
         {/* When + what, and what you can do */}
         <section className={`${cardClass} p-4`}>
           <div className="flex items-center justify-between gap-2">
-            <span className={`rounded-full px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] ${statusStyle(booking.status)}`}>
+            <span className={`rounded-full px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.1em] ${statusStyle(booking.status)}`}>
               {booking.status.replace("_", " ")}
             </span>
             <span className="text-base font-black">{money(booking.total)}</span>
@@ -149,7 +149,7 @@ function Appointment() {
             <span className="text-sm font-bold">Total</span>
             <span className="text-base font-black">{money(booking.total)}</span>
           </div>
-          <p className={`mt-1 text-xs ${mutedClass}`}>Taxes included.</p>
+          <p className={`mt-1 text-sm ${mutedClass}`}>Taxes included.</p>
         </section>
 
         {/* Payment */}
@@ -158,7 +158,7 @@ function Appointment() {
             <div className="flex items-center justify-between">
               <p className={eyebrowClass}>Payment</p>
               <span
-                className={`rounded-full px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] ${
+                className={`rounded-full px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.1em] ${
                   balance <= 0 ? "bg-[#4E9A57]/15 text-[#3f7e47]" : "bg-[#C96C83]/12 text-[#9E4A60]"
                 }`}
               >
@@ -185,12 +185,12 @@ function Appointment() {
         {/* Your notes */}
         {booking.notes?.trim() ? (
           <section className="rounded-2xl bg-[#C98A2E]/10 p-4">
-            <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-[#8a5e12]">Your notes</p>
+            <p className="text-[0.8125rem] font-bold uppercase tracking-[0.16em] text-[#8a5e12]">Your notes</p>
             <p className="mt-1.5 text-sm leading-snug text-[#5c3f0d]">{booking.notes}</p>
           </section>
         ) : null}
 
-        <p className={`px-1 text-xs ${mutedClass}`}>
+        <p className={`px-1 text-sm ${mutedClass}`}>
           Booking #{booking.id} · booked {formatBookingDate(booking.created_at, { month: "short", day: "numeric", year: "numeric" })}
         </p>
       </div>
@@ -203,7 +203,7 @@ function Line({ label, hint, value }: { label?: string; hint?: string; value: st
     <li className="flex items-start justify-between gap-3">
       <span className="min-w-0">
         <span className="block font-semibold">{label}</span>
-        {hint ? <span className={`block text-xs ${mutedClass}`}>{hint}</span> : null}
+        {hint ? <span className={`block text-sm ${mutedClass}`}>{hint}</span> : null}
       </span>
       <span className="shrink-0 font-bold">{value}</span>
     </li>

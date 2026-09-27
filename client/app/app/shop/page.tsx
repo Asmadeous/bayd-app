@@ -104,7 +104,6 @@ function Shop() {
     <div className={appScreenClass}>
       <AppHeader
         title="Shop"
-        subtitle="Beauty products, delivered."
         action={
           <button
             type="button"
@@ -114,7 +113,7 @@ function Shop() {
           >
             <ShoppingBag className="size-5" aria-hidden />
             {count > 0 && (
-              <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-[#c96c83] text-[0.65rem] font-bold text-white">
+              <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-[#c96c83] text-[0.75rem] font-bold text-white">
                 {count}
               </span>
             )}
@@ -313,7 +312,7 @@ function ProductDetailSheet({
 
           {hasVariants && (
             <div className="mt-4">
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#101217]/45">
+              <p className="mb-2 text-sm font-bold uppercase tracking-[0.14em] text-[#101217]/45">
                 Choose {product.variants[0]?.color_name ? "colour" : "option"}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -473,7 +472,7 @@ function CartSheet({ onClose }: { onClose: () => void }) {
                   <span className="size-14 shrink-0 rounded-xl bg-cover bg-center bg-black/5" style={{ backgroundImage: `url(${assetUrl(i.product.imageUrl)})` }} aria-hidden />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold">{i.product.name}</p>
-                    {i.product.variantLabel && <p className="text-xs text-[#101217]/50">{i.product.variantLabel}</p>}
+                    {i.product.variantLabel && <p className="text-sm text-[#101217]/50">{i.product.variantLabel}</p>}
                     <p className="text-sm text-[#101217]/55">{i.product.price}</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -565,11 +564,11 @@ function GiftCardTab() {
   return (
     <div className="px-5 pb-8">
       <div className="rounded-3xl bg-gradient-to-br from-[#c96c83] to-[#a9526a] p-6 text-white shadow-[0_12px_30px_-14px_rgba(201,108,131,0.7)]">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/70">BAYD Gift Card</p>
+        <p className="text-sm font-bold uppercase tracking-[0.16em] text-white/70">BAYD Gift Card</p>
         <p className="mt-2 text-4xl font-extrabold">${amount}</p>
       </div>
 
-      <p className="mb-2 mt-5 text-xs font-bold uppercase tracking-[0.14em] text-[#101217]/45">Amount</p>
+      <p className="mb-2 mt-5 text-sm font-bold uppercase tracking-[0.14em] text-[#101217]/45">Amount</p>
       <div className="flex flex-wrap gap-2">
         {AMOUNTS.map((a) => (
           <button

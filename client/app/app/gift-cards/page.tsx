@@ -3,9 +3,9 @@
 import { useGiftCards } from "@/lib/hooks/use-gift-cards"
 import { Gift } from "lucide-react"
 import { EmptyState } from "../empty-state"
-import { SectionScreen } from "../section-screen"
+import { AppHeader } from "../app-header"
+import { appScreenClass } from "../app-theme"
 
-// The list itself, shown on its own screen and inside Management.
 export function GiftCardsList() {
   const { data: cards = [], isLoading } = useGiftCards()
 
@@ -20,21 +20,21 @@ export function GiftCardsList() {
           {cards.map((c) => (
             <li key={c.id} className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#c96c83] to-[#a9526a] p-5 text-white shadow-[0_12px_30px_-14px_rgba(201,108,131,0.7)]">
               <div className="flex items-center justify-between">
-                <span className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-white/70">Gift card</span>
-                <span className={`rounded-full px-2 py-0.5 text-[0.6rem] font-bold uppercase ${c.active ? "bg-white/20" : "bg-black/20"}`}>
+                <span className="text-[0.8125rem] font-bold uppercase tracking-[0.16em] text-white/70">Gift card</span>
+                <span className={`rounded-full px-2 py-0.5 text-[0.8125rem] font-bold uppercase ${c.active ? "bg-white/20" : "bg-black/20"}`}>
                   {c.active ? "Active" : "Inactive"}
                 </span>
               </div>
               <p className="mt-3 font-mono text-lg font-bold tracking-widest">{c.code}</p>
               <div className="mt-3 flex items-end justify-between">
                 <div>
-                  <p className="text-[0.62rem] uppercase tracking-wide text-white/60">Balance</p>
+                  <p className="text-[0.8125rem] uppercase tracking-wide text-white/60">Balance</p>
                   <p className="text-2xl font-extrabold">${Number(c.current_balance).toFixed(2)}</p>
                 </div>
-                <p className="text-xs text-white/70">of ${Number(c.initial_balance).toFixed(2)}</p>
+                <p className="text-sm text-white/70">of ${Number(c.initial_balance).toFixed(2)}</p>
               </div>
               {c.expires_at && (
-                <p className="mt-2 text-xs text-white/60">
+                <p className="mt-2 text-sm text-white/60">
                   Expires {new Date(c.expires_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                 </p>
               )}
@@ -48,9 +48,12 @@ export function GiftCardsList() {
 
 export default function AppGiftCardsScreen() {
   return (
-    <SectionScreen title="Gift cards">
-      <GiftCardsList />
-    </SectionScreen>
+    <div className={appScreenClass}>
+      <AppHeader back title="Gift cards" />
+      <div className="px-5">
+        <GiftCardsList />
+      </div>
+    </div>
   )
 }
 

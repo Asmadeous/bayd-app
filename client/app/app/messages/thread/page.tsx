@@ -4,6 +4,8 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ChevronLeft, Send } from "lucide-react"
 
+import { ChatAvatar } from "@/components/chat/chat-avatar"
+import { ChatPhoto, ChatPhotoButton, ChatPhotoPreview } from "@/components/chat/chat-photos"
 import { LoadEarlier } from "@/components/load-earlier"
 import { useChat } from "@/lib/cable/use-chat"
 import { useConversation } from "@/lib/hooks/use-conversations"
@@ -42,6 +44,7 @@ function MessageThread() {
   const newestId = messages[messages.length - 1]?.id
 
   const [draft, setDraft] = useState("")
+  const [photo, setPhoto] = useState<File | null>(null)
   const [sending, setSending] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -62,14 +65,18 @@ function MessageThread() {
 
   async function onSend() {
     const body = draft.trim()
-    if (!body || sending) return
+    const image = photo
+    if ((!body && !image) || sending) return
     setSending(true)
     setDraft("")
+    setPhoto(null)
     setTyping(false)
     try {
-      await send(body)
+      await send(body, image)
     } catch (e) {
-      setDraft(body) // restore on failure so the customer can retry
+      // Restore on failure so the customer can retry.
+      setDraft(body)
+      setPhoto(image)
       toast({ title: "Message not sent", description: sendError(e), variant: "error" })
     } finally {
       setSending(false)
@@ -81,7 +88,7 @@ function MessageThread() {
   if (!conversationId) {
     return (
       <div className={appScreenClass}>
-        <ThreadHeader name="Messages" status="" onBack={() => router.push("/app/chat")} />
+        <ThreadHeader name="Messages" avatarUrl={null} status="" onBack={() => router.push("/app/chat")} />
         <p className={`px-5 text-sm ${mutedClass}`}>Conversation not found.</p>
       </div>
     )
@@ -94,6 +101,7 @@ function MessageThread() {
     <div className="fixed inset-0 flex flex-col bg-[#F6F1EC] pt-[var(--top-inset)]">
       <ThreadHeader
         name={name}
+        avatarUrl={conversation?.other_participant?.avatar_url}
         status={otherTyping ? "typing…" : otherOnline ? "online" : ""}
         onBack={() => router.push("/app/chat")}
       />
@@ -116,8 +124,9 @@ function MessageThread() {
                       : "max-w-[78%] rounded-2xl rounded-bl-md bg-white px-3.5 py-2 text-sm text-[#101217] shadow-sm"
                   }
                 >
-                  <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                  <p className={`mt-0.5 text-[0.65rem] ${mine ? "text-white/70" : "text-[#101217]/40"}`}>
+                  {m.image_url && <ChatPhoto url={m.image_url} />}
+                  {m.body && <p className={`whitespace-pre-wrap break-words ${m.image_url ? "mt-1.5" : ""}`}>{m.body}</p>}
+                  <p className={`mt-0.5 text-[0.8125rem] ${mine ? "text-white/70" : "text-[#101217]/40"}`}>
                     {formatBookingTime(m.created_at)}
                     {mine && m.read_at ? " · Read" : ""}
                   </p>
@@ -135,36 +144,50 @@ function MessageThread() {
         )}
       </div>
 
-      <div className="flex items-end gap-2 border-t border-black/5 bg-white px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
-        <textarea
-          rows={1}
-          value={draft}
-          onChange={(e) => onDraftChange(e.target.value)}
-          onBlur={() => setTyping(false)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault()
-              onSend()
-            }
-          }}
-          placeholder="Message…"
-          className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-black/10 bg-[#F6F1EC] px-4 py-2.5 text-base text-[#101217] outline-none placeholder:text-[#101217]/35 focus:border-[#c96c83]"
-        />
-        <button
-          type="button"
-          onClick={onSend}
-          disabled={!draft.trim() || sending}
-          aria-label="Send"
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-[#c96c83] text-white transition-opacity disabled:opacity-40"
-        >
-          <Send className="size-5" aria-hidden />
-        </button>
+      <div className="border-t border-black/5 bg-white px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+        {photo && <ChatPhotoPreview file={photo} onRemove={() => setPhoto(null)} />}
+        <div className="flex items-end gap-2">
+          <ChatPhotoButton onPick={setPhoto} className="text-[#101217]/60" />
+          <textarea
+            rows={1}
+            value={draft}
+            onChange={(e) => onDraftChange(e.target.value)}
+            onBlur={() => setTyping(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                onSend()
+              }
+            }}
+            placeholder="Message…"
+            className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-black/10 bg-[#F6F1EC] px-4 py-2.5 text-base text-[#101217] outline-none placeholder:text-[#101217]/35 focus:border-[#c96c83]"
+          />
+          <button
+            type="button"
+            onClick={onSend}
+            disabled={(!draft.trim() && !photo) || sending}
+            aria-label="Send"
+            className="grid size-11 shrink-0 place-items-center rounded-full bg-[#c96c83] text-white transition-opacity disabled:opacity-40"
+          >
+            <Send className="size-5" aria-hidden />
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
-function ThreadHeader({ name, status, onBack }: { name: string; status: string; onBack: () => void }) {
+function ThreadHeader({
+  name,
+  avatarUrl,
+  status,
+  onBack,
+}: {
+  name: string
+  avatarUrl: string | null | undefined
+  status: string
+  onBack: () => void
+}) {
   return (
     <header className="flex items-center gap-3 border-b border-black/5 bg-white px-3 py-2.5">
       <button
@@ -175,9 +198,10 @@ function ThreadHeader({ name, status, onBack }: { name: string; status: string; 
       >
         <ChevronLeft className="size-5" aria-hidden />
       </button>
+      <ChatAvatar name={name} url={avatarUrl} className="size-10" />
       <div className="min-w-0">
         <p className="truncate font-bold text-[#101217]">{name}</p>
-        {status && <p className="truncate text-xs font-medium text-[#c96c83]">{status}</p>}
+        {status && <p className="truncate text-sm font-medium text-[#c96c83]">{status}</p>}
       </div>
     </header>
   )

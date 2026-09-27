@@ -31,6 +31,7 @@ declare module "lucide-react" {
   export const Gift: LucideIcon
   export const HandCoins: LucideIcon
   export const Handshake: LucideIcon
+  export const History: LucideIcon
   export const Home: LucideIcon
   export const ImagePlus: LucideIcon
   export const Images: LucideIcon

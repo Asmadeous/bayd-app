@@ -79,7 +79,7 @@ function NavigateView() {
           <p className="truncate text-base font-extrabold leading-tight">
             {booking?.customer_name ? `To ${booking.customer_name}` : "Navigate"}
           </p>
-          {addressLine && <p className="truncate text-xs text-[#14100F]/55">{addressLine}</p>}
+          {addressLine && <p className="truncate text-sm text-[#14100F]/55">{addressLine}</p>}
         </div>
       </header>
 
@@ -120,7 +120,7 @@ function NavigateView() {
                 <p className="text-sm font-semibold text-[#14100F]/55">Finding your location…</p>
               )}
               {addressLine && (
-                <p className="flex items-center gap-1 truncate text-xs text-[#14100F]/55">
+                <p className="flex items-center gap-1 truncate text-sm text-[#14100F]/55">
                   <MapPin className="size-3.5 shrink-0" aria-hidden /> {addressLine}
                 </p>
               )}

@@ -136,7 +136,7 @@ export default function SignInScreen() {
 
           <div className="flex items-center gap-3 py-1">
             <span className="h-px flex-1 bg-white/10" />
-            <span className="text-xs font-medium uppercase tracking-[0.14em] text-white/35">or</span>
+            <span className="text-sm font-medium uppercase tracking-[0.14em] text-white/35">or</span>
             <span className="h-px flex-1 bg-white/10" />
           </div>
 
@@ -151,7 +151,7 @@ export default function SignInScreen() {
           </button>
         </div>
 
-        <p className="mt-auto pt-8 text-center text-xs text-white/45">
+        <p className="mt-auto pt-8 text-center text-sm text-white/45">
           New here?{" "}
           <Link href="/app/signup" className="font-bold text-[#C96C83]">
             Create an account

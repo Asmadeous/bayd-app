@@ -42,6 +42,14 @@ RSpec.describe "Conversations + messages", type: :request do
       expect(row["unread_count"]).to eq(1)
     end
 
+    it "includes the other participant's uploaded avatar" do
+      bob.avatar.attach(io: file_fixture("test_avatar.png").open, filename: "bob.png")
+      Conversation.between(alice, bob)
+
+      get "/api/v1/conversations", headers: auth_header(alice)
+      expect(response.parsed_body.first["other_participant"]["avatar_url"]).to include("bob.png")
+    end
+
     it "requires auth" do
       get "/api/v1/conversations"
       expect(response).to have_http_status(:unauthorized)
@@ -87,6 +95,35 @@ RSpec.describe "Conversations + messages", type: :request do
       }.to change { convo.messages.count }.by(1)
       expect(response).to have_http_status(:created)
       expect(response.parsed_body["sender_id"]).to eq(alice.id)
+    end
+
+    it "posts a photo, with or without text" do
+      book(starts_at: 20.minutes.from_now)
+      photo = fixture_file_upload("test_avatar.png", "image/png")
+
+      post "/api/v1/conversations/#{convo.id}/messages", params: { image: photo }, headers: auth_header(alice)
+      expect(response).to have_http_status(:created)
+      expect(response.parsed_body["body"]).to eq("")
+      expect(response.parsed_body["image_url"]).to include("test_avatar.png")
+
+      get "/api/v1/conversations/#{convo.id}/messages", params: { latest: 1 }, headers: auth_header(bob)
+      expect(response.parsed_body["data"].last["image_url"]).to include("test_avatar.png")
+    end
+
+    it "refuses a message with neither text nor a photo" do
+      book(starts_at: 20.minutes.from_now)
+      expect {
+        post "/api/v1/conversations/#{convo.id}/messages", params: { body: " " }, headers: auth_header(alice), as: :json
+      }.not_to change(Message, :count)
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "refuses a file that isn't a photo" do
+      book(starts_at: 20.minutes.from_now)
+      fake = fixture_file_upload("fake_image.png", "image/png")
+
+      post "/api/v1/conversations/#{convo.id}/messages", params: { image: fake }, headers: auth_header(alice)
+      expect(response).to have_http_status(:unprocessable_entity)
     end
 
     it "forbids a non-participant" do

@@ -81,7 +81,7 @@ export function RescheduleSheet({ booking, onClose }: { booking: Booking; onClos
         ) : null}
 
         <DateStrip value={date} onChange={(d) => { setDate(d); setTime("") }} />
-        <p className={`mt-1 text-center text-xs ${mutedClass}`}>Times are shown in Eastern time.</p>
+        <p className={`mt-1 text-center text-sm ${mutedClass}`}>Times are shown in Eastern time.</p>
 
         <h3 className="mt-4 border-t border-black/10 pt-4 text-base font-black tracking-tight">
           {date === todayKey() ? "Today, " : ""}

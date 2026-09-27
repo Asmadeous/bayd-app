@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { MessageCircle } from "lucide-react"
 
+import { ChatAvatar } from "@/components/chat/chat-avatar"
 import { LoadMore } from "@/components/load-more"
 import { useConversationsList } from "@/lib/hooks/use-conversations"
 import type { Conversation } from "@/lib/cable/chat-types"
@@ -17,7 +18,7 @@ export default function StaffMessagesScreen() {
 
   return (
     <div className={staffScreenClass}>
-      <StaffHeader title="Messages" subtitle="Chat with your clients and the B.A.Y.D team." />
+      <StaffHeader title="Messages" />
 
       <div className="px-5">
         {isLoading ? (
@@ -53,19 +54,16 @@ function ConversationRow({ conversation: c }: { conversation: Conversation }) {
   const name =
     [c.other_participant?.first_name, c.other_participant?.last_name].filter(Boolean).join(" ") ||
     "B.A.Y.D"
-  const initial = (c.other_participant?.first_name ?? "B").charAt(0).toUpperCase()
 
   return (
     <li>
       <Link href={`/staff/messages/thread?id=${c.id}`} className={`${cardClass} flex items-center gap-3 p-4`}>
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#f0ece4] text-base font-bold text-[#C96C83]">
-          {initial}
-        </span>
+        <ChatAvatar name={c.other_participant?.first_name} url={c.other_participant?.avatar_url} />
         <span className="min-w-0 flex-1">
           <span className="flex items-center justify-between gap-2">
             <span className="truncate font-bold text-[#14100F]">{name}</span>
             {c.last_message_at && (
-              <span className={`shrink-0 text-xs ${mutedClass}`}>
+              <span className={`shrink-0 text-sm ${mutedClass}`}>
                 {formatBookingDate(c.last_message_at, { month: "short", day: "numeric" })}
                 {" · "}
                 {formatBookingTime(c.last_message_at)}
@@ -77,7 +75,7 @@ function ConversationRow({ conversation: c }: { conversation: Conversation }) {
               {roleLabel(c.other_participant?.role)}
             </span>
             {c.unread_count > 0 && (
-              <span className="grid min-w-5 shrink-0 place-items-center rounded-full bg-[#C96C83] px-1.5 text-xs font-bold text-white">
+              <span className="grid min-w-5 shrink-0 place-items-center rounded-full bg-[#C96C83] px-1.5 text-sm font-bold text-white">
                 {c.unread_count}
               </span>
             )}

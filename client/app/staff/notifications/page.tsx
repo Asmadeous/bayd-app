@@ -2,6 +2,7 @@
 
 import { Bell } from "lucide-react"
 
+import { MarkAllReadButton } from "@/components/notifications/mark-all-read"
 import { NotificationList } from "@/components/notifications/notification-list"
 import { staffScreenClass, cardClass, mutedClass } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
@@ -11,6 +12,7 @@ export default function StaffNotificationsScreen() {
     <div className={staffScreenClass}>
       <StaffHeader title="Notifications" back />
       <div className="px-5">
+        <MarkAllReadButton />
         <NotificationList
           app="staff"
           cardClassName={cardClass}

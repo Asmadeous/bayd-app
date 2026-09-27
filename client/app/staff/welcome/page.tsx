@@ -49,7 +49,7 @@ export default function StaffWelcomeScreen() {
         </div>
 
         <div className="mt-12">
-          <p className="text-[0.7rem] font-bold uppercase tracking-[0.2em] text-[#C96C83]">Staff</p>
+          <p className="text-[0.8125rem] font-bold uppercase tracking-[0.2em] text-[#C96C83]">Staff</p>
           <h1 className="mt-2 text-[2.2rem] font-black leading-[1.05] tracking-tight">
             Sign in to your day.
           </h1>
@@ -100,7 +100,7 @@ export default function StaffWelcomeScreen() {
         </div>
 
 
-        <p className="mt-auto pt-8 text-center text-xs text-white/35">
+        <p className="mt-auto pt-8 text-center text-sm text-white/35">
           Staff accounts are created by an admin. Contact your manager if you can&apos;t sign in.
         </p>
       </div>
