@@ -8,6 +8,7 @@ import { ArrowRight, ChevronLeft, Lock, Mail, Phone } from "lucide-react"
 
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useToast } from "@/lib/app-ui/app-ui-provider"
+import { authErrorMessage } from "@/lib/auth-errors"
 
 const APP_REDIRECT = { afterAuth: "/app/home", afterLogout: "/app/welcome" }
 
@@ -35,12 +36,9 @@ export default function SignInScreen() {
         await requestPhoneCode.mutateAsync(phone.trim())
         router.push(`/app/verify?channel=phone&to=${encodeURIComponent(phone.trim())}`)
       }
-    } catch {
-      toast({
-        title: "Couldn't send the code",
-        description: mode === "email" ? "Check the address and try again." : "Check the number and try again.",
-        variant: "error",
-      })
+    } catch (e: unknown) {
+      const msg = authErrorMessage(e, "send")
+      if (msg) toast({ ...msg, variant: "error" })
     }
   }
 
@@ -51,12 +49,9 @@ export default function SignInScreen() {
     }
     try {
       await passkeySignIn.mutateAsync(mode === "email" ? { email: contact } : { phone: contact })
-    } catch {
-      toast({
-        title: "Couldn't sign in with a passkey",
-        description: "Use the email or phone option.",
-        variant: "error",
-      })
+    } catch (e: unknown) {
+      const msg = authErrorMessage(e, "passkey")
+      if (msg) toast({ ...msg, variant: "error" })
     }
   }
 

@@ -6,6 +6,7 @@ import { ChevronLeft } from "lucide-react"
 
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useToast } from "@/lib/app-ui/app-ui-provider"
+import { authErrorMessage } from "@/lib/auth-errors"
 
 const APP_REDIRECT = { afterAuth: "/app/home", afterLogout: "/app/welcome" }
 const CODE_LEN = 6
@@ -95,11 +96,16 @@ function Verify() {
       if (channel === "email") await verifyEmailCode.mutateAsync({ email: to, code: value })
       else await verifyPhoneCode.mutateAsync({ phone: to, code: value, email: signupEmail, first_name: signupFirstName })
       // useAuth redirects to /app/home on success.
-    } catch {
-      setHasError(true)
-      toast({ title: "That code didn't work", description: "Check it or request a new one.", variant: "error" })
-      setDigits(Array(CODE_LEN).fill(""))
-      inputs.current[0]?.focus()
+    } catch (e: unknown) {
+      const msg = authErrorMessage(e, "verify")
+      if (msg) toast({ ...msg, variant: "error" })
+      // Only a rejected code is cleared; after a rate limit or a dropped
+      // connection the same code can simply be sent again.
+      if ((e as { response?: { status?: number } })?.response?.status === 401) {
+        setHasError(true)
+        setDigits(Array(CODE_LEN).fill(""))
+        inputs.current[0]?.focus()
+      }
     }
   }
 
@@ -111,8 +117,9 @@ function Verify() {
       else await requestPhoneCode.mutateAsync(to)
       setCooldown(30)
       toast({ title: "A fresh code is on its way", variant: "success" })
-    } catch {
-      toast({ title: "Couldn't resend the code", description: "Try again in a moment.", variant: "error" })
+    } catch (e: unknown) {
+      const msg = authErrorMessage(e, "send")
+      if (msg) toast({ ...msg, variant: "error" })
     }
   }
 

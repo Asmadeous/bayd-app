@@ -9,6 +9,7 @@ import { ArrowRight, ChevronLeft } from "lucide-react"
 import { SignupConsent } from "@/components/legal/legal-links"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useToast } from "@/lib/app-ui/app-ui-provider"
+import { authErrorMessage } from "@/lib/auth-errors"
 
 const APP_REDIRECT = { afterAuth: "/app/home", afterLogout: "/app/welcome" }
 
@@ -40,8 +41,9 @@ export default function SignUpScreen() {
         first_name: firstName.trim(),
       })
       router.push(`/app/verify?${q.toString()}`)
-    } catch {
-      toast({ title: "Couldn't send the code", description: "Check the number and try again.", variant: "error" })
+    } catch (e: unknown) {
+      const msg = authErrorMessage(e, "send")
+      if (msg) toast({ ...msg, variant: "error" })
     }
   }
 

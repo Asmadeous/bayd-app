@@ -139,7 +139,6 @@ env:
     - INFOBIP_BASE_URL
     - INFOBIP_API_KEY
     - INFOBIP_SENDER
-    # TESTING ONLY — disables the clock-in geofence. REMOVE before public launch.
     # App-review demo login (one email + fixed code bypasses OTP for reviewers)
     - APP_REVIEW_DEMO_EMAIL
     - APP_REVIEW_DEMO_CODE
