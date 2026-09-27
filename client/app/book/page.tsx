@@ -150,7 +150,7 @@ export function BookingFlow({
   const [staff, setStaff] = useState<string>(staffBooking ? String(staffBooking.employeeId) : "any") // "any" | providerId
   const [pickedClient, setPickedClient] = useState<StaffClient | null>(null)
   const [date, setDate] = useState(() => searchParams.get("date") ?? todayKey())
-  const [time, setTime] = useState("")
+  const [time, setTime] = useState(() => searchParams.get("time") ?? "")
   // Prefill from the account whenever the customer is SIGNED IN - not just in
   // dashboard mode. A logged-in user booking from the public /book page shouldn't
   // have to retype details we already have. Dashboard mode still layers a chosen

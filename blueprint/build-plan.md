@@ -127,8 +127,9 @@ role-conditional for staff vs admin. NOT a wrapped website.
 
 - [x] 6. Editable booking calendar — a List | Calendar toggle on every bookings
       screen (list stays the default); appointments are managed from the calendar
-      under each role's existing rules. Staff: view + existing actions only (no
-      reschedule/cancel). "Delete" means cancel; bookings are never hard-deleted.
+      under each role's rules. Staff: full editing of their OWN appointments
+      (create, reschedule, cancel, drag to move); reassigning to another tech
+      stays admin. "Delete" means cancel; bookings are never hard-deleted.
   - [x] 6a. Backend + dashboard calendars — `from`/`to` date range on the customer,
         staff, and admin booking lists; fix admin booking `show`; remove admin
         hard delete; bucket days in the company zone; shared calendar component
@@ -139,6 +140,14 @@ role-conditional for staff vs admin. NOT a wrapped website.
   - [x] 6c. Admin calendar tools — drag-to-reschedule (same availability and
         double-booking checks as the reschedule dialog) and a tech availability +
         blackout overlay; pairs with the admin schedule editor.
+  - [x] 6d. Staff calendar editing - in the staff app day view: tap an empty
+        hour to open New booking with that date + time pre-filled; reschedule
+        and cancel from the job page; long-press-and-drag a block to a new
+        time. New staff reschedule/cancel endpoints scoped to the tech's own
+        bookings, reusing Booking#reschedule! (same hours, travel and
+        double-booking checks) and the admin cancel path; customer notified.
+        Staff are guided in-app: a first-use hint, confirm dialogs that say
+        what happens and who is told, and plain-language errors with a next step.
 
 ## Roadmap - Phase 7: Payments hardening
 

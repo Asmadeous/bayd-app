@@ -56,8 +56,9 @@ the SimplyBook.me integration (being removed).
    (WebAuthn).
 6. **Editable booking calendar** - a List | Calendar toggle on every bookings
    screen (list stays default), managing appointments under each role's
-   existing rules. Staff get view + existing actions only (no reschedule or
-   cancel); "delete" means cancel, bookings are never hard-deleted.
+   rules. Staff fully edit their OWN appointments (create, reschedule, cancel,
+   drag to move); reassigning to another tech stays admin. "Delete" means
+   cancel, bookings are never hard-deleted.
    - 6a. Backend + dashboard calendars: `from`/`to` date range on the customer,
      staff, and admin booking lists; fix admin booking `show`; remove admin hard
      delete; company-zone day bucketing; shared month/week/day calendar with a
@@ -65,6 +66,10 @@ the SimplyBook.me integration (being removed).
    - 6b. App calendars: customer app Bookings + staff app Schedule, reusing 6a.
    - 6c. Admin tools: drag-to-reschedule (same availability + double-booking
      checks) and a tech availability/blackout overlay.
+   - 6d. Staff calendar editing (staff app): tap an empty hour to book with date
+     + time pre-filled, reschedule/cancel from the job page, long-press drag to
+     move; own bookings only, reusing `Booking#reschedule!` and the admin cancel
+     path. In-app guidance: first-use hint, explanatory confirms, plain errors.
 7. **Payments hardening** - no-show collected at full price, a card on file
    required to book, gift cards accepted at the tech's checkout.
    - 7a. No-show charges full price: `NoShowChargeJob` charges the booking's full

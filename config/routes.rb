@@ -169,6 +169,10 @@ Rails.application.routes.draw do
         # Mark a booking missed (the tech failed to attend). Client is never
         # charged; notifies the customer + offers a reschedule (BookingMissedJob).
         post   "bookings/:id/missed",    to: "employees#mark_missed"
+        # The tech moves or cancels their OWN job (never reassigns it). Same
+        # hours, travel and double-booking checks as the admin reschedule.
+        post   "bookings/:id/reschedule", to: "employees#reschedule_booking"
+        post   "bookings/:id/cancel",     to: "employees#cancel_booking"
         get    "current_shift", to: "employees#current_shift"
         get    "shifts",        to: "employees#shifts"
         # The tech's own earnings: tips owed/paid, fuel, partner payout split.

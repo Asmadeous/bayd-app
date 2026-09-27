@@ -166,6 +166,36 @@ export function useMarkMissed() {
   })
 }
 
+// The tech moves their own job to a new local wall-clock time. The API runs the
+// same hours, travel and double-booking checks as admin, and tells the client.
+export function useStaffReschedule() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingId, startsAt }: { bookingId: number; startsAt: string }) =>
+      api.post<Booking>(`/employee/bookings/${bookingId}/reschedule`, { starts_at: startsAt }).then((r) => r.data),
+    onSuccess: (_data, { bookingId }) => {
+      qc.invalidateQueries({ queryKey: ["employee-schedule"] })
+      qc.invalidateQueries({ queryKey: ["employee-booking", bookingId] })
+      qc.invalidateQueries({ queryKey: ["availability"] })
+    },
+  })
+}
+
+// The tech cancels their own job (a reason is required). The API tells the client
+// and the office; the booking stays on record as cancelled.
+export function useStaffCancel() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ bookingId, reason }: { bookingId: number; reason: string }) =>
+      api.post<Booking>(`/employee/bookings/${bookingId}/cancel`, { reason }).then((r) => r.data),
+    onSuccess: (_data, { bookingId }) => {
+      qc.invalidateQueries({ queryKey: ["employee-schedule"] })
+      qc.invalidateQueries({ queryKey: ["employee-booking", bookingId] })
+      qc.invalidateQueries({ queryKey: ["availability"] })
+    },
+  })
+}
+
 // The client wasn't there. The API only allows it from the appointment's start
 // time, and it charges the booking's unpaid balance to their card on file.
 export function useMarkNoShow() {

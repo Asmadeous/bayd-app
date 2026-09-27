@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { CalendarDays, Check, Clock3, Lock, MapPin, CreditCard, MessageCircle, Navigation, Video } from "lucide-react"
+import { CalendarClock, CalendarDays, Check, Clock3, Lock, MapPin, CreditCard, MessageCircle, Navigation, Video, X } from "lucide-react"
 
 import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
@@ -15,6 +15,7 @@ import { CHARGE_METHODS, paymentMethodLabel, type OfflinePaymentMethod } from "@
 import { openPaymentUrl } from "@/lib/native/open-external"
 import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
 import { useRouter } from "next/navigation"
+import { apiError, StaffCancelSheet, StaffRescheduleSheet } from "./schedule/job-edit-sheets"
 import { cardClass, bookingStatusStyle, mutedClass, staffTheme } from "./staff-theme"
 
 // A technician's booking as a purpose-built mobile card. Carries every action the
@@ -138,6 +139,11 @@ export function JobActions({
           {preArrival ? <JoinCallButton booking={booking} /> : null}
         </div>
       )}
+
+      {/* Before it starts, the tech can move their own job (cancel sits beside
+          it). "Can't attend" below is different: it records that the tech
+          missed it. */}
+      {!history && ["pending", "confirmed"].includes(booking.status) && <ChangeJobButtons booking={booking} />}
 
       {/* Pre-arrival only: self-report that you can't attend (missed). The client
           is never charged; they're notified and offered a reschedule. */}
@@ -448,11 +454,6 @@ function ChargeButton({ booking }: { booking: Booking }) {
   )
 }
 
-function apiError(e: unknown) {
-  const d = e as { response?: { data?: { error?: string } }; message?: string }
-  return d?.response?.data?.error ?? d?.message ?? "Please try again."
-}
-
 // Clock-in and navigation are locked until 30 minutes before the start; tapping
 // explains why (the API refuses an early clock-in with the same message).
 function LockedWindow({ opensLabel }: { opensLabel: string }) {
@@ -544,6 +545,33 @@ function ClockButton({ booking }: { booking: Booking }) {
 // Self-report a booking the tech can't attend (missed). Two-tap confirm because
 // it's customer-visible and not something to fire by accident: the client gets a
 // "we missed your appointment" notification and a reschedule prompt. Never charges.
+function ChangeJobButtons({ booking }: { booking: Booking }) {
+  const [sheet, setSheet] = useState<"reschedule" | "cancel" | null>(null)
+
+  return (
+    <>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => setSheet("reschedule")}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-black/[0.05] px-3 py-2.5 text-sm font-bold text-[#14100F] transition-colors active:bg-black/10"
+        >
+          <CalendarClock className="size-4" aria-hidden /> Reschedule
+        </button>
+        <button
+          type="button"
+          onClick={() => setSheet("cancel")}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-black/[0.05] px-3 py-2.5 text-sm font-bold text-[#8f3f4b] transition-colors active:bg-black/10"
+        >
+          <X className="size-4" aria-hidden /> Cancel job
+        </button>
+      </div>
+      {sheet === "reschedule" && <StaffRescheduleSheet booking={booking} onClose={() => setSheet(null)} />}
+      {sheet === "cancel" && <StaffCancelSheet booking={booking} onClose={() => setSheet(null)} />}
+    </>
+  )
+}
+
 function MarkMissedButton({ booking }: { booking: Booking }) {
   const { toast } = useToast()
   const confirm = useConfirm()

@@ -150,6 +150,48 @@ module Api
         render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
       end
 
+      # Staff-facing wording for Booking#reschedule! refusals: each says what to
+      # do next, since the tech is fixing it on the spot.
+      RESCHEDULE_ERRORS = {
+        slot_taken:    "You already have a job then. Pick another time, or move that job first.",
+        outside_hours: "That time is outside business hours. Pick a time the business is open.",
+        not_reachable: "You couldn't travel there in time from your job before or after. Leave more room between jobs."
+      }.freeze
+
+      # The tech moves their own job. No customer cutoff or reschedule cap, and
+      # the job always stays with this tech; reassigning is admin-only.
+      def reschedule_booking
+        booking   = profile.bookings.find(params[:id])
+        new_start = BusinessHours.parse_local(params[:starts_at])
+        return render(json: { error: "Pick a new date and time." }, status: :unprocessable_entity) if new_start.nil?
+        if new_start <= Time.current
+          return render json: { error: "That time has already passed. Pick a later time." }, status: :unprocessable_entity
+        end
+
+        booking.reschedule!(new_start: new_start, by_customer: false)
+        render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
+      rescue Booking::RescheduleError => e
+        message = RESCHEDULE_ERRORS[e.reason] || "This job is #{booking.status.humanize.downcase} and can't be moved."
+        render json: { error: message, code: e.reason },
+               status: e.reason == :slot_taken ? :conflict : :unprocessable_entity
+      end
+
+      # The tech cancels their own job. BookingCancelledJob tells the customer;
+      # admins are told here because any refund is theirs to handle.
+      def cancel_booking
+        booking = profile.bookings.find(params[:id])
+        unless booking.pending? || booking.confirmed?
+          return render json: { error: "This job is #{booking.status.humanize.downcase} and can't be cancelled." },
+                        status: :unprocessable_entity
+        end
+        reason = params[:reason].to_s.strip
+        return render(json: { error: "Choose a reason so the client and office know why." }, status: :unprocessable_entity) if reason.blank?
+
+        booking.update!(status: :cancelled, cancellation_reason: reason)
+        notify_admins_of_staff_cancel(booking, reason)
+        render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
+      end
+
       def current_shift
         shift = profile.current_shift
         render json: shift ? ShiftSerializer.render_as_hash(shift) : nil
@@ -462,6 +504,23 @@ module Api
           late_arrivals: count - on_time,
           on_time_rate: count.positive? ? (on_time * 100.0 / count).round : nil
         }
+      end
+
+      def notify_admins_of_staff_cancel(booking, reason)
+        tech = current_user.first_name.presence || "A technician"
+        when_str = booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%b %-d at %-l:%M %p")
+        paid = booking.amount_paid.positive? ? " #{ActiveSupport::NumberHelper.number_to_currency(booking.amount_paid)} was paid; refund it if due." : ""
+        User.where(role: :admin).find_each do |admin|
+          NotificationService.deliver(
+            user: admin, kind: :booking_cancelled,
+            title: "#{tech} cancelled a booking",
+            body: "#{booking.service&.name || 'A booking'} for #{booking.user&.first_name.presence || 'a client'} on #{when_str}. Reason: #{reason}.#{paid}",
+            booking: booking,
+            action_url: "#{ENV.fetch('APP_URL', 'http://localhost:3001')}/dashboard/admin/bookings"
+          )
+        end
+      rescue StandardError => e
+        Rails.logger.warn("[EmployeesController] admin cancel notice for booking #{booking.id} failed: #{e.message}")
       end
 
       def profile
