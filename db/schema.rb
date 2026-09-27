@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_25_105614) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_005038) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -886,6 +886,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_105614) do
     t.string "city"
     t.string "country", default: "Canada"
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.string "email"
     t.string "first_name"
     t.string "google_uid"
@@ -905,6 +906,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_25_105614) do
     t.string "street_address"
     t.datetime "updated_at", null: false
     t.string "webauthn_id"
+    t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["google_uid"], name: "index_users_on_google_uid", unique: true, where: "(google_uid IS NOT NULL)"
     t.index ["phone"], name: "index_users_on_phone"

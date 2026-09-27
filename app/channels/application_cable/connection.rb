@@ -20,7 +20,7 @@ module ApplicationCable
       reject_unauthorized_connection unless token
 
       payload = JWT.decode(token, jwt_secret, true, algorithm: "HS256").first
-      User.find(payload["sub"])
+      User.where(deleted_at: nil).find(payload["sub"])
     rescue JWT::DecodeError, ActiveRecord::RecordNotFound
       reject_unauthorized_connection
     end

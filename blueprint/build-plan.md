@@ -165,3 +165,21 @@ role-conditional for staff vs admin. NOT a wrapped website.
   - [ ] 7d. Gift card in the tech Charge sheet - tech enters or scans a code,
         the balance is applied first, and the remainder goes to card / cash /
         Interac / cheque.
+
+## Roadmap - Phase 8: Store readiness
+
+- [ ] 8. App Store + Google Play readiness
+  - [x] 8a. In-app account deletion - customers (app Account, web settings) and
+        staff (app Profile) can delete their account, plus a public web page
+        for Google Play's deletion link. Deletion erases personal data (name,
+        email, phone, addresses, saved card, push tokens, messages, avatar),
+        signs out everywhere and cancels upcoming bookings; bookings, payments
+        and invoices stay, anonymized, for tax and payout records.
+  - [ ] 8b. Privacy policy + terms - public /privacy and /terms pages written
+        from what the app actually collects (contact: Bookings@baydspa.ca),
+        linked from sign-up, the app Account/Profile screens and the site
+        footer. Needs legal review before submission.
+  - [ ] 8c. Staff location disclosure + store notes - a one-time in-app
+        explanation before the staff app first shares location on shift, and
+        App Review / Play Data safety notes (staff app ships Unlisted on iOS,
+        closed or private track on Play; Android uses foreground location only).

@@ -91,3 +91,26 @@ export function useRemoveCard() {
     },
   })
 }
+
+// ── Account deletion ─────────────────────────────────────────────────────────
+
+export interface DeletionPreview {
+  upcoming_bookings: { id: number; service: string | null; starts_at: string; paid: boolean }[]
+  // Set when the account can't be deleted yet (staff with jobs, admins).
+  blocked_reason: string | null
+}
+
+export function useDeletionPreview(enabled: boolean) {
+  return useQuery({
+    queryKey: ["account-deletion-preview"],
+    queryFn: () => api.get<DeletionPreview>("/account/deletion_preview").then((r) => r.data),
+    enabled,
+  })
+}
+
+// Erases the signed-in user's account; the caller signs them out afterwards.
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: (confirm: string) => api.delete<{ deleted: true }>("/account", { data: { confirm } }).then((r) => r.data),
+  })
+}

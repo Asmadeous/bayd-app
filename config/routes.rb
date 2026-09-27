@@ -17,6 +17,10 @@ Rails.application.routes.draw do
       post  "auth/phone_code/verify", to: "auth#verify_phone_code"
       post  "auth/email_code",        to: "auth#request_email_code"
       post  "auth/email_code/verify", to: "auth#verify_email_code"
+      # The signed-in user deletes their own account (store requirement).
+      resource :account, only: :destroy do
+        get :deletion_preview
+      end
       # Passkeys / WebAuthn (optional MFA). Registration is authed; auth is public.
       post  "auth/passkeys/registration_options",   to: "passkeys#registration_options"
       post  "auth/passkeys/register",               to: "passkeys#register"

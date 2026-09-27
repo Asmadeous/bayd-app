@@ -60,7 +60,7 @@ module Api
         token = request.headers["Authorization"]&.split(" ")&.last
         return if token.blank?
 
-        User.find_by(id: JWT.decode(token, jwt_secret, true, algorithm: "HS256").first["sub"])
+        User.find_by(id: JWT.decode(token, jwt_secret, true, algorithm: "HS256").first["sub"], deleted_at: nil)
       rescue JWT::DecodeError
         nil
       end

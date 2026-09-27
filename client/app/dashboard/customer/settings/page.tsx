@@ -12,6 +12,7 @@ import { CardOnFile } from "@/components/dashboard/card-on-file"
 import { PasskeyManager } from "@/components/dashboard/passkey-manager"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
+import { DeleteAccountButton } from "@/components/account/delete-account"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { customerSettingsSteps } from "@/lib/tours/customer-settings-tour"
@@ -24,7 +25,7 @@ const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] t
 export default function CustomerSettingsPage() {
   const { toast } = useToast()
   const { user } = useAuthStore()
-  const { updateMe } = useAuth()
+  const { updateMe, logout } = useAuth()
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const avatarPreviewObjectUrlRef = useRef<string | null>(null)
   const [form, setForm] = useState({
@@ -244,6 +245,14 @@ export default function CustomerSettingsPage() {
           <div data-tour="customer-settings-card-on-file">
             <CardOnFile />
           </div>
+
+          <DeleteAccountButton
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#8f3f4b]/25 bg-white py-2.5 text-sm font-semibold text-[#8f3f4b] hover:bg-[#fff5f6]"
+            onDeleted={() => {
+              toast({ title: "Your account was deleted", variant: "success" })
+              logout()
+            }}
+          />
         </div>
       </div>
 

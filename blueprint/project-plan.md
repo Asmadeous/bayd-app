@@ -48,6 +48,9 @@ Android via Capacitor) are being built for customers and for staff/admin.
   location + day-of customer ETA.
 - Payments hardening: no-show charged at full price, card on file required to
   book (web + app, Square-tokenized), gift cards accepted by techs at checkout.
+- Store readiness: in-app account deletion (personal data erased, financial
+  records kept anonymized), privacy policy + terms, staff location disclosure;
+  staff app distributed Unlisted (iOS) / private track (Play).
 
 ## 4. Data — What are the core entities?
 

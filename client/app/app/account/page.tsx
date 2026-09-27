@@ -14,6 +14,7 @@ import {
   verifyBiometric,
 } from "@/lib/native/biometric"
 import { hapticSuccess, hapticError } from "@/lib/native/haptics"
+import { DeleteAccountButton } from "@/components/account/delete-account"
 import { ImagePicker } from "@/components/image-picker"
 import { appScreenClass } from "../app-theme"
 import { AppHeader } from "../app-header"
@@ -228,6 +229,13 @@ export default function AccountScreen() {
           <LogOut className="size-4" aria-hidden />
           Sign out
         </button>
+
+        <DeleteAccountButton
+          onDeleted={() => {
+            toast({ title: "Your account was deleted", variant: "success" })
+            logout()
+          }}
+        />
       </div>
     </div>
   )

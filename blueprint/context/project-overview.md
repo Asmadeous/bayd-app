@@ -83,6 +83,14 @@ the SimplyBook.me integration (being removed).
      same card + consent step in the app booking flow.
    - 7d. Gift card in the tech Charge sheet: balance applied first, remainder via
      card / cash / Interac / cheque.
+8. **Store readiness** - what App Store + Google Play review require.
+   - 8a. In-app account deletion (customer app, web, staff app, public web
+     page): erase personal data, sign out everywhere, cancel upcoming
+     bookings; keep bookings/payments/invoices anonymized (tax + payouts).
+   - 8b. Public /privacy and /terms (contact Bookings@baydspa.ca), linked from
+     sign-up, Account/Profile and the footer; legal review before submission.
+   - 8c. Staff location disclosure before first on-shift sharing + App Review /
+     Play Data safety notes. Staff app: Unlisted (iOS), private track (Play).
 
 ## Data model
 

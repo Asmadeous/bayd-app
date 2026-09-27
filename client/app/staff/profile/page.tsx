@@ -11,6 +11,7 @@ import { biometricAvailable, biometricLockEnabled, setBiometricLock, verifyBiome
 import { hapticError, hapticSuccess } from "@/lib/native/haptics"
 import { assetUrl } from "@/lib/asset-url"
 import { ImagePicker } from "@/components/image-picker"
+import { DeleteAccountButton } from "@/components/account/delete-account"
 import { ChangePasswordForm } from "@/components/change-password-form"
 import { staffScreenClass, cardClass, eyebrowClass, inputClass, labelClass, mutedClass } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
@@ -270,6 +271,14 @@ export default function StaffProfileScreen() {
           <LogOut className="size-4" aria-hidden />
           Sign out
         </button>
+
+        <DeleteAccountButton
+          audience="staff"
+          onDeleted={() => {
+            toast({ title: "Your account was deleted", variant: "success" })
+            logout()
+          }}
+        />
       </div>
     </div>
   )

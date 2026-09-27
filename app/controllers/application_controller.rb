@@ -23,7 +23,8 @@ class ApplicationController < ActionController::API
     return unauthorized unless token
 
     payload = JWT.decode(token, jwt_secret, true, algorithm: "HS256").first
-    @current_user = User.find(payload["sub"])
+    # A deleted account's unexpired tokens must stop working too.
+    @current_user = User.where(deleted_at: nil).find(payload["sub"])
   rescue JWT::DecodeError, ActiveRecord::RecordNotFound
     unauthorized
   end
