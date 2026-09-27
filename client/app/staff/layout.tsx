@@ -8,6 +8,7 @@ import { useAuthStore } from "@/lib/stores/auth-store"
 import { biometricLockEnabled, verifyBiometric } from "@/lib/native/biometric"
 import { requestStatusBarSync } from "@/lib/native/use-native-shell"
 import { AppUIProvider } from "@/lib/app-ui/app-ui-provider"
+import { LocationDisclosure } from "./location-disclosure"
 import { StaffNav } from "./staff-nav"
 
 // Root layout for the purpose-built STAFF app. Gates on the persisted auth store:
@@ -83,6 +84,7 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
       <div className="min-h-dvh bg-[#F4F2EF]">
         {children}
         {!hideNav && <StaffNav />}
+        <LocationDisclosure />
       </div>
     </AppUIProvider>
   )

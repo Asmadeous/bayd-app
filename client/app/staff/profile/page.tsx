@@ -12,6 +12,7 @@ import { hapticError, hapticSuccess } from "@/lib/native/haptics"
 import { assetUrl } from "@/lib/asset-url"
 import { ImagePicker } from "@/components/image-picker"
 import { DeleteAccountButton } from "@/components/account/delete-account"
+import { LegalLinks } from "@/components/legal/legal-links"
 import { ChangePasswordForm } from "@/components/change-password-form"
 import { staffScreenClass, cardClass, eyebrowClass, inputClass, labelClass, mutedClass } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
@@ -279,6 +280,8 @@ export default function StaffProfileScreen() {
             logout()
           }}
         />
+
+        <LegalLinks className="text-[#14100F]/55" />
       </div>
     </div>
   )

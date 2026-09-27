@@ -50,7 +50,7 @@ Android via Capacitor) are being built for customers and for staff/admin.
   book (web + app, Square-tokenized), gift cards accepted by techs at checkout.
 - Store readiness: in-app account deletion (personal data erased, financial
   records kept anonymized), privacy policy + terms, staff location disclosure;
-  staff app distributed Unlisted (iOS) / private track (Play).
+  customer app to store review; staff app stays on TestFlight / Play internal.
 
 ## 4. Data — What are the core entities?
 

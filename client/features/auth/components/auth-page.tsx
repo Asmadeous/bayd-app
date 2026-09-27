@@ -396,6 +396,19 @@ export function AuthPage({ content }: AuthPageProps) {
                     ? "Sign in"
                     : content.primaryAction}
               </button>
+              {content.mode === "signup" && (
+                <p className="text-center text-xs text-[#5f6268]">
+                  By creating an account you agree to our{" "}
+                  <Link href="/terms" className="font-semibold text-[#9E4A60] underline underline-offset-2">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/privacy" className="font-semibold text-[#9E4A60] underline underline-offset-2">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
+              )}
             </form>
             )}
 

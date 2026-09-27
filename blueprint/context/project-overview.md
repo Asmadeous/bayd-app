@@ -90,7 +90,9 @@ the SimplyBook.me integration (being removed).
    - 8b. Public /privacy and /terms (contact Bookings@baydspa.ca), linked from
      sign-up, Account/Profile and the footer; legal review before submission.
    - 8c. Staff location disclosure before first on-shift sharing + App Review /
-     Play Data safety notes. Staff app: Unlisted (iOS), private track (Play).
+     Play Data safety notes (`deploy/mobile/STORE_REVIEW.md`). Only the
+     customer app goes to store review; staff app stays on TestFlight / Play
+     internal.
 
 ## Data model
 

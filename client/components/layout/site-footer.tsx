@@ -71,6 +71,15 @@ export function SiteFooter() {
           <Link className="mt-3 block hover:text-white" href="/careers">
             Careers
           </Link>
+          <Link className="mt-3 block hover:text-white" href="/privacy">
+            Privacy Policy
+          </Link>
+          <Link className="mt-3 block hover:text-white" href="/terms">
+            Terms of Service
+          </Link>
+          <Link className="mt-3 block hover:text-white" href="/delete-account">
+            Delete your account
+          </Link>
         </div>
 
         <div className="text-sm text-white/62">

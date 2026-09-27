@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { ArrowRight, ChevronLeft } from "lucide-react"
 
+import { SignupConsent } from "@/components/legal/legal-links"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useToast } from "@/lib/app-ui/app-ui-provider"
 
@@ -105,6 +106,7 @@ export default function SignUpScreen() {
             {sending ? "Sending…" : "Verify my number"}
             {!sending && <ArrowRight className="size-[1.15rem]" aria-hidden />}
           </button>
+          <SignupConsent className="text-white/50" linkClassName="text-white/80" />
         </div>
 
         <p className="mt-auto pt-8 text-center text-xs text-white/45">

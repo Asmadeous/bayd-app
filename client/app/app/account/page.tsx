@@ -15,6 +15,7 @@ import {
 } from "@/lib/native/biometric"
 import { hapticSuccess, hapticError } from "@/lib/native/haptics"
 import { DeleteAccountButton } from "@/components/account/delete-account"
+import { LegalLinks } from "@/components/legal/legal-links"
 import { ImagePicker } from "@/components/image-picker"
 import { appScreenClass } from "../app-theme"
 import { AppHeader } from "../app-header"
@@ -236,6 +237,8 @@ export default function AccountScreen() {
             logout()
           }}
         />
+
+        <LegalLinks className="text-[#101217]/55" />
       </div>
     </div>
   )
