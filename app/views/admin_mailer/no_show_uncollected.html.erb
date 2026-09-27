@@ -1,0 +1,16 @@
+<h2 style="margin:0 0 12px;font-family:Arial,sans-serif;color:#101217;">No-show not collected</h2>
+<p style="margin:0 0 16px;font-family:Arial,sans-serif;color:#5f6268;font-size:14px;line-height:1.5;">
+  <%= @booking.user.first_name %> was marked a no-show, but the booking's balance couldn't be charged.
+  It is still owed and needs collecting by hand.
+</p>
+<table style="font-family:Arial,sans-serif;font-size:14px;color:#101217;border-collapse:collapse;margin-bottom:16px;">
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Reason</td><td style="padding:4px 0;"><%= @reason %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Still owed</td><td style="padding:4px 0;"><%= number_to_currency(@owed) %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Booking</td><td style="padding:4px 0;">#<%= @booking.id %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Service</td><td style="padding:4px 0;"><%= @booking.service.name %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Technician</td><td style="padding:4px 0;"><%= @technician_name %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">When</td><td style="padding:4px 0;"><%= @booking.starts_at&.in_time_zone(BusinessHours.zone)&.strftime("%b %-d, %Y at %-l:%M %p %Z") %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Customer</td><td style="padding:4px 0;"><%= [ @booking.user.first_name, @booking.user.last_name ].compact_blank.join(" ") %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Email</td><td style="padding:4px 0;"><%= @booking.user.email.presence || "-" %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Phone</td><td style="padding:4px 0;"><%= @booking.user.phone.presence || "-" %></td></tr>
+</table>

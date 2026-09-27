@@ -22,6 +22,7 @@ class Notification < ApplicationRecord
     booking_reminder_day_of: "booking_reminder_day_of",
     booking_dispatch: "booking_dispatch",
     booking_no_show: "booking_no_show",
+    booking_no_show_uncollected: "booking_no_show_uncollected", # admin: no-show balance could not be charged
     booking_starting: "booking_starting",           # tech nudge to clock in (at starts_at)
     booking_window_ended: "booking_window_ended",    # tech prompt to confirm completion (after ends_at)
     booking_overdue: "booking_overdue",              # tech/admin flag: past grace, no clock-in (sweep)

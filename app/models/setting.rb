@@ -7,7 +7,6 @@ class Setting < ApplicationRecord
   DEFAULTS = {
     "group_deposit_pct" => "25", # % of the total collected upfront for group bookings
     "group_deposit_min" => "50", # minimum group deposit in $ (floor on the % above)
-    "no_show_fee"       => "0",  # flat $ charged to a no-show's card on file (0 = off)
     # Printed on every invoice when set. A Canadian invoice needs the GST/HST
     # registration number; blank prints nothing rather than a made-up one.
     "invoice_hst_number"       => "",
@@ -30,11 +29,5 @@ class Setting < ApplicationRecord
   # Minimum group-booking deposit in dollars. Returns a BigDecimal.
   def self.group_deposit_min
     get("group_deposit_min").to_d
-  end
-
-  # Flat no-show fee in dollars, charged to the customer's card on file when a
-  # booking is marked no_show. Returns a BigDecimal; 0 disables the charge.
-  def self.no_show_fee
-    get("no_show_fee").to_d
   end
 end

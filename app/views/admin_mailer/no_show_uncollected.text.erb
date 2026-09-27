@@ -1,0 +1,16 @@
+No-show not collected
+
+<%= @booking.user.first_name %> was marked a no-show, but the booking's balance
+couldn't be charged. It is still owed and needs collecting by hand.
+
+Reason:     <%= @reason %>
+Still owed: <%= number_to_currency(@owed) %>
+
+Booking:    #<%= @booking.id %>
+Service:    <%= @booking.service.name %>
+Technician: <%= @technician_name %>
+When:       <%= @booking.starts_at&.in_time_zone(BusinessHours.zone)&.strftime("%b %-d, %Y at %-l:%M %p %Z") %>
+
+Customer:   <%= [ @booking.user.first_name, @booking.user.last_name ].compact_blank.join(" ") %>
+Email:      <%= @booking.user.email.presence || "-" %>
+Phone:      <%= @booking.user.phone.presence || "-" %>

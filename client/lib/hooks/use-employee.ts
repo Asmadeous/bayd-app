@@ -167,7 +167,7 @@ export function useMarkMissed() {
 }
 
 // The client wasn't there. The API only allows it from the appointment's start
-// time, and it charges the no-show fee to their card on file.
+// time, and it charges the booking's unpaid balance to their card on file.
 export function useMarkNoShow() {
   const qc = useQueryClient()
   return useMutation({

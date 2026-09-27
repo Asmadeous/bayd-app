@@ -144,7 +144,7 @@ export function JobActions({
       {preArrival && <MarkMissedButton booking={booking} />}
 
       {/* From the appointment's start: the client wasn't there (charges the
-          no-show fee). */}
+          booking's unpaid balance). */}
       {(preArrival || inProgress) && now >= new Date(booking.starts_at).getTime() ? (
         <MarkNoShowButton booking={booking} />
       ) : null}
@@ -594,9 +594,15 @@ function MarkNoShowButton({ booking }: { booking: Booking }) {
   const markNoShow = useMarkNoShow()
 
   async function go() {
+    const client = booking.customer_name ?? "the client"
+    const owed = Number(booking.outstanding_balance)
+    const charge =
+      owed > 0
+        ? `The $${owed.toFixed(2)} still owed for the booking is charged to their card on file (the office follows up if it can't be).`
+        : "The booking is already paid, so nothing more is charged."
     const ok = await confirm({
       title: "Client didn't show?",
-      message: `Mark ${booking.customer_name ?? "the client"} as a no-show. The no-show fee is charged to their card on file and they're told they missed it. This can't be undone.`,
+      message: `Mark ${client} as a no-show. ${charge} They're told they missed it. This can't be undone.`,
       confirmLabel: "Mark no-show",
       cancelLabel: "Back",
       tone: "danger",

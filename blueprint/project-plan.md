@@ -46,6 +46,8 @@ Android via Capacitor) are being built for customers and for staff/admin.
 - Customer mobile app (Capacitor).
 - Staff/admin mobile app (Capacitor) with Square Tap to Pay NFC POS + live
   location + day-of customer ETA.
+- Payments hardening: no-show charged at full price, card on file required to
+  book (web + app, Square-tokenized), gift cards accepted by techs at checkout.
 
 ## 4. Data — What are the core entities?
 

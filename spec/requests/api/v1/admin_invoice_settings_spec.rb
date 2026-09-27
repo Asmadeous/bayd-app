@@ -20,7 +20,7 @@ RSpec.describe "Admin invoice business settings", type: :request do
   end
 
   it "still ignores a blank numeric setting" do
-    patch "/api/v1/admin/settings", params: { no_show_fee: "" }, headers: auth_header(admin), as: :json
-    expect(response.parsed_body["no_show_fee"]).to eq("0")
+    patch "/api/v1/admin/settings", params: { group_deposit_min: "" }, headers: auth_header(admin), as: :json
+    expect(response.parsed_body["group_deposit_min"]).to eq("50")
   end
 end

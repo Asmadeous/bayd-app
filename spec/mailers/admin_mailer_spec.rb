@@ -40,4 +40,24 @@ RSpec.describe AdminMailer, type: :mailer do
       expect(mail.body.encoded).to include("Susi") # technician name from the associated user
     end
   end
+
+  describe "#no_show_uncollected" do
+    let(:tech)     { create(:employee_profile, user: create(:user, first_name: "Susi", last_name: "N")) }
+    let(:customer) { create(:user, first_name: "Ada", email: "ada@example.com", phone: "+16045550123") }
+    let(:service)  { create(:service, name: "Manicure", duration_minutes: 30, price: 40) }
+    let(:booking) do
+      start = BusinessHours.zone.parse("#{Date.current - 1} 10:00")
+      Booking.create!(user: customer, service: service, employee_profile: tech,
+                      starts_at: start, ends_at: start + 30.minutes,
+                      status: "no_show", subtotal: 40, travel_fee: 0, total: 40)
+    end
+
+    it "goes to the team inbox with the amount owed, reason and customer contact" do
+      mail = described_class.no_show_uncollected(booking, "No card on file")
+      expect(mail.subject).to include("No-show not collected", "Ada")
+      expect(mail.to).to eq([ ENV.fetch("ADMIN_NOTIFY_EMAIL", ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca")) ])
+      body = mail.body.encoded
+      expect(body).to include("$40.00", "No card on file", "ada@example.com", "+16045550123", "Susi")
+    end
+  end
 end

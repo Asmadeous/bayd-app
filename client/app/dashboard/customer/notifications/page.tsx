@@ -253,6 +253,7 @@ const KIND_LABELS: Record<string, string> = {
   booking_rescheduled: "Rescheduled",
   booking_cancelled: "Cancelled",
   booking_no_show: "Missed appointment",
+  booking_no_show_uncollected: "No-show unpaid",
   booking_missed: "Missed appointment",
   booking_dispatch: "Job today",
   booking_starting: "Clock in",

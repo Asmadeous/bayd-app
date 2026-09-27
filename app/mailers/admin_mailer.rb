@@ -23,4 +23,17 @@ class AdminMailer < ApplicationMailer
     to = ENV.fetch("ADMIN_NOTIFY_EMAIL", ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca"))
     mail(to: to, subject: "Booking add-ons — ##{booking.id} #{booking.user.first_name}")
   end
+
+  # Team heads-up: a no-show's balance couldn't be charged (no card on file, or
+  # the card was declined), so it's still owed and needs collecting by hand.
+  def no_show_uncollected(booking, reason)
+    @booking = booking
+    @reason  = reason
+    @owed    = booking.outstanding_balance
+    u = booking.employee_profile&.user
+    @technician_name = [ u&.first_name, u&.last_name ].compact_blank.join(" ").presence ||
+                       "Technician ##{booking.employee_profile_id}"
+    to = ENV.fetch("ADMIN_NOTIFY_EMAIL", ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca"))
+    mail(to: to, subject: "No-show not collected - ##{booking.id} #{booking.user.first_name}")
+  end
 end

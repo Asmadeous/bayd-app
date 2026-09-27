@@ -26,7 +26,7 @@ class Booking < ApplicationRecord
     in_progress: "in_progress",
     completed:   "completed",
     cancelled:   "cancelled",
-    no_show:     "no_show",   # client unavailable - chargeable (Setting.no_show_fee)
+    no_show:     "no_show",   # client unavailable - charged the unpaid balance (NoShowChargeJob)
     missed:      "missed"     # tech failed to attend - never charged
   }
 

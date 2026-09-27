@@ -139,3 +139,20 @@ role-conditional for staff vs admin. NOT a wrapped website.
   - [x] 6c. Admin calendar tools — drag-to-reschedule (same availability and
         double-booking checks as the reschedule dialog) and a tech availability +
         blackout overlay; pairs with the admin schedule editor.
+
+## Roadmap - Phase 7: Payments hardening
+
+- [ ] 7. No-show collection, card on file, gift card at checkout
+  - [x] 7a. No-show charges full price - NoShowChargeJob charges the booking's
+        full service price (incl. add-ons) to the card on file instead of the
+        flat Setting.no_show_fee; when it can't charge (no card, declined),
+        leave the balance outstanding and alert admin (in-app + email).
+  - [ ] 7b. Card required to book (web) - /book gets a card step (Square Web
+        Payments SDK, token only) plus a consent checkbox for the no-show /
+        late-cancel policy, stored with a timestamp; "pay now" charges the
+        saved card instead of a second hosted checkout. Settings card box stays.
+  - [ ] 7c. Card on file in the customer app - a purpose-built Payment screen
+        under Account, and the same card + consent step in the app booking flow.
+  - [ ] 7d. Gift card in the tech Charge sheet - tech enters or scans a code,
+        the balance is applied first, and the remainder goes to card / cash /
+        Interac / cheque.

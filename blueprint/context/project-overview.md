@@ -65,6 +65,19 @@ the SimplyBook.me integration (being removed).
    - 6b. App calendars: customer app Bookings + staff app Schedule, reusing 6a.
    - 6c. Admin tools: drag-to-reschedule (same availability + double-booking
      checks) and a tech availability/blackout overlay.
+7. **Payments hardening** - no-show collected at full price, a card on file
+   required to book, gift cards accepted at the tech's checkout.
+   - 7a. No-show charges full price: `NoShowChargeJob` charges the booking's full
+     service price (incl. add-ons) to the card on file instead of the flat
+     `Setting.no_show_fee`; if it can't charge (no card, declined), the balance
+     stays outstanding and admin is alerted (in-app + email).
+   - 7b. Card required to book (web): card step in `/book` (Square Web Payments
+     SDK, token only) + a timestamped no-show/late-cancel policy consent; "pay
+     now" charges the saved card instead of a second hosted checkout.
+   - 7c. Customer app card on file: purpose-built Payment screen under Account,
+     same card + consent step in the app booking flow.
+   - 7d. Gift card in the tech Charge sheet: balance applied first, remainder via
+     card / cash / Interac / cheque.
 
 ## Data model
 
@@ -90,6 +103,13 @@ Phase 1 introduces. Existing schema is authoritative in `db/schema.rb`.
 - **`no_double_booking`**: Postgres exclusion constraint on
   (`employee_profile_id`, `tsrange(starts_at, ends_at)`) where status is active -
   authoritative; conflict -> 422. **Load-bearing; keep.**
+
+### User payment fields (exist - Phase 7 depends on them)
+- `square_customer_id`, `square_card_id`, `card_brand`, `card_last4` - the card
+  on file. Square tokenizes the card; we never store card numbers (PCI SAQ A).
+- `card_on_file?` is true when `square_card_id` is present.
+- Phase 7b adds a timestamped no-show/late-cancel policy consent (field shape
+  locked in the 7b spec).
 
 ### Shift (exists - attendance, NOT bookable hours)
 - clock-in/out timestamps + GPS + distance + fuel reimbursement. Records that a
@@ -164,3 +184,5 @@ a List | Calendar toggle (roadmap 6).
 >   leave untracked.
 > - Availability slot granularity (15-min? per-service duration?) and default
 >   turnaround/buffer values - to be decided when speccing the AvailabilityEngine.
+> - Square Web Payments SDK inside the Capacitor app (`capacitor://` origin) is
+>   unverified; prove it on a test build at the start of 7c.
