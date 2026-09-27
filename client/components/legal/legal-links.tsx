@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 
 // The phone apps don't bundle the website's pages, so the legal pages open from
 // the live site: in the in-app browser on native, a new tab on the web.
-async function openLegal(path: "/privacy" | "/terms") {
+export async function openLegal(path: "/privacy" | "/terms") {
   const url = `${siteConfig.url}${path}`
   if (Capacitor.isNativePlatform()) {
     const mod = await import("@capacitor/browser").catch(() => null)

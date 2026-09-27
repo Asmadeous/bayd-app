@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Capacitor } from "@capacitor/core"
 import { ImagePlus } from "lucide-react"
+import { assetUrl } from "@/lib/asset-url"
 
 // Shared photo picker: replaces "paste an image URL" everywhere. Returns a File
 // to the caller (upload it as multipart). On native (Capacitor) it opens the
@@ -24,7 +25,10 @@ export function ImagePicker({
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const objectUrlRef = useRef<string | null>(null)
-  const [preview, setPreview] = useState<string | null>(currentUrl ?? null)
+  // Only a freshly picked file lives in state; the saved photo is read live so
+  // it still shows when the profile loads after this mounts.
+  const [picked, setPicked] = useState<string | null>(null)
+  const preview = picked ?? (currentUrl ? assetUrl(currentUrl) : null)
 
   useEffect(() => {
     return () => {
@@ -36,7 +40,7 @@ export function ImagePicker({
     if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
     const url = URL.createObjectURL(file)
     objectUrlRef.current = url
-    setPreview(url)
+    setPicked(url)
     onPick(file)
   }
 

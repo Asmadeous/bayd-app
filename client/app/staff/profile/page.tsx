@@ -1,75 +1,41 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { BadgeCheck, Lock, LogOut, Mail, MapPin, Phone } from "lucide-react"
+import Link from "next/link"
+import { BadgeCheck, FileText, KeyRound, Lock, LogOut, Mail, MapPin, Phone, ShieldCheck } from "lucide-react"
 
-import { useEmployeeProfile, useUpdateProfile } from "@/lib/hooks/use-employee"
+import { useEmployeeProfile } from "@/lib/hooks/use-employee"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
-import { biometricAvailable, biometricLockEnabled, setBiometricLock, verifyBiometric } from "@/lib/native/biometric"
-import { hapticError, hapticSuccess } from "@/lib/native/haptics"
-import { assetUrl } from "@/lib/asset-url"
-import { ImagePicker } from "@/components/image-picker"
 import { DeleteAccountButton } from "@/components/account/delete-account"
-import { LegalLinks } from "@/components/legal/legal-links"
-import { ChangePasswordForm } from "@/components/change-password-form"
-import { ToggleRow } from "@/components/toggle-row"
-import { staffScreenClass, cardClass, eyebrowClass, inputClass, labelClass, mutedClass } from "../staff-theme"
-import { StaffHeader } from "../staff-header"
+import {
+  ProfileChip,
+  ProfileHero,
+  SettingsGroup,
+  SettingsRow,
+  SettingsToggle,
+  deleteAccountLinkClass,
+} from "@/components/account/profile-ui"
+import { useAppLock } from "@/components/account/use-app-lock"
+import { openLegal } from "@/components/legal/legal-links"
+import { staffScreenClass } from "../staff-theme"
 
 const STAFF_REDIRECT = { afterAuth: "/staff/schedule", afterLogout: "/staff/welcome" }
 
-// Staff profile - a purpose-built mobile screen on useEmployeeProfile +
-// useUpdateProfile (the same title/bio/photo the desktop staff profile edits;
-// base location, services and availability are admin-managed, not editable here).
-// Also holds app lock and sign out; past jobs, Earnings, Reviews, Shifts and
-// Fuel live on the Manage tab. Changing the password is part of Edit profile.
+// Staff profile: photo, name and title up top, then grouped settings. Editing
+// (photo, title, bio) and changing the password open their own screens. Base
+// location, services and availability are admin-managed, not editable here;
+// past jobs, Earnings, Reviews, Shifts and Fuel live on the Manage tab.
 export default function StaffProfileScreen() {
   const { toast } = useToast()
   const confirm = useConfirm()
   const { logout } = useAuth(STAFF_REDIRECT)
   const { data: profile, isLoading } = useEmployeeProfile()
-  const update = useUpdateProfile()
-
-  const [editing, setEditing] = useState(false)
-  const [title, setTitle] = useState<string | null>(null)
-  const [bio, setBio] = useState<string | null>(null)
-  const [photo, setPhoto] = useState<File | null>(null)
-
-  const [bioAvailable, setBioAvailable] = useState(false)
-  const [bioOn, setBioOn] = useState(() => biometricLockEnabled())
-  const [bioBusy, setBioBusy] = useState(false)
-
-  useEffect(() => {
-    biometricAvailable().then(setBioAvailable)
-  }, [])
+  const appLock = useAppLock()
 
   const user = profile?.user
-  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || profile?.name || "Your profile"
-  const titleVal = title ?? profile?.title ?? ""
-  const bioVal = bio ?? profile?.bio ?? ""
-
+  const name = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || profile?.name || "Your profile"
   const years = profile?.years_experience
   const areaCount = profile?.service_fsas?.length ?? 0
-  const details = [
-    years ? { icon: BadgeCheck, label: "Experience", value: `${years} years` } : null,
-    areaCount ? { icon: MapPin, label: "Coverage", value: `${areaCount} service area${areaCount === 1 ? "" : "s"}` } : null,
-    user?.phone ? { icon: Phone, label: "Phone", value: user.phone } : null,
-    user?.email ? { icon: Mail, label: "Email", value: user.email } : null,
-  ].filter((d): d is { icon: typeof BadgeCheck; label: string; value: string } => d !== null)
-
-  async function save() {
-    try {
-      await update.mutateAsync({ title: titleVal, bio: bioVal, photo })
-      setEditing(false)
-      setPhoto(null)
-      setTitle(null)
-      setBio(null)
-      toast({ title: "Profile saved", variant: "success" })
-    } catch {
-      toast({ title: "Couldn't save your profile", description: "Please try again.", variant: "error" })
-    }
-  }
 
   async function handleLogout() {
     const ok = await confirm({
@@ -81,191 +47,86 @@ export default function StaffProfileScreen() {
     if (ok) logout()
   }
 
-  // Toggle the biometric app-lock. Turning it on requires passing the device
-  // biometric once (proving it works); turning it off just clears the flag.
-  async function toggleBiometric() {
-    setBioBusy(true)
-    try {
-      if (bioOn) {
-        setBiometricLock(false)
-        setBioOn(false)
-        toast({ title: "App lock turned off", variant: "warning" })
-      } else {
-        const ok = await verifyBiometric("Enable app lock")
-        if (ok) {
-          setBiometricLock(true)
-          setBioOn(true)
-          hapticSuccess()
-          toast({
-            title: "App lock on",
-            description: "You'll unlock with your fingerprint or face.",
-            variant: "success",
-          })
-        } else {
-          hapticError()
-          toast({ title: "Couldn't verify", description: "App lock not enabled.", variant: "error" })
-        }
-      }
-    } finally {
-      setBioBusy(false)
-    }
+  if (isLoading) {
+    return (
+      <div className={staffScreenClass}>
+        <div className="space-y-4 px-5 pt-[calc(2rem+var(--top-inset))]">
+          <div className="mx-auto size-24 animate-pulse rounded-full bg-black/5" />
+          <div className="h-48 animate-pulse rounded-2xl bg-black/5" />
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className={staffScreenClass}>
-      <StaffHeader
-        title="Profile"
-        action={
-          !editing && !isLoading ? (
-            <button type="button" onClick={() => setEditing(true)} className="text-sm font-bold text-[#14100F]">
-              Edit
-            </button>
-          ) : undefined
-        }
-      />
+      <div className="space-y-6 px-5 pt-[calc(2rem+var(--top-inset))]">
+        <ProfileHero photoUrl={profile?.photo_url} name={name} subtitle={profile?.title} editHref="/staff/profile/edit">
+          {years || areaCount ? (
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              {years ? <ProfileChip icon={BadgeCheck}>{years} yrs</ProfileChip> : null}
+              {areaCount ? (
+                <ProfileChip icon={MapPin}>
+                  {areaCount} area{areaCount === 1 ? "" : "s"}
+                </ProfileChip>
+              ) : null}
+            </div>
+          ) : null}
+        </ProfileHero>
 
-      <div className="space-y-5 px-5">
-        {/* Identity card */}
-        <section className="rounded-2xl bg-[#14100F] p-5 text-white">
-          <div className="flex items-center gap-3">
-            <span className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-full bg-white/10">
-              {profile?.photo_url ? (
-                <span
-                  className="size-full bg-cover bg-center"
-                  style={{ backgroundImage: `url(${assetUrl(profile.photo_url)})` }}
-                  aria-hidden
-                />
-              ) : (
-                <span className="text-lg font-black">{(user?.first_name ?? "T").charAt(0)}</span>
-              )}
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-lg font-black">{fullName}</p>
-              <p className="truncate text-sm text-white/55">{profile?.title || user?.email}</p>
-            </div>
-          </div>
-        </section>
+        {profile?.bio ? (
+          <p className="rounded-2xl border border-black/[0.06] bg-white px-4 py-3 text-sm leading-relaxed text-[#14100F]/80">
+            {profile.bio}
+          </p>
+        ) : (
+          <Link
+            href="/staff/profile/edit"
+            className="block rounded-2xl border border-dashed border-[#C96C83]/40 bg-white px-4 py-3 text-sm text-[#14100F]/70"
+          >
+            <span className="font-bold text-[#C96C83]">+ Add a short bio</span> clients see when they pick you.
+          </Link>
+        )}
 
-        {/* Edit form */}
-        {editing ? (
-          <div className={`${cardClass} space-y-4 p-4`}>
-            <div>
-              <label className={labelClass}>Profile photo</label>
-              <ImagePicker currentUrl={profile?.photo_url} onPick={setPhoto} label="photo" shape="circle" />
-            </div>
-            <div>
-              <label className={labelClass}>Title</label>
-              <input
-                className={inputClass}
-                value={titleVal}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Nail Tech for Mississauga"
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Bio</label>
-              <textarea
-                className={`${inputClass} h-24`}
-                value={bioVal}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="A short intro clients see."
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={save}
-                disabled={update.isPending}
-                className="flex-1 rounded-xl bg-[#C96C83] py-3 text-sm font-bold text-white disabled:opacity-50"
-              >
-                {update.isPending ? "Saving…" : "Save"}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditing(false)
-                  setPhoto(null)
-                  setTitle(null)
-                  setBio(null)
-                }}
-                className="flex-1 rounded-xl bg-black/[0.06] py-3 text-sm font-bold transition-colors active:bg-black/10"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+        {user?.email || user?.phone ? (
+          <SettingsGroup title="Contact">
+            {user?.email ? <SettingsRow icon={Mail} label="Email" value={user.email} /> : null}
+            {user?.phone ? <SettingsRow icon={Phone} label="Phone" value={user.phone} /> : null}
+          </SettingsGroup>
         ) : null}
 
-        {editing ? (
-          <section className={`${cardClass} p-4`}>
-            <p className={eyebrowClass}>Change password</p>
-            <p className={`mb-3 mt-1 text-sm ${mutedClass}`}>
-              Enter your current password and choose a new one. You&apos;ll stay signed in.
-            </p>
-            <ChangePasswordForm />
-          </section>
-        ) : (
-          <div className={`${cardClass} p-4`}>
-            <p className={eyebrowClass}>About</p>
-            <p className={`mt-1.5 text-sm ${bioVal ? "text-[#14100F]" : mutedClass}`}>
-              {bioVal || "No bio yet. Tap Edit to add one."}
-            </p>
-          </div>
-        )}
-
-        {/* Details - the real employee record (coverage, experience, contact).
-            Services and availability are admin-managed, shown read-only. */}
-        {!editing && details.length > 0 && (
-          <section className={`${cardClass} p-4`}>
-            <p className={eyebrowClass}>Details</p>
-            <dl className="mt-2 divide-y divide-black/[0.06]">
-              {details.map((d) => (
-                <div key={d.label} className="flex items-center gap-3 py-2.5">
-                  <d.icon className="size-4 shrink-0 text-[#C96C83]" aria-hidden />
-                  <dt className="w-24 shrink-0 text-sm font-semibold uppercase tracking-[0.06em] text-[#14100F]/45">
-                    {d.label}
-                  </dt>
-                  <dd className="min-w-0 flex-1 truncate text-sm font-medium text-[#14100F]">{d.value}</dd>
-                </div>
-              ))}
-            </dl>
-            {profile?.partner_name && (
-              <p className={`mt-3 border-t border-black/[0.06] pt-3 text-sm ${mutedClass}`}>
-                Partnered with {profile.partner_name}
-              </p>
-            )}
-          </section>
-        )}
-
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
-          <ToggleRow
+        <SettingsGroup title="Security">
+          <SettingsToggle
             icon={Lock}
             label="App lock"
-            checked={bioOn}
-            disabled={!bioAvailable || bioBusy}
-            onToggle={toggleBiometric}
-            last
+            checked={appLock.on}
+            disabled={!appLock.available || appLock.busy}
+            onToggle={appLock.toggle}
           />
-        </section>
+          <SettingsRow icon={KeyRound} label="Change password" href="/staff/profile/password" />
+        </SettingsGroup>
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#8f3f4b]/25 bg-white py-3.5 text-sm font-bold text-[#8f3f4b]"
-        >
-          <LogOut className="size-4" aria-hidden />
-          Sign out
-        </button>
+        <SettingsGroup title="Legal">
+          <SettingsRow icon={ShieldCheck} label="Privacy policy" onClick={() => void openLegal("/privacy")} />
+          <SettingsRow icon={FileText} label="Terms of service" onClick={() => void openLegal("/terms")} />
+        </SettingsGroup>
 
-        <DeleteAccountButton
-          audience="staff"
-          onDeleted={() => {
-            toast({ title: "Your account was deleted", variant: "success" })
-            logout()
-          }}
-        />
+        {profile?.partner_name ? (
+          <p className="text-center text-sm text-[#14100F]/55">Partnered with {profile.partner_name}</p>
+        ) : null}
 
-        <LegalLinks className="text-[#14100F]/55" />
+        <div>
+          <SettingsGroup>
+            <SettingsRow icon={LogOut} label="Sign out" onClick={handleLogout} danger />
+          </SettingsGroup>
+          <DeleteAccountButton
+            audience="staff"
+            className={`mt-3 ${deleteAccountLinkClass}`}
+            onDeleted={() => {
+              toast({ title: "Your account was deleted", variant: "success" })
+              logout()
+            }}
+          />
+        </div>
       </div>
     </div>
   )

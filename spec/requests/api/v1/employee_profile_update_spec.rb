@@ -36,4 +36,17 @@ RSpec.describe "PATCH /api/v1/employee/profile", type: :request do
     expect(response).to have_http_status(:unprocessable_entity)
     expect(profile.reload.photo).not_to be_attached
   end
+
+  it "shows the tech their own contact details, bio and coverage" do
+    profile.update!(bio: "Twenty years of nails", service_fsas: [ "L5L" ])
+    tech_user.update!(phone: "4165550142")
+
+    get "/api/v1/employee/profile", headers: auth_header(tech_user)
+    json = JSON.parse(response.body)
+
+    expect(json["bio"]).to eq("Twenty years of nails")
+    expect(json["service_fsas"]).to eq([ "L5L" ])
+    expect(json.dig("user", "email")).to eq("tech@baydspa.ca")
+    expect(json.dig("user", "phone")).to eq("4165550142")
+  end
 end

@@ -10,8 +10,9 @@ module Api
 
       before_action :require_employee!
 
+      # The tech's own record, so the full view (contact, bio, coverage).
       def show
-        render json: EmployeeProfileSerializer.render_as_hash(profile)
+        render json: EmployeeProfileSerializer.render_as_hash(profile, view: :full)
       end
 
       def update
@@ -21,7 +22,7 @@ module Api
 
         profile.update!(profile_params) if params[:employee].present?
         profile.photo.attach(params[:photo]) if params[:photo].present?
-        render json: EmployeeProfileSerializer.render_as_hash(profile)
+        render json: EmployeeProfileSerializer.render_as_hash(profile, view: :full)
       end
 
       def toggle_shift
