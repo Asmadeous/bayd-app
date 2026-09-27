@@ -25,6 +25,11 @@ class EmployeeProfile < ApplicationRecord
   # direct (solo) tech is paid individually (tips + fuel reimbursement). This
   # governs which earnings surfaces they see - the two never mix.
   def partner_provider? = partner_id.present?
+
+  # Prefers the uploaded photo; falls back to the plain photo_url string.
+  def photo_image_url
+    photo.attached? ? Rails.application.routes.url_helpers.rails_blob_url(photo) : photo_url
+  end
   def direct_staff?     = partner_id.blank?
 
   scope :active,       -> { where(active: true) }

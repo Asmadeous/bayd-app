@@ -75,6 +75,12 @@ class User < ApplicationRecord
     avatar.attached? ? Rails.application.routes.url_helpers.rails_blob_url(avatar) : avatar_url
   end
 
+  # The photo other people see (e.g. in chat): a tech's staff-app profile photo,
+  # otherwise the account avatar.
+  def display_photo_url
+    employee_profile&.photo_image_url.presence || avatar_image_url
+  end
+
   private
 
   def email_or_phone_present

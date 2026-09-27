@@ -50,6 +50,14 @@ RSpec.describe "Conversations + messages", type: :request do
       expect(response.parsed_body.first["other_participant"]["avatar_url"]).to include("bob.png")
     end
 
+    it "shows a tech's staff profile photo" do
+      bob_profile.photo.attach(io: file_fixture("test_avatar.png").open, filename: "bob-staff.png")
+      Conversation.between(alice, bob)
+
+      get "/api/v1/conversations", headers: auth_header(alice)
+      expect(response.parsed_body.first["other_participant"]["avatar_url"]).to include("bob-staff.png")
+    end
+
     it "requires auth" do
       get "/api/v1/conversations"
       expect(response).to have_http_status(:unauthorized)

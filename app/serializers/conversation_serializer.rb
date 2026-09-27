@@ -7,7 +7,7 @@ class ConversationSerializer < Blueprinter::Base
   field :other_participant do |conversation, options|
     other = options[:current_user] ? conversation.other_participant(options[:current_user]) : nil
     other && { id: other.id, first_name: other.first_name, last_name: other.last_name, role: other.role,
-               avatar_url: other.avatar_image_url }
+               avatar_url: other.display_photo_url }
   end
 
   field :unread_count do |conversation, options|

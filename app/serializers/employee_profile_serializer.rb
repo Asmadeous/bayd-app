@@ -7,13 +7,7 @@ class EmployeeProfileSerializer < Blueprinter::Base
   # tech as id + name + photo + title + experience, never contact/earnings.
   fields :title, :years_experience
 
-  field :photo_url do |profile|
-    if profile.photo.attached?
-      Rails.application.routes.url_helpers.rails_blob_url(profile.photo)
-    else
-      profile.photo_url
-    end
-  end
+  field :photo_url, &:photo_image_url
 
   # First name only - "who's coming" without the private user record.
   field :name do |profile|

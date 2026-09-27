@@ -3,9 +3,11 @@ module Api
     # Direct-message conversations for the authenticated user. A conversation is a
     # 1:1 thread; you only ever see your own (admins can open any via messages).
     class ConversationsController < ApplicationController
+      PARTICIPANT_PHOTOS = [ { avatar_attachment: :blob }, { employee_profile: { photo_attachment: :blob } } ].freeze
+
       def index
         convos = Conversation.for_user(current_user).newest_first
-                             .includes(participant_one: { avatar_attachment: :blob }, participant_two: { avatar_attachment: :blob })
+                             .includes(participant_one: PARTICIPANT_PHOTOS, participant_two: PARTICIPANT_PHOTOS)
         # With ?page the list comes in pages; without it, everything (older clients).
         if params[:page].present?
           records, meta = paginate(convos)
