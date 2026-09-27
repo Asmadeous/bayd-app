@@ -56,6 +56,24 @@ RSpec.describe "Employee booking edits", type: :request do
       expect(b.reload.employee_profile).to eq(profile)
     end
 
+    it "refuses a tech-side reason and points to Can't attend" do
+      b = booking
+      cancel(b, "Weather or travel problem")
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body["error"]).to include("Use Can't attend")
+      expect(b.reload).to be_confirmed
+    end
+
+    it "refuses once the appointment has started, so a missing client is a no-show" do
+      b = Booking.create!(user: customer, service: service, employee_profile: profile,
+                          starts_at: 5.minutes.ago, ends_at: 55.minutes.from_now, status: "confirmed",
+                          subtotal: 80, travel_fee: 0, total: 80)
+      cancel(b, "Client asked to cancel")
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body["error"]).to include("mark a no-show")
+      expect(b.reload).to be_confirmed
+    end
+
     it "404s for another tech's booking" do
       reschedule(booking(employee: other_tech), "#{day}T14:00:00")
       expect(response).to have_http_status(:not_found)
@@ -111,22 +129,22 @@ RSpec.describe "Employee booking edits", type: :request do
 
     it "cancels the tech's own job with the reason and tells the customer" do
       b = booking
-      perform_enqueued_jobs { cancel(b, "Sick") }
+      perform_enqueued_jobs { cancel(b, "Client asked to cancel") }
 
       expect(response).to have_http_status(:ok)
       expect(b.reload).to be_cancelled
-      expect(b.cancellation_reason).to eq("Sick")
+      expect(b.cancellation_reason).to eq("Client asked to cancel")
       expect(Notification.exists?(user: customer, booking: b, kind: "booking_cancelled")).to be(true)
     end
 
     it "tells admins who cancelled, why, and what was paid" do
       b = booking
       b.payments.create!(amount: 80, status: "paid", method: "card", processor: "square", paid_at: Time.current)
-      cancel(b, "Car broke down")
+      cancel(b, "Client asked to cancel: moving away")
 
       note = Notification.find_by(user: admin, booking: b, kind: "booking_cancelled")
       expect(note.title).to eq("Claire cancelled a booking")
-      expect(note.body).to include("Reason: Car broke down", "$80.00 was paid; refund it if due")
+      expect(note.body).to include("Reason: Client asked to cancel: moving away", "$80.00 was paid; refund it if due")
     end
 
     it "requires a reason" do
@@ -138,13 +156,31 @@ RSpec.describe "Employee booking edits", type: :request do
     end
 
     it "refuses a job that is already under way" do
-      cancel(booking(status: "in_progress"), "Sick")
+      cancel(booking(status: "in_progress"), "Client asked to cancel")
       expect(response).to have_http_status(:unprocessable_entity)
       expect(response.parsed_body["error"]).to eq("This job is in progress and can't be cancelled.")
     end
 
+    it "refuses a tech-side reason and points to Can't attend" do
+      b = booking
+      cancel(b, "Weather or travel problem")
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body["error"]).to include("Use Can't attend")
+      expect(b.reload).to be_confirmed
+    end
+
+    it "refuses once the appointment has started, so a missing client is a no-show" do
+      b = Booking.create!(user: customer, service: service, employee_profile: profile,
+                          starts_at: 5.minutes.ago, ends_at: 55.minutes.from_now, status: "confirmed",
+                          subtotal: 80, travel_fee: 0, total: 80)
+      cancel(b, "Client asked to cancel")
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body["error"]).to include("mark a no-show")
+      expect(b.reload).to be_confirmed
+    end
+
     it "404s for another tech's booking" do
-      cancel(booking(employee: other_tech), "Sick")
+      cancel(booking(employee: other_tech), "Client asked to cancel")
       expect(response).to have_http_status(:not_found)
     end
   end

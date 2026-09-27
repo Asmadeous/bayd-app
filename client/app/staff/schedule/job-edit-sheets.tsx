@@ -149,10 +149,12 @@ export function StaffRescheduleSheet({ booking, onClose }: { booking: Booking; o
   )
 }
 
-const CANCEL_REASONS = ["Client asked to cancel", "Duplicate or booked by mistake", "Weather or travel problem", "Other"]
+// Client-side reasons only; the API refuses anything else. A tech who can't make
+// it uses "Can't attend", and a client who isn't there is a no-show.
+const CANCEL_REASONS = ["Client asked to cancel", "Duplicate or booked by mistake"]
 
-// The tech calls off their own job. A reason is required because the client and
-// the office both see it. Refunds are the office's call, so the sheet says so
+// The tech calls off their own job before it starts. A reason is required
+// because the client and the office both see it. Refunds are the office's call, so the sheet says so
 // when the client has paid rather than promising one.
 export function StaffCancelSheet({ booking, onClose }: { booking: Booking; onClose: () => void }) {
   const { toast } = useToast()
@@ -162,7 +164,7 @@ export function StaffCancelSheet({ booking, onClose }: { booking: Booking; onClo
   const [error, setError] = useState<string | null>(null)
   const client = booking.customer_name ?? "The client"
   const paid = Number(booking.financials?.amount_paid ?? 0)
-  const reason = choice === "Other" ? note.trim() : [choice, note.trim()].filter(Boolean).join(": ")
+  const reason = [choice, note.trim()].filter(Boolean).join(": ")
 
   async function submit() {
     setError(null)
@@ -207,7 +209,7 @@ export function StaffCancelSheet({ booking, onClose }: { booking: Booking; onClo
       {choice ? (
         <label className="mt-4 block">
           <span className="mb-1 block text-sm font-bold uppercase tracking-wide text-[#14100F]/60">
-            {choice === "Other" ? "Tell them why" : "Add a note (optional)"}
+            Add a note (optional)
           </span>
           <textarea rows={2} className={field} value={note} onChange={(e) => { setNote(e.target.value); setError(null) }} />
         </label>

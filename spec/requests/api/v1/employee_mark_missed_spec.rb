@@ -39,6 +39,16 @@ RSpec.describe "Employee mark booking missed", type: :request do
     expect(Notification.exists?(user: customer, booking: b, kind: "booking_missed")).to be(true)
   end
 
+  it "alerts admins that the tech can't attend" do
+    admin = create(:user, role: :admin)
+    tech_user.update!(first_name: "Claire")
+    b = booking
+    post "/api/v1/employee/bookings/#{b.id}/missed", headers: auth_header(tech_user), as: :json
+
+    note = Notification.find_by(user: admin, booking: b, kind: "booking_missed")
+    expect(note.title).to eq("Claire can't attend a booking")
+  end
+
   it "never charges the customer for a missed booking" do
     b = booking
     expect {

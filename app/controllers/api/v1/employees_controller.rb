@@ -148,8 +148,12 @@ module Api
         end
 
         booking.update!(status: :missed)
+        notify_admins_of_missed(booking)
         render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
       end
+
+      # The client-side reasons a tech may cancel for; the staff app offers these.
+      STAFF_CANCEL_REASONS = [ "Client asked to cancel", "Duplicate or booked by mistake" ].freeze
 
       # Staff-facing wording for Booking#reschedule! refusals: each says what to
       # do next, since the tech is fixing it on the spot.
@@ -185,8 +189,19 @@ module Api
           return render json: { error: "This job is #{booking.status.humanize.downcase} and can't be cancelled." },
                         status: :unprocessable_entity
         end
+        # Once it has started, a client who isn't there is a no-show (charged),
+        # not a cancel.
+        if Time.current >= booking.starts_at
+          return render json: { error: "This job has started. If the client isn't there, mark a no-show." },
+                        status: :unprocessable_entity
+        end
         reason = params[:reason].to_s.strip
         return render(json: { error: "Choose a reason so the client and office know why." }, status: :unprocessable_entity) if reason.blank?
+        # A tech who can't make it uses "Can't attend", so it's recorded as missed.
+        unless STAFF_CANCEL_REASONS.any? { |r| reason.start_with?(r) }
+          return render json: { error: "Staff can only cancel when the client asked to or it was booked by mistake. Can't make it yourself? Use Can't attend." },
+                        status: :unprocessable_entity
+        end
 
         booking.update!(status: :cancelled, cancellation_reason: reason)
         notify_admins_of_staff_cancel(booking, reason)
@@ -522,6 +537,23 @@ module Api
         end
       rescue StandardError => e
         Rails.logger.warn("[EmployeesController] admin cancel notice for booking #{booking.id} failed: #{e.message}")
+      end
+
+      # The office has to cover or rebook a job the tech can't make.
+      def notify_admins_of_missed(booking)
+        tech = current_user.first_name.presence || "A technician"
+        when_str = booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%b %-d at %-l:%M %p")
+        User.where(role: :admin).find_each do |admin|
+          NotificationService.deliver(
+            user: admin, kind: :booking_missed,
+            title: "#{tech} can't attend a booking",
+            body: "#{booking.service&.name || 'A booking'} for #{booking.user&.first_name.presence || 'a client'} on #{when_str}. The client was offered a new time.",
+            booking: booking,
+            action_url: "#{ENV.fetch('APP_URL', 'http://localhost:3001')}/dashboard/admin/bookings"
+          )
+        end
+      rescue StandardError => e
+        Rails.logger.warn("[EmployeesController] admin missed notice for booking #{booking.id} failed: #{e.message}")
       end
 
       def profile

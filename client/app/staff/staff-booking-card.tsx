@@ -105,6 +105,7 @@ export function JobActions({
   const inProgress = !history && booking.status === "in_progress"
   const done = !history && booking.status === "completed"
   const preArrival = !history && booking.status === "confirmed"
+  const started = now >= new Date(booking.starts_at).getTime()
   const isPast = ["completed", "cancelled", "no_show", "missed"].includes(booking.status)
   const access = useBookingAccess(booking)
   const secondaryCount =
@@ -140,20 +141,19 @@ export function JobActions({
         </div>
       )}
 
-      {/* Before it starts, the tech can move their own job (cancel sits beside
-          it). "Can't attend" below is different: it records that the tech
-          missed it. */}
-      {!history && ["pending", "confirmed"].includes(booking.status) && <ChangeJobButtons booking={booking} />}
+      {/* Reschedule, with Cancel beside it before the start time (client asked,
+          or booked by mistake) and No-show from the start time (client not
+          there, charged). "Can't attend" below is the tech's own absence. */}
+      {!history && ["pending", "confirmed"].includes(booking.status) && (
+        <ChangeJobButtons booking={booking} started={started} />
+      )}
 
       {/* Pre-arrival only: self-report that you can't attend (missed). The client
           is never charged; they're notified and offered a reschedule. */}
       {preArrival && <MarkMissedButton booking={booking} />}
 
-      {/* From the appointment's start: the client wasn't there (charges the
-          booking's unpaid balance). */}
-      {(preArrival || inProgress) && now >= new Date(booking.starts_at).getTime() ? (
-        <MarkNoShowButton booking={booking} />
-      ) : null}
+      {/* Clocked in but the client isn't there: charges the unpaid balance. */}
+      {inProgress && started ? <MarkNoShowButton booking={booking} /> : null}
 
       {history && ["confirmed", "pending", "in_progress"].includes(booking.status) ? (
         <p className="mt-3 rounded-lg bg-black/[0.04] px-3 py-2 text-sm text-[#14100F]/60">
@@ -545,7 +545,7 @@ function ClockButton({ booking }: { booking: Booking }) {
 // Self-report a booking the tech can't attend (missed). Two-tap confirm because
 // it's customer-visible and not something to fire by accident: the client gets a
 // "we missed your appointment" notification and a reschedule prompt. Never charges.
-function ChangeJobButtons({ booking }: { booking: Booking }) {
+function ChangeJobButtons({ booking, started }: { booking: Booking; started: boolean }) {
   const [sheet, setSheet] = useState<"reschedule" | "cancel" | null>(null)
 
   return (
@@ -558,13 +558,17 @@ function ChangeJobButtons({ booking }: { booking: Booking }) {
         >
           <CalendarClock className="size-4" aria-hidden /> Reschedule
         </button>
-        <button
-          type="button"
-          onClick={() => setSheet("cancel")}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-black/[0.05] px-3 py-2.5 text-sm font-bold text-[#8f3f4b] transition-colors active:bg-black/10"
-        >
-          <X className="size-4" aria-hidden /> Cancel job
-        </button>
+        {started ? (
+          <MarkNoShowButton booking={booking} inRow />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setSheet("cancel")}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-black/[0.05] px-3 py-2.5 text-sm font-bold text-[#8f3f4b] transition-colors active:bg-black/10"
+          >
+            <X className="size-4" aria-hidden /> Cancel job
+          </button>
+        )}
       </div>
       {sheet === "reschedule" && <StaffRescheduleSheet booking={booking} onClose={() => setSheet(null)} />}
       {sheet === "cancel" && <StaffCancelSheet booking={booking} onClose={() => setSheet(null)} />}
@@ -581,7 +585,7 @@ function MarkMissedButton({ booking }: { booking: Booking }) {
     // Customer-visible + irreversible -> real modal confirmation.
     const ok = await confirm({
       title: "Can't attend this job?",
-      message: "The client will be notified and offered a reschedule. No charge is applied. This can't be undone.",
+      message: "The client is offered a new time and the office is told, so they can cover it. No charge is applied. This can't be undone.",
       confirmLabel: "Yes, I can't attend",
       cancelLabel: "Back",
       tone: "danger",
@@ -591,7 +595,7 @@ function MarkMissedButton({ booking }: { booking: Booking }) {
       await markMissed.mutateAsync(booking.id)
       toast({
         title: "Marked as missed",
-        description: "The client was notified and offered a reschedule. No charge was applied.",
+        description: "The client was offered a new time and the office was told. No charge was applied.",
         variant: "success",
       })
     } catch (e: unknown) {
@@ -616,7 +620,8 @@ function MarkMissedButton({ booking }: { booking: Booking }) {
   )
 }
 
-function MarkNoShowButton({ booking }: { booking: Booking }) {
+// `inRow` is the half-width button beside Reschedule.
+function MarkNoShowButton({ booking, inRow = false }: { booking: Booking; inRow?: boolean }) {
   const { toast } = useToast()
   const confirm = useConfirm()
   const markNoShow = useMarkNoShow()
@@ -649,9 +654,9 @@ function MarkNoShowButton({ booking }: { booking: Booking }) {
       type="button"
       onClick={go}
       disabled={markNoShow.isPending}
-      className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#8f3f4b]/10 px-3 py-2.5 text-sm font-bold text-[#8f3f4b] transition-colors active:bg-[#8f3f4b]/20 disabled:opacity-50"
+      className={`${inRow ? "" : "mt-2 w-full "}inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#8f3f4b]/10 px-3 py-2.5 text-sm font-bold text-[#8f3f4b] transition-colors active:bg-[#8f3f4b]/20 disabled:opacity-50`}
     >
-      {markNoShow.isPending ? "…" : "Client didn't show"}
+      {markNoShow.isPending ? "…" : inRow ? "No-show" : "Client didn't show"}
     </button>
   )
 }
