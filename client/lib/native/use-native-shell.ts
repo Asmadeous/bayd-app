@@ -105,6 +105,58 @@ export function useNativeShell() {
     return () => cleanup?.()
   }, [])
 
+  // The OS only scrolls a focused field to just above the keyboard, where the
+  // pinned Continue bar and tab bar still cover it. Centre it in what is left.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+
+    let keyboardOpen = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const centreFocusedField = () => {
+      const field = document.activeElement
+      if (field instanceof HTMLElement && field.matches("input, textarea, select")) {
+        field.scrollIntoView({ block: "center", behavior: "smooth" })
+      }
+    }
+    // Runs after the WebView has shrunk for the keyboard, which lands after
+    // keyboardDidShow; centring before that uses the full-height viewport.
+    // Moving between fields with the keyboard already up fires no keyboard
+    // event, hence focusin too.
+    const scheduleCentre = () => {
+      if (!keyboardOpen) return
+      clearTimeout(timer)
+      timer = setTimeout(centreFocusedField, 50)
+    }
+
+    let removeListeners: (() => void) | undefined
+    let cancelled = false
+    ;(async () => {
+      const { Keyboard } = await import("@capacitor/keyboard")
+      const shown = await Keyboard.addListener("keyboardDidShow", () => {
+        keyboardOpen = true
+        scheduleCentre()
+      })
+      const hidden = await Keyboard.addListener("keyboardDidHide", () => {
+        keyboardOpen = false
+      })
+      removeListeners = () => {
+        shown.remove()
+        hidden.remove()
+      }
+      if (cancelled) removeListeners()
+    })()
+    document.addEventListener("focusin", scheduleCentre)
+    window.addEventListener("resize", scheduleCentre)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+      document.removeEventListener("focusin", scheduleCentre)
+      window.removeEventListener("resize", scheduleCentre)
+      removeListeners?.()
+    }
+  }, [])
+
   // Re-match the bar to the screen on every navigation, and again when the
   // launch splash leaves (while it is up, the pink overlay is what gets
   // sampled). Runs after paint so the new screen's background is the one read.

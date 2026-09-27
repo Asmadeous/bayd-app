@@ -383,3 +383,14 @@
 .animate-service-content-7 {
   animation-delay: 570ms;
 }
+
+/* iOS zooms the page in when a focused field's text is under 16px, and the
+   Capacitor apps never zoom back out. Unlayered so it beats text-sm utilities;
+   the @supports test limits it to iOS, leaving desktop and Android sizes alone. */
+@supports (-webkit-touch-callout: none) {
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}
