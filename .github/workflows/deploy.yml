@@ -68,7 +68,6 @@ jobs:
       INFOBIP_API_KEY: ${{ secrets.INFOBIP_API_KEY }}
       INFOBIP_SENDER: ${{ secrets.INFOBIP_SENDER }}
       # TESTING ONLY - disables the clock-in geofence. Remove before public launch.
-      GEOFENCE_DISABLED: ${{ secrets.GEOFENCE_DISABLED }}
       # App-review demo login (one email + fixed code bypasses OTP for reviewers).
       APP_REVIEW_DEMO_EMAIL: ${{ secrets.APP_REVIEW_DEMO_EMAIL }}
       APP_REVIEW_DEMO_CODE: ${{ secrets.APP_REVIEW_DEMO_CODE }}

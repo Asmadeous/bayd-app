@@ -42,6 +42,15 @@ RSpec.describe TimeClock, type: :service do
       expect(b.reload.status).to eq("confirmed") # unchanged
     end
 
+    it "has no testing bypass: GEOFENCE_DISABLED no longer switches it off" do
+      b = booking
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("GEOFENCE_DISABLED").and_return("true")
+      expect {
+        described_class.clock_in(tech, booking: b, latitude: 43.67, longitude: -79.40)
+      }.to raise_error(TimeClock::Error, /within 150 m/)
+    end
+
     it "allows clock-in within 150 m and sets the booking in_progress" do
       b = booking
       shift = described_class.clock_in(tech, booking: b, latitude: 43.65005, longitude: -79.38005) # ~7 m
