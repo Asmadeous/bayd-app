@@ -12,6 +12,7 @@ import { BookingRow } from "@/components/calendar/booking-row"
 import { LoadMore } from "@/components/load-more"
 import { DateStrip, weekRange } from "@/components/booking/date-strip"
 import { ViewSwitch, type BookingView } from "@/components/calendar/view-switch"
+import { cn } from "@/lib/utils"
 import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
 import { useStartMeeting } from "@/lib/hooks/use-meetings"
 import type { Conversation } from "@/lib/cable/chat-types"
@@ -37,7 +38,14 @@ export default function BookingsScreen() {
 
 // The customer's bookings. Upcoming (Home and this screen) switches between a
 // list and a calendar; past bookings live under the Management tab as a list.
-export function BookingsPanel({ tab = "upcoming" }: { tab?: "upcoming" | "past" }) {
+// `action` sits at the right end of the view-switch row (Home puts Book now there).
+export function BookingsPanel({
+  tab = "upcoming",
+  action,
+}: {
+  tab?: "upcoming" | "past"
+  action?: React.ReactNode
+}) {
   const [view, setView] = useState<BookingView>("list")
   const { items: list, isLoading, hasMore, loadingMore, loadMore } = useBookingsList(tab, {
     enabled: tab === "past" || view === "list",
@@ -46,8 +54,9 @@ export function BookingsPanel({ tab = "upcoming" }: { tab?: "upcoming" | "past" 
   return (
     <div>
         {tab === "upcoming" ? (
-          <div className="mb-4 flex items-center justify-end">
+          <div className={cn("mb-4 flex items-center gap-3", action ? "justify-between" : "justify-end")}>
             <ViewSwitch value={view} onChange={setView} />
+            {action}
           </div>
         ) : null}
 

@@ -9,6 +9,7 @@ import { useAuthStore } from "@/lib/stores/auth-store"
 import { hapticTap } from "@/lib/native/haptics"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
 import { BookingsPanel } from "../bookings/page"
+import { HeaderAvatar } from "@/components/account/header-avatar"
 import { appScreenClass, cardClass, displayClass, eyebrowClass, mutedClass } from "../app-theme"
 
 export default function HomeScreen() {
@@ -38,17 +39,9 @@ export default function HomeScreen() {
           <h1 className={`${displayClass} min-w-0 break-words text-[2.2rem] leading-tight tracking-[-0.02em]`}>
             Hello, <span className="text-[#C96C83]">{firstName}</span>
           </h1>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-3.5">
             <NotificationBell />
-            {/* Booking starts here (there's no Book tab). */}
-            <Link
-              href="/app/book"
-              onClick={() => hapticTap()}
-              aria-label="Book now"
-              className="grid size-11 shrink-0 place-items-center rounded-full bg-[#14100F] text-white"
-            >
-              <Plus className="size-5" aria-hidden />
-            </Link>
+            <HeaderAvatar href="/app/account" photoUrl={user?.avatar_url} name={firstName} />
           </div>
         </div>
       </div>
@@ -67,7 +60,19 @@ export default function HomeScreen() {
 
         <section>
           <h2 className={`mb-3 ${eyebrowClass}`}>My bookings</h2>
-          <BookingsPanel />
+          <BookingsPanel
+            action={
+              // Booking starts here (there's no Book tab).
+              <Link
+                href="/app/book"
+                onClick={() => hapticTap()}
+                className="flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[#C96C83] px-4 text-sm font-extrabold text-white"
+              >
+                <Plus className="size-4" aria-hidden />
+                Book now
+              </Link>
+            }
+          />
         </section>
       </div>
     </div>
@@ -83,9 +88,9 @@ function NotificationBell() {
       href="/app/notifications"
       onClick={() => hapticTap()}
       aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
-      className="relative grid size-11 shrink-0 place-items-center rounded-full bg-white shadow-sm"
+      className="relative grid size-9 shrink-0 place-items-center rounded-full bg-white shadow-sm"
     >
-      <Bell className="size-5 text-[#14100F]" aria-hidden />
+      <Bell className="size-4 text-[#14100F]" aria-hidden />
       {unread > 0 && (
         <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-[#C96C83] px-1 text-[0.75rem] font-bold text-white">
           {unread > 9 ? "9+" : unread}

@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { ArrowRight, Bell, CalendarDays, Clock3, MapPin, Plus } from "lucide-react"
 
@@ -9,15 +8,17 @@ import { DateStrip, weekRange } from "@/components/booking/date-strip"
 import { BookingRow } from "@/components/calendar/booking-row"
 import { LoadMore } from "@/components/load-more"
 import { ViewSwitch, type BookingView } from "@/components/calendar/view-switch"
+import { HeaderAvatar } from "@/components/account/header-avatar"
 import { useEmployeeProfile, useEmployeeScheduleList, useEmployeeScheduleRange } from "@/lib/hooks/use-employee"
 import { useNotifications } from "@/lib/hooks/use-notifications"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { hapticTap } from "@/lib/native/haptics"
 import { useLocationSharing } from "@/lib/native/use-location-sharing"
-import { bookingDateKey, formatBookingDate, formatBookingTime, todayKey } from "@/lib/booking-time"
+import { bookingDateKey, formatBookingDate, formatBookingTime, formatDateKey, todayKey } from "@/lib/booking-time"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import { staffScreenClass, cardClass, displayClass, eyebrowClass, mutedClass } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
+import { DaySchedule } from "./day-schedule"
 
 // Schedule is the tech's upcoming work: the next job up top, then every active
 // job as a list or calendar. Past jobs live under the Manage tab.
@@ -40,19 +41,10 @@ export default function StaffScheduleScreen() {
     <div className={staffScreenClass}>
       <StaffHeader
         greeting={firstName}
-        // The calendar has its own Add booking (with the tapped date filled in).
         action={
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-3.5">
             <NotificationBell />
-            {view === "calendar" ? null : (
-              <Link
-                href="/staff/schedule/new"
-                aria-label="New booking"
-                className="grid size-11 shrink-0 place-items-center rounded-full bg-[#14100F] text-white"
-              >
-                <Plus className="size-5" aria-hidden />
-              </Link>
-            )}
+            <HeaderAvatar href="/staff/profile" photoUrl={profile?.photo_url} name={firstName} />
           </div>
         }
       />
@@ -60,6 +52,19 @@ export default function StaffScheduleScreen() {
       <div className="space-y-4 px-5">
         {/* No day-level clock: each appointment has its own Clock in/out on its
             card (geofenced to the client). Availability is your SCHEDULE. */}
+
+        {/* Above the next job: techs switch views and start bookings all day. */}
+        <div className="flex items-center justify-between gap-3">
+          <ViewSwitch value={view} onChange={setView} />
+          <Link
+            href="/staff/schedule/new"
+            onClick={() => hapticTap()}
+            className="flex h-9 shrink-0 items-center gap-1 rounded-lg bg-[#14100F] px-3 text-[0.8125rem] font-extrabold text-white"
+          >
+            <Plus className="size-3.5" aria-hidden />
+            New booking
+          </Link>
+        </div>
 
         {view !== "calendar" ? (
           <section>
@@ -76,10 +81,6 @@ export default function StaffScheduleScreen() {
             )}
           </section>
         ) : null}
-
-        <div className="flex items-center justify-end">
-          <ViewSwitch value={view} onChange={setView} />
-        </div>
 
         {view === "calendar" ? (
           <StaffCalendarTab />
@@ -119,7 +120,7 @@ export default function StaffScheduleScreen() {
 // Calendar view: the booking week strip (expands to the month) with a dot on days
 // that have jobs. Tapping a day opens its Day page (hour grid).
 function StaffCalendarTab() {
-  const router = useRouter()
+  const [selected, setSelected] = useState(todayKey)
   const [range, setRange] = useState(() => weekRange(todayKey()))
   const { data = [] } = useEmployeeScheduleRange(range.from, range.to)
   const marks = new Set(data.map((b) => bookingDateKey(b.starts_at)))
@@ -128,14 +129,16 @@ function StaffCalendarTab() {
     <div className="space-y-3">
       <div className={`${cardClass} p-4`}>
         <DateStrip
-          value={todayKey()}
-          onChange={(day) => router.push(`/staff/schedule/day?date=${day}`)}
+          value={selected}
+          onChange={setSelected}
           allowPast
           marks={marks}
           onVisibleRangeChange={(from, to) => setRange({ from, to })}
         />
       </div>
-      <p className={`px-1 text-center text-sm ${mutedClass}`}>Tap a day to open it.</p>
+
+      <h2 className={`px-1 ${eyebrowClass}`}>{formatDateKey(selected, { weekday: "long", month: "short", day: "numeric" })}</h2>
+      <DaySchedule day={selected} />
     </div>
   )
 }
@@ -149,9 +152,9 @@ function NotificationBell() {
       href="/staff/notifications"
       onClick={() => hapticTap()}
       aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
-      className="relative grid size-11 shrink-0 place-items-center rounded-full bg-white shadow-sm"
+      className="relative grid size-9 shrink-0 place-items-center rounded-full bg-white shadow-sm"
     >
-      <Bell className="size-5 text-[#14100F]" aria-hidden />
+      <Bell className="size-4 text-[#14100F]" aria-hidden />
       {unread > 0 && (
         <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-[#C96C83] px-1 text-[0.75rem] font-bold text-white">
           {unread > 9 ? "9+" : unread}
