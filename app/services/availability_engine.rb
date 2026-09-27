@@ -25,12 +25,14 @@ class AvailabilityEngine
   # service    — Service (its duration drives the visit length)
   # date       — Date to check
   # party_size — a group is ONE long visit; duration scales by this (default 1)
+  # extra_minutes — add-on time done in the same visit (per visit, not × party)
   # customer_lat/lng — appointment location for travel feasibility (nil = not judged)
-  def initialize(employee:, service:, date:, party_size: 1, customer_lat: nil, customer_lng: nil)
+  def initialize(employee:, service:, date:, party_size: 1, extra_minutes: 0, customer_lat: nil, customer_lng: nil)
     @employee   = employee
     @service    = service
     @date       = date
     @party_size = [ party_size.to_i, 1 ].max
+    @extra_minutes = [ extra_minutes.to_i, 0 ].max
     @customer_lat = customer_lat
     @customer_lng = customer_lng
   end
@@ -41,7 +43,7 @@ class AvailabilityEngine
     return [] if windows.empty?
 
     tf = TravelFeasibility.new(employee: @employee, customer_lat: @customer_lat, customer_lng: @customer_lng)
-    duration = @service.duration_minutes * @party_size
+    duration = (@service.duration_minutes * @party_size) + @extra_minutes
 
     windows.flat_map { |ws, we| candidate_starts(ws, we, duration) }
            .select  { |start| start > Time.current } # never offer a slot in the past (today)

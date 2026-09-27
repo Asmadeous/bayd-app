@@ -46,6 +46,15 @@ RSpec.describe "GET /api/v1/availability", type: :request do
     expect(json["slots"]).to eq([ "09:15" ])
   end
 
+  it "counts add-on time (addon_service_ids) so a slot fits the whole visit" do
+    schedule!(start_time: "09:00", end_time: "12:00")
+    addon = create(:service, duration_minutes: 60)
+    json = get_availability(service_id: service.id, employee_id: employee.id, date: date,
+                            addon_service_ids: [ addon.id ])
+    # 60-min service + 60-min add-on = 120 min, so only 09:15 fits, like a party of 2.
+    expect(json["slots"]).to eq([ "09:15" ])
+  end
+
   it "reports mapped:false (empty slots) when the tech does not perform the service" do
     json = get_availability(service_id: service.id, employee_id: employee.id, date: date)
     expect(response).to have_http_status(:ok)
@@ -128,6 +137,23 @@ RSpec.describe "GET /api/v1/availability", type: :request do
       # 09:15 and 10:30 have BOTH free; 11:45 only Claire.
       expect(json["by_time"]["10:30"].map { |p| p["name"] }).to contain_exactly("Susi", "Claire")
       expect(json["by_time"]["11:45"].map { |p| p["name"] }).to eq([ "Claire" ])
+    end
+
+    it "counts add-on time so Any does not offer a start that runs into a booking" do
+      EmployeeService.create!(service: service, employee_profile: susi)
+      create(:availability_schedule, employee_profile: susi, day_of_week: date_obj.wday, start_time: "09:00", end_time: "13:00")
+      booked = BusinessHours.zone.local(date_obj.year, date_obj.month, date_obj.day, 10, 45)
+      Booking.create!(user: create(:user), service: service, employee_profile: susi,
+                      starts_at: booked, ends_at: booked + 60.minutes,
+                      status: "confirmed", subtotal: 1, travel_fee: 0, total: 1)
+      addon = create(:service, duration_minutes: 60)
+
+      get "/api/v1/availability/any", params: { service_id: service.id, date: date }
+      expect(JSON.parse(response.body)["by_time"]).to have_key("09:15")
+
+      # Service + add-on is 09:15-11:15, which overlaps the 10:45 booking.
+      get "/api/v1/availability/any", params: { service_id: service.id, date: date, addon_service_ids: [ addon.id ] }
+      expect(JSON.parse(response.body)["by_time"]).not_to have_key("09:15")
     end
 
     it "reports mapped:false when the service has no techs" do

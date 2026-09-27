@@ -84,7 +84,7 @@ module Api
         lat, lng = customer_coords
         AvailabilityEngine.new(
           employee: employee, service: service, date: date,
-          party_size: party_size, customer_lat: lat, customer_lng: lng
+          party_size: party_size, extra_minutes: addon_minutes(service), customer_lat: lat, customer_lng: lng
         ).slots
       end
 
@@ -95,7 +95,7 @@ module Api
         dates = techs.filter_map do |ep|
           AvailabilityEngine.first_available_date(
             employee: ep, service: service, from: date,
-            party_size: party_size, customer_lat: lat, customer_lng: lng
+            party_size: party_size, extra_minutes: addon_minutes(service), customer_lat: lat, customer_lng: lng
           )
         end
         dates.min
@@ -106,6 +106,16 @@ module Api
       # so party size scales the visit DURATION (in the engine), never a count.
       def party_size
         [ params[:count].to_i, 1 ].max
+      end
+
+      # Add-on time reserved in the same visit. Summed the same way
+      # AssignmentService#addon_duration_minutes does, so an offered slot is one
+      # the booking (service + add-ons) actually fits.
+      def addon_minutes(service)
+        @addon_minutes ||= begin
+          ids = Array(params[:addon_service_ids]).map(&:to_i).uniq.reject { |id| id.zero? || id == service.id }
+          ids.empty? ? 0 : Service.active.where(id: ids).sum(:duration_minutes)
+        end
       end
 
       def performs?(employee, service)

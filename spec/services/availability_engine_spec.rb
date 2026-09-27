@@ -101,6 +101,23 @@ RSpec.describe AvailabilityEngine, type: :service do
     end
   end
 
+  describe "add-on time extends the visit" do
+    before do
+      create(:availability_schedule, employee_profile: tech, day_of_week: date.wday, start_time: "09:00", end_time: "13:00")
+      booked_start = zone.local(date.year, date.month, date.day, 10, 45)
+      Booking.create!(user: create(:user), service: service, employee_profile: tech,
+                      starts_at: booked_start, ends_at: booked_start + 60.minutes,
+                      status: "confirmed", subtotal: 1, travel_fee: 0, total: 1)
+    end
+
+    it "does not offer a start whose service + add-ons would run into the next booking" do
+      # 60-min service alone: 09:15-10:15 clears the 10:45 booking.
+      expect(engine.slots).to include("09:15")
+      # With a 60-min add-on the visit is 09:15-11:15, which overlaps it.
+      expect(engine(extra_minutes: 60).slots).not_to include("09:15")
+    end
+  end
+
   describe "travel feasibility filters slots" do
     before do
       create(:availability_schedule, employee_profile: tech, day_of_week: date.wday, start_time: "09:00", end_time: "13:00")
