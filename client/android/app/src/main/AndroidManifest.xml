@@ -62,8 +62,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
-    <!-- Photo picker (profile photo). Read the gallery on Android 13+; the older
-         storage permission covers pre-13 devices. -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- No media permissions: profile and chat photos come from the system photo
+         picker (Capacitor Camera), which needs none. Google Play refuses
+         READ_MEDIA_IMAGES for apps that only pick a photo now and then. -->
 </manifest>
