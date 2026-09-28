@@ -6,6 +6,7 @@ import { ChevronLeft, Send } from "lucide-react"
 
 import { ChatAvatar } from "@/components/chat/chat-avatar"
 import { ChatPhoto, ChatPhotoButton, ChatPhotoPreview } from "@/components/chat/chat-photos"
+import { ChatBlockedNotice, ChatSafetyMenu } from "@/components/chat/chat-safety"
 import { LoadEarlier } from "@/components/load-earlier"
 import { useChat } from "@/lib/cable/use-chat"
 import { useConversation } from "@/lib/hooks/use-conversations"
@@ -36,6 +37,7 @@ function MessageThread() {
     [conversation?.other_participant?.first_name, conversation?.other_participant?.last_name]
       .filter(Boolean)
       .join(" ") || "B.A.Y.D"
+  const blocked = !!(conversation?.blocked_by_me || conversation?.blocked_me)
 
   const { messages, hasEarlier, loadingEarlier, loadEarlier, otherTyping, otherOnline, send, setTyping } = useChat(
     conversationId,
@@ -104,6 +106,11 @@ function MessageThread() {
         avatarUrl={conversation?.other_participant?.avatar_url}
         status={otherTyping ? "typing…" : otherOnline ? "online" : ""}
         onBack={() => router.push("/app/chat")}
+        action={
+          conversation ? (
+            <ChatSafetyMenu conversationId={conversationId} name={name} blockedByMe={!!conversation.blocked_by_me} />
+          ) : null
+        }
       />
 
       <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
@@ -144,35 +151,39 @@ function MessageThread() {
         )}
       </div>
 
-      <div className="border-t border-black/5 bg-white px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
-        {photo && <ChatPhotoPreview file={photo} onRemove={() => setPhoto(null)} />}
-        <div className="flex items-end gap-2">
-          <ChatPhotoButton onPick={setPhoto} className="text-[#101217]/60" />
-          <textarea
-            rows={1}
-            value={draft}
-            onChange={(e) => onDraftChange(e.target.value)}
-            onBlur={() => setTyping(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault()
-                onSend()
-              }
-            }}
-            placeholder="Message…"
-            className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-black/10 bg-[#F6F1EC] px-4 py-2.5 text-base text-[#101217] outline-none placeholder:text-[#101217]/35 focus:border-[#c96c83]"
-          />
-          <button
-            type="button"
-            onClick={onSend}
-            disabled={(!draft.trim() && !photo) || sending}
-            aria-label="Send"
-            className="grid size-11 shrink-0 place-items-center rounded-full bg-[#c96c83] text-white transition-opacity disabled:opacity-40"
-          >
-            <Send className="size-5" aria-hidden />
-          </button>
+      {blocked ? (
+        <ChatBlockedNotice name={name} blockedByMe={!!conversation?.blocked_by_me} />
+      ) : (
+        <div className="border-t border-black/5 bg-white px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+          {photo && <ChatPhotoPreview file={photo} onRemove={() => setPhoto(null)} />}
+          <div className="flex items-end gap-2">
+            <ChatPhotoButton onPick={setPhoto} className="text-[#101217]/60" />
+            <textarea
+              rows={1}
+              value={draft}
+              onChange={(e) => onDraftChange(e.target.value)}
+              onBlur={() => setTyping(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault()
+                  onSend()
+                }
+              }}
+              placeholder="Message…"
+              className="max-h-32 min-h-11 flex-1 resize-none rounded-2xl border border-black/10 bg-[#F6F1EC] px-4 py-2.5 text-base text-[#101217] outline-none placeholder:text-[#101217]/35 focus:border-[#c96c83]"
+            />
+            <button
+              type="button"
+              onClick={onSend}
+              disabled={(!draft.trim() && !photo) || sending}
+              aria-label="Send"
+              className="grid size-11 shrink-0 place-items-center rounded-full bg-[#c96c83] text-white transition-opacity disabled:opacity-40"
+            >
+              <Send className="size-5" aria-hidden />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -182,11 +193,13 @@ function ThreadHeader({
   avatarUrl,
   status,
   onBack,
+  action,
 }: {
   name: string
   avatarUrl: string | null | undefined
   status: string
   onBack: () => void
+  action?: React.ReactNode
 }) {
   return (
     <header className="flex items-center gap-3 border-b border-black/5 bg-white px-3 py-2.5">
@@ -203,6 +216,7 @@ function ThreadHeader({
         <p className="truncate font-bold text-[#101217]">{name}</p>
         {status && <p className="truncate text-sm font-medium text-[#c96c83]">{status}</p>}
       </div>
+      {action}
     </header>
   )
 }

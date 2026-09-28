@@ -1,0 +1,12 @@
+<h2 style="margin:0 0 12px;font-family:Arial,sans-serif;color:#101217;">Chat report</h2>
+<p style="margin:0 0 16px;font-family:Arial,sans-serif;color:#5f6268;font-size:14px;line-height:1.5;">
+  <%= @reporter %> reported <%= @reported %> in chat. Please review the conversation.
+</p>
+<table style="font-family:Arial,sans-serif;font-size:14px;color:#101217;border-collapse:collapse;margin-bottom:16px;">
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Reason</td><td style="padding:4px 0;"><%= @report.reason %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Details</td><td style="padding:4px 0;"><%= @report.details.presence || "-" %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Conversation</td><td style="padding:4px 0;">#<%= @report.conversation_id %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Reported</td><td style="padding:4px 0;"><%= @reported %> (<%= @report.reported_user.role %>, <%= @report.reported_user.email.presence || @report.reported_user.phone.presence || "no contact" %>)</td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Reported by</td><td style="padding:4px 0;"><%= @reporter %> (<%= @report.reporter.email.presence || @report.reporter.phone.presence || "no contact" %>)</td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">When</td><td style="padding:4px 0;"><%= @report.created_at.in_time_zone(BusinessHours.zone).strftime("%b %-d, %Y at %-l:%M %p %Z") %></td></tr>
+</table>

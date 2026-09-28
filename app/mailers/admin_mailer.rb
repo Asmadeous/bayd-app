@@ -36,4 +36,14 @@ class AdminMailer < ApplicationMailer
     to = ENV.fetch("ADMIN_NOTIFY_EMAIL", ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca"))
     mail(to: to, subject: "No-show not collected - ##{booking.id} #{booking.user.first_name}")
   end
+
+  # Team heads-up: someone reported the other person in a chat. Review the
+  # conversation and act on it promptly.
+  def chat_reported(report)
+    @report = report
+    @reporter = [ report.reporter.first_name, report.reporter.last_name ].compact_blank.join(" ").presence || "User ##{report.reporter_id}"
+    @reported = [ report.reported_user.first_name, report.reported_user.last_name ].compact_blank.join(" ").presence || "User ##{report.reported_user_id}"
+    to = ENV.fetch("ADMIN_NOTIFY_EMAIL", ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca"))
+    mail(to: to, subject: "Chat report - #{@reported}: #{report.reason}")
+  end
 end

@@ -6,6 +6,7 @@ declare module "lucide-react" {
   export const ArrowLeft: LucideIcon
   export const ArrowRight: LucideIcon
   export const ArrowUpRight: LucideIcon
+  export const Ban: LucideIcon
   export const BadgeCheck: LucideIcon
   export const BarChart3: LucideIcon
   export const Bell: LucideIcon
@@ -26,8 +27,10 @@ declare module "lucide-react" {
   export const Download: LucideIcon
   export const Eye: LucideIcon
   export const EyeOff: LucideIcon
+  export const EllipsisVertical: LucideIcon
   export const Expand: LucideIcon
   export const FileText: LucideIcon
+  export const Flag: LucideIcon
   export const Fuel: LucideIcon
   export const Gift: LucideIcon
   export const HandCoins: LucideIcon

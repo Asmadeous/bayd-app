@@ -13,4 +13,15 @@ class ConversationSerializer < Blueprinter::Base
   field :unread_count do |conversation, options|
     options[:current_user] ? conversation.unread_count_for(options[:current_user]) : 0
   end
+
+  # Block state from the viewer's side, so the thread can say why it can't send.
+  field :blocked_by_me do |conversation, options|
+    viewer = options[:current_user]
+    viewer ? UserBlock.exists?(blocker: viewer, blocked: conversation.other_participant(viewer)) : false
+  end
+
+  field :blocked_me do |conversation, options|
+    viewer = options[:current_user]
+    viewer ? UserBlock.exists?(blocker: conversation.other_participant(viewer), blocked: viewer) : false
+  end
 end

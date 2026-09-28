@@ -23,6 +23,9 @@ export interface Conversation {
     avatar_url: string | null
   } | null
   unread_count: number
+  // Block state from the viewer's side: either one stops messages both ways.
+  blocked_by_me?: boolean
+  blocked_me?: boolean
 }
 
 // ChatChannel broadcasts: a bare message (no `type`), or an event with a `type`.

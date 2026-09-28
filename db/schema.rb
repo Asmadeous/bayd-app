@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_005038) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gist"
   enable_extension "pg_catalog.plpgsql"
@@ -222,6 +222,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_005038) do
     t.index ["service_id"], name: "index_callback_requests_on_service_id"
     t.index ["status"], name: "index_callback_requests_on_status"
     t.index ["user_id"], name: "index_callback_requests_on_user_id"
+  end
+
+  create_table "chat_reports", force: :cascade do |t|
+    t.bigint "conversation_id", null: false
+    t.datetime "created_at", null: false
+    t.text "details"
+    t.string "reason", null: false
+    t.bigint "reported_user_id", null: false
+    t.bigint "reporter_id", null: false
+    t.string "status", default: "open", null: false
+    t.datetime "updated_at", null: false
+    t.index ["conversation_id"], name: "index_chat_reports_on_conversation_id"
+    t.index ["reported_user_id"], name: "index_chat_reports_on_reported_user_id"
+    t.index ["reporter_id"], name: "index_chat_reports_on_reporter_id"
   end
 
   create_table "contact_messages", force: :cascade do |t|
@@ -879,6 +893,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_005038) do
     t.index ["employee_profile_id"], name: "index_tips_on_employee_profile_id"
   end
 
+  create_table "user_blocks", force: :cascade do |t|
+    t.bigint "blocked_id", null: false
+    t.bigint "blocker_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["blocked_id"], name: "index_user_blocks_on_blocked_id"
+    t.index ["blocker_id", "blocked_id"], name: "index_user_blocks_on_blocker_id_and_blocked_id", unique: true
+    t.index ["blocker_id"], name: "index_user_blocks_on_blocker_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "avatar_url"
     t.string "card_brand"
@@ -965,6 +989,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_005038) do
   add_foreign_key "bookings", "users"
   add_foreign_key "callback_requests", "services"
   add_foreign_key "callback_requests", "users"
+  add_foreign_key "chat_reports", "conversations"
+  add_foreign_key "chat_reports", "users", column: "reported_user_id"
+  add_foreign_key "chat_reports", "users", column: "reporter_id"
   add_foreign_key "conversations", "users", column: "participant_one_id"
   add_foreign_key "conversations", "users", column: "participant_two_id"
   add_foreign_key "device_tokens", "users"
@@ -1019,6 +1046,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_005038) do
   add_foreign_key "support_threads", "users"
   add_foreign_key "tips", "bookings"
   add_foreign_key "tips", "employee_profiles"
+  add_foreign_key "user_blocks", "users", column: "blocked_id"
+  add_foreign_key "user_blocks", "users", column: "blocker_id"
   add_foreign_key "users", "users", column: "referred_by_id"
   add_foreign_key "webauthn_challenges", "users"
   add_foreign_key "webauthn_credentials", "users"

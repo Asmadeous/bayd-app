@@ -26,6 +26,10 @@ module Api
           return render(json: { error: reason, code: "contact_window_closed" }, status: :unprocessable_entity)
         end
 
+        if UserBlock.between?(current_user, @conversation.other_participant(current_user))
+          return render(json: { error: "You can't message this person.", code: "blocked" }, status: :unprocessable_entity)
+        end
+
         if params[:image].present? && !valid_image?(params[:image])
           return render(json: { error: "Photo must be a real JPEG, PNG, WEBP, or GIF image." }, status: :unprocessable_entity)
         end

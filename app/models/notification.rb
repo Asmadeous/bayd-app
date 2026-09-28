@@ -27,7 +27,8 @@ class Notification < ApplicationRecord
     booking_window_ended: "booking_window_ended",    # tech prompt to confirm completion (after ends_at)
     booking_overdue: "booking_overdue",              # tech/admin flag: past grace, no clock-in (sweep)
     support_message: "support_message",              # admin: a website visitor wrote in the support chat
-    booking_missed: "booking_missed"                 # customer: tech missed, reschedule offered
+    booking_missed: "booking_missed",                # customer: tech missed, reschedule offered
+    chat_reported: "chat_reported"                   # admin: a user reported someone in chat
   }, prefix: true
 
   validates :kind, :title, presence: true
