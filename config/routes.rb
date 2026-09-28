@@ -119,9 +119,6 @@ Rails.application.routes.draw do
       # can auto-shift to another available tech when the chosen one is full.
       get "availability/any", to: "availability#any"
 
-      # Country gate (public — "do we accept requests from your country?")
-      get "geo", to: "geo#show"
-
       # Address verification (public — geocode the typed address and confirm it's
       # a real Canadian address before letting the booking form proceed).
       post "geo/verify_address", to: "geo#verify_address"
@@ -208,6 +205,11 @@ Rails.application.routes.draw do
 
       # Direct messaging (customer↔staff, staff↔admin). Any authenticated user.
       resources :conversations, only: %i[index show create] do
+        member do
+          post   :block
+          delete :block, action: :unblock
+          post   :report
+        end
         resources :messages, only: %i[index create] do
           post :read, on: :collection
         end

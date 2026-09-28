@@ -3,8 +3,6 @@ module Api
     class BookingRequestsController < ApplicationController
       # Booking is available to guests — no login required to book a service.
       skip_before_action :authenticate_user!, only: :create
-      # Canada-only: reject requests from outside the country.
-      before_action :enforce_canada!, only: :create
 
       def index
         records, meta = paginate(current_user.booking_requests.order(created_at: :desc))

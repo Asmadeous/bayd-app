@@ -1,23 +1,16 @@
 module Api
   module V1
-    # Public country gate. Lets the booking UI show an upfront "Canada only"
-    # message; the actual enforcement lives in enforce_canada! on the create
-    # actions. Returns { allowed:, country: }.
+    # Public address helpers for the booking form: verify, autocomplete and
+    # place details. Where the visitor is doesn't matter; the service address
+    # is what must be in Canada.
     class GeoController < ApplicationController
-      skip_before_action :authenticate_user!, only: %i[show verify_address autocomplete place_details]
+      skip_before_action :authenticate_user!, only: %i[verify_address autocomplete place_details]
 
       PLACES_BASE = "https://maps.googleapis.com".freeze
 
       # Canadian postal code: "A1A 1A1" (space optional). Excludes letters that
       # Canada Post never uses (D, F, I, O, Q, U in the first letter; W, Z lead).
       CA_POSTAL = /\A[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][ ]?\d[ABCEGHJ-NPRSTV-Z]\d\z/i
-
-      def show
-        render json: {
-          allowed: GeoGate.allowed?(request),
-          country: GeoGate.country_for(request)
-        }
-      end
 
       # Geocode the typed address and confirm it's a real Canadian address before
       # the booking form lets the user proceed. Returns:

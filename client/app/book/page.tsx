@@ -57,7 +57,6 @@ interface ApiService {
   prices?: Partial<Record<ClientType, string>>
   providers?: Provider[]
 }
-interface GeoResult { allowed: boolean; country: string | null }
 interface AvailabilityResult { slots: string[]; mapped: boolean; date?: string }
 interface FreeProvider { employee_id: number; name: string | null; photo_url: string | null }
 interface AnyAvailabilityResult {
@@ -146,12 +145,6 @@ export function BookingFlow({
   const { user: signedIn } = useAuthStore()
   // The signed-in person is the tech in staff mode, never the client.
   const user = staffMode ? null : signedIn
-  const geo = useQuery<GeoResult>({
-    queryKey: ["geo"],
-    queryFn: () => api.get<GeoResult>("/geo").then((r) => r.data),
-    retry: false,
-    staleTime: 30 * 60 * 1000,
-  })
   const { data: services = [] } = useQuery<ApiService[]>({
     queryKey: ["public-services"],
     queryFn: () => api.get<ApiService[]>("/services").then((r) => r.data),
@@ -641,10 +634,6 @@ export function BookingFlow({
       }
     } catch (err: unknown) {
       const res = (err as { response?: { status?: number; data?: BookingRequestResponse } })?.response
-      if (res?.status === 403 && res.data?.error === "outside_country") {
-        geo.refetch()
-        return
-      }
       if (res?.data?.code === "no_coverage") {
         requestCallback.mutate()
         return
@@ -673,22 +662,6 @@ export function BookingFlow({
   const summary = (
     <AppointmentSummary lines={summaryLines} when={summaryWhen} onEditService={step > 1 ? () => setStep(1) : undefined} />
   )
-
-  // ── Non-Canada block ────────────────────────────────────────────────────────
-  if (geo.data && !geo.data.allowed) {
-    return (
-      <Shell dashboardMode={dashboardMode} onBack={pinnedBar ? () => router.back() : undefined}>
-        <div className={cn(card, "mx-auto max-w-2xl text-center")}>
-          <MapPin className="mx-auto mb-3 size-8 text-[#c96c83]" />
-          <h1 className="text-xl font-black tracking-tight">We serve Canada only</h1>
-          <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#5f6268]">
-            Beauty @ Your Door is a mobile service across the Greater Toronto Area. We can only accept
-            booking requests from within Canada.
-          </p>
-        </div>
-      </Shell>
-    )
-  }
 
   if (view === "booked") {
     return (
