@@ -1,9 +1,11 @@
 import { Capacitor } from "@capacitor/core"
 
 // Native device biometrics (Face ID / fingerprint / device PIN) via
-// capacitor-native-biometric. Unlike WebAuthn passkeys, this works in the
-// Capacitor WebView with no domain / assetlinks setup - it's a local device
-// check. Used for an optional "unlock the app" gate, not server auth.
+// @capgo/capacitor-native-biometric. The original capacitor-native-biometric
+// has no Swift package, so the iOS apps (Swift Package Manager) never got it
+// and App lock was greyed out on iPhone. Unlike WebAuthn passkeys, this works
+// in the Capacitor WebView with no domain / assetlinks setup - it's a local
+// device check. Used for an optional "unlock the app" gate, not server auth.
 //
 // The enabled flag lives in localStorage (bayd-biometric-lock). The app layout
 // can read it to require an unlock on launch.
@@ -13,7 +15,7 @@ const LOCK_KEY = "bayd-biometric-lock"
 export async function biometricAvailable(): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) return false
   try {
-    const { NativeBiometric } = await import("capacitor-native-biometric")
+    const { NativeBiometric } = await import("@capgo/capacitor-native-biometric")
     const result = await NativeBiometric.isAvailable()
     return result.isAvailable
   } catch {
@@ -25,7 +27,7 @@ export async function biometricAvailable(): Promise<boolean> {
 export async function verifyBiometric(reason = "Confirm it's you"): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) return false
   try {
-    const { NativeBiometric } = await import("capacitor-native-biometric")
+    const { NativeBiometric } = await import("@capgo/capacitor-native-biometric")
     await NativeBiometric.verifyIdentity({
       reason,
       title: "Beauty @ Your Door",

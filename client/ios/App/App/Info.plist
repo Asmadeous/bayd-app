@@ -26,6 +26,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>BAYD uses Face ID to unlock the app when App lock is on.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera access is used for your work-scope video call and to take a profile photo.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
