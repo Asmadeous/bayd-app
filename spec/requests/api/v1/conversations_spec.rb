@@ -167,45 +167,44 @@ RSpec.describe "Conversations + messages", type: :request do
     end
   end
 
-  describe "customer <-> technician window" do
+  describe "customer <-> technician messaging" do
     let(:convo) { Conversation.between(alice, bob) }
 
     def say(user, body = "hi")
       post "/api/v1/conversations/#{convo.id}/messages", params: { body: body }, headers: auth_header(user), as: :json
     end
 
-    it "blocks both sides more than #{Booking::ACCESS_LEAD_MIN} minutes before the appointment" do
-      book(starts_at: 2.hours.from_now)
+    it "is closed when they've never had a booking together" do
+      bob_profile # the tech exists, but no booking with alice
 
       say(alice)
       expect(response).to have_http_status(:unprocessable_entity)
-      expect(response.parsed_body).to include("code" => "contact_window_closed")
-      expect(response.parsed_body["error"]).to include("Your appointment window hasn't started yet", "message your technician")
+      expect(response.parsed_body).to include("code" => "no_shared_booking")
+      expect(response.parsed_body["error"]).to eq("You can only message technicians you've had a booking with.")
 
       say(bob)
-      expect(response).to have_http_status(:unprocessable_entity)
-      expect(response.parsed_body["error"]).to include("message your client")
+      expect(response.parsed_body["error"]).to eq("You can only message clients you've had a booking with.")
 
       post "/api/v1/conversations", params: { user_id: bob.id }, headers: auth_header(alice), as: :json
       expect(response).to have_http_status(:unprocessable_entity)
     end
 
-    it "opens #{Booking::ACCESS_LEAD_MIN} minutes before and stays open while in progress" do
-      booking = book(starts_at: 25.minutes.from_now)
+    it "is open any time once they share a booking, days before it" do
+      book(starts_at: 3.days.from_now)
       say(alice)
       expect(response).to have_http_status(:created)
-
-      booking.update_columns(status: "in_progress", starts_at: 10.minutes.ago)
       say(bob)
       expect(response).to have_http_status(:created)
     end
 
-    it "closes once the booking is completed or cancelled" do
-      booking = book(starts_at: 10.minutes.ago)
-      booking.update_columns(status: "completed")
+    it "stays open after the booking is completed or cancelled" do
+      book(starts_at: 2.days.ago).update_columns(status: "completed")
       say(alice)
-      expect(response).to have_http_status(:unprocessable_entity)
-      expect(response.parsed_body["error"]).to include("only open from 30 minutes before an appointment")
+      expect(response).to have_http_status(:created)
+
+      Booking.update_all(status: "cancelled")
+      say(bob)
+      expect(response).to have_http_status(:created)
     end
 
     it "never limits admins or customer-to-customer chats" do

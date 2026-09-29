@@ -173,25 +173,25 @@ export function AppointmentActions({ booking, cancellable, now }: { booking: Boo
     <>
       {cancellable && booking.meeting_recommended && <MeetAction booking={booking} />}
 
-      {/* Messaging and live tracking open 30 minutes before the appointment. */}
+      {/* Live tracking opens 30 minutes before the appointment; messaging is open any time. */}
       {cancellable && booking.employee_profile.user_id && access.active && !access.open ? (
         <button
           type="button"
           onClick={() =>
             toast({
               title: "Not open yet",
-              description: windowNotStartedMessage(access.opensLabel, "message and track your technician"),
+              description: windowNotStartedMessage(access.opensLabel, "track your technician"),
               variant: "error",
             })
           }
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-black/[0.04] py-2.5 text-sm font-semibold text-[#101217]/60"
         >
           <Lock className="size-3.5" aria-hidden />
-          Message &amp; tracking open at {access.opensLabel}
+          Live tracking opens at {access.opensLabel}
         </button>
       ) : null}
 
-      {cancellable && access.open && booking.employee_profile.user_id ? <MessageTechAction techUserId={booking.employee_profile.user_id} /> : null}
+      {booking.employee_profile.user_id ? <MessageTechAction techUserId={booking.employee_profile.user_id} /> : null}
 
       {cancellable && access.open && ["confirmed", "in_progress"].includes(booking.status) && (
         <Link

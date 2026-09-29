@@ -23,7 +23,7 @@ module Api
 
       def create
         if (reason = ContactWindow.blocked_reason(current_user, @conversation.other_participant(current_user)))
-          return render(json: { error: reason, code: "contact_window_closed" }, status: :unprocessable_entity)
+          return render(json: { error: reason, code: "no_shared_booking" }, status: :unprocessable_entity)
         end
 
         if UserBlock.between?(current_user, @conversation.other_participant(current_user))

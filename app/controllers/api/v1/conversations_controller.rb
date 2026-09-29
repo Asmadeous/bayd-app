@@ -29,7 +29,7 @@ module Api
         other = User.find(params.require(:user_id))
         return render(json: { error: "You can't message yourself." }, status: :unprocessable_entity) if other == current_user
         if (reason = ContactWindow.blocked_reason(current_user, other))
-          return render(json: { error: reason, code: "contact_window_closed" }, status: :unprocessable_entity)
+          return render(json: { error: reason, code: "no_shared_booking" }, status: :unprocessable_entity)
         end
         return render(json: { error: BLOCKED_ERROR, code: "blocked" }, status: :unprocessable_entity) if UserBlock.between?(current_user, other)
 

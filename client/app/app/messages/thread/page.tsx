@@ -221,8 +221,8 @@ function ThreadHeader({
   )
 }
 
-// The API explains why a send was refused (e.g. customer-technician messaging
-// only opens 30 minutes before the appointment); show that instead of failing silently.
+// The API explains why a send was refused (e.g. the other person is blocked);
+// show that instead of failing silently.
 function sendError(e: unknown) {
   return (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Message not sent. Please try again."
 }

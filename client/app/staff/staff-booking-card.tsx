@@ -109,7 +109,7 @@ export function JobActions({
   const isPast = ["completed", "cancelled", "no_show", "missed"].includes(booking.status)
   const access = useBookingAccess(booking)
   const secondaryCount =
-    (canNavigate && access.open ? 1 : 0) + (clientUserId && access.open ? 1 : 0) + (preArrival ? 1 : 0)
+    (canNavigate && access.open ? 1 : 0) + (clientUserId ? 1 : 0) + (preArrival ? 1 : 0)
 
   return (
     <>
@@ -123,8 +123,8 @@ export function JobActions({
       {preArrival && !access.open && <LockedWindow opensLabel={access.opensLabel} />}
       {((preArrival && access.open) || inProgress) && <ClockButton booking={booking} />}
 
-      {/* Secondary: in-app navigation and messaging the client (both from 30
-          minutes before, and still while in service), and the video call. */}
+      {/* Secondary: in-app navigation (from 30 minutes before, and still while in
+          service), messaging the client (any time), and the video call. */}
       {(preArrival || inProgress) && (
         <div className={`mt-2 grid gap-2 ${SECONDARY_COLS[secondaryCount]}`}>
           {canNavigate && access.open && (
@@ -136,7 +136,7 @@ export function JobActions({
               <Navigation className="size-4 text-[#C96C83]" aria-hidden /> Navigate
             </button>
           )}
-          {clientUserId && access.open ? <MessageClientButton clientUserId={clientUserId} /> : null}
+          {clientUserId ? <MessageClientButton clientUserId={clientUserId} /> : null}
           {preArrival ? <JoinCallButton booking={booking} /> : null}
         </div>
       )}
@@ -661,8 +661,7 @@ function MarkNoShowButton({ booking, inRow = false }: { booking: Booking; inRow?
   )
 }
 
-// Opens (or reuses) the chat with the client. The API refuses before the 30-minute
-// window, same as the customer side.
+// Opens (or reuses) the chat with the client.
 function MessageClientButton({ clientUserId }: { clientUserId: number }) {
   const router = useRouter()
   const { toast } = useToast()
