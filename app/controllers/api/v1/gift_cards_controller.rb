@@ -1,7 +1,7 @@
 module Api
   module V1
     class GiftCardsController < ApplicationController
-      AMOUNTS = [ 25, 50, 75, 100 ].freeze
+      AMOUNTS = [ 25, 50, 75, 100, 150 ].freeze
 
       # Gift cards the current user has purchased.
       def index
@@ -9,11 +9,13 @@ module Api
         render json: { data: GiftCardSerializer.render_as_hash(cards) }
       end
 
-      # Purchase a gift card. Creates it inactive, then returns a Helcim checkout
-      # token; the card is activated + delivered by the payment webhook (GC-<id>).
+      # Purchase a gift card. Creates it inactive, then starts a payment: a Helcim
+      # checkout token (website), or a Square hosted page with gateway=square (the
+      # apps, where Helcim's embedded window can't hold its session). The card is
+      # activated + delivered by the payment webhook (GC-<id>).
       def create
         amount = params[:amount].to_i
-        return render json: { error: "Choose $25, $50, $75, or $100." }, status: :unprocessable_entity unless AMOUNTS.include?(amount)
+        return render json: { error: "Choose $25, $50, $75, $100, or $150." }, status: :unprocessable_entity unless AMOUNTS.include?(amount)
 
         card = current_user.gift_cards.create!(
           initial_balance: amount, current_balance: amount, active: false,
@@ -23,15 +25,12 @@ module Api
           message:         params[:message].presence
         )
 
-        session = HelcimService.initialize_session(
-          payment_type: "purchase", amount: amount.to_f, invoice_number: "GC-#{card.id}",
-          line_items: [ { description: "Gift Card (#{ActiveSupport::NumberHelper.number_to_currency(amount)})", quantity: 1, price: amount.to_f } ]
-        )
-        if session[:success] && session[:checkout_token].present?
-          render json: { gateway: "helcim", gift_card_id: card.id, checkout_token: session[:checkout_token] }, status: :created
-        else
+        payment = start_payment("GC-#{card.id}", amount, "Gift Card (#{ActiveSupport::NumberHelper.number_to_currency(amount)})")
+        if payment[:error]
           card.destroy
-          render json: { error: session[:error] || "Could not start payment." }, status: :unprocessable_entity
+          render json: { error: payment[:error] }, status: :unprocessable_entity
+        else
+          render json: payment.merge(gift_card_id: card.id), status: :created
         end
       end
 
@@ -39,21 +38,18 @@ module Api
         render json: GiftCardSerializer.render_as_hash(find_card)
       end
 
-      # Online top-up by card — returns a Helcim checkout token; the balance is
-      # credited by the payment webhook (GCT-<id>).
+      # Online top-up by card (Helcim token, or Square page with gateway=square);
+      # the balance is credited by the payment webhook (GCT-<id>).
       def topup
         card   = find_card
         amount = params[:amount].to_i
         return render json: { error: "Enter a valid amount." }, status: :unprocessable_entity unless amount.positive?
 
-        session = HelcimService.initialize_session(
-          payment_type: "purchase", amount: amount.to_f, invoice_number: "GCT-#{card.id}",
-          line_items: [ { description: "Gift Card Top-Up", quantity: 1, price: amount.to_f } ]
-        )
-        if session[:success] && session[:checkout_token].present?
-          render json: { gateway: "helcim", gift_card_id: card.id, checkout_token: session[:checkout_token] }
+        payment = start_payment("GCT-#{card.id}", amount, "Gift Card Top-Up")
+        if payment[:error]
+          render json: { error: payment[:error] }, status: :unprocessable_entity
         else
-          render json: { error: session[:error] || "Could not start payment." }, status: :unprocessable_entity
+          render json: payment.merge(gift_card_id: card.id)
         end
       end
 
@@ -71,6 +67,28 @@ module Api
       end
 
       private
+
+      # { gateway:, checkout_token: } or { gateway:, redirect_url: }, or { error: }.
+      def start_payment(reference, amount, description)
+        if params[:gateway].to_s == "square"
+          link = SquareService.create_reference_link(
+            reference: reference,
+            line_items: [ { name: description, quantity: 1, price_cents: (amount * 100).to_i } ],
+            redirect_url: "#{ENV.fetch('APP_URL', 'http://localhost:3001')}/app/gift-cards"
+          )
+          return { error: link[:error] || "Could not start payment." } unless link[:success] && link[:url].present?
+
+          { gateway: "square", redirect_url: link[:url] }
+        else
+          session = HelcimService.initialize_session(
+            payment_type: "purchase", amount: amount.to_f, invoice_number: reference,
+            line_items: [ { description: description, quantity: 1, price: amount.to_f } ]
+          )
+          return { error: session[:error] || "Could not start payment." } unless session[:success] && session[:checkout_token].present?
+
+          { gateway: "helcim", checkout_token: session[:checkout_token] }
+        end
+      end
 
       def find_card
         # Route uses `param: :code`, so the value arrives as params[:code];

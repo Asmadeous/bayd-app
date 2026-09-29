@@ -527,6 +527,9 @@ function GiftCardTab() {
       const senderName = useAuthStore.getState().user?.first_name ?? undefined
       const data = await api
         .post<{ gateway: string; gift_card_id: number; checkout_token?: string; redirect_url?: string }>("/gift_cards", {
+          // Same reason as the cart: Helcim's window can't hold its session in the
+          // app, so the app pays on Square's hosted page.
+          ...(Capacitor.isNativePlatform() ? { gateway: "square" } : {}),
           amount,
           recipient_name: recipientName.trim() || undefined,
           recipient_email: recipientEmail.trim() || undefined,
@@ -549,7 +552,7 @@ function GiftCardTab() {
           toast({ title: "Payment couldn't be completed", description: "Please try again.", variant: "error" })
         }
       } else if (data.redirect_url) {
-        void openPaymentUrl(data.redirect_url, () => window.location.assign("/app/orders"))
+        void openPaymentUrl(data.redirect_url, () => window.location.assign("/app/gift-cards"))
       } else {
         toast({ title: "Couldn't start the payment", description: "Please try again.", variant: "error" })
       }

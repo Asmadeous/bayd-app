@@ -104,6 +104,12 @@ class SquareService
   # amount). reference "BKG-<id>" lets the webhook reconcile it to the booking.
   # `line_items` is [{ name:, quantity:, price_cents: }]; total is their sum.
   def self.create_booking_link(booking_id:, line_items:, redirect_url:)
+    create_reference_link(reference: "BKG-#{booking_id}", line_items: line_items, redirect_url: redirect_url)
+  end
+
+  # Hosted payment link tagged with our reference (e.g. "GC-<id>" for a gift
+  # card), which the webhook uses to settle the right record.
+  def self.create_reference_link(reference:, line_items:, redirect_url:)
     items = line_items.map do |i|
       {
         name: i[:name].to_s,
@@ -115,7 +121,7 @@ class SquareService
     response = connection.post("/v2/online-checkout/payment-links") do |req|
       req.body = {
         idempotency_key: SecureRandom.uuid,
-        order: { location_id: location_id, reference_id: "BKG-#{booking_id}", line_items: items },
+        order: { location_id: location_id, reference_id: reference, line_items: items },
         checkout_options: {
           redirect_url: redirect_url,
           merchant_support_email: ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca")
