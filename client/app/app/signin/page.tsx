@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { ArrowRight, ChevronLeft, Lock, Mail, Phone } from "lucide-react"
 
+import { SignupConsent } from "@/components/legal/legal-links"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useToast } from "@/lib/app-ui/app-ui-provider"
 import { authErrorMessage } from "@/lib/auth-errors"
@@ -144,6 +145,8 @@ export default function SignInScreen() {
             <Lock className="size-[1.15rem]" aria-hidden />
             {passkeySignIn.isPending ? "Waiting for your device…" : "Use a passkey"}
           </button>
+          {/* A first code sign-in creates the account, so this screen asks for consent too. */}
+          <SignupConsent className="text-white/50" linkClassName="text-white/80" />
         </div>
 
         <p className="mt-auto pt-8 text-center text-sm text-white/45">

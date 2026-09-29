@@ -13,6 +13,7 @@ class Message < ApplicationRecord
   validate  :sender_is_participant
   validate  :image_size
 
+  before_validation :mask_objectionable_words
   after_create_commit :touch_conversation
 
   scope :chronological, -> { order(:created_at) }
@@ -29,6 +30,10 @@ class Message < ApplicationRecord
 
   def image_size
     errors.add(:image, "must be smaller than 10 MB") if image.attached? && image.blob.byte_size > MAX_IMAGE_SIZE
+  end
+
+  def mask_objectionable_words
+    self.body = ObjectionableContent.mask(body)
   end
 
   def touch_conversation

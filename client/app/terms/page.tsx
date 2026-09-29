@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms of Service" updated="September 27, 2026">
+    <LegalPage title="Terms of Service" updated="September 29, 2026">
       <p>
         These terms apply when you book or use Beauty @ Your Door (&quot;BAYD&quot;, &quot;we&quot;) services through
         our website or the BAYD app. By booking, you agree to them. Questions:{" "}
@@ -43,6 +43,18 @@ export default function TermsPage() {
         <li>If you save a card, you authorize us to charge it for bookings you make, balances after service, and no-shows as described above.</li>
         <li>Tips are optional and go to your technician.</li>
         <li>Gift cards can be used toward services.</li>
+      </ul>
+
+      <h2>Messages, photos and reviews</h2>
+      <p>
+        You can message your technician and our team, share photos, and review your services. We have zero tolerance
+        for objectionable content and abusive users.
+      </p>
+      <ul>
+        <li>Don&apos;t post anything abusive, harassing, hateful, sexual, threatening, unlawful or spam, and don&apos;t ask a technician for services we don&apos;t offer.</li>
+        <li>Offensive language is filtered out of messages, and every review is checked by our team before it&apos;s published.</li>
+        <li>In the BAYD app, open a chat and tap its menu to report or block the other person. We review every report within 24 hours.</li>
+        <li>We remove content that breaks these rules and close the accounts of people who post it.</li>
       </ul>
 
       <h2>Your account</h2>
