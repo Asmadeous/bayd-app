@@ -107,7 +107,7 @@ function ReportSheet({ conversationId, name, onClose }: { conversationId: number
 
   return (
     <BottomSheet title={`Report ${name}`} onClose={onClose}>
-      <p className="mb-3 text-sm text-[#101217]/65">Our team is told and reviews the conversation. {name} isn&apos;t told who reported them.</p>
+      <p className="mb-3 text-sm text-[#101217]/65">Our team is told and reviews the conversation. {name} isn&apos;t told about your report.</p>
       <div className="grid gap-2">
         {REPORT_REASONS.map((r) => (
           <button

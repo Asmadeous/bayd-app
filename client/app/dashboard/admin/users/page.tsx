@@ -265,6 +265,7 @@ export default function AdminUsersPage() {
                       >
                         Edit Role
                       </Button>
+                      <MessageUserButton user={user} />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -348,4 +349,55 @@ function RoleBadge({ role }: { role: string }) {
 function getApiErrorMessage(error: unknown, fallback: string) {
   const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
   return data?.error ?? data?.errors?.join(", ") ?? fallback
+}
+
+// Starts (or reuses) a chat between this admin and the user, with a first
+// message. Admin chats aren't tied to a booking, so this is how the team reaches
+// a customer directly. Replies appear in the staff app's Messages tab.
+function MessageUserButton({ user }: { user: User }) {
+  const { toast } = useToast()
+  const [body, setBody] = useState("")
+  const send = useMutation({
+    mutationFn: async (text: string) => {
+      const { data: convo } = await api.post<{ id: number }>("/conversations", { user_id: user.id })
+      await api.post(`/conversations/${convo.id}/messages`, { body: text })
+    },
+    onSuccess: () => {
+      setBody("")
+      toast({ title: "Message sent", description: "Replies appear in the staff app's Messages tab.", variant: "success" })
+    },
+    onError: (e: unknown) => {
+      const message = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Please try again."
+      toast({ title: "Message not sent", description: message, variant: "error" })
+    },
+  })
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button disabled={send.isPending} size="xs" variant="outline">
+          Message
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Message {user.first_name || user.email}</AlertDialogTitle>
+          <AlertDialogDescription>They see it in the app&apos;s Chat tab and can reply.</AlertDialogDescription>
+        </AlertDialogHeader>
+        <textarea
+          rows={4}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Hi, this is the BAYD team…"
+          className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm outline-none focus:border-[#c96c83]"
+        />
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction disabled={!body.trim()} onClick={() => send.mutate(body.trim())}>
+            Send
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
 }
