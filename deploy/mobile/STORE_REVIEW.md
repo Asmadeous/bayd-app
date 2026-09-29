@@ -75,10 +75,10 @@ Put the demo email and code in the Sign-In Information fields too. Never commit
 the real values to this file.
 
 ```text
-Hello, thank you for reviewing BAYD. The requested information is below, and a screen recording from a physical iPhone ([model], iOS [version]) is attached. It starts at launch and shows registration, login, booking, payment, chat with Report and Block, a review, and account deletion.
+Hello, thank you for reviewing BAYD. The requested information is below, and a screen recording from a physical iPhone ([model], iOS [version]) is attached. It starts at launch and shows registration, a booking (the checkout page, then booking without paying), a chat message to a technician with the Report and Block options, the shop and gift card checkouts, profile editing and app lock, sign out and sign in, and account deletion.
 
 1. SCREEN RECORDING
-Attached.
+Attached. [If sending a link instead, paste the link to the video file here.]
 
 2. PURPOSE AND AUDIENCE
 BAYD (Beauty @ Your Door) is the customer app for our mobile beauty business in the Greater Toronto Area, Canada. Adults book at-home nail, lash, waxing, massage and spa services, and a technician travels to their address. It saves a trip to a salon and helps people with busy schedules, young children or limited mobility. Customers book and manage appointments, message their technician, see the technician's arrival on the day, buy beauty products and gift cards, and keep receipts. This app is for the public; our technicians use a separate staff app that is not part of this submission.
