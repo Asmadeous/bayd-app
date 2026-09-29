@@ -75,10 +75,10 @@ Put the demo email and code in the Sign-In Information fields too. Never commit
 the real values to this file.
 
 ```text
-Hello, thank you for reviewing BAYD. The requested information is below, and a screen recording from a physical iPhone ([model], iOS [version]) is attached. It starts at launch and shows registration, a booking (the checkout page, then booking without paying), a chat message to a technician with the Report and Block options, the shop and gift card checkouts, profile editing and app lock, sign out and sign in, and account deletion.
+Hello, thank you for reviewing BAYD. The requested information is below, and a screen recording from a physical iPhone ([model], iOS [version]) is attached. It starts at launch and shows registration, a booking (checkout, then booking without paying), chat with Report and Block, the shop and gift card checkouts, profile editing, app lock, sign in and out, and account deletion.
 
 1. SCREEN RECORDING
-Attached. [If sending a link instead, paste the link to the video file here.]
+Attached. [Or paste the video link here.]
 
 2. PURPOSE AND AUDIENCE
 BAYD (Beauty @ Your Door) is the customer app for our mobile beauty business in the Greater Toronto Area, Canada. Adults book at-home nail, lash, waxing, massage and spa services, and a technician travels to their address. It saves a trip to a salon and helps people with busy schedules, young children or limited mobility. Customers book and manage appointments, message their technician, see the technician's arrival on the day, buy beauty products and gift cards, and keep receipts. This app is for the public; our technicians use a separate staff app that is not part of this submission.
@@ -86,11 +86,11 @@ BAYD (Beauty @ Your Door) is the customer app for our mobile beauty business in 
 3. HOW TO ACCESS THE APP
 Sign-in is passwordless (a one-time code). The demo account accepts a fixed code, so no email access is needed.
 - Tap "I already have an account", keep Email, enter [DEMO EMAIL], tap Continue, enter code [DEMO CODE].
-- Bookings tab: upcoming and past appointments (List or Calendar). Tap Book now, choose a service, technician and time, use the saved address, and tap "Book now, pay after the visit" to finish without paying.
+- Bookings tab: your appointments. Tap Book now, choose a service, technician and time, use the saved address, and tap "Book now, pay after the visit" to finish without paying.
 - Chat tab: open the technician conversation. The three-dot menu at the top right has Report and Block.
 - Past booking: "Rate your service". Reviews are published only after our team checks them.
 - Shop tab: physical beauty products and gift cards.
-- Profile tab: Privacy policy, Terms, and Delete account (type DELETE to confirm). After deleting, signing in again with the demo email and code creates a new empty account.
+- Profile tab: Privacy policy, Terms, and Delete account (type DELETE to confirm). Signing in again after deleting creates a new empty account.
 An account is needed because each booking sends a technician to the customer's home, so we need a verified phone number and address; bookings, orders, messages and receipts belong to that account.
 
 4. EXTERNAL SERVICES
