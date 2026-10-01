@@ -56,6 +56,8 @@ export interface Booking {
   service_longitude: string | null
   customer_name: string | null
   booked_for_phone: string | null
+  // Staff/admin views only: the booked-for person's phone, else the customer's.
+  client_phone?: string | null
   address: {
     id: number
     label: string | null

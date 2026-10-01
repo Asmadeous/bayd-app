@@ -178,7 +178,7 @@ export function JobActions({
 function ClientDetails({ booking }: { booking: Booking }) {
   const addr = booking.address
   const name = booking.customer_name
-  const phone = booking.booked_for_phone
+  const phone = booking.client_phone ?? booking.booked_for_phone
   const notes = booking.notes?.trim()
 
   const addressLine = addr
@@ -729,7 +729,7 @@ function JoinCallButton({ booking }: { booking: Booking }) {
         {state === "open" ? "Join call" : state === "waiting" ? `Call ${callTimeLabel(meeting)}` : "Schedule call"}
       </button>
       {picking ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={() => setPicking(false)}>
+        <div className="fixed inset-0 z-[60] flex items-end bg-black/40" onClick={() => setPicking(false)}>
           <div
             className="w-full rounded-t-3xl bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]"
             onClick={(e) => e.stopPropagation()}

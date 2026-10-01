@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Lock, MessageCircle } from "lucide-react"
+import { Lock, MessageCircle, Phone } from "lucide-react"
 
 import { useToast } from "@/components/bayd-toast-provider"
 import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
@@ -47,6 +47,14 @@ export function StaffJobControls({ booking }: { booking: Booking }) {
       {inProgress && booking.clocked_in_at ? <RunningTimer since={booking.clocked_in_at} /> : null}
       {preArrival || inProgress ? <ClockControl booking={booking} /> : null}
       <div className="flex flex-wrap gap-2">
+        {booking.client_phone ? (
+          <a
+            href={`tel:${booking.client_phone}`}
+            className="inline-flex h-7 items-center gap-1 border border-black/15 px-2.5 text-xs font-semibold text-[#101217] hover:bg-black/[0.03]"
+          >
+            <Phone className="size-3.5 text-[#c96c83]" /> {booking.client_phone}
+          </a>
+        ) : null}
         <MessageClientButton bookingId={booking.id} />
         {open ? <RescheduleDialog booking={booking} staff /> : null}
         {open ? <ChangeJob booking={booking} /> : null}

@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { CalendarDays, Clock3, MapPin, Repeat, Route, User } from "lucide-react"
+import { CalendarDays, Clock3, MapPin, Phone, Repeat, Route, User } from "lucide-react"
 
 import { BubbleLoader } from "@/components/bubble-loader"
 import { useBookingAccess } from "@/lib/booking-access"
@@ -127,6 +127,16 @@ function JobDetails({ job, history }: { job: EmployeeJob; history: boolean }) {
           <p className="mt-3 rounded-lg bg-black/[0.04] px-3 py-2 text-sm">
             Booked for <span className="font-bold">{bookedFor}</span>
           </p>
+        ) : null}
+        {job.client_phone ? (
+          <a
+            href={`tel:${job.client_phone}`}
+            className="mt-3 flex items-center gap-2 rounded-lg bg-[#C96C83]/10 px-3 py-2.5 text-sm font-bold text-[#9E4A60]"
+          >
+            <Phone className="size-4" aria-hidden />
+            <span>Call {bookedFor ?? (client?.name ?? job.customer_name ?? "client")}</span>
+            <span className="ml-auto font-semibold">{job.client_phone}</span>
+          </a>
         ) : null}
       </section>
 

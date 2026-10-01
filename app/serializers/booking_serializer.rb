@@ -69,6 +69,12 @@ class BookingSerializer < Blueprinter::Base
   view :full do
     association :employee_profile, blueprint: EmployeeProfileSerializer, view: :full
 
+    # Who the tech calls to reach the client: the person it was booked for if
+    # someone booked on their behalf, else the customer. Staff/admin views only.
+    field :client_phone do |booking|
+      booking.booked_for_phone.presence || booking.user&.phone.presence
+    end
+
     # Per-booking money picture, per the tech's account type (partner vs direct).
     # NOT in the default view - a customer must never see their tech's earnings.
     field :financials do |booking|
