@@ -1,0 +1,106 @@
+name: App Review demo technician
+
+# Manual only. Creates or updates the staff app's App Review demo technician
+# (reviewer@baydspa.ca) and its sample job on production, by running that one
+# seed file inside the running API container. It does not deploy and does not
+# run the rest of db/seeds.rb (which cleans up shop data).
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  app-review-staff:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    env:
+      # kamal-proxy/registry
+      KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      # config/deploy.yml reads the host/port from these (ERB), so a host change
+      # is just a secret update — never a code edit.
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT || '2206' }}
+      # .kamal/secrets reads these from the environment:
+      SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
+      DB_USERNAME: ${{ secrets.DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      HELCIM_API_TOKEN: ${{ secrets.HELCIM_API_TOKEN }}
+      HELCIM_WEBHOOK_VERIFIER_TOKEN: ${{ secrets.HELCIM_WEBHOOK_VERIFIER_TOKEN }}
+      SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+      SQUARE_WEBHOOK_SIGNATURE_KEY: ${{ secrets.SQUARE_WEBHOOK_SIGNATURE_KEY }}
+      SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+      # Square Tap to Pay POS (staff app). Blank keeps Tap to Pay inert (app falls
+      # back to a payment link). Environment defaults to sandbox in code.
+      SQUARE_APPLICATION_ID: ${{ secrets.SQUARE_APPLICATION_ID }}
+      SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+      SMTP_ADDRESS: ${{ secrets.SMTP_ADDRESS }}
+      # Push (FCM). Blank keeps push inert.
+      FCM_PROJECT_ID: ${{ secrets.FCM_PROJECT_ID }}
+      FCM_CREDENTIALS_JSON: ${{ secrets.FCM_CREDENTIALS_JSON }}
+      # Browser notifications (web push). Blank keeps web push inert.
+      VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+      # Phone-OTP (Infobip). Blank keeps OTP send inert.
+      INFOBIP_BASE_URL: ${{ secrets.INFOBIP_BASE_URL }}
+      INFOBIP_API_KEY: ${{ secrets.INFOBIP_API_KEY }}
+      INFOBIP_SENDER: ${{ secrets.INFOBIP_SENDER }}
+      # TESTING ONLY - disables the clock-in geofence. Remove before public launch.
+      # App-review demo login (one email + fixed code bypasses OTP for reviewers).
+      APP_REVIEW_DEMO_EMAIL: ${{ secrets.APP_REVIEW_DEMO_EMAIL }}
+      APP_REVIEW_DEMO_CODE: ${{ secrets.APP_REVIEW_DEMO_CODE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.2"
+
+      - name: Install Kamal
+        run: gem install kamal -v 2.11.0
+
+      # config/master.key is gitignored; .kamal/secrets does `cat config/master.key`.
+      - name: Write master key
+        run: |
+          echo "${{ secrets.RAILS_MASTER_KEY }}" > config/master.key
+          chmod 600 config/master.key
+
+      - name: Load deploy SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Trust the server host key
+        run: |
+          mkdir -p ~/.ssh
+          HOST="${{ secrets.SSH_HOST }}"
+          PORT="${{ secrets.SSH_PORT || '2206' }}"
+          # Retry keyscan a few times — GitHub runner → server can blip transiently.
+          # Fail the step only if we never get a single key line after all retries.
+          got=0
+          for i in 1 2 3 4 5; do
+            if ssh-keyscan -p "$PORT" -t rsa,ecdsa,ed25519 "$HOST" >> ~/.ssh/known_hosts 2>/dev/null \
+               && ssh-keyscan -p "$PORT" -t rsa,ecdsa,ed25519 -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
+              got=1; break
+            fi
+            echo "keyscan attempt $i failed, retrying in 5s..."; sleep 5
+          done
+          if [ "$got" != "1" ] || ! grep -q . ~/.ssh/known_hosts; then
+            echo "::error::ssh-keyscan could not reach $HOST:$PORT after retries"; exit 1
+          fi
+
+      # A deploy that dies mid-run leaves a lock on the server; every later deploy
+      # then aborts with "Deploy lock already in place!". `kamal lock release` can't
+      # clear a CORRUPTED lock (Kamal reports it held while the lock dir is missing/
+      # partial - "stat: cannot statx .kamal/lock-..."), so remove the lock artifact
+      # directly over the same SSH Kamal uses. Best-effort; nothing to remove is fine.
+      - name: Create or update the demo technician
+        run: kamal app exec --reuse "bin/rails demo:app_review_staff"
