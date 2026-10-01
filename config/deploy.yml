@@ -135,6 +135,8 @@ env:
     # Push (FCM) — blank keeps push inert
     - FCM_PROJECT_ID
     - FCM_CREDENTIALS_JSON
+    # Browser notifications (web push) - blank keeps web push inert
+    - VAPID_PRIVATE_KEY
     # Phone-OTP (Infobip) — blank keeps OTP send inert
     - INFOBIP_BASE_URL
     - INFOBIP_API_KEY
