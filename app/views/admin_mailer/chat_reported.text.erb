@@ -8,3 +8,5 @@ Conversation: #<%= @report.conversation_id %>
 Reported:     <%= @reported %> (<%= @report.reported_user.role %>, <%= @report.reported_user.email.presence || @report.reported_user.phone.presence || "no contact" %>)
 Reported by:  <%= @reporter %> (<%= @report.reporter.email.presence || @report.reporter.phone.presence || "no contact" %>)
 When:         <%= @report.created_at.in_time_zone(BusinessHours.zone).strftime("%b %-d, %Y at %-l:%M %p %Z") %>
+
+Review it: <%= @review_url %>

@@ -224,7 +224,7 @@ export interface Review {
   featured: boolean
   created_at: string
   user: { first_name: string | null; last_name: string | null }
-  employee_profile: { user: { first_name: string | null; last_name: string | null } }
+  employee_profile: { name: string | null } | null
 }
 
 export function useAdminReviews(params?: { approved?: boolean; page?: number }) {
@@ -238,6 +238,23 @@ export function useApproveReview() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => api.post(`/admin/reviews/${id}/approve`).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-reviews"] }),
+  })
+}
+
+// Featured reviews headline the technician's public profile. Toggles.
+export function useFeatureReview() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.post(`/admin/reviews/${id}/feature`).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-reviews"] }),
+  })
+}
+
+export function useDeleteReview() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/admin/reviews/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-reviews"] }),
   })
 }
@@ -338,6 +355,7 @@ export interface AdminJobApplication {
   status: "unread" | "reviewing" | "rejected" | "hired"
   scan_status: "pending" | "clean" | "infected"
   created_at: string
+  employee_profile_id: number | null
   documents: { id: number; filename: string; byte_size: number; downloadable: boolean; download_path: string }[]
 }
 

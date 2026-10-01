@@ -7,6 +7,7 @@ import { Providers } from "@/app/providers";
 import { SupportChatBubble } from "@/components/support/support-chat-bubble";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
+import { APP_STORE } from "@/lib/app-links";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-sans",
@@ -45,6 +46,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  // iPhone Safari's own "Open / Get" app banner, once the listing is live.
+  ...(APP_STORE.live ? { itunes: { appId: APP_STORE.appId } } : {}),
   openGraph: {
     type: "website",
     locale: "en_CA",

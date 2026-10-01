@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { CalendarDays, CheckCircle2, Clock3, List, MapPin, Plus, ToggleLeft, ToggleRight } from "lucide-react"
+import { CalendarDays, CheckCircle2, Clock3, List, MapPin, Plus } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { StaffBookingCalendar } from "@/components/dashboard/role-booking-calendars"
@@ -22,7 +22,8 @@ import { StaffBookingActions } from "@/components/dashboard/staff-booking-action
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { useToast } from "@/components/bayd-toast-provider"
 import { Button } from "@/components/ui/button"
-import { useEmployeeProfile, useEmployeeSchedule, useEmployeeScheduleList, useToggleShift } from "@/lib/hooks/use-employee"
+import { useEmployeeProfile, useEmployeeSchedule, useEmployeeScheduleList } from "@/lib/hooks/use-employee"
+import { useCurrentShift } from "@/lib/hooks/use-time-clock"
 import { employeeDashboardSteps } from "@/lib/tours/employee-tour"
 
 type ScheduleView = "list" | "calendar" | "past"
@@ -31,9 +32,9 @@ export default function EmployeeDashboardPage() {
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data: profile, isError: isProfileError } = useEmployeeProfile()
+  const { isError: isProfileError } = useEmployeeProfile()
   const { data, isError: isScheduleError, isLoading } = useEmployeeSchedule(1)
-  const toggleShift = useToggleShift()
+  const { data: currentShift } = useCurrentShift()
   const initialView = searchParams.get("view")
   const [view, setView] = useState<ScheduleView>(
     initialView === "calendar" ? "calendar" : initialView === "past" ? "past" : "list",
@@ -87,8 +88,8 @@ export default function EmployeeDashboardPage() {
       <DashboardHero
         data-tour="employee-hero"
         eyebrow="Employee schedule"
-        title={profile?.on_shift ? "You are live for appointments." : "Start your shift when you are ready."}
-        description="Track your assigned bookings, review the calendar, and keep your mobile service schedule organized."
+        title={currentShift ? "You're clocked in on a job." : "Clock in on each job when you arrive."}
+        description="Clock in and out on each job below, same as the staff app: from 30 minutes before, at the client's address."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Link
@@ -98,40 +99,7 @@ export default function EmployeeDashboardPage() {
             >
               <Plus aria-hidden="true" className="size-4" /> New booking
             </Link>
-            <Button
-              data-tour="employee-shift-toggle"
-              className="h-10 px-4 font-bold text-white"
-              disabled={toggleShift.isPending}
-              onClick={() =>
-                toggleShift.mutate(undefined, {
-                  onSuccess: (data) => {
-                    toast({
-                      title: data.on_shift ? "Shift started" : "Shift ended",
-                      variant: "success",
-                    })
-                  },
-                  onError: (error) => {
-                    toast({
-                      title: "Shift status not changed",
-                      description: getApiErrorMessage(error, "Could not update your shift status."),
-                      variant: "error",
-                    })
-                  },
-                })
-              }
-              style={
-                profile?.on_shift
-                  ? { background: "#5a9e5a", border: "none" }
-                  : { background: "#c96c83", border: "none" }
-              }
-            >
-              {profile?.on_shift ? (
-                <ToggleRight aria-hidden="true" />
-              ) : (
-                <ToggleLeft aria-hidden="true" />
-              )}
-              {profile?.on_shift ? "End Shift" : "Start Shift"}
-            </Button>
+
           </div>
         }
         aside={
@@ -157,10 +125,10 @@ export default function EmployeeDashboardPage() {
 
       <div data-tour="employee-metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          accent={profile?.on_shift}
-          icon={profile?.on_shift ? ToggleRight : ToggleLeft}
-          label="On shift"
-          value={profile?.on_shift ? "Yes" : "No"}
+          accent={!!currentShift}
+          icon={Clock3}
+          label="Clocked in"
+          value={currentShift ? "On a job" : "No"}
         />
         <MetricCard icon={CalendarDays} label="Upcoming" value={upcomingCount} />
         <MetricCard icon={Clock3} label="In progress" value={inProgress.length} />
@@ -273,10 +241,6 @@ function getTime(value: string) {
   return Number.isNaN(time) ? Number.MAX_SAFE_INTEGER : time
 }
 
-function getApiErrorMessage(error: unknown, fallback: string) {
-  const data = (error as { response?: { data?: { error?: string; errors?: string[] } } })?.response?.data
-  return data?.error ?? data?.errors?.join(", ") ?? fallback
-}
 
 function WebLoadMore({ list }: { list: { hasMore: boolean; loadingMore: boolean; loadMore: () => void } }) {
   if (!list.hasMore) return null

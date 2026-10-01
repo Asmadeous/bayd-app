@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { CalendarDays, Repeat2, UserRound } from "lucide-react"
 
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
+import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
 import { cn } from "@/lib/utils"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
@@ -101,17 +102,14 @@ export function BookingCard({ booking, actions, className }: BookingCardProps) {
   )
 }
 
+// Always the business's clock (Toronto), whatever timezone the viewer is in:
+// the appointment happens there.
 function formatBookingDateTime(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return "Date not available"
 
-  const dateStr = date.toLocaleDateString("en-CA", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
-  const timeStr = date.toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit" })
+  const dateStr = formatBookingDate(value, { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+  const timeStr = formatBookingTime(value, { hour: "2-digit", minute: "2-digit" })
   return `${dateStr} at ${timeStr}`
 }
 

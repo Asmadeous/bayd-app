@@ -5,7 +5,7 @@ module Api
         def index
           scope = NewsletterSubscriber.order(created_at: :desc)
           records, meta = paginate(scope, per: 50)
-          render json: { data: records.as_json, pagination: meta }
+          render json: { data: records.as_json(except: :unsubscribe_token), pagination: meta }
         end
 
         def destroy

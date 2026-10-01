@@ -54,9 +54,11 @@ function InvoiceDetailsPanel({ settings }: { settings?: Settings }) {
   return (
     <DashboardPanel>
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">Invoices</p>
-      <h2 className="mt-1 text-lg font-extrabold text-[#101217]">Business details on invoices</h2>
+      <h2 className="mt-1 text-lg font-extrabold text-[#101217]">Business details on invoices and newsletters</h2>
       <p className="mt-2 text-xs leading-5 text-[#5f6268]">
-        Printed on every new invoice. Canadian invoices should show your GST/HST registration number. Leave a field blank to leave it off.
+        Printed on every new invoice. Canadian invoices should show your GST/HST registration number. The business
+        address also goes at the bottom of every newsletter, which Canada&apos;s anti-spam law requires. Leave a field
+        blank to leave it off.
       </p>
       <div className="mt-5 grid max-w-2xl gap-4 sm:grid-cols-2">
         <label>

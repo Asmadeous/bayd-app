@@ -7,13 +7,15 @@ import { useToast } from "@/components/bayd-toast-provider"
 import { Button } from "@/components/ui/button"
 import { ChargeBookingDialog } from "@/components/dashboard/charge-booking-dialog"
 import { MeetingButton } from "@/components/dashboard/meeting-button"
+import { StaffJobControls } from "@/components/dashboard/staff-job-controls"
 import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import { useBookingAccess } from "@/lib/booking-access"
 
-// Actions a technician has on their own booking card: join the work-scope call,
-// navigate to the customer, charge the balance by the client's payment method,
-// and add an overtime charge if the service ran over.
+// Actions a technician has on their own booking card: the staff app's job
+// controls (clock in/out, message client, reschedule, cancel / no-show / can't
+// attend), then the work-scope call, navigation, charging the balance and an
+// overtime charge if the service ran over.
 export function StaffBookingActions({ booking }: { booking: Booking }) {
   const { toast } = useToast()
   const qc = useQueryClient()
@@ -66,6 +68,7 @@ export function StaffBookingActions({ booking }: { booking: Booking }) {
 
   return (
     <div className="flex flex-col gap-2">
+      <StaffJobControls booking={booking} />
       <div className="flex flex-wrap items-center gap-2">
         {(booking.status === "confirmed" || booking.status === "in_progress") && (
           <MeetingButton booking={booking} />

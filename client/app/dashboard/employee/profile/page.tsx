@@ -7,6 +7,7 @@ import { CheckCircle2, ImagePlus, Mail, Sparkles, UserRound } from "lucide-react
 import { useToast } from "@/components/bayd-toast-provider"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { ChangePasswordForm } from "@/components/change-password-form"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
@@ -233,6 +234,13 @@ export default function EmployeeProfilePage() {
           </form>
         </DashboardPanel>
       </div>
+
+      {/* Same form as the staff app's Change password screen. */}
+      <DashboardPanel className="max-w-xl">
+        <h2 className="text-lg font-extrabold text-[#101217]">Change password</h2>
+        <p className="mt-1 text-sm text-[#5f6268]">Enter your current password and choose a new one. You&apos;ll stay signed in.</p>
+        <ChangePasswordForm className="mt-4" />
+      </DashboardPanel>
 
       <TutorialButton
         steps={employeeProfileSteps}

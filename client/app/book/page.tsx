@@ -23,6 +23,7 @@ import { useCoverage } from "@/lib/hooks/use-coverage"
 import { FREQUENCY_PRESETS } from "@/lib/hooks/use-subscriptions"
 import { siteConfig } from "@/lib/site"
 import { useAuthStore } from "@/lib/stores/auth-store"
+import { BookedAppPrompt } from "@/components/marketing/app-download"
 
 // Same company number as the footer; used for the out-of-area call / WhatsApp options.
 const WHATSAPP_HREF = `https://wa.me/${siteConfig.phoneHref.replace(/\D/g, "")}?text=${encodeURIComponent(
@@ -681,6 +682,7 @@ export function BookingFlow({
           <Link href={staffMode ? "/staff/schedule" : dashboardMode ? "/dashboard/customer" : "/"} className="mt-5 inline-block rounded-xl bg-[#101217] px-5 py-2.5 text-sm font-bold text-white">
             {staffMode ? "Back to schedule" : dashboardMode ? "Back to dashboard" : "Back to home"}
           </Link>
+          {!staffMode ? <BookedAppPrompt /> : null}
         </div>
       </Shell>
     )
@@ -1438,7 +1440,9 @@ export function BookingFlow({
         <div className="hidden lg:sticky lg:top-24 lg:block">{summary}</div>
       </div>
 
-        {dashboardMode ? null : <p className="mt-4 text-center text-xs font-medium text-[#8a8d93]">
+        {/* Centred under the form, not the whole page: on large screens the
+            summary column (20rem + 2rem gap) sits to the right. */}
+        {dashboardMode ? null : <p className="mt-4 text-center text-xs font-medium text-[#8a8d93] lg:pr-[22rem]">
           Already have an account? <Link href="/signin" className="font-bold text-[#c96c83]">Sign in</Link>
         </p>}
       </Shell>

@@ -1,13 +1,56 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, MapPin, Star } from "lucide-react";
 
 import { ScrollReveal } from "@/components/scroll-reveal";
+import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-const testimonials = [
+type Testimonial = {
+  name: string;
+  context: string;
+  location?: string;
+  quote: string;
+  service: string;
+  rating?: number;
+  image: { src: string; alt: string };
+};
+
+interface PublicReview {
+  id: number;
+  rating: number;
+  body: string | null;
+  reviewer_name: string;
+  technician_name: string | null;
+  service_name: string | null;
+}
+
+// Real client reviews have no photo, so each gets one of the section's service
+// photos, picked by the service they reviewed.
+function reviewImage(service: string | null, index: number) {
+  const s = (service ?? "").toLowerCase();
+  if (s.includes("lash")) return { src: "/images/lashes2.jpg", alt: "Client relaxing during a lash service" };
+  if (s.includes("pedicure") || s.includes("feet")) return { src: "/images/pedicure1.jpg", alt: "Client receiving a pedicure" };
+  const rotation = sampleTestimonials.map((t) => t.image);
+  return rotation[index % rotation.length];
+}
+
+function toTestimonial(review: PublicReview, index: number): Testimonial {
+  return {
+    name: review.reviewer_name,
+    context: review.technician_name ? `With ${review.technician_name}` : "Verified client",
+    quote: review.body ?? "",
+    service: review.service_name ?? "Beauty @ Your Door",
+    rating: review.rating,
+    image: reviewImage(review.service_name, index),
+  };
+}
+
+// Shown only until approved client reviews exist.
+const sampleTestimonials: Testimonial[] = [
   {
     name: "Maya R.",
     context: "Lash refill at home",
@@ -47,25 +90,34 @@ const testimonials = [
 ];
 
 export function TestimonialsSection() {
+  const { data: reviews } = useQuery({
+    queryKey: ["public-reviews", "testimonials"],
+    queryFn: () => api.get<{ data: PublicReview[] }>("/reviews", { params: { per_page: 10 } }).then((r) => r.data.data),
+    staleTime: 5 * 60 * 1000,
+  });
+  // Approved reviews with written feedback (featured first, from the API).
+  const testimonials = useMemo(() => {
+    const real = (reviews ?? []).filter((r) => r.body?.trim()).map(toTestimonial);
+    return real.length > 0 ? real : sampleTestimonials;
+  }, [reviews]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeTestimonial = testimonials[activeIndex];
+  const activeTestimonial = testimonials[activeIndex % testimonials.length];
+  const count = testimonials.length;
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setActiveIndex((currentIndex) => getNextIndex(currentIndex));
+      setActiveIndex((currentIndex) => (currentIndex + 1) % count);
     }, 6500);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [count]);
 
   function showPrevious() {
-    setActiveIndex((currentIndex) =>
-      currentIndex === 0 ? testimonials.length - 1 : currentIndex - 1,
-    );
+    setActiveIndex((currentIndex) => (currentIndex - 1 + count) % count);
   }
 
   function showNext() {
-    setActiveIndex((currentIndex) => getNextIndex(currentIndex));
+    setActiveIndex((currentIndex) => (currentIndex + 1) % count);
   }
 
   return (
@@ -80,12 +132,12 @@ export function TestimonialsSection() {
             alt={testimonial.image.alt}
             className={cn(
               "-z-30 object-cover transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]",
-              index === activeIndex
+              index === activeIndex % count
                 ? "scale-100 opacity-100"
                 : "scale-105 opacity-0",
             )}
             fill
-            key={testimonial.name}
+            key={`${testimonial.name}-${index}`}
             priority={index === 0}
             sizes="100vw"
             src={testimonial.image.src}
@@ -100,7 +152,7 @@ export function TestimonialsSection() {
             <div className="max-w-5xl">
               <p className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.2em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]">
                 <span className="grid size-8 place-items-center border border-white/75 text-sm">
-                  {activeIndex + 1}
+                  {(activeIndex % count) + 1}
                 </span>
                 Why clients love
               </p>
@@ -130,7 +182,7 @@ export function TestimonialsSection() {
                     {Array.from({ length: 5 }).map((_, starIndex) => (
                       <Star
                         aria-hidden="true"
-                        className="size-4 fill-current"
+                        className={cn("size-4", starIndex < (activeTestimonial.rating ?? 5) && "fill-current")}
                         key={starIndex}
                       />
                     ))}
@@ -149,10 +201,12 @@ export function TestimonialsSection() {
                     <p className="mt-1 text-sm font-bold text-[#62666d]">
                       {activeTestimonial.context}
                     </p>
-                    <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#62666d]">
-                      <MapPin aria-hidden="true" className="size-4" />
-                      {activeTestimonial.location}
-                    </p>
+                    {activeTestimonial.location ? (
+                      <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#62666d]">
+                        <MapPin aria-hidden="true" className="size-4" />
+                        {activeTestimonial.location}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="flex shrink-0 gap-2">
@@ -183,6 +237,3 @@ export function TestimonialsSection() {
   );
 }
 
-function getNextIndex(currentIndex: number) {
-  return currentIndex === testimonials.length - 1 ? 0 : currentIndex + 1;
-}

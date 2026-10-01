@@ -11,9 +11,9 @@ class MagicLinkToken < ApplicationRecord
   # Generates a raw token, stores only its digest, and returns the RAW token
   # (the only time it's ever available — the email link needs it, the DB never
   # sees it again).
-  def self.issue!(user, purpose: "sign_in")
+  def self.issue!(user, purpose: "sign_in", ttl: TTL)
     raw = SecureRandom.urlsafe_base64(32)
-    create!(user: user, token_digest: digest(raw), expires_at: TTL.from_now, purpose: purpose)
+    create!(user: user, token_digest: digest(raw), expires_at: ttl.from_now, purpose: purpose)
     raw
   end
 

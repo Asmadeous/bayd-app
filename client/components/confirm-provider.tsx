@@ -86,7 +86,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => resolve(true)}
-                style={danger ? { background: "#b3453f" } : undefined}
+                style={danger ? { background: "#b3453f", color: "#fff" } : undefined}
               >
                 {pending.confirmLabel ?? (danger ? "Delete" : "Confirm")}
               </AlertDialogAction>

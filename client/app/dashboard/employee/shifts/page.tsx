@@ -61,7 +61,7 @@ export default function EmployeeShiftsPage() {
       <div data-tour="shifts-header">
         <DashboardHeader
           title="My Shifts"
-          subtitle="Your clock-in history and travel reimbursement."
+          subtitle="Your clock-in history and travel reimbursement. Clock in and out from the BAYD Staff app, on each job."
         />
       </div>
 
@@ -80,7 +80,7 @@ export default function EmployeeShiftsPage() {
           <EmptyState
             icon={Fuel}
             title="No shifts yet"
-            description="Clock in from your dashboard to start tracking shift history."
+            description="You clock in on each job in the BAYD Staff app when you arrive at the client (within 150 m, from 30 minutes before the start). Your shifts show up here."
           />
         ) : (
           <div className="space-y-3">

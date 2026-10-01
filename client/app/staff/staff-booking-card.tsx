@@ -8,7 +8,9 @@ import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
 import { useBookingAccess, windowNotStartedMessage } from "@/lib/booking-access"
-import { useStartMeeting } from "@/lib/hooks/use-meetings"
+import { useRescheduleMeeting, useStartMeeting, type CallTime } from "@/lib/hooks/use-meetings"
+import { callState, callTimeLabel, meetingError } from "@/lib/meeting-time"
+import { CallTimeForm } from "@/components/call-time-form"
 import { useClockIn, useClockOut } from "@/lib/hooks/use-time-clock"
 import { useChargeBooking, useMarkMissed, useMarkNoShow, useRecordPayment } from "@/lib/hooks/use-employee"
 import { CHARGE_METHODS, paymentMethodLabel, type OfflinePaymentMethod } from "@/lib/payment-methods"
@@ -694,32 +696,58 @@ function MessageClientButton({ clientUserId }: { clientUserId: number }) {
 // Start (idempotent) or join the work-scope call, opening the in-app call screen.
 function JoinCallButton({ booking }: { booking: Booking }) {
   const router = useRouter()
-  const startMeeting = useStartMeeting()
-  const scheduled = booking.meeting?.status === "scheduled"
+  const start = useStartMeeting()
+  const move = useRescheduleMeeting()
+  const [picking, setPicking] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const meeting = booking.meeting
+  const state = callState(meeting)
 
-  async function go() {
-    if (scheduled) {
-      router.push(`/staff/schedule/call?id=${booking.id}`)
-      return
+  function save(at: CallTime) {
+    setError(null)
+    const done = {
+      onSuccess: () => {
+        setPicking(false)
+        if (at === "now") router.push(`/staff/schedule/call?id=${booking.id}`)
+      },
+      onError: (e: unknown) => setError(meetingError(e)),
     }
-    try {
-      await startMeeting.mutateAsync(booking.id)
-      router.push(`/staff/schedule/call?id=${booking.id}`)
-    } catch {
-      /* surfaced by isError elsewhere */
-    }
+    if (meeting && meeting.status === "scheduled") move.mutate({ meetingId: meeting.id, at }, done)
+    else start.mutate({ bookingId: booking.id, at }, done)
   }
 
+  // The call is set for a time first so the client knows when to join; the
+  // room opens 10 minutes before (Meeting::JOIN_LEAD_MIN).
   return (
-    <button
-      type="button"
-      onClick={go}
-      disabled={startMeeting.isPending}
-      className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#C96C83]/10 px-3 py-2.5 text-sm font-bold text-[#9E4A60] transition-colors active:bg-[#C96C83]/20 disabled:opacity-50"
-    >
-      <Video className="size-4 text-[#C96C83]" aria-hidden />
-      {startMeeting.isPending ? "…" : scheduled ? "Join call" : "Start call"}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => (state === "open" ? router.push(`/staff/schedule/call?id=${booking.id}`) : setPicking(true))}
+        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#C96C83]/10 px-3 py-2.5 text-sm font-bold text-[#9E4A60] transition-colors active:bg-[#C96C83]/20"
+      >
+        <Video className="size-4 text-[#C96C83]" aria-hidden />
+        {state === "open" ? "Join call" : state === "waiting" ? `Call ${callTimeLabel(meeting)}` : "Schedule call"}
+      </button>
+      {picking ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={() => setPicking(false)}>
+          <div
+            className="w-full rounded-t-3xl bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-lg font-extrabold text-[#14100F]">{state === "none" ? "When should the call be?" : "Move the call"}</p>
+            <p className="mt-1 text-sm text-[#14100F]/60">A short video call with the client before the visit.</p>
+            <CallTimeForm
+              className="mt-4"
+              startsAt={booking.starts_at}
+              pending={start.isPending || move.isPending}
+              error={error}
+              submitLabel={state === "none" ? "Set call time" : "Move call"}
+              onSubmit={save}
+            />
+          </div>
+        </div>
+      ) : null}
+    </>
   )
 }
 

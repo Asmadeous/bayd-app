@@ -31,6 +31,7 @@ class User < ApplicationRecord
   has_many :notifications, dependent: :destroy
   has_many :sent_messages, class_name: "Message", foreign_key: :sender_id, dependent: :destroy
   has_many :device_tokens, dependent: :destroy
+  has_many :web_push_subscriptions, dependent: :destroy
   has_many :webauthn_credentials, dependent: :destroy
   has_many :blocks_made, class_name: "UserBlock", foreign_key: :blocker_id, dependent: :destroy
   has_many :blocks_received, class_name: "UserBlock", foreign_key: :blocked_id, dependent: :destroy

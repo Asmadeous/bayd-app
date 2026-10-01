@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { useRescheduleBooking, type Booking } from "@/lib/hooks/use-bookings"
 import { useAdminRescheduleBooking } from "@/lib/hooks/use-admin"
+import { useStaffReschedule } from "@/lib/hooks/use-employee"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -29,14 +30,32 @@ const TODAY = new Date().toISOString().split("T")[0]
 // Reuses the /availability endpoint (travel-filtered) so the
 // customer only sees slots the tech can actually take. The backend enforces the
 // 24h cutoff + 2-reschedule cap and returns a typed code on failure.
-export function RescheduleDialog({ booking, admin = false }: { booking: Booking; admin?: boolean }) {
+export function RescheduleDialog({
+  booking,
+  admin = false,
+  staff = false,
+}: {
+  booking: Booking
+  admin?: boolean
+  // The assigned tech moving their own job (staff web dashboard): no cap, same
+  // hours, travel and double-booking checks on the server.
+  staff?: boolean
+}) {
   const [open, setOpen] = useState(false)
   const [date, setDate] = useState("")
   const [time, setTime] = useState("")
   const [error, setError] = useState<string | null>(null)
   const customerReschedule = useRescheduleBooking()
   const adminReschedule = useAdminRescheduleBooking()
-  const reschedule = admin ? adminReschedule : customerReschedule
+  const staffReschedule = useStaffReschedule()
+  const staffAsCommon = {
+    isPending: staffReschedule.isPending,
+    mutate: (
+      vars: { id: number; starts_at: string },
+      opts: { onSuccess: () => void; onError: (err: unknown) => void },
+    ) => staffReschedule.mutate({ bookingId: vars.id, startsAt: vars.starts_at }, opts),
+  }
+  const reschedule = staff ? staffAsCommon : admin ? adminReschedule : customerReschedule
 
   const availability = useQuery<AvailabilityResult>({
     queryKey: ["availability", booking.service.id, booking.employee_profile.id, date],
@@ -69,9 +88,10 @@ export function RescheduleDialog({ booking, admin = false }: { booking: Booking;
     )
   }
 
-  // Admins are uncapped; customers get 2 self-reschedules per booking.
-  const remaining = admin ? Infinity : Math.max(0, 2 - booking.reschedule_count)
-  const capReached = !admin && remaining === 0
+  // Admins and the assigned tech are uncapped; customers get 2 self-reschedules.
+  const uncapped = admin || staff
+  const remaining = uncapped ? Infinity : Math.max(0, 2 - booking.reschedule_count)
+  const capReached = !uncapped && remaining === 0
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -85,7 +105,7 @@ export function RescheduleDialog({ booking, admin = false }: { booking: Booking;
           <DialogTitle>Reschedule appointment</DialogTitle>
           <DialogDescription>
             Pick a new open time for {booking.service?.name ?? "this service"} with the same technician.
-            {admin ? null : ` You can reschedule ${remaining} more time${remaining === 1 ? "" : "s"}.`}
+            {uncapped ? null : ` You can reschedule ${remaining} more time${remaining === 1 ? "" : "s"}.`}
           </DialogDescription>
         </DialogHeader>
         <DialogBody>

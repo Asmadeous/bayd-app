@@ -10,3 +10,6 @@
   <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Reported by</td><td style="padding:4px 0;"><%= @reporter %> (<%= @report.reporter.email.presence || @report.reporter.phone.presence || "no contact" %>)</td></tr>
   <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">When</td><td style="padding:4px 0;"><%= @report.created_at.in_time_zone(BusinessHours.zone).strftime("%b %-d, %Y at %-l:%M %p %Z") %></td></tr>
 </table>
+<p style="margin:0;font-family:Arial,sans-serif;font-size:14px;">
+  <a href="<%= @review_url %>" style="color:#c96c83;font-weight:bold;">Review it in the dashboard</a>
+</p>

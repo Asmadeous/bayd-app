@@ -353,7 +353,7 @@ function getApiErrorMessage(error: unknown, fallback: string) {
 
 // Starts (or reuses) a chat between this admin and the user, with a first
 // message. Admin chats aren't tied to a booking, so this is how the team reaches
-// a customer directly. Replies appear in the staff app's Messages tab.
+// a customer directly. Replies appear on the dashboard's Messages page.
 function MessageUserButton({ user }: { user: User }) {
   const { toast } = useToast()
   const [body, setBody] = useState("")
@@ -364,7 +364,7 @@ function MessageUserButton({ user }: { user: User }) {
     },
     onSuccess: () => {
       setBody("")
-      toast({ title: "Message sent", description: "Replies appear in the staff app's Messages tab.", variant: "success" })
+      toast({ title: "Message sent", description: "Replies appear under Messages in this dashboard.", variant: "success" })
     },
     onError: (e: unknown) => {
       const message = (e as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Please try again."

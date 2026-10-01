@@ -27,8 +27,10 @@ class MeetingReminderJob < ApplicationJob
     booking = meeting.booking
 
     recipients_for(booking).each do |recipient|
-      # Idempotency: one notification of this kind per (recipient, booking).
-      next if Notification.exists?(user: recipient, booking: booking, kind: spec[:kind])
+      # Idempotency: one notification of this kind per (recipient, booking, call
+      # time), so moving the call gets fresh reminders but a retry doesn't.
+      next if Notification.where(user: recipient, booking: booking, kind: spec[:kind])
+                          .exists?([ "metadata->>'scheduled_at' = ?", meeting.scheduled_at.iso8601 ])
 
       NotificationService.deliver(
         user:  recipient,
@@ -36,7 +38,8 @@ class MeetingReminderJob < ApplicationJob
         title: spec[:title],
         body:  body_for(reminder, meeting),
         booking: booking,
-        action_url: meeting.url
+        action_url: meeting.url,
+        metadata: { scheduled_at: meeting.scheduled_at.iso8601 }
       )
     end
   end

@@ -20,7 +20,8 @@ import {
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { buttonVariants } from "@/components/ui/button";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { Button, buttonVariants } from "@/components/ui/button";
 import type { ShopProduct, ShopVariant } from "@/features/shop/types";
 import api from "@/lib/api";
 import { openHelcimPay } from "@/lib/helcim-pay";
@@ -130,7 +131,9 @@ function toCartProduct(product: ShopProduct, variant?: ShopVariant): CartProduct
   };
 }
 
-export function ShopPage() {
+// `embedded` renders the shop inside the customer dashboard: no public site
+// header, hero, policy bands or footer, and a Cart button in the page header.
+export function ShopPage({ embedded = false }: { embedded?: boolean } = {}) {
   const [selectedProduct, setSelectedProduct] = useState<ShopProduct | null>(
     null,
   );
@@ -215,13 +218,26 @@ export function ShopPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <SiteHeader cartCount={cartCount} onOpenCart={openCart} />
+    <div className={embedded ? "text-foreground" : "min-h-screen bg-background text-foreground"}>
+      {embedded ? null : <SiteHeader cartCount={cartCount} onOpenCart={openCart} />}
       <main>
-        <ShopHero products={products} />
+        {embedded ? (
+          <DashboardHeader
+            title="Shop"
+            subtitle="Aftercare products and gift cards, delivered or sent by email."
+            actions={
+              <Button onClick={openCart} size="sm" variant="outline">
+                <ShoppingBag aria-hidden="true" className="size-4" />
+                Cart{cartCount > 0 ? ` (${cartCount})` : ""}
+              </Button>
+            }
+          />
+        ) : (
+          <ShopHero products={products} />
+        )}
 
         {/* Tabs: Products / Gift Cards */}
-        <div className="mx-auto w-full max-w-[1760px] px-4 pt-4 sm:px-6 lg:px-8 2xl:px-10">
+        <div className={embedded ? "pt-4" : "mx-auto w-full max-w-[1760px] px-4 pt-4 sm:px-6 lg:px-8 2xl:px-10"}>
           <div className="flex gap-2 border-b border-black/10">
             {([["products", "Products"], ["gift-cards", "Gift Cards"]] as const).map(
               ([key, label]) => (
@@ -245,7 +261,7 @@ export function ShopPage() {
         {tab === "products" ? (
           <>
             {/* Category filter — horizontal scroll on mobile, wraps on desktop */}
-            <div className="mx-auto w-full max-w-[1760px] px-4 pt-6 sm:px-6 lg:px-8 2xl:px-10">
+            <div className={embedded ? "pt-6" : "mx-auto w-full max-w-[1760px] px-4 pt-6 sm:px-6 lg:px-8 2xl:px-10"}>
               <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:px-0 sm:overflow-visible">
                 {[{ id: 0, name: "All" }, ...categories].map((c) => {
                   const value = c.name === "All" ? null : c.name;
@@ -268,16 +284,20 @@ export function ShopPage() {
                 })}
               </div>
             </div>
-            <ProductShowcase onSelectProduct={openProduct} products={visibleProducts} />
+            <ProductShowcase embedded={embedded} onSelectProduct={openProduct} products={visibleProducts} />
           </>
         ) : (
           <GiftCardTab />
         )}
 
-        <ShopPolicyBand />
-        <ShopBookingBand />
+        {embedded ? null : (
+          <>
+            <ShopPolicyBand />
+            <ShopBookingBand />
+          </>
+        )}
       </main>
-      <SiteFooter />
+      {embedded ? null : <SiteFooter />}
       {selectedProduct ? (
         <ProductModal
           modalOrigin={modalOrigin}
@@ -380,9 +400,11 @@ function ShopHero({ products }: { products: ShopProduct[] }) {
 }
 
 function ProductShowcase({
+  embedded = false,
   onSelectProduct,
   products,
 }: {
+  embedded?: boolean;
   onSelectProduct: (
     product: ShopProduct,
     event: MouseEvent<HTMLButtonElement>,
@@ -414,9 +436,15 @@ function ProductShowcase({
   }
 
   return (
-    <section className="bg-background py-12 text-[#101217] sm:py-20" id="products">
-      <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8 2xl:px-10">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+    <section className={embedded ? "py-6 text-[#101217]" : "bg-background py-12 text-[#101217] sm:py-20"} id="products">
+      <div className={embedded ? "w-full" : "mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8 2xl:px-10"}>
+        {/* Beside the dashboard sidebar there's less room, so fewer columns. */}
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-4 sm:grid-cols-2",
+            embedded ? "2xl:grid-cols-3" : "lg:grid-cols-3 2xl:grid-cols-4",
+          )}
+        >
           {pageProducts.map((product, index) => (
             <ScrollReveal
               as="article"

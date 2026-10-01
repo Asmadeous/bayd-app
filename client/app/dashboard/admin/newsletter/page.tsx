@@ -18,6 +18,7 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { DashboardToolbar, ToolbarSection } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
+import { NewsletterComposer } from "@/components/dashboard/newsletter-composer"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
@@ -36,7 +37,7 @@ import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { adminNewsletterSteps } from "@/lib/tours/admin-newsletter-tour"
 
-interface Subscriber { id: number; email: string; confirmed: boolean; created_at: string }
+interface Subscriber { id: number; email: string; status: "subscribed" | "unsubscribed" | "bounced"; created_at: string }
 interface PagedResponse<T> { data: T[]; pagination: { current_page: number; total_pages: number; next_page: number | null; total_count: number } }
 
 export default function AdminNewsletterPage() {
@@ -72,14 +73,16 @@ export default function AdminNewsletterPage() {
   return (
     <DashboardPage maxWidth="wide">
       <div data-tour="admin-newsletter-header">
-        <DashboardHeader title="Newsletter" subtitle="Manage newsletter subscribers." />
+        <DashboardHeader title="Newsletter" subtitle="Write newsletters and manage subscribers." />
       </div>
+
+      <NewsletterComposer />
 
       <div className="grid gap-4 sm:grid-cols-3" data-tour="admin-newsletter-metrics">
         <MetricCard
           accent
           icon={Mail}
-          label="Total Subscribers"
+          label="Sign-ups (all time)"
           value={data?.pagination?.total_count ?? "-"}
         />
       </div>
@@ -100,7 +103,7 @@ export default function AdminNewsletterPage() {
           <DataTableHead>
             <DataTableRow>
               <DataTableHeaderCell>Email</DataTableHeaderCell>
-              <DataTableHeaderCell>Confirmed</DataTableHeaderCell>
+              <DataTableHeaderCell>Status</DataTableHeaderCell>
               <DataTableHeaderCell>Subscribed</DataTableHeaderCell>
               <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
             </DataTableRow>
@@ -110,8 +113,8 @@ export default function AdminNewsletterPage() {
               <DataTableRow key={subscriber.id}>
                 <DataTableCell className="font-semibold text-[#101217]">{subscriber.email}</DataTableCell>
                 <DataTableCell>
-                  <StatusBadge tone={subscriber.confirmed ? "green" : "gold"}>
-                    {subscriber.confirmed ? "Yes" : "Pending"}
+                  <StatusBadge tone={subscriber.status === "subscribed" ? "green" : "gray"}>
+                    {subscriber.status === "subscribed" ? "Subscribed" : subscriber.status === "bounced" ? "Bounced" : "Unsubscribed"}
                   </StatusBadge>
                 </DataTableCell>
                 <DataTableCell className="text-xs">

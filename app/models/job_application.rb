@@ -4,6 +4,8 @@ class JobApplication < ApplicationRecord
   MAX_DOCUMENTS   = 3
 
   belongs_to :job_posting, optional: true
+  # Set when the applicant is hired from the dashboard (StaffOnboarding).
+  belongs_to :employee_profile, optional: true
   has_many_attached :documents
 
   # `unread` key maps to DB value "new" — see ContactMessage for why `new` can't be a key.

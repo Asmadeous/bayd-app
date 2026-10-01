@@ -1,0 +1,7 @@
+<p class="muted">
+  You're receiving this because you subscribed to the Beauty @ Your Door newsletter.
+  <a href="<%= @unsubscribe_url %>">Unsubscribe</a>
+</p>
+<% if @mailing_address.present? %>
+  <p class="muted">Beauty @ Your Door · <%= @mailing_address %></p>
+<% end %>

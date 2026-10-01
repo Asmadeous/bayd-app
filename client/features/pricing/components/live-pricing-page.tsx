@@ -108,13 +108,15 @@ export function LivePricingPage() {
     queryFn: () => api.get<ApiService[]>("/services").then((r) => r.data),
   });
 
-  // While loading, or if the API is unreachable, fall back to the static menu
-  // so the page never renders empty. Facials are a real seeded category, so the
-  // static copy only fills in for the fallback.
-  const categories =
-    !isLoading && !isError && services && services.length > 0
-      ? toPriceCategories(services)
-      : [...pricingCategories, FACIAL_SERVICES];
+  // Live prices only. The built-in menu (which doesn't follow price changes)
+  // is a last resort when the API is unreachable, and says so. Facials are a
+  // real seeded category, so the static copy only fills in for that fallback.
+  if (isLoading) return <PricingPage categories={[]} loading />;
 
-  return <PricingPage categories={categories} />;
+  const live = !isError && services && services.length > 0;
+  return live ? (
+    <PricingPage categories={toPriceCategories(services)} />
+  ) : (
+    <PricingPage categories={[...pricingCategories, FACIAL_SERVICES]} stale />
+  );
 }

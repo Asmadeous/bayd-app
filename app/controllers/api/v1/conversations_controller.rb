@@ -79,6 +79,7 @@ module Api
             user: admin, kind: :chat_reported,
             title: "Chat report: #{name}",
             body: "#{report.reason}#{report.details ? " - #{report.details}" : ""}",
+            action_url: "#{ENV.fetch('APP_URL', 'http://localhost:3001')}/dashboard/admin/chat-reports?id=#{report.id}",
             metadata: { conversation_id: report.conversation_id, chat_report_id: report.id }
           )
         end

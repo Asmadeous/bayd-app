@@ -69,21 +69,13 @@ export function GalleryPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const galleryItems: GalleryItem[] = useMemo(
-    () => {
-      const mappedApiItems =
-        apiItems?.filter((item) => item.category !== "Team").map(mapApiItem) ?? [];
-      const existingIds = new Set(staticGalleryItems.map((item) => item.id));
-      const additionalApiItems = mappedApiItems.filter(
-        (item) =>
-          !existingIds.has(item.id) &&
-          item.image.src.startsWith("/images/new-pics-for-the-ladies/"),
-      );
-
-      return [...staticGalleryItems, ...additionalApiItems];
-    },
-    [apiItems],
-  );
+  // The dashboard's Gallery is the source of truth: uploads show up and hidden
+  // or deleted items disappear. The built-in set only covers the API being
+  // unreachable (or an empty gallery), so the page is never blank.
+  const galleryItems: GalleryItem[] = useMemo(() => {
+    const fromApi = apiItems?.filter((item) => item.category !== "Team").map(mapApiItem) ?? [];
+    return fromApi.length > 0 ? fromApi : staticGalleryItems;
+  }, [apiItems]);
 
   const visibleItems = useMemo(
     () =>

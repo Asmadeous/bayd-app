@@ -14,7 +14,9 @@ import { DateStrip, weekRange } from "@/components/booking/date-strip"
 import { ViewSwitch, type BookingView } from "@/components/calendar/view-switch"
 import { cn } from "@/lib/utils"
 import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
-import { useStartMeeting } from "@/lib/hooks/use-meetings"
+import { useRescheduleMeeting, useStartMeeting, type CallTime } from "@/lib/hooks/use-meetings"
+import { callState, callTimeLabel, meetingError } from "@/lib/meeting-time"
+import { CallTimeForm } from "@/components/call-time-form"
 import type { Conversation } from "@/lib/cable/chat-types"
 import { bookingDateKey, formatBookingDate, formatDateKey, todayKey } from "@/lib/booking-time"
 import { appScreenClass } from "../app-theme"
@@ -171,7 +173,7 @@ export function AppointmentActions({ booking, cancellable, now }: { booking: Boo
 
   return (
     <>
-      {cancellable && booking.meeting_recommended && <MeetAction booking={booking} />}
+      {cancellable && (booking.meeting_recommended || booking.meeting?.status === "scheduled") && <MeetAction booking={booking} />}
 
       {/* Live tracking opens 30 minutes before the appointment; messaging is open any time. */}
       {cancellable && booking.employee_profile.user_id && access.active && !access.open ? (
@@ -249,46 +251,63 @@ export function AppointmentActions({ booking, cancellable, now }: { booking: Boo
   )
 }
 
-// Work-scope video call action, shown only on bookings the backend flags with
-// meeting_recommended (special-needs or first-time clients). Join the existing
-// call if one is scheduled, otherwise create it (idempotent) first. Either way
-// it opens the EMBEDDED in-app Jitsi call screen - no browser hop.
+// Work-scope video call, on bookings the backend flags with meeting_recommended
+// (special-needs or first-time clients) or that already have a call. The call
+// is set for a time first (or "now") so the technician knows when to be there;
+// Join opens the EMBEDDED in-app Jitsi screen from 10 minutes before.
 function MeetAction({ booking }: { booking: Booking }) {
   const router = useRouter()
-  const startMeeting = useStartMeeting()
+  const start = useStartMeeting()
+  const move = useRescheduleMeeting()
+  const [picking, setPicking] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const meeting = booking.meeting
+  const state = callState(meeting)
 
-  async function scheduleAndJoin() {
-    try {
-      await startMeeting.mutateAsync(booking.id)
-      router.push(`/app/bookings/call?id=${booking.id}`)
-    } catch {
-      // Surfaced by startMeeting.isError below.
+  function save(at: CallTime) {
+    setError(null)
+    const done = {
+      onSuccess: () => {
+        setPicking(false)
+        if (at === "now") router.push(`/app/bookings/call?id=${booking.id}`)
+      },
+      onError: (e: unknown) => setError(meetingError(e)),
     }
-  }
-
-  if (meeting && meeting.status === "scheduled") {
-    return (
-      <Link
-        href={`/app/bookings/call?id=${booking.id}`}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#c96c83] py-2.5 text-sm font-bold text-white"
-      >
-        <Video className="size-4" aria-hidden />
-        Join video call
-      </Link>
-    )
+    if (meeting && meeting.status === "scheduled") move.mutate({ meetingId: meeting.id, at }, done)
+    else start.mutate({ bookingId: booking.id, at }, done)
   }
 
   return (
-    <button
-      type="button"
-      onClick={scheduleAndJoin}
-      disabled={startMeeting.isPending}
-      className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-[#c96c83]/40 py-2.5 text-sm font-semibold text-[#c96c83] disabled:opacity-50"
-    >
-      <Video className="size-4" aria-hidden />
-      {startMeeting.isPending ? "Setting up…" : "Set up work-scope call"}
-    </button>
+    <div className="mt-3">
+      {state === "open" ? (
+        <Link
+          href={`/app/bookings/call?id=${booking.id}`}
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#c96c83] py-2.5 text-sm font-bold text-white"
+        >
+          <Video className="size-4" aria-hidden />
+          Join video call
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setPicking((v) => !v)}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#c96c83]/40 py-2.5 text-sm font-semibold text-[#c96c83]"
+        >
+          <Video className="size-4" aria-hidden />
+          {state === "waiting" ? `Video call ${callTimeLabel(meeting)} · change` : "Schedule a work-scope call"}
+        </button>
+      )}
+      {picking ? (
+        <CallTimeForm
+          className="mt-3 rounded-xl bg-[#f7f4ef] p-3"
+          startsAt={booking.starts_at}
+          pending={start.isPending || move.isPending}
+          error={error}
+          submitLabel={state === "none" ? "Set call time" : "Move call"}
+          onSubmit={save}
+        />
+      ) : null}
+    </div>
   )
 }
 

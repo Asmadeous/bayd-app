@@ -1,0 +1,10 @@
+<% if AppLinks.any_live? -%>
+
+Get the BAYD app to track your technician, chat and rebook:
+<% if AppLinks::APP_STORE[:live] -%>
+iPhone: <%= AppLinks::APP_STORE[:url] %>
+<% end -%>
+<% if AppLinks::GOOGLE_PLAY[:live] -%>
+Android: <%= AppLinks::GOOGLE_PLAY[:url] %>
+<% end -%>
+<% end -%>

@@ -30,4 +30,16 @@ class MagicLinkMailer < ApplicationMailer
 
     mail(to: user.email, subject: "Reset your Beauty @ Your Door password")
   end
+
+  # A new hire's first email: their staff sign-in email and a link to set a
+  # password (the reset flow, with a longer-lived token). Sent to the address
+  # they applied with, since their company mailbox may not be set up yet.
+  def staff_welcome(user, raw_token, to:)
+    @user = user
+    @reset_url = "#{ENV.fetch('APP_URL', 'http://localhost:3001')}/reset-password?token=#{raw_token}"
+    @expires_in_days = (StaffOnboarding::WELCOME_LINK_TTL / 1.day).to_i
+    @sign_in_url = "#{ENV.fetch('APP_URL', 'http://localhost:3001')}/signin"
+
+    mail(to: to, subject: "Welcome to the Beauty @ Your Door team")
+  end
 end

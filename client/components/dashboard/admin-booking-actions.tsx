@@ -3,6 +3,7 @@
 import { useState } from "react"
 
 import { useToast } from "@/components/bayd-toast-provider"
+import { CollectPaymentButton } from "@/components/dashboard/collect-payment-button"
 import { ReassignControl } from "@/components/dashboard/reassign-control"
 import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
 import {
@@ -30,8 +31,9 @@ import { useUpdateBooking } from "@/lib/hooks/use-admin"
 import type { Booking } from "@/lib/hooks/use-bookings"
 
 // Everything an admin can do to one booking: reassign, reschedule, start,
-// complete, and cancel with a recorded reason. Used on the bookings list and in
-// the calendar's detail sheet. There is no delete: bookings are only cancelled.
+// complete, collect payment, and cancel with a recorded reason. Used on the
+// bookings list and in the calendar's detail sheet. There is no delete:
+// bookings are only cancelled.
 export function AdminBookingActions({ booking }: { booking: Booking }) {
   const { toast } = useToast()
   const update = useUpdateBooking()
@@ -98,6 +100,7 @@ export function AdminBookingActions({ booking }: { booking: Booking }) {
           </AlertDialogContent>
         </AlertDialog>
       )}
+      <CollectPaymentButton booking={booking} />
       {open && (
         <Button disabled={update.isPending} onClick={() => setCancelOpen(true)} size="xs" variant="destructive">
           Cancel

@@ -1,0 +1,14 @@
+Welcome to the team<%= @user.first_name.present? ? ", #{@user.first_name}" : "" %>!
+
+Your Beauty @ Your Door staff account is ready. You'll sign in with:
+
+<%= @user.email %>
+
+First, choose your password. This link works once and expires in <%= @expires_in_days %> days:
+
+<%= @reset_url %>
+
+Then sign in to the BAYD Staff app on your phone to see your jobs. You'll get a separate invite
+to install it. You can also sign in on the web at <%= @sign_in_url %>
+
+If the link has expired, use "Forgot password" on the sign-in page with the email above.

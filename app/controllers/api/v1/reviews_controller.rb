@@ -4,10 +4,12 @@ module Api
       skip_before_action :authenticate_user!, only: :index
 
       def index
-        scope = Review.approved.includes(:user, :employee_profile)
+        scope = Review.approved.includes(:user, { employee_profile: :user }, { booking: :service })
         scope = scope.where(employee_profile_id: params[:employee_id]) if params[:employee_id]
-        records, meta = paginate(scope.order(created_at: :desc))
-        render json: { data: ReviewSerializer.render_as_hash(records), pagination: meta }
+        scope = scope.where(featured: true) if params[:featured] == "true"
+        # Public: featured first, then newest. First name + last initial only.
+        records, meta = paginate(scope.order(featured: :desc, created_at: :desc))
+        render json: { data: PublicReviewSerializer.render_as_hash(records), pagination: meta }
       end
 
       def create

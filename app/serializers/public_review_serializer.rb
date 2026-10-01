@@ -8,4 +8,12 @@ class PublicReviewSerializer < Blueprinter::Base
     last_initial = review.user&.last_name.to_s.strip.first
     [ first, (last_initial ? "#{last_initial}." : nil) ].compact.join(" ").presence || "Anonymous"
   end
+
+  field :technician_name do |review|
+    review.employee_profile&.user&.first_name
+  end
+
+  field :service_name do |review|
+    review.booking&.service&.name
+  end
 end

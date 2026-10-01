@@ -22,6 +22,7 @@ const toneClasses: Record<StatusTone, string> = {
 const statusToneMap: Record<string, StatusTone> = {
   active: "green",
   approved: "green",
+  featured: "rose",
   assigned: "green",
   booked: "green",
   completed: "green",

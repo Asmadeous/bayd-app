@@ -26,6 +26,11 @@ module Api
           JobApplication.find(params[:id]).update!(status: params[:status])
           head :ok
         end
+
+        def update_contact
+          ContactMessage.find(params[:id]).update!(status: params[:status])
+          head :ok
+        end
       end
     end
   end

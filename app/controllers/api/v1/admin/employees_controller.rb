@@ -7,11 +7,11 @@ module Api
 
         def index
           records, meta = paginate(EmployeeProfile.includes(:user, :partner, :services, :service_areas))
-          render json: { data: EmployeeProfileSerializer.render_as_hash(records), pagination: meta }
+          render json: { data: EmployeeProfileSerializer.render_as_hash(records, view: :full), pagination: meta }
         end
 
         def show
-          render json: EmployeeProfileSerializer.render_as_hash(find_profile)
+          render json: EmployeeProfileSerializer.render_as_hash(find_profile, view: :full)
         end
 
         # Create a staff member: an employee-role User + their EmployeeProfile.
@@ -27,7 +27,7 @@ module Api
             profile = EmployeeProfile.create!(employee_params.merge(user: user))
             profile.photo.attach(photo_param) if photo_param.present?
           end
-          render json: EmployeeProfileSerializer.render_as_hash(profile), status: :created
+          render json: EmployeeProfileSerializer.render_as_hash(profile, view: :full), status: :created
         end
 
         def update
@@ -39,7 +39,7 @@ module Api
             profile.update!(employee_params)
             profile.photo.attach(photo_param) if photo_param.present?
           end
-          render json: EmployeeProfileSerializer.render_as_hash(profile)
+          render json: EmployeeProfileSerializer.render_as_hash(profile, view: :full)
         end
 
         # Remove a staff member (profile + login). Blocked if they have bookings.

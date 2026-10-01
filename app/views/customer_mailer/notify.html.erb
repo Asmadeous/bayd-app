@@ -7,3 +7,5 @@
 <% if @action_url.present? %>
   <a href="<%= @action_url %>" class="btn"><%= @notification.metadata["cta"] || "View details" %></a>
 <% end %>
+
+<%= render "shared/get_the_app" %>

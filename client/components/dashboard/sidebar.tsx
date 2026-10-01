@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Clock3,
   FileText,
+  Flag,
   Fuel,
   Gift,
   Handshake,
@@ -40,18 +41,20 @@ import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useConfirm } from "@/components/confirm-provider"
+import { useNavBadges, type NavBadge } from "@/lib/hooks/use-nav-badges"
 
-type NavItem = { label: string; href: string; icon: LucideIcon }
+type NavItem = { label: string; href: string; icon: LucideIcon; badge?: NavBadge }
 type NavGroup = { group: string; items: NavItem[] }
 
 const customerNav: NavItem[] = [
   { label: "Overview", href: "/dashboard/customer", icon: Home },
   { label: "Book", href: "/dashboard/customer/book", icon: CalendarDays },
   { label: "Shop", href: "/dashboard/customer/shop", icon: ShoppingBag },
+  { label: "Bookings", href: "/dashboard/customer/bookings", icon: Clock3 },
   { label: "Calendar", href: "/dashboard/customer/calendar", icon: CalendarDays },
-  // { label: "Bookings", href: "/dashboard/customer/bookings", icon: CalendarDays },
   { label: "Subscriptions", href: "/dashboard/customer/subscriptions", icon: Repeat2 },
-  { label: "Notifications", href: "/dashboard/customer/notifications", icon: Bell },
+  { label: "Messages", href: "/dashboard/customer/messages", icon: MessageCircle, badge: "messages" },
+  { label: "Notifications", href: "/dashboard/customer/notifications", icon: Bell, badge: "notifications" },
   { label: "Addresses", href: "/dashboard/customer/addresses", icon: MapPin },
   { label: "Loyalty", href: "/dashboard/customer/loyalty", icon: Star },
   { label: "Gift Cards", href: "/dashboard/customer/gift-cards", icon: Gift },
@@ -63,6 +66,9 @@ const customerNav: NavItem[] = [
 const employeeNav: NavItem[] = [
   { label: "Schedule", href: "/dashboard/employee", icon: CalendarDays },
   { label: "Shifts", href: "/dashboard/employee/shifts", icon: Clock3 },
+  { label: "Earnings", href: "/dashboard/employee/earnings", icon: ReceiptText },
+  { label: "Messages", href: "/dashboard/employee/messages", icon: MessageCircle, badge: "messages" },
+  { label: "Notifications", href: "/dashboard/employee/notifications", icon: Bell, badge: "notifications" },
   { label: "Gift Cards", href: "/dashboard/employee/gift-cards", icon: Gift },
   { label: "Profile", href: "/dashboard/employee/profile", icon: User },
   { label: "Reviews", href: "/dashboard/employee/reviews", icon: Star },
@@ -73,6 +79,7 @@ const adminNavGroups: NavGroup[] = [
     group: "Dashboard",
     items: [
       { label: "Overview", href: "/dashboard/admin", icon: Home },
+      { label: "Notifications", href: "/dashboard/admin/notifications", icon: Bell, badge: "notifications" },
       { label: "Analytics", href: "/dashboard/admin/analytics", icon: BarChart3 },
       { label: "Calendar", href: "/dashboard/admin/calendar", icon: CalendarDays },
     ],
@@ -84,7 +91,9 @@ const adminNavGroups: NavGroup[] = [
       { label: "Employees", href: "/dashboard/admin/employees", icon: Users },
       { label: "Partners", href: "/dashboard/admin/partners", icon: Handshake },
       { label: "Jobs", href: "/dashboard/admin/jobs", icon: BriefcaseBusiness },
+      { label: "Messages", href: "/dashboard/admin/messages", icon: MessageCircle, badge: "messages" },
       { label: "Support Chat", href: "/dashboard/admin/support", icon: MessageCircle },
+      { label: "Chat Reports", href: "/dashboard/admin/chat-reports", icon: Flag, badge: "chatReports" },
     ],
   },
   {
@@ -124,6 +133,7 @@ const adminNavGroups: NavGroup[] = [
     group: "Content",
     items: [
       { label: "Blog Posts", href: "/dashboard/admin/blog", icon: FileText },
+      { label: "Blog Comments", href: "/dashboard/admin/blog-comments", icon: MessageCircle },
       { label: "Gallery", href: "/dashboard/admin/gallery", icon: Images },
       { label: "Reviews", href: "/dashboard/admin/reviews", icon: Star },
       { label: "Newsletter", href: "/dashboard/admin/newsletter", icon: Mail },
@@ -148,6 +158,7 @@ export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false)
 
   const isAdmin = user?.role === "admin"
+  const badges = useNavBadges(isAdmin)
   const roleLabel =
     user?.role === "admin" ? "Admin" : user?.role === "employee" ? "Employee" : "Customer"
   const fullName = user?.first_name
@@ -259,7 +270,7 @@ export function Sidebar() {
                 </p>
                 <div className="space-y-1">
                   {group.items.map((item) => (
-                    <NavLink item={item} key={item.href} onNavigate={closeMobileNav} pathname={pathname} />
+                    <NavLink badges={badges} item={item} key={item.href} onNavigate={closeMobileNav} pathname={pathname} />
                   ))}
                 </div>
               </div>
@@ -267,7 +278,7 @@ export function Sidebar() {
           ) : (
             <div className="space-y-1">
               {(user?.role === "employee" ? employeeNav : customerNav).map((item) => (
-                <NavLink item={item} key={item.href} onNavigate={closeMobileNav} pathname={pathname} />
+                <NavLink badges={badges} item={item} key={item.href} onNavigate={closeMobileNav} pathname={pathname} />
               ))}
             </div>
           )}
@@ -289,16 +300,19 @@ export function Sidebar() {
 }
 
 function NavLink({
+  badges,
   item,
   onNavigate,
   pathname,
 }: {
+  badges: Record<NavBadge, number>
   item: NavItem
   onNavigate: () => void
   pathname: string
 }) {
   const active = pathname === item.href
   const Icon = item.icon
+  const count = item.badge ? badges[item.badge] : 0
 
   return (
     <Link
@@ -316,6 +330,16 @@ function NavLink({
         className={cn("size-4 shrink-0", active ? "text-white" : "text-[#f0c8d3]/70 group-hover:text-[#f0c8d3]")}
       />
       <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      {count > 0 ? (
+        <span
+          className={cn(
+            "min-w-5 rounded-full px-1.5 py-0.5 text-center text-[0.68rem] font-bold",
+            active ? "bg-white text-[#c96c83]" : "bg-[#c96c83] text-white",
+          )}
+        >
+          {count > 99 ? "99+" : count}
+        </span>
+      ) : null}
       {active ? <ChevronRight aria-hidden="true" className="size-3.5 shrink-0 text-white/75" /> : null}
     </Link>
   )

@@ -10,6 +10,7 @@ declare module "lucide-react" {
   export const BadgeCheck: LucideIcon
   export const BarChart3: LucideIcon
   export const Bell: LucideIcon
+  export const BellRing: LucideIcon
   export const Briefcase: LucideIcon
   export const BriefcaseBusiness: LucideIcon
   export const CalendarClock: LucideIcon
@@ -30,6 +31,7 @@ declare module "lucide-react" {
   export const EllipsisVertical: LucideIcon
   export const Expand: LucideIcon
   export const FileText: LucideIcon
+  export const ExternalLink: LucideIcon
   export const Flag: LucideIcon
   export const Fuel: LucideIcon
   export const Gift: LucideIcon

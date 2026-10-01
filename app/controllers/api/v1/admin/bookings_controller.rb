@@ -93,14 +93,29 @@ module Api
         # Staff-triggered collection for an agreed amount (e.g. negotiated
         # out-of-area travel fee, or after-service balance). Auto-charges an
         # existing customer's card, or returns a payment link for a new one.
+        #
+        # mode=link always makes a hosted checkout link (notify=true also sends it
+        # to the customer); mode=charge only ever charges the saved card. With no
+        # mode it keeps the original behaviour: charge a saved card, else a link.
         def payment_link
           booking = Booking.find(params[:id])
           amount  = params[:amount].present? ? params[:amount].to_d : booking.outstanding_balance
-          result  = BookingPaymentService.new(booking).collect(
-            amount: amount, tip: params[:tip].to_d, gift_card_code: params[:gift_card_code]
-          )
+          service = BookingPaymentService.new(booking)
+          result  =
+            case params[:mode]
+            when "link" then service.checkout_link(amount: amount, tip: params[:tip].to_d)
+            when "charge"
+              unless booking.user&.card_on_file?
+                return render json: { error: "This client has no card on file. Send a payment link instead." },
+                              status: :unprocessable_entity
+              end
+              service.collect(amount: amount, tip: params[:tip].to_d)
+            else
+              service.collect(amount: amount, tip: params[:tip].to_d, gift_card_code: params[:gift_card_code])
+            end
 
           if result.success?
+            send_link_to_customer(booking, result.url, amount) if result.mode == :link && params[:notify].to_s == "true"
             render json: { mode: result.mode.to_s, url: result.url }
           else
             render json: { error: result.error }, status: :unprocessable_entity
@@ -108,6 +123,20 @@ module Api
         end
 
         private
+
+        # In-app, push and SMS (the SMS carries the link) so the client can pay
+        # from their phone.
+        def send_link_to_customer(booking, url, amount)
+          return unless booking.user
+
+          when_str = booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%b %-d")
+          NotificationService.deliver(
+            user: booking.user, kind: :payment_requested, booking: booking, action_url: url,
+            title: "Payment requested",
+            body: "#{ActiveSupport::NumberHelper.number_to_currency(amount)} for your #{booking.service&.name || 'appointment'} on #{when_str}. Tap to pay securely.",
+            metadata: { cta: "Pay now" }
+          )
+        end
 
         # Live GPS if fresh, else the tech's base location.
         def staff_position(ep)

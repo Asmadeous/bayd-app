@@ -25,6 +25,29 @@ module Api
           head :no_content
         end
 
+        # Hire the applicant: creates their staff account and emails them a link
+        # to set a password. The admin confirms the details first (staff sign in
+        # with a company email, not the one they applied with).
+        def hire
+          application = find_application
+          hire = params.require(:hire).permit(:first_name, :last_name, :email, :phone, :title)
+          if hire[:first_name].blank? || hire[:email].blank?
+            return render json: { error: "First name and sign-in email are required." }, status: :unprocessable_entity
+          end
+
+          result = StaffOnboarding.hire!(
+            application,
+            first_name: hire[:first_name], last_name: hire[:last_name], email: hire[:email],
+            phone: hire[:phone], title: hire[:title]
+          )
+
+          if result.success?
+            render json: { employee_profile_id: result.profile.id, email: result.profile.user.email }, status: :created
+          else
+            render json: { error: result.error }, status: :unprocessable_entity
+          end
+        end
+
         # Secure, scan-gated, admin-only document download. Forces an attachment
         # so the file is never rendered/executed in the browser, and never
         # exposes a public Active Storage blob URL.

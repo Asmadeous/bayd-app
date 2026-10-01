@@ -70,6 +70,12 @@ Rails.application.routes.draw do
       # Card on file (Square) — single card per customer, for booking/subscription auto-charge
       resource :payment_method, only: %i[show create destroy], controller: "payment_methods"
 
+      # Browser notifications (web push) for the website
+      get    "web_push/key",           to: "web_push_subscriptions#key"
+      post   "web_push/subscriptions", to: "web_push_subscriptions#create"
+      delete "web_push/subscriptions", to: "web_push_subscriptions#destroy"
+      post   "web_push/test",          to: "web_push_subscriptions#test"
+
       # Notifications
       resources :notifications, only: :index do
         member     { post :read }
@@ -140,6 +146,7 @@ Rails.application.routes.draw do
       # Newsletter
       post "newsletter/subscribe",   to: "newsletter_subscribers#create"
       get  "newsletter/unsubscribe", to: "newsletter_subscribers#unsubscribe"
+      post "newsletter/unsubscribe", to: "newsletter_subscribers#unsubscribe"
 
       # Inbound forms (public)
       post "contact",   to: "inbound_forms#contact"
@@ -220,7 +227,7 @@ Rails.application.routes.draw do
       delete "device_tokens", to: "device_tokens#destroy"
 
       # Work-scope video calls (customer ↔ staff)
-      resources :meetings, only: %i[show] do
+      resources :meetings, only: %i[show update] do
         member do
           post :complete
           post :cancel
@@ -259,7 +266,10 @@ Rails.application.routes.draw do
         # Careers
         resources :job_postings, only: %i[index show create update destroy]
         resources :job_applications, only: %i[index show update destroy] do
-          member { get "documents/:doc_id", action: :document, as: :document }
+          member do
+            get "documents/:doc_id", action: :document, as: :document
+            post :hire
+          end
         end
 
         resources :subscriptions, only: %i[index show update destroy] do
@@ -345,12 +355,21 @@ Rails.application.routes.draw do
             member { post :approve }
           end
         end
+        resources :blog_comments, only: %i[index destroy] do
+          member { post :approve }
+        end
 
         # Gallery
         resources :gallery_items, only: %i[index show create update destroy]
 
         # Newsletter
         resources :newsletter_subscribers, only: %i[index destroy]
+        resources :newsletter_campaigns, only: %i[index create] do
+          collection { post :preview }
+        end
+
+        # Chat reports (Report in the apps' chat)
+        resources :chat_reports, only: %i[index show update]
 
         # Inquiries
         get   "inquiries/franchise",     to: "inquiries#franchise"
@@ -358,6 +377,7 @@ Rails.application.routes.draw do
         get   "inquiries/contacts",      to: "inquiries#contacts"
         patch "inquiries/franchise/:id", to: "inquiries#update_franchise"
         patch "inquiries/jobs/:id",      to: "inquiries#update_job"
+        patch "inquiries/contacts/:id",  to: "inquiries#update_contact"
 
         # Website support chat inbox
         resources :support_threads, only: %i[index show update] do

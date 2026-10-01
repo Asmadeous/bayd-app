@@ -28,7 +28,9 @@ class Notification < ApplicationRecord
     booking_overdue: "booking_overdue",              # tech/admin flag: past grace, no clock-in (sweep)
     support_message: "support_message",              # admin: a website visitor wrote in the support chat
     booking_missed: "booking_missed",                # customer: tech missed, reschedule offered
-    chat_reported: "chat_reported"                   # admin: a user reported someone in chat
+    chat_reported: "chat_reported",                  # admin: a user reported someone in chat
+    payment_pending: "payment_pending",              # admin: a pay-now booking's link is still unpaid
+    payment_requested: "payment_requested"           # customer: admin sent a payment link
   }, prefix: true
 
   validates :kind, :title, presence: true

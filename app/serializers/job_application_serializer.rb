@@ -1,7 +1,7 @@
 class JobApplicationSerializer < Blueprinter::Base
   identifier :id
   fields :name, :email, :phone, :role_applied_for, :message,
-         :status, :scan_status, :created_at
+         :status, :scan_status, :created_at, :employee_profile_id
 
   field :job_title do |app|
     app.job_posting&.title || app.role_applied_for

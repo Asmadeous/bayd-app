@@ -16,6 +16,7 @@ import {
   ToolbarSection,
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
+import { HireApplicantButton } from "@/components/dashboard/hire-applicant-button"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import {
@@ -489,22 +490,25 @@ function ApplicationsTab() {
                   <p className="text-xs text-[#5f6268] mt-0.5">{a.email}{a.phone ? ` · ${a.phone}` : ""} · {new Date(a.created_at).toLocaleDateString("en-CA")}</p>
                   {a.message && <p className="text-sm text-[#101217] mt-1.5">{a.message}</p>}
                 </div>
-                <Select
-                  disabled={updateStatus.isPending}
-                  onValueChange={(value) => updateApplicationStatus(a.id, value ?? a.status)}
-                  value={a.status}
-                >
-                  <SelectTrigger className="h-8 w-32 text-xs capitalize">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {APP_STATUSES.map((status) => (
-                      <SelectItem className="capitalize" key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <HireApplicantButton application={a} />
+                  <Select
+                    disabled={updateStatus.isPending}
+                    onValueChange={(value) => updateApplicationStatus(a.id, value ?? a.status)}
+                    value={a.status}
+                  >
+                    <SelectTrigger className="h-8 w-32 text-xs capitalize">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {APP_STATUSES.map((status) => (
+                        <SelectItem className="capitalize" key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               {a.documents.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2">

@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 
+import { AndroidAppBanner } from "@/components/marketing/app-download";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,7 @@ export function SiteHeader({ cartCount = 0, onOpenCart }: SiteHeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 bg-[#f4f1eb]/90 backdrop-blur-xl">
+      <AndroidAppBanner />
       <div className="mx-auto flex h-16 w-full max-w-[1760px] items-center justify-between px-4 sm:px-6 lg:px-8 2xl:px-10">
         <Link
           href="/"

@@ -105,17 +105,29 @@ module Api
 
         user = User.find_by(google_uid: google_uid) || User.find_by(email: email)
         if user
-          user.update!(google_uid: google_uid) if user.google_uid.blank?
+          user.update!(google_profile_gaps(user, data).merge(google_uid: user.google_uid.presence || google_uid))
         else
           user = User.create!(
             email:      email,
             first_name: data["given_name"],
             last_name:  data["family_name"],
+            avatar_url: data["picture"],
             google_uid: google_uid,
             role:       :customer
           )
         end
         user
+      end
+
+      # Google fills in what the account is missing (name, photo), never what
+      # the customer already set themselves. Phone and service address aren't
+      # available from Google: the website asks for them right after sign-in.
+      def google_profile_gaps(user, data)
+        {
+          first_name: user.first_name.presence || data["given_name"],
+          last_name:  user.last_name.presence || data["family_name"],
+          avatar_url: user.avatar.attached? || user.avatar_url.present? ? user.avatar_url : data["picture"]
+        }.compact
       end
 
       def generate_token(user)

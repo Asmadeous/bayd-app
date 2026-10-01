@@ -42,3 +42,32 @@ RSpec.describe "Google OAuth", type: :request do
     end
   end
 end
+
+# What a Google sign-in saves to the account: name and photo from Google, and
+# never overwriting what the customer already set.
+RSpec.describe Api::V1::GoogleAuthController do
+  subject(:controller) { described_class.new }
+
+  let(:google) do
+    { "sub" => "g-123", "email" => "kim@example.com", "given_name" => "Kim", "family_name" => "Lee",
+      "picture" => "https://lh3.googleusercontent.com/a/photo" }
+  end
+
+  it "creates a customer with Google's name and photo" do
+    user = controller.send(:find_or_create_from_google, google)
+
+    expect(user).to have_attributes(first_name: "Kim", last_name: "Lee", google_uid: "g-123",
+                                     avatar_url: "https://lh3.googleusercontent.com/a/photo")
+    expect(user).to be_customer
+  end
+
+  it "fills gaps on an existing account without overwriting it" do
+    existing = User.create!(email: "kim@example.com", first_name: "Kimberly", role: :customer)
+
+    user = controller.send(:find_or_create_from_google, google)
+
+    expect(user.id).to eq(existing.id)
+    expect(user).to have_attributes(first_name: "Kimberly", last_name: "Lee", google_uid: "g-123",
+                                     avatar_url: "https://lh3.googleusercontent.com/a/photo")
+  end
+end

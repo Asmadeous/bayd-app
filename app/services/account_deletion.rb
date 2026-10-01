@@ -49,6 +49,7 @@ class AccountDeletion
     Subscription.where(user: @user).update_all(address_id: nil)
     @user.addresses.destroy_all
     @user.device_tokens.destroy_all
+    @user.web_push_subscriptions.destroy_all
     @user.webauthn_credentials.destroy_all
     @user.magic_link_tokens.destroy_all
     @user.notifications.destroy_all

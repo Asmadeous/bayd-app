@@ -33,6 +33,9 @@ class NotificationService
     PushService.push(user: user, title: title, body: body.to_s,
                      data: { kind: kind, booking_id: booking&.id, path: push_path(user, booking) }.compact)
 
+    # Browser notifications (the website's push), for browsers that allowed it.
+    WebPushJob.perform_later(user.id, title, body.to_s, web_path(user, action_url)) if user.web_push_subscriptions.exists?
+
     # SMS — text the confirmation/reminder to the user's phone (customer or staff).
     # Queued + best-effort: no-op when the user has no phone or Infobip is unset.
     NotificationSmsJob.perform_later(notification.id)
@@ -41,6 +44,19 @@ class NotificationService
   rescue => e
     Rails.logger.error("[NotificationService] #{kind} failed for user #{user.id}: #{e.message}")
     notification
+  end
+
+  # Where clicking a browser notification opens: the notification's own link
+  # (a page on this site, or an outside one like a call room or payment page),
+  # else the person's dashboard notifications.
+  def self.web_path(user, action_url)
+    url = action_url.to_s
+    site = ENV.fetch("APP_URL", "http://localhost:3001")
+    return url.delete_prefix(site).presence || "/" if url.start_with?(site)
+    return url if url.start_with?("https://") || (url.start_with?("/") && !url.start_with?("//"))
+
+    role = user.customer? ? "customer" : user.admin? ? "admin" : "employee"
+    "/dashboard/#{role}/notifications"
   end
 
   # Where tapping the push opens in the app: a booking notification opens that

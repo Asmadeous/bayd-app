@@ -25,6 +25,7 @@ export function usePagedList<T, P extends Page<T> = Page<T>>(
     items: query.data?.pages.flatMap((p) => p.data) ?? [],
     first: query.data?.pages[0],
     isLoading: query.isLoading,
+    isError: query.isError,
     hasMore: !!query.hasNextPage,
     loadingMore: query.isFetchingNextPage,
     loadMore: () => query.fetchNextPage(),

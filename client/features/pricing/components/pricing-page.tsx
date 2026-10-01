@@ -18,13 +18,29 @@ const bookingNotes = [
   "Final timing can vary by service mix, travel needs, and group size.",
 ];
 
-export function PricingPage({ categories }: { categories: PriceCategory[] }) {
+// `loading` shows placeholders instead of prices while the live menu loads;
+// `stale` flags the built-in menu shown when the live one couldn't load.
+export function PricingPage({
+  categories,
+  loading = false,
+  stale = false,
+}: {
+  categories: PriceCategory[]
+  loading?: boolean
+  stale?: boolean
+}) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SiteHeader />
       <main>
-        <PricingHero categories={categories} />
-        <PriceDirectory categories={categories} />
+        <PricingHero categories={categories} loading={loading} />
+        {stale ? (
+          <p className="bg-[#fff5f6] px-4 py-3 text-center text-sm font-semibold text-[#8f3f4b]">
+            We couldn&apos;t load today&apos;s prices. The menu below may be out of date; your booking shows the
+            current price.
+          </p>
+        ) : null}
+        <PriceDirectory categories={categories} loading={loading} />
         <BookingStrip />
       </main>
       <SiteFooter />
@@ -32,7 +48,7 @@ export function PricingPage({ categories }: { categories: PriceCategory[] }) {
   );
 }
 
-function PricingHero({ categories }: { categories: PriceCategory[] }) {
+function PricingHero({ categories, loading }: { categories: PriceCategory[]; loading: boolean }) {
   return (
     <section className="overflow-hidden bg-[#f4f1eb] text-[#101217]">
       <div className="mx-auto grid w-full max-w-[1760px] gap-10 px-4 pb-14 pt-10 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:pb-20 lg:pt-16 2xl:px-10">
@@ -83,6 +99,15 @@ function PricingHero({ categories }: { categories: PriceCategory[] }) {
         </div>
 
         <div className="grid gap-4 self-end md:grid-cols-3">
+          {loading
+            ? [0, 1, 2].map((index) => (
+                <div
+                  aria-hidden="true"
+                  className={cn("min-h-56 animate-pulse border border-black/10 bg-white/60", index === 1 ? "md:-translate-y-8" : "")}
+                  key={index}
+                />
+              ))
+            : null}
           {categories.slice(0, 3).map((category, index) => (
             <ScrollReveal
               as="article"
@@ -140,7 +165,7 @@ function PricingHero({ categories }: { categories: PriceCategory[] }) {
   );
 }
 
-function PriceDirectory({ categories }: { categories: PriceCategory[] }) {
+function PriceDirectory({ categories, loading }: { categories: PriceCategory[]; loading: boolean }) {
   return (
     <section className="bg-[#f4f1eb] py-20 text-[#101217]" id="price-directory">
       <div className="mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8 2xl:px-10">
@@ -179,6 +204,11 @@ function PriceDirectory({ categories }: { categories: PriceCategory[] }) {
           </ScrollReveal>
 
           <div className="space-y-6">
+            {loading ? (
+              <p aria-live="polite" className="border border-black/10 bg-white/70 p-6 text-sm font-semibold text-[#5f6268]">
+                Loading today&apos;s prices...
+              </p>
+            ) : null}
             {categories.map((category, index) => {
               const groups = groupCategoryItems(category);
 

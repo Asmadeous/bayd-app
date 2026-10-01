@@ -16,8 +16,19 @@ import {
 import { EmptyState } from "@/components/dashboard/empty-state"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { useAdminReviews, useApproveReview } from "@/lib/hooks/use-admin"
+import { useAdminReviews, useApproveReview, useDeleteReview, useFeatureReview } from "@/lib/hooks/use-admin"
 import { adminReviewsSteps } from "@/lib/tours/admin-reviews-tour"
 
 function Stars({ rating }: { rating: number }) {
@@ -45,6 +56,8 @@ export default function AdminReviewsPage() {
     page,
   })
   const approveMutation = useApproveReview()
+  const featureMutation = useFeatureReview()
+  const deleteMutation = useDeleteReview()
   const reviews = data?.data ?? []
   const pagination = data?.pagination
 
@@ -68,6 +81,22 @@ export default function AdminReviewsPage() {
           variant: "error",
         })
       },
+    })
+  }
+
+  function toggleFeatured(id: number, featured: boolean) {
+    featureMutation.mutate(id, {
+      onSuccess: () => toast({ title: featured ? "Review unfeatured" : "Review featured", variant: "success" }),
+      onError: (error: unknown) =>
+        toast({ title: "Review not updated", description: getApiErrorMessage(error, "Please try again."), variant: "error" }),
+    })
+  }
+
+  function deleteReview(id: number) {
+    deleteMutation.mutate(id, {
+      onSuccess: () => toast({ title: "Review deleted", variant: "success" }),
+      onError: (error: unknown) =>
+        toast({ title: "Review not deleted", description: getApiErrorMessage(error, "Please try again."), variant: "error" }),
     })
   }
 
@@ -103,7 +132,7 @@ export default function AdminReviewsPage() {
         <div className="space-y-3" data-tour="admin-reviews-list">
           {reviews.map((review) => {
             const clientName = [review.user?.first_name, review.user?.last_name].filter(Boolean).join(" ") || "Anonymous"
-            const employeeName = [review.employee_profile?.user?.first_name, review.employee_profile?.user?.last_name].filter(Boolean).join(" ")
+            const employeeName = review.employee_profile?.name ?? ""
             return (
               <DashboardPanel key={review.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -115,6 +144,7 @@ export default function AdminReviewsPage() {
                         <span className="text-xs font-semibold text-[#5f6268]">to {employeeName}</span>
                       ) : null}
                       {review.approved ? <StatusBadgeFor status="approved" /> : <StatusBadgeFor status="pending" />}
+                      {review.featured ? <StatusBadgeFor status="featured" /> : null}
                     </div>
                     {review.body ? (
                       <p className="mt-3 text-sm leading-6 text-[#101217]">{review.body}</p>
@@ -123,16 +153,46 @@ export default function AdminReviewsPage() {
                       {formatDate(review.created_at)}
                     </p>
                   </div>
-                  {!review.approved ? (
-                    <Button
-                      disabled={approveMutation.isPending}
-                      onClick={() => approveReview(review.id)}
-                      size="xs"
-                      style={{ background: "#5a9e5a", border: "none", color: "#fff" }}
-                    >
-                      Approve
-                    </Button>
-                  ) : null}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {!review.approved ? (
+                      <Button
+                        disabled={approveMutation.isPending}
+                        onClick={() => approveReview(review.id)}
+                        size="xs"
+                        style={{ background: "#5a9e5a", border: "none", color: "#fff" }}
+                      >
+                        Approve
+                      </Button>
+                    ) : (
+                      <Button
+                        disabled={featureMutation.isPending}
+                        onClick={() => toggleFeatured(review.id, review.featured)}
+                        size="xs"
+                        variant="outline"
+                      >
+                        {review.featured ? "Unfeature" : "Feature"}
+                      </Button>
+                    )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button disabled={deleteMutation.isPending} size="xs" variant="outline">
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this review?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            It&apos;s removed from the site and the technician&apos;s rating. This can&apos;t be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteReview(review.id)}>Delete review</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </DashboardPanel>
             )

@@ -12,6 +12,12 @@ function roleDashboard(role: string) {
   return "/dashboard/customer";
 }
 
+async function needsProfile(user: AuthUser) {
+  if (!user.phone) return true;
+  const { data } = await api.get<unknown[]>("/addresses");
+  return data.length === 0;
+}
+
 // Landing page for the Google OAuth backend-redirect flow. The API sends the
 // browser here as /auth/callback?token=<jwt>. We stash the token, fetch the
 // user with it, then route to the right dashboard.
@@ -31,8 +37,14 @@ export function GoogleCallback() {
 
     api
       .get<AuthUser>("/auth/me")
-      .then((r) => {
+      .then(async (r) => {
         useAuthStore.getState().setAuth(r.data, token);
+        // Google doesn't give us a phone or an address, so a new customer
+        // finishes their account before reaching the dashboard.
+        if (r.data.role === "customer" && (await needsProfile(r.data))) {
+          router.replace("/complete-profile?next=/dashboard/customer");
+          return;
+        }
         router.replace(roleDashboard(r.data.role));
       })
       .catch(() => {

@@ -21,7 +21,8 @@ import { ReviewDialog } from "@/components/dashboard/review-dialog"
 import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
-import { useBookings, type Booking } from "@/lib/hooks/use-bookings"
+import { useBookingsList, type Booking } from "@/lib/hooks/use-bookings"
+import { BookingDetailsSheet } from "@/components/dashboard/booking-details-sheet"
 import { CancelBookingButton } from "@/components/dashboard/cancel-booking-button"
 import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
 import { MessageTechButton } from "@/components/dashboard/message-tech-button"
@@ -53,9 +54,7 @@ function destinationOf(b: Booking): { lat: number; lng: number } | null {
   return { lat: Number(b.service_latitude), lng: Number(b.service_longitude) }
 }
 
-const ALL_STATUSES: Booking["status"][] = [
-  "pending", "confirmed", "in_progress", "completed", "cancelled", "no_show", "missed",
-]
+type BookingsTab = "upcoming" | "past"
 
 type BookingsView = "list" | "calendar"
 
@@ -63,25 +62,51 @@ export default function CustomerBookingsPage() {
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [page, setPage] = useState(1)
-  const [filter, setFilter] = useState<Booking["status"] | "all">("all")
+  const [tab, setTab] = useState<BookingsTab>(searchParams.get("tab") === "past" ? "past" : "upcoming")
   const [view, setView] = useState<BookingsView>(
     searchParams.get("view") === "calendar" ? "calendar" : "list",
   )
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null)
-  const { data, isError, isLoading } = useBookings(page)
+  const [detailsId, setDetailsId] = useState<number | null>(null)
+  // Upcoming soonest first, past (history) latest first: split on the server so
+  // paging can't hide an upcoming appointment behind older ones.
+  const upcoming = useBookingsList("upcoming")
+  const past = useBookingsList("past", { enabled: tab === "past" })
+  const list = tab === "upcoming" ? upcoming : past
+  const bookings = list.items
+  const isLoading = list.isLoading
+  const isError = upcoming.isError || past.isError
+  const details = [...upcoming.items, ...past.items].find((b) => b.id === detailsId) ?? null
 
-  const bookings = data?.data ?? []
-  const pagination = data?.pagination
-
-  const filtered =
-    filter === "all" ? bookings : bookings.filter((b) => b.status === filter)
+  function bookingActions(b: Booking) {
+    if (b.status === "pending" || b.status === "confirmed") {
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          <MessageTechButton booking={b} />
+          <MeetingButton booking={b} />
+          <RescheduleDialog booking={b} />
+          <CancelBookingButton booking={b} />
+        </div>
+      )
+    }
+    if (b.status === "completed") {
+      return b.has_review ? (
+        <StatusBadgeFor status="reviewed" />
+      ) : (
+        <Button
+          size="xs"
+          onClick={() => setReviewBooking(b)}
+          style={{ background: "#c96c83", border: "none", color: "#fff" }}
+        >
+          Leave a review
+        </Button>
+      )
+    }
+    return null
+  }
 
   function handleViewChange(nextView: BookingsView) {
     setView(nextView)
-    if (nextView === "calendar") {
-      setPage(1)
-    }
     router.replace(
       nextView === "calendar"
         ? "/dashboard/customer/bookings?view=calendar"
@@ -129,7 +154,7 @@ export default function CustomerBookingsPage() {
           </SegmentedControl>
         </ToolbarSection>
         <ToolbarSection className="text-sm font-semibold text-[#5f6268]">
-          {filtered.length} bookings
+          {view === "list" ? `${bookings.length}${list.hasMore ? "+" : ""} ${tab === "upcoming" ? "upcoming" : "past"}` : null}
         </ToolbarSection>
       </DashboardToolbar>
 
@@ -137,13 +162,12 @@ export default function CustomerBookingsPage() {
         <DashboardToolbar data-tour="customer-bookings-filters">
           <ToolbarSection>
             <SegmentedControl>
-              {(["all", ...ALL_STATUSES] as const).map((status) => (
-                <SegmentButton
-                  active={filter === status}
-                  key={status}
-                  onClick={() => setFilter(status)}
-                >
-                  {status.replace("_", " ")}
+              {([
+                { value: "upcoming", label: "Upcoming" },
+                { value: "past", label: "Past & cancelled" },
+              ] as const).map((item) => (
+                <SegmentButton active={tab === item.value} key={item.value} onClick={() => setTab(item.value)}>
+                  {item.label}
                 </SegmentButton>
               ))}
             </SegmentedControl>
@@ -160,39 +184,25 @@ export default function CustomerBookingsPage() {
         <CustomerBookingCalendar />
       ) : (
         <>
-          {filtered.length === 0 ? (
+          {bookings.length === 0 ? (
             <EmptyState
               icon={CalendarDays}
-              title="No bookings found"
-              description="Try another filter or book a new appointment."
+              title={tab === "upcoming" ? "No upcoming appointments" : "No past appointments yet"}
+              description={tab === "upcoming" ? "Book an appointment and it will show here." : "Your appointment history will appear here."}
             />
           ) : (
             <div className="space-y-3">
-              {filtered.map((b) => (
+              {bookings.map((b) => (
                 <div key={b.id}>
                 <BookingCard
                   booking={b}
                   actions={
-                    b.status === "pending" || b.status === "confirmed" ? (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <MessageTechButton booking={b} />
-                        <MeetingButton booking={b} />
-                        <RescheduleDialog booking={b} />
-                        <CancelBookingButton booking={b} />
-                      </div>
-                    ) : b.status === "completed" ? (
-                      b.has_review ? (
-                        <StatusBadgeFor status="reviewed" />
-                      ) : (
-                        <Button
-                          size="xs"
-                          onClick={() => setReviewBooking(b)}
-                          style={{ background: "#c96c83", border: "none", color: "#fff" }}
-                        >
-                          Leave a review
-                        </Button>
-                      )
-                    ) : null
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button size="xs" variant="outline" onClick={() => setDetailsId(b.id)}>
+                        Details
+                      </Button>
+                      {bookingActions(b)}
+                    </div>
                   }
                 />
                 {b.status === "confirmed" && isToday(b.starts_at) && <LiveTracking booking={b} />}
@@ -201,34 +211,20 @@ export default function CustomerBookingsPage() {
             </div>
           )}
 
-          {pagination && pagination.total_pages > 1 && (
-            <DashboardToolbar className="justify-end">
-              <ToolbarSection className="ml-auto">
-              <Button
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-                size="sm"
-                variant="outline"
-              >
-                Prev
-              </Button>
-              <span className="px-2 text-sm font-semibold text-[#5f6268]">
-                {page} / {pagination.total_pages}
-              </span>
-              <Button
-                disabled={!pagination.next_page}
-                onClick={() => setPage((p) => p + 1)}
-                size="sm"
-                variant="outline"
-              >
-                Next
-              </Button>
-              </ToolbarSection>
-            </DashboardToolbar>
-          )}
+          {list.hasMore ? (
+            <Button className="mt-3 w-full" disabled={list.loadingMore} onClick={list.loadMore} variant="outline">
+              {list.loadingMore ? "Loading..." : "Load more"}
+            </Button>
+          ) : null}
         </>
       )}
       </div>
+
+      <BookingDetailsSheet
+        booking={details}
+        actions={details ? bookingActions(details) : null}
+        onClose={() => setDetailsId(null)}
+      />
 
       {reviewBooking && (
         <ReviewDialog

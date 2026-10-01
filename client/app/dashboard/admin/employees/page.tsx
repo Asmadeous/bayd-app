@@ -17,6 +17,7 @@ import {
   ToolbarSection,
 } from "@/components/dashboard/dashboard-toolbar"
 import { EmptyState } from "@/components/dashboard/empty-state"
+import { StaffHoursSheet } from "@/components/dashboard/staff-hours-sheet"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import {
@@ -263,6 +264,7 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
   const [editingFsas, setEditingFsas] = useState(false)
   const [fsaText, setFsaText] = useState((employee.service_fsas ?? []).join(" "))
   const [fsaError, setFsaError] = useState<string | null>(null)
+  const [hoursOpen, setHoursOpen] = useState(false)
 
   function saveFsas() {
     const parsed = parseFsaInput(fsaText)
@@ -354,9 +356,12 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
             {employee.title && <p className="text-xs font-bold text-[#a36f4d]">{employee.title}</p>}
             <p className="mt-1 truncate text-xs text-[#5f6268]">{employee.user?.email}</p>
           </div>
-          <StatusBadge tone={employee.on_shift ? "green" : "gray"}>
-            {employee.on_shift ? "On Shift" : "Off Shift"}
-          </StatusBadge>
+          <span className="flex flex-wrap gap-1.5">
+            {!employee.dispatchable ? <StatusBadge tone="red">Auto-assign paused</StatusBadge> : null}
+            <StatusBadge tone={employee.on_shift ? "green" : "gray"}>
+              {employee.on_shift ? "On Shift" : "Off Shift"}
+            </StatusBadge>
+          </span>
         </div>
         <div className="flex items-center gap-2 mt-2 flex-wrap">
           <Button
@@ -368,6 +373,7 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
             Toggle Shift
           </Button>
           <Button size="xs" variant="outline" onClick={onEdit}>Edit</Button>
+          <Button size="xs" variant="outline" onClick={() => setHoursOpen(true)}>Hours</Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button size="xs" variant="outline" disabled={deleteEmployee.isPending}>
@@ -471,6 +477,13 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
           View detailed KPIs →
         </Link>
       </div>
+      <StaffHoursSheet
+        employeeId={employee.id}
+        name={name}
+        dispatchable={employee.dispatchable}
+        open={hoursOpen}
+        onOpenChange={setHoursOpen}
+      />
     </DashboardPanel>
   )
 }

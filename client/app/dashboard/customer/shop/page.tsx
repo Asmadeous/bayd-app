@@ -1,9 +1,14 @@
 "use client"
 
+import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { ShopPage } from "@/features/shop/components/shop-page"
 
-// The store, reachable from inside the customer dashboard/app so customers can
-// browse + buy products without leaving the app. Reuses the existing ShopPage.
+// The store inside the customer dashboard: same products, cart and checkout as
+// the public shop, without the public site's header, hero and footer.
 export default function CustomerShopPage() {
-  return <ShopPage />
+  return (
+    <DashboardPage maxWidth="wide">
+      <ShopPage embedded />
+    </DashboardPage>
+  )
 }
