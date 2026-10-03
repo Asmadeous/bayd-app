@@ -1,0 +1,7 @@
+<p>Hi<%= @user.first_name.present? ? " #{@user.first_name}" : "" %>,</p>
+<p>You've been added as an admin of <strong><%= @franchise.name %></strong>. You'll sign in with:</p>
+<p><strong><%= @user.email %></strong></p>
+<p>First, choose your password. This link works once and expires in <%= @expires_in_days %> days:</p>
+<p><a href="<%= @reset_url %>">Choose your password</a></p>
+<p>Then sign in at <a href="<%= @sign_in_url %>"><%= @sign_in_url %></a> to set up your team, services and hours.</p>
+<p>If the link has expired, use "Forgot password" on the sign-in page with the email above.</p>

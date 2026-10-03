@@ -6,8 +6,37 @@ import { usePagedList } from "@/lib/hooks/use-paged-list"
 import type { Meeting } from "@/lib/hooks/use-meetings"
 import type { PaymentMethod } from "@/lib/payment-methods"
 
+// Another service on the same multi-service visit, and who does it.
+export interface VisitLine {
+  id: number
+  service_id: number
+  service_name: string | null
+  starts_at: string
+  ends_at: string
+  status: Booking["status"]
+  total: string
+  employee: { id: number | null; user_id: number | null; name: string | null; photo_url: string | null }
+}
+
+// The whole visit with its money picture (every line's total, paid, owing).
+export interface VisitDetail {
+  id: number
+  status: Booking["status"]
+  starts_at: string
+  ends_at: string
+  total: string
+  amount_paid: string
+  outstanding_balance: string
+  lines: Booking[]
+}
+
 export interface Booking {
   id: number
+  // Set when this booking is one service of a multi-service visit. visit_lines
+  // are the OTHER services on it (empty for a standalone booking).
+  visit_id: number | null
+  visit_position: number | null
+  visit_lines: VisitLine[]
   status: "pending" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show" | "missed"
   starts_at: string
   ends_at: string
@@ -127,6 +156,14 @@ export function useBooking(id: number) {
   })
 }
 
+export function useVisit(id: number | null | undefined) {
+  return useQuery({
+    queryKey: ["bookings", "visit", id],
+    queryFn: () => api.get<VisitDetail>(`/visits/${id}`).then((r) => r.data),
+    enabled: !!id,
+  })
+}
+
 export function useCancelBooking() {
   const qc = useQueryClient()
   return useMutation({
@@ -144,6 +181,26 @@ export function useRescheduleBooking() {
   return useMutation({
     mutationFn: ({ id, starts_at }: { id: number; starts_at: string }) =>
       api.post<Booking>(`/bookings/${id}/reschedule`, { starts_at }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
+  })
+}
+
+// A whole multi-service visit: every service moves together (techs may change
+// to whoever is free) or is cancelled together.
+export function useRescheduleVisit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ visitId, starts_at }: { visitId: number; starts_at: string }) =>
+      api.post(`/visits/${visitId}/reschedule`, { starts_at }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
+  })
+}
+
+export function useCancelVisit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ visitId, reason }: { visitId: number; reason?: string }) =>
+      api.post(`/visits/${visitId}/cancel`, { reason }).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
   })
 }

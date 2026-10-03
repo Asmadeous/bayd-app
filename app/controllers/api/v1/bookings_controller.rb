@@ -65,6 +65,12 @@ module Api
                         status: :unprocessable_entity
         end
 
+        # A line of a multi-service visit moves with the rest of its visit.
+        if booking.visit && booking.visit.bookings.size > 1
+          booking.visit.reschedule!(new_start: new_start - (booking.starts_at - booking.visit.starts_at), by_customer: true)
+          return render json: BookingSerializer.render_as_hash(booking.reload)
+        end
+
         booking.reschedule!(new_start: new_start, by_customer: true)
         render json: BookingSerializer.render_as_hash(booking)
       rescue Booking::RescheduleError => e
@@ -103,7 +109,8 @@ module Api
           not_reschedulable: "This booking can no longer be rescheduled.",
           outside_hours:     "Please choose a time within our hours (9:00 AM–7:00 PM ET) that allows the full service to finish before close.",
           not_reachable:     "Your technician can't reach that time given their other appointments. Please pick another slot.",
-          slot_taken:        "That slot was just taken. Please pick another open time."
+          slot_taken:        "That slot was just taken. Please pick another open time.",
+          no_availability:   "We couldn't find technicians for every service at that time. Please pick another open time."
         }.fetch(reason, "We couldn't reschedule that booking. Please try again.")
       end
 

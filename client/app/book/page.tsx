@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Check, CheckCircle2, ChevronLeft, Clock, MapPin, Phone, Send, Sparkles, User } from "lucide-react"
+import { Check, CheckCircle2, ChevronLeft, MapPin, Phone, Send, Sparkles, User } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { SiteHeader } from "@/components/layout/site-header"
@@ -14,7 +14,7 @@ import { formatTime, TimeGroups } from "@/components/booking/time-groups"
 import { BubbleLoader } from "@/components/bubble-loader"
 import { ClientLookup } from "@/components/booking/client-lookup"
 import { useCreateStaffBooking, type StaffClient } from "@/lib/hooks/use-employee"
-import { formatDateKey, todayKey } from "@/lib/booking-time"
+import { formatDateKey, todayKey, bookingZoneLabel } from "@/lib/booking-time"
 import { AddressAutocomplete } from "@/components/address-autocomplete"
 import api from "@/lib/api"
 import { openPaymentUrl } from "@/lib/native/open-external"
@@ -24,6 +24,7 @@ import { FREQUENCY_PRESETS } from "@/lib/hooks/use-subscriptions"
 import { siteConfig } from "@/lib/site"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { BookedAppPrompt } from "@/components/marketing/app-download"
+import { DEFAULT_FRANCHISE, formatMoney, useFranchiseStore } from "@/lib/stores/franchise-store"
 
 // Same company number as the footer; used for the out-of-area call / WhatsApp options.
 const WHATSAPP_HREF = `https://wa.me/${siteConfig.phoneHref.replace(/\D/g, "")}?text=${encodeURIComponent(
@@ -43,6 +44,18 @@ const PROVINCES = ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
 // Canadian postal code (space optional). Same rule the backend enforces.
 const CA_POSTAL = /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPRSTV-Z]\d$/i
+// Any other country: a plausible postal code (the backend's ANY_POSTAL).
+const ANY_POSTAL = /^[A-Z0-9][A-Z0-9 -]{1,9}$/i
+
+function regionName(code: string) {
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code
+  } catch {
+    return code
+  }
+}
+
+interface LiveFranchise { slug: string; name: string; country_code: string }
 
 interface Provider { id: number; name: string | null; title: string | null; photo_url: string | null }
 interface ApiService {
@@ -59,17 +72,27 @@ interface ApiService {
   providers?: Provider[]
 }
 interface AvailabilityResult { slots: string[]; mapped: boolean; date?: string }
-interface FreeProvider { employee_id: number; name: string | null; photo_url: string | null }
-interface AnyAvailabilityResult {
-  date: string
-  mapped: boolean
-  providers: { employee_id: number; name: string | null; title: string | null; photo_url: string | null; slots: string[] }[]
-  by_time: Record<string, FreeProvider[]>
-  next_available_date?: string | null
+// One service of a visit at a start time: who does it and when (company zone).
+export interface VisitPlanLine {
+  service_id: number
+  service_name: string
+  employee_id: number
+  name: string | null
+  title: string | null
+  photo_url: string | null
+  starts_at: string
+  ends_at: string
+  start_time: string
+  end_time: string
 }
-interface BookingRequestResponse {
-  booking_request?: { id: number; status: string }
-  booking?: { id: number }
+interface VisitAvailabilityResult {
+  date: string
+  by_time: Record<string, { single_tech: boolean; lines: VisitPlanLine[] }>
+  next_available_date?: string | null
+  error?: string
+}
+interface VisitResponse {
+  visit?: { id: number }
   payment?: { mode: string; url?: string; error?: string }
   // "follow_up" → guest booked without an email; we captured a callback request
   // and the team will phone them to confirm and book manually.
@@ -99,7 +122,8 @@ const field =
 const lbl = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 const card = "rounded-2xl border border-black/10 bg-white p-5 sm:p-6"
 
-const STEPS = ["Details", "Service", "Staff", "Add-ons", "Date", "Payment"] as const
+const STEPS = ["Details", "Service", "Add-ons", "Time", "Checkout"] as const
+const STAFF_STEPS = ["Client", "Service", "Add-ons", "Date", "Confirm"] as const
 
 export default function PublicBookPage() {
   // BookingFlow calls useSearchParams(), which requires a Suspense boundary or
@@ -122,8 +146,8 @@ export function BookingFlow({
   inApp?: boolean
   initialAddress?: SavedAddress | null
   // Staff app: a tech booking a client onto their own schedule. Same steps as a
-  // customer, except the client is looked up or typed in, there's no Staff step,
-  // and the last step creates the booking instead of taking payment.
+  // customer, except the client is looked up or typed in, every service is the
+  // tech's own, and the last step creates the booking instead of taking payment.
   staffBooking?: { employeeId: number }
 }) {
   const searchParams = useSearchParams()
@@ -156,7 +180,6 @@ export function BookingFlow({
   const [partySize, setPartySize] = useState(2)
   const [categoryFilter, setCategoryFilter] = useState<string>("all") // "all" | category_name
   const [serviceId, setServiceId] = useState(searchParams.get("service") ?? "")
-  const [staff, setStaff] = useState<string>(staffBooking ? String(staffBooking.employeeId) : "any") // "any" | providerId
   const [pickedClient, setPickedClient] = useState<StaffClient | null>(null)
   const [date, setDate] = useState(() => searchParams.get("date") ?? todayKey())
   const [time, setTime] = useState(() => searchParams.get("time") ?? "")
@@ -170,7 +193,18 @@ export function BookingFlow({
   const [line1, setLine1] = useState(initialAddress?.line1 ?? user?.street_address ?? "")
   const [unit, setUnit] = useState(initialAddress?.line2 ?? "")
   const [city, setCity] = useState(initialAddress?.city ?? user?.city ?? "")
-  const [province, setProvince] = useState(initialAddress?.province ?? "ON")
+  // The franchise this booking is with: its country decides the address rules.
+  const franchise = useFranchiseStore((s) => s.config) ?? DEFAULT_FRANCHISE
+  const setFranchiseSlug = useFranchiseStore((s) => s.setSlug)
+  const inCanada = franchise.country_code === "CA"
+  const countryName = regionName(franchise.country_code)
+  const { data: liveFranchises = [] } = useQuery<LiveFranchise[]>({
+    queryKey: ["live-franchises"],
+    queryFn: () => api.get<LiveFranchise[]>("/franchises").then((r) => r.data),
+    enabled: !staffBooking,
+    staleTime: 10 * 60 * 1000,
+  })
+  const [province, setProvince] = useState(initialAddress?.province ?? (inCanada ? "ON" : ""))
   const [postal, setPostal] = useState(initialAddress?.postal_code ?? user?.postal_code ?? "")
   const [isApartment, setIsApartment] = useState(Boolean(initialAddress?.is_apartment))
   const [buzzCode, setBuzzCode] = useState(initialAddress?.buzz_code ?? "")
@@ -203,8 +237,8 @@ export function BookingFlow({
   const [recurLabel, setRecurLabel] = useState<string>("Weekly")
   const recurPreset = FREQUENCY_PRESETS.find((p) => p.label === recurLabel) ?? FREQUENCY_PRESETS[1]
   const [autoCharge, setAutoCharge] = useState(false)
-  // Service add-ons: extra services the CHOSEN tech also performs, done back-to-
-  // back in the same visit and folded into one combined charge.
+  // More services in the same visit, from any category. Each becomes its own
+  // booking, done back-to-back by a technician who offers it.
   const [addonIds, setAddonIds] = useState<number[]>([])
   const [bookedMsg, setBookedMsg] = useState("")
   const [view, setView] = useState<"form" | "booked" | "consultation" | "follow_up">("form")
@@ -248,29 +282,14 @@ export function BookingFlow({
   }, [menu, categoryFilter])
 
   const selected = services.find((s) => String(s.id) === serviceId)
-  const providers = selected?.providers ?? []
 
   const perPerson = (s: ApiService) => Number(s.prices?.[clientType] ?? s.price)
 
-  // Add-ons: other services done back-to-back in the same visit by the same
-  // tech. With a chosen tech, that tech's services; with "any", services at least
-  // one of this service's techs also does (the slot pick then binds a tech who
-  // does everything). Lashes is siloed (the lash tech does only lashes), so only
-  // offer add-ons on the same side of that line, mirroring AddonBooker.
-  const isLashes = (name: string | null) => (name ?? "").toLowerCase() === "lashes"
-  const primaryIsLashes = isLashes(selected?.category_name ?? null)
-  const techIds = staff === "any" ? providers.map((p) => p.id) : [Number(staff)]
-  const performs = (s: ApiService, techId: number) => (s.providers ?? []).some((p) => p.id === techId)
-  const addonOptions =
-    clientType === "group" || !selected
-      ? []
-      : menu.filter(
-          (s) =>
-            String(s.id) !== serviceId &&
-            !s.requires_consultation &&
-            isLashes(s.category_name) === primaryIsLashes &&
-            techIds.some((id) => performs(s, id)),
-        )
+  // Anything else on the menu can join the visit. Staff only offer their own
+  // services (the menu is already filtered to them).
+  const addonOptions = !selected
+    ? []
+    : menu.filter((s) => String(s.id) !== serviceId && !s.requires_consultation)
   // Add-ons grouped by category (the main service's own category first) so the
   // list scans like the service menu instead of one long run.
   const addonGroups = Array.from(
@@ -280,42 +299,35 @@ export function BookingFlow({
       return map
     }, new Map<string, ApiService[]>()),
   ).sort(([a], [b]) => Number(b === selected?.category_name) - Number(a === selected?.category_name))
-  const chosenAddons = addonOptions.filter((s) => addonIds.includes(s.id))
+  // In the order the customer added them: that's the order they're done in.
+  const chosenAddons = addonIds.flatMap((id) => addonOptions.filter((s) => s.id === id))
   const validAddonIds = chosenAddons.map((s) => s.id)
-  // Techs who can do the main service AND every chosen add-on.
-  const eligibleTechIds = techIds.filter((id) => chosenAddons.every((a) => performs(a, id)))
-  const canAddAddon = (s: ApiService) => techIds.some((id) => [...chosenAddons, s].every((a) => performs(a, id)))
-  const addonTotal = chosenAddons.reduce((sum, s) => sum + perPerson(s), 0)
-  // Full visit length = main service + add-ons (they extend the same visit).
-  const apptMinutes = (selected?.duration_minutes ?? 0) + chosenAddons.reduce((sum, s) => sum + s.duration_minutes, 0)
+  const visitServices = selected ? [selected, ...chosenAddons] : []
+  const visitServiceIds = visitServices.map((s) => s.id)
   const skipAddons = addonOptions.length === 0
 
   // Group total = per-person price × number of people.
   const totalFor = (s: ApiService) => (clientType === "group" ? perPerson(s) * partySize : perPerson(s))
   const price = selected ? totalFor(selected) : null
-  const staffLabel =
-    staff === "any" ? "Any available" : providers.find((p) => String(p.id) === staff)?.name ?? "Technician"
+  const visitTotal = visitServices.reduce((sum, s) => sum + totalFor(s), 0)
+  // A group visit is one long visit per service: durations scale by party size.
+  const apptMinutes = visitServices.reduce((sum, s) => sum + s.duration_minutes * (clientType === "group" ? partySize : 1), 0)
   // Client-side estimate only (backend is authoritative: 25% / $50 min defaults).
-  const depositEstimate = Math.min(Math.max((price ?? 0) * 0.25, 50), price ?? 0)
+  const depositEstimate = Math.min(Math.max(visitTotal * 0.25, 50), visitTotal)
 
   const coverage = useCoverage(postal)
   const notServiced = coverage.data ? !coverage.data.covered : false
 
-  // Availability: fetch the chosen tech's open slots for the chosen date. Only a
-  // SPECIFIC tech has a bookable schedule to read, so we skip when "any". When
-  // the tech/service isn't bookable yet (mapped:false), the UI falls
-  // back to a free time input.
-  // Slots must fit the whole party for a group booking (N consecutive slots);
-  // adult/kids/elderly are single-slot, so count = 1 for them.
+  // Staff book onto their own schedule: their open slots for the whole visit.
   const slotCount = clientType === "group" ? partySize : 1
-  const canQuerySlots = !!serviceId && staff !== "any" && !!date
+  const canQuerySlots = staffMode && !!serviceId && !!date
   const availability = useQuery<AvailabilityResult>({
-    queryKey: ["availability", serviceId, staff, date, slotCount, validAddonIds, custLat, custLng, postal.trim()],
+    queryKey: ["availability", serviceId, staffBooking?.employeeId, date, slotCount, validAddonIds, custLat, custLng, postal.trim()],
     queryFn: () =>
       api
         .get<AvailabilityResult>("/availability", {
           params: {
-            service_id: Number(serviceId), employee_id: Number(staff), date, count: slotCount,
+            service_id: Number(serviceId), employee_id: staffBooking?.employeeId, date, count: slotCount,
             addon_service_ids: validAddonIds.length ? validAddonIds : undefined,
             latitude: custLat ?? undefined, longitude: custLng ?? undefined,
             postal_code: postal.trim() || undefined,
@@ -326,47 +338,34 @@ export function BookingFlow({
     staleTime: 60 * 1000,
   })
   const slots = availability.data?.slots ?? []
+  const slotMode = staffMode && availability.data?.mapped === true
 
-  // Availability across ALL eligible techs for this service+date. Powers two
-  // things: the "Any available" staff option, and the auto-shift suggestion when
-  // the customer's chosen tech has no open time on the date.
-  const canQueryAny = !!serviceId && !!date
-  const anyAvailability = useQuery<AnyAvailabilityResult>({
-    queryKey: ["availability-any", serviceId, date, slotCount, validAddonIds, custLat, custLng, postal.trim()],
+  // Customers: times when EVERY chosen service has a technician, and who does
+  // what at each time (the planner picks the techs).
+  const canQueryVisit = !staffMode && visitServiceIds.length > 0 && !!date
+  const visitAvailability = useQuery<VisitAvailabilityResult>({
+    queryKey: ["availability-visit", visitServiceIds, date, slotCount, custLat, custLng, postal.trim()],
     queryFn: () =>
       api
-        .get<AnyAvailabilityResult>("/availability/any", {
+        .get<VisitAvailabilityResult>("/availability/visit", {
           params: {
-            service_id: Number(serviceId), date, count: slotCount,
-            addon_service_ids: validAddonIds.length ? validAddonIds : undefined,
+            service_ids: visitServiceIds, date, count: slotCount,
             latitude: custLat ?? undefined, longitude: custLng ?? undefined,
             postal_code: postal.trim() || undefined,
           },
         })
         .then((r) => r.data),
-    enabled: canQueryAny,
+    enabled: canQueryVisit,
     staleTime: 60 * 1000,
   })
-  const anyMapped = anyAvailability.data?.mapped === true
-  const byTime = anyAvailability.data?.by_time ?? {}
-  const freeFor = (t: string) =>
-    (byTime[t] ?? []).filter((f) => !validAddonIds.length || eligibleTechIds.includes(f.employee_id))
-  const anyTimes = Object.keys(byTime).filter((t) => freeFor(t).length > 0)
-  const nextAvailableDate = anyAvailability.data?.next_available_date ?? null
-
-  // "Real slot mode" = the tech has a bookable schedule. True when a chosen
-  // tech is mapped, or when "Any available" is picked and the any-query is mapped.
-  const slotMode =
-    (canQuerySlots && availability.data?.mapped === true) || (staff === "any" && anyMapped)
-  // The customer chose a specific tech but they have NO open times that day, yet
-  // OTHER techs do → offer to shift to whoever is free ("someone pops up").
-  const chosenTechFull =
-    canQuerySlots && availability.data?.mapped === true && slots.length === 0 && anyMapped && anyTimes.length > 0
+  const visitTimes = Object.keys(visitAvailability.data?.by_time ?? {})
+  const plan = time ? visitAvailability.data?.by_time?.[time]?.lines ?? [] : []
+  const nextAvailableDate = visitAvailability.data?.next_available_date ?? null
 
   const createBooking = useMutation({
     mutationFn: (pay: { timing: "pay_upfront" | "pay_after"; groupCharge?: "deposit" | "full" }) =>
       api
-        .post<BookingRequestResponse>("/booking_requests", {
+        .post<VisitResponse>("/visits", {
           customer: {
             // The form collects one "Full name" field; split it so the backend
             // gets first_name + last_name (first word = first name, rest = last).
@@ -384,13 +383,11 @@ export function BookingFlow({
             is_apartment: isApartment,
             buzz_code: isApartment ? buzzCode.trim() || undefined : undefined,
           },
-          booking_request: {
-            service_id: Number(serviceId),
-            kind: "scheduled",
+          visit: {
+            service_ids: visitServiceIds,
             client_type: clientType,
             party_size: clientType === "group" ? partySize : 1,
-            requested_employee_id: staff !== "any" ? Number(staff) : undefined,
-            requested_start: `${date}T${time}:00`,
+            starts_at: `${date}T${time}:00`,
             payment_timing: pay.timing,
             group_charge: pay.groupCharge,
             tip: tip ? Number(tip) : undefined,
@@ -401,10 +398,6 @@ export function BookingFlow({
             recurrence_interval_unit: recurring ? recurPreset.unit : undefined,
             recurrence_interval_count: recurring ? recurPreset.count : undefined,
             auto_charge: recurring && autoCharge ? true : undefined,
-            // Service add-ons: extra services the same tech performs, this visit.
-            // Only send IDs that are still valid options (a primary/tech change can
-            // leave a stale, now-incompatible pick selected — don't submit it).
-            addon_service_ids: validAddonIds.length ? validAddonIds : undefined,
           },
         })
         .then((r) => r.data),
@@ -426,39 +419,17 @@ export function BookingFlow({
 
   function chooseService(id: number) {
     setServiceId(String(id))
-    if (staffMode) {
-      setStep(3) // the tech is booking themself: no Staff step
-      return
-    }
-    const provs = services.find((s) => s.id === id)?.providers ?? []
-    setStaff(provs.length === 1 ? String(provs[0].id) : "any") // auto-pick when only one tech
+    setAddonIds((ids) => ids.filter((x) => x !== id))
+    setTime("")
     setStep(2)
   }
 
-  // Pick a time slot. In "any"/auto-shift mode we also bind the tech who is free
-  // at that time (the first available, or a specific one the customer taps).
-  function pickSlotWithTech(t: string, employeeId?: number) {
-    setTime(t)
-    if (employeeId != null) setStaff(String(employeeId))
-    else if (staff === "any") {
-      const free = freeFor(t)[0]?.employee_id
-      if (free != null) setStaff(String(free))
-    }
-  }
-
-  // Add-ons is skipped when there's nothing to add (groups, or no other services).
-  // Staff mode also skips the Staff step (2).
+  // Add-ons is skipped when there's nothing else to add.
   function goNext() {
-    setStep((s) => {
-      const next = staffMode && s === 1 ? 3 : s + 1
-      return next === 3 && skipAddons ? 4 : next
-    })
+    setStep((s) => (s === 1 && skipAddons ? 3 : s + 1))
   }
   function goBack() {
-    setStep((s) => {
-      const prev = s === 4 && skipAddons ? 2 : s - 1
-      return staffMode && prev === 2 ? 1 : prev
-    })
+    setStep((s) => (s === 3 && skipAddons ? 1 : s - 1))
   }
 
   function pickClient(c: StaffClient) {
@@ -484,64 +455,62 @@ export function BookingFlow({
   }
 
   const isTimeValid = TIME_PATTERN.test(time)
-  const summaryLines: SummaryLine[] = selected
-    ? [
-        {
-          name: selected.name,
-          detail: `with ${staff === "any" ? "any available technician" : staffLabel} · ${selected.duration_minutes} min${clientType === "group" ? ` · ${partySize} people` : ""}`,
-          price: selected.requires_consultation ? null : price,
-        },
-        ...chosenAddons.map((a) => ({ name: a.name, detail: `Add-on · ${a.duration_minutes} min`, price: perPerson(a) })),
-      ]
-    : []
+  // Each service with the tech doing it once a time is picked.
+  const summaryLines: SummaryLine[] = visitServices.map((s) => {
+    const tech = plan.find((l) => l.service_id === s.id)?.name
+    const detail = [tech ? `with ${tech}` : null, `${s.duration_minutes} min`, clientType === "group" ? `${partySize} people` : null]
+      .filter(Boolean)
+      .join(" · ")
+    return { name: s.name, detail, price: s.requires_consultation ? null : totalFor(s) }
+  })
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
   // At least one of email/phone is required, not both — a customer without an
   // inbox can still book by phone (staff/notifications reach them by call/SMS).
   // If an email IS given it must be well-formed; a bare phone number is fine.
   const contactValid = email.trim() ? emailValid : !!phone.trim()
-  const postalFormatOk = CA_POSTAL.test(postal.trim())
+  const postalFormatOk = (inCanada ? CA_POSTAL : ANY_POSTAL).test(postal.trim())
+  const postalHint = inCanada ? "Enter a valid Canadian postal code (e.g. M5J 2X5)." : "Enter a valid postal code."
   // A typed phone needs a full 10-digit number (country code optional).
   const phoneDigits = phone.replace(/\D/g, "")
   const phoneOk = !phone.trim() || phoneDigits.length === 10 || (phoneDigits.length === 11 && phoneDigits.startsWith("1"))
   // Staff book for someone else, so the client's name is required.
   const nameOk = !staffMode || name.trim().length >= 2
   const stepValid = [
-    // Details: a contact method + all address fields + a Canadian postal
-    // format. The realness/Canada check runs against the backend on Continue.
+    // Details: a contact method + all address fields + a postal code in the
+    // franchise country's format. The realness check runs on Continue.
     nameOk && contactValid && phoneOk && !!line1.trim() && !!city.trim() && postalFormatOk,
     !!serviceId, // Service
-    !!staff, // Staff (auto or picked; "any" is valid)
     true, // Add-ons (optional)
-    // Date & time. In slot mode the picked time must be a real fetched slot (for
-    // the chosen tech, or any tech in "any"/auto-shift mode) so a stale time can't
-    // slip through; otherwise any valid HH:MM from the free input is fine.
-    // Staff may also book outside their open slots ("Other time").
-    !!date && isTimeValid && (staffMode || !slotMode || slots.includes(time) || anyTimes.includes(time)),
-    true, // Payment (pay-after is always valid)
+    // Time. Customers must pick a real combined time (every service staffed) so
+    // a stale one can't slip through. Staff may book outside their open slots.
+    !!date && isTimeValid && (staffMode ? true : visitTimes.includes(time)),
+    true, // Checkout (pay-after is always valid)
   ]
 
-  // Verify the typed address is a real Canadian one (Google geocode via our
-  // backend) before advancing off the Details step. Blocks on failure.
+  // Verify the typed address is real and in the franchise's country (Google
+  // geocode via our backend) before advancing off the Details step, then make
+  // sure the franchise that serves it is the one this booking goes to.
   async function verifyAddressThenAdvance() {
     setAddressError(null)
     if (!postalFormatOk) {
-      setAddressError("Enter a valid Canadian postal code (e.g. M5J 2X5).")
+      setAddressError(postalHint)
       return
     }
     setVerifyingAddress(true)
     try {
-      const { data } = await api.post<{ valid: boolean; in_canada: boolean; postal_format_ok: boolean; error?: string; latitude?: number | null; longitude?: number | null }>(
+      const { data } = await api.post<{ valid: boolean; in_country?: boolean; in_canada: boolean; postal_format_ok: boolean; error?: string; latitude?: number | null; longitude?: number | null }>(
         "/geo/verify_address",
         { line1: line1.trim(), city: city.trim(), province, postal_code: postal.trim() },
       )
       if (data.valid) {
         setCustLat(data.latitude ?? null)
         setCustLng(data.longitude ?? null)
+        if (!staffMode) await switchToServingFranchise(data.latitude ?? null, data.longitude ?? null)
         setStep((s) => s + 1)
       } else if (!data.postal_format_ok) {
-        setAddressError("Enter a valid Canadian postal code (e.g. M5J 2X5).")
-      } else if (!data.in_canada) {
-        setAddressError("We couldn't find that address in Canada. Check the street, city, and postal code.")
+        setAddressError(postalHint)
+      } else if (!(data.in_country ?? data.in_canada)) {
+        setAddressError(`We couldn't find that address in ${countryName}. Check the street, city, and postal code.`)
       } else {
         setAddressError("Please double-check your address details.")
       }
@@ -552,13 +521,40 @@ export function BookingFlow({
     }
   }
 
+  // A country can have more than one franchise (regions): book with the one
+  // whose technicians cover this address.
+  async function switchToServingFranchise(lat: number | null, lng: number | null) {
+    try {
+      const { data } = await api.get<{ slug: string }>("/franchise/resolve", {
+        params: { country_code: franchise.country_code, postal_code: postal.trim(), latitude: lat ?? undefined, longitude: lng ?? undefined },
+      })
+      if (data.slug && data.slug !== franchise.slug) setFranchiseSlug(data.slug)
+    } catch {
+      // Keep the current franchise; booking still checks coverage on submit.
+    }
+  }
+
+  // Switching country starts the booking over in that franchise (its own
+  // services, prices, technicians and address rules).
+  function chooseCountry(slug: string) {
+    setFranchiseSlug(slug)
+    setServiceId("")
+    setAddonIds([])
+    setTime("")
+    setPostal("")
+    setProvince("")
+    setCustLat(null)
+    setCustLng(null)
+    setAddressError(null)
+  }
+
   const createStaffBooking = useCreateStaffBooking()
   async function submitStaff() {
     setError(null)
     const [first, ...rest] = name.trim().split(/\s+/)
     try {
       await createStaffBooking.mutateAsync({
-        service_id: Number(serviceId),
+        service_ids: visitServiceIds,
         starts_at: `${date}T${time}:00`,
         customer: {
           email: email.trim() || undefined,
@@ -578,7 +574,6 @@ export function BookingFlow({
           buzz_code: isApartment ? buzzCode.trim() || undefined : undefined,
         },
         notes: notes.trim() || undefined,
-        addon_service_ids: validAddonIds.length ? validAddonIds : undefined,
       })
       setBookedMsg("It's on your schedule as a confirmed booking.")
       setView("booked")
@@ -620,7 +615,7 @@ export function BookingFlow({
         void openPaymentUrl(data.payment.url, dashboardMode ? () => window.location.assign("/app/bookings") : undefined)
         return
       }
-      if (data.booking) {
+      if (data.visit) {
         const mode = data.payment?.mode
         setBookedMsg(
           mode === "charged"
@@ -631,21 +626,20 @@ export function BookingFlow({
         )
         setView("booked")
       } else {
-        setError("We couldn't confirm that technician for your time. Try another slot or technician.")
+        setError("We couldn't confirm technicians for that time. Please pick another time.")
       }
     } catch (err: unknown) {
-      const res = (err as { response?: { status?: number; data?: BookingRequestResponse } })?.response
+      const res = (err as { response?: { status?: number; data?: VisitResponse } })?.response
       if (res?.data?.code === "no_coverage") {
         requestCallback.mutate()
         return
       }
-      // The chosen slot isn't reachable for the tech (travel time between jobs).
-      // Now that we have the address coords, the Date step re-queries with them
-      // and shows only feasible slots — send the customer back to re-pick.
-      if (res?.data?.code === "no_availability") {
+      // The time was taken or can no longer be staffed for every service: back
+      // to Time, which re-queries and shows only times that still work.
+      if (res?.data?.code === "no_availability" || res?.data?.code === "slot_taken") {
         setTime("")
-        setStep(4)
-        setError("That time just became unavailable for travel reasons. Please pick another open slot.")
+        setStep(3)
+        setError(res.data.error ?? "That time just became unavailable. Please pick another open time.")
         return
       }
       setError(res?.data?.error ?? "Something went wrong. Please try again.")
@@ -653,10 +647,10 @@ export function BookingFlow({
   }
 
   const summaryWhen =
-    step >= 4 && stepValid[4]
+    step >= 3 && stepValid[3]
       ? {
           date: formatDateKey(date, { weekday: "long", month: "short", day: "numeric" }),
-          time: `${slotRange(time, apptMinutes)} ET`,
+          time: slotRange(time, apptMinutes),
           short: `${formatDateKey(date, { weekday: "short", month: "short", day: "numeric" })} · ${slotRange(time, apptMinutes)}`,
         }
       : null
@@ -775,7 +769,7 @@ export function BookingFlow({
       <div className="min-w-0">
       {/* Stepper */}
       <div className="mb-6 flex items-center gap-2">
-        {(staffMode ? ["Client", "Service", "", "Add-ons", "Date", "Confirm"] : [...STEPS]).map((label, i) => label ? (
+        {(staffMode ? [...STAFF_STEPS] : [...STEPS]).map((label, i) => (
           <div key={label} className="flex flex-1 items-center gap-2">
             <div
               className={cn(
@@ -787,14 +781,14 @@ export function BookingFlow({
                     : "border-black/15 bg-white text-[#a7abb2]",
               )}
             >
-              {i < step ? <Check className="size-3.5" /> : staffMode && i > 2 ? i : i + 1}
+              {i < step ? <Check className="size-3.5" /> : i + 1}
             </div>
             <span className={cn("hidden whitespace-nowrap text-xs font-bold sm:block", i === step ? "text-[#101217]" : "text-[#a7abb2]")}>
               {label}
             </span>
             {i < STEPS.length - 1 ? <div className="h-px flex-1 bg-black/10" /> : null}
           </div>
-        ) : null)}
+        ))}
       </div>
 
       {/* Step 2 — Service (with age selector) */}
@@ -859,11 +853,12 @@ export function BookingFlow({
             </div>
           ) : null}
 
-          {/* Let customers know add-ons exist before they pick, so it's not a
-              surprise later — the add-on picker appears after choosing a tech. */}
+          {/* Let customers know they can combine services before they pick. */}
           <p className="mb-3 flex items-center gap-1.5 border-l-2 border-[#c96c83] bg-[#c96c83]/[0.06] px-3 py-2 text-xs font-medium text-[#5f6268]">
             <span aria-hidden>💡</span>
-            Pick the main service now. Extra services (like a paraffin or French finish) can be added to the same visit next.
+            {staffMode
+              ? "Pick the first service. You can add more of your services to the same visit next."
+              : "Pick your first service. You can add more from any category next, like lashes with a pedicure."}
           </p>
 
           <div className="grid gap-4">
@@ -898,7 +893,7 @@ export function BookingFlow({
                             <span className="mt-0.5 block text-xs font-medium text-[#8a8d93]">{s.duration_minutes} min</span>
                           </span>
                           <span className="shrink-0 self-center text-sm font-black text-[#c96c83]">
-                            {s.requires_consultation ? "Quote" : `$${p.toFixed(2)}`}
+                            {s.requires_consultation ? "Quote" : `${formatMoney(p)}`}
                           </span>
                         </button>
                       )
@@ -912,42 +907,14 @@ export function BookingFlow({
         </div>
       ) : null}
 
-      {/* Step 3 — Staff (chosen before Date so we can show that tech's open slots) */}
-      {step === 2 ? (
-        <div className={card}>
-          <label className={lbl}>Choose your technician</label>
-          {selected ? (
-            <p className="mb-4 text-sm font-semibold text-[#101217]">
-              {selected.name} · <span className="text-[#c96c83]">{price != null ? `$${price.toFixed(2)}` : "Quote"}</span>
-            </p>
-          ) : null}
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
-            {providers.length > 1 ? (
-              <StaffOption label="Any available" hint="We'll match the best-fit technician" active={staff === "any"} onClick={() => setStaff("any")} />
-            ) : null}
-            {providers.map((p) => (
-              <StaffOption
-                key={p.id}
-                label={p.name ?? "Technician"}
-                hint={p.title ?? undefined}
-                photo={p.photo_url ?? undefined}
-                active={staff === String(p.id)}
-                onClick={() => setStaff(String(p.id))}
-              />
-            ))}
-            {providers.length === 0 ? (
-              <p className="text-sm font-medium text-[#8a8d93]">A technician will be matched automatically.</p>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-
       {/* Add-ons: Square's "Add more to your appointment?" */}
-      {step === 3 ? (
+      {step === 2 ? (
         <div className={card}>
           <h2 className="text-lg font-black tracking-tight">Add more to your appointment?</h2>
           <p className="mt-1 text-sm font-medium text-[#5f6268]">
-            Done back-to-back in the same visit{staff === "any" ? "" : ` by ${staffLabel}`}. Optional.
+            {staffMode
+              ? "Done back-to-back in the same visit. Optional."
+              : "Done back-to-back in the same visit, each by a technician who offers it. Optional."}
           </p>
           <div className="mt-4 grid gap-2">
             {selected ? (
@@ -955,7 +922,7 @@ export function BookingFlow({
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold">{selected.name}</span>
                   <span className="block text-xs font-medium text-[#8a8d93]">
-                    {price != null ? `$${price.toFixed(2)}` : "Quote"} · {selected.duration_minutes} min
+                    {price != null ? `${formatMoney(price)}` : "Quote"} · {selected.duration_minutes} min
                   </span>
                 </span>
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-[#c96c83]">
@@ -964,7 +931,7 @@ export function BookingFlow({
               </div>
             ) : null}
             {addonOptions.length === 0 ? (
-              <p className="py-2 text-sm font-medium text-[#8a8d93]">Nothing else can be added to this service.</p>
+              <p className="py-2 text-sm font-medium text-[#8a8d93]">There&apos;s nothing else to add.</p>
             ) : null}
             {addonGroups.map(([category, list]) => (
               <div key={category} className="pt-2">
@@ -972,25 +939,24 @@ export function BookingFlow({
                 <div className="grid gap-2">
             {list.map((a) => {
               const added = addonIds.includes(a.id)
-              const blocked = !added && !canAddAddon(a)
               return (
                 <button
                   key={a.id}
                   type="button"
-                  disabled={blocked}
                   aria-pressed={added}
-                  onClick={() => setAddonIds((ids) => (added ? ids.filter((x) => x !== a.id) : [...ids, a.id]))}
+                  onClick={() => {
+                    setTime("")
+                    setAddonIds((ids) => (added ? ids.filter((x) => x !== a.id) : [...ids, a.id]))
+                  }}
                   className={cn(
                     "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors",
                     added ? "border-[#c96c83] bg-[#c96c83]/[0.06]" : "border-black/10 bg-white hover:border-black/25",
-                    blocked && "cursor-not-allowed opacity-45 hover:border-black/10",
                   )}
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-bold">{a.name}</span>
                     <span className="block text-xs font-medium text-[#8a8d93]">
-                      +${perPerson(a).toFixed(2)} · +{a.duration_minutes} min
-                      {blocked ? " · not with your other picks" : ""}
+                      +{formatMoney(totalFor(a))} · +{a.duration_minutes} min
                     </span>
                   </span>
                   {added ? (
@@ -1010,12 +976,12 @@ export function BookingFlow({
         </div>
       ) : null}
 
-      {/* Date & time: Square-style week strip + Morning / Afternoon / Evening.
-          When the tech has no bookable schedule, a free time input instead. */}
-      {step === 4 ? (
+      {/* Time: Square-style week strip + Morning / Afternoon / Evening. Customers
+          see times when every chosen service is staffed, and who does what. */}
+      {step === 3 ? (
         <div className={card}>
           <DateStrip value={date} onChange={(d) => { setDate(d); setTime("") }} />
-          <p className="mt-1 text-center text-xs font-medium text-[#8a8d93]">Times are shown in Eastern time.</p>
+          <p className="mt-1 text-center text-xs font-medium text-[#8a8d93]">Times are shown in {bookingZoneLabel()} time.</p>
 
           <h2 className="mt-5 border-t border-black/10 pt-5 text-base font-black tracking-tight">
             {date === todayKey() ? "Today, " : ""}
@@ -1023,77 +989,34 @@ export function BookingFlow({
           </h2>
 
           <div className="mt-4">
-            {slotMode ? (
-              (availability.isFetching || anyAvailability.isFetching) ? (
-                <BubbleLoader className="py-6" label="Finding open times" />
-              ) : staff === "any" ? (
-                anyTimes.length === 0 ? (
-                  <NextDayPrompt nextDate={nextAvailableDate} onJump={(d) => { setDate(d); setTime("") }} />
+            {staffMode ? (
+              slotMode ? (
+                availability.isFetching ? (
+                  <BubbleLoader className="py-6" label="Finding open times" />
+                ) : slots.length === 0 ? (
+                  <p className="text-sm font-medium text-[#8a8d93]">No open times on this date.</p>
                 ) : (
-                  <>
-                    <TimeGroups times={anyTimes} selected={time} onPick={(t) => pickSlotWithTech(t)} />
-                    {time && freeFor(time).length ? (
-                      <p className="mt-3 text-xs font-medium text-[#8a8d93]">
-                        {freeFor(time).length > 1
-                          ? `${freeFor(time).length} technicians free at ${formatTime(time)}. We'll assign ${freeFor(time)[0].name ?? "one"}.`
-                          : `${freeFor(time)[0].name ?? "A technician"} is free at ${formatTime(time)}.`}
-                      </p>
-                    ) : null}
-                  </>
+                  <TimeGroups times={slots} selected={time} onPick={setTime} />
                 )
-              ) : chosenTechFull && !staffMode ? (
-                // Chosen tech is full: offer whoever is free instead.
-                <div>
-                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-3">
-                    <p className="text-sm font-bold text-amber-900">{staffLabel} is fully booked on this date.</p>
-                    <p className="mt-1 text-sm font-medium text-amber-800">Pick another day, or book one of these technicians:</p>
-                  </div>
-                  <div className="mt-4 space-y-5">
-                    {(anyAvailability.data?.providers ?? [])
-                      .filter((p) => p.slots.length > 0 && (!validAddonIds.length || eligibleTechIds.includes(p.employee_id)))
-                      .map((p) => (
-                        <div key={p.employee_id}>
-                          <p className="mb-2 text-sm font-black">{p.name ?? "Technician"}</p>
-                          <TimeGroups
-                            times={p.slots}
-                            selected={String(p.employee_id) === staff ? time : ""}
-                            onPick={(t) => pickSlotWithTech(t, p.employee_id)}
-                          />
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              ) : slots.length === 0 ? (
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-[#8a8d93]">No open times for {staffLabel} on this date.</p>
-                  <NextDayPrompt nextDate={nextAvailableDate} onJump={(d) => { setDate(d); setTime("") }} />
-                  {providers.length > 1 && !staffMode ? (
-                    <button
-                      type="button"
-                      onClick={() => { setStaff("any"); setTime("") }}
-                      className="text-sm font-bold text-[#c96c83] underline-offset-2 hover:underline"
-                    >
-                      Or see all available technicians
-                    </button>
-                  ) : null}
-                </div>
-              ) : (
-                <TimeGroups times={slots} selected={time} onPick={setTime} />
-              )
+              ) : null
+            ) : visitAvailability.isFetching ? (
+              <BubbleLoader className="py-6" label="Finding open times" />
+            ) : visitTimes.length === 0 ? (
+              <NextDayPrompt nextDate={nextAvailableDate} onJump={(d) => { setDate(d); setTime("") }} />
             ) : (
-              <div>
-                <label className={lbl}><Clock className="mr-1 inline size-3.5" /> Time</label>
-                <input type="time" className={field} value={time} onChange={(e) => setTime(e.target.value)} />
-                <p className="mt-3 text-xs font-medium text-[#8a8d93]">Hours: Mon–Sat, 9:00 AM – 7:00 PM (Eastern).</p>
-              </div>
+              <>
+                <TimeGroups times={visitTimes} selected={time} onPick={setTime} />
+                {plan.length ? <VisitPlan lines={plan} /> : null}
+              </>
             )}
-            {slotMode && staffMode ? (
-              <label className="mt-5 block border-t border-black/10 pt-4">
-                <span className={lbl}>Other time (outside your open slots)</span>
+            {staffMode ? (
+              <label className={cn("block", slotMode && "mt-5 border-t border-black/10 pt-4")}>
+                <span className={lbl}>{slotMode ? "Other time (outside your open slots)" : "Time"}</span>
                 <input type="time" className={field} value={time} onChange={(e) => setTime(e.target.value)} />
               </label>
             ) : null}
           </div>
+          {error ? <p className="mt-3 text-sm font-bold text-red-600">{error}</p> : null}
         </div>
       ) : null}
 
@@ -1150,6 +1073,18 @@ export function BookingFlow({
             ) : null}
 
             <label className={cn(lbl, "mt-1")}><MapPin className="mr-1 inline size-3.5" /> Service address</label>
+            {!staffMode && liveFranchises.length > 1 ? (
+              <select
+                className={field}
+                aria-label="Country"
+                value={franchise.slug}
+                onChange={(e) => chooseCountry(e.target.value)}
+              >
+                {liveFranchises.map((f) => (
+                  <option key={f.slug} value={f.slug}>{regionName(f.country_code)} · {f.name}</option>
+                ))}
+              </select>
+            ) : null}
             <AddressAutocomplete
               className={field}
               value={line1}
@@ -1164,9 +1099,13 @@ export function BookingFlow({
             />
             <div className="grid gap-4 sm:grid-cols-3">
               <input className={field} value={city} onChange={(e) => setCity(e.target.value)} placeholder="City *" />
-              <select className={field} value={province} onChange={(e) => setProvince(e.target.value)}>
-                {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              {inCanada ? (
+                <select className={field} value={province} onChange={(e) => setProvince(e.target.value)}>
+                  {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              ) : (
+                <input className={field} value={province} onChange={(e) => setProvince(e.target.value)} placeholder="Region (optional)" />
+              )}
               <input
                 className={cn(field, postal.trim() && !postalFormatOk ? "border-red-400 focus:border-red-500 focus:ring-red-500/20" : "")}
                 value={postal}
@@ -1176,7 +1115,7 @@ export function BookingFlow({
               />
             </div>
             {postal.trim() && !postalFormatOk ? (
-              <p className="-mt-2 text-xs font-semibold text-red-600">Enter a valid Canadian postal code (e.g. M5J 2X5).</p>
+              <p className="-mt-2 text-xs font-semibold text-red-600">{postalHint}</p>
             ) : null}
             <label className="flex items-center gap-2 text-sm font-semibold text-[#101217]">
               <input type="checkbox" checked={isApartment} onChange={(e) => setIsApartment(e.target.checked)} className="size-4 accent-[#c96c83]" />
@@ -1217,7 +1156,7 @@ export function BookingFlow({
       ) : null}
 
       {/* Step 5 — Payment */}
-      {step === 5 && staffMode ? (
+      {step === 4 && staffMode ? (
         <div className={card}>
           <h2 className="text-lg font-black tracking-tight">Confirm the booking</h2>
           <p className="mt-1 text-sm font-medium text-[#5f6268]">
@@ -1228,18 +1167,18 @@ export function BookingFlow({
         </div>
       ) : null}
 
-      {step === 5 && !staffMode ? (
+      {step === 4 && !staffMode ? (
         <div className={card}>
           {clientType === "group" ? (
             <p className="mb-5 text-sm font-semibold text-[#c96c83]">
-              Pay a deposit (${depositEstimate.toFixed(2)}) or the full ${(price ?? 0).toFixed(2)} to confirm.
+              Pay a deposit ({formatMoney(depositEstimate)}) or the full {formatMoney(visitTotal)} to confirm.
             </p>
           ) : null}
 
           <label className={lbl}>Add a tip (optional)</label>
           <div className="mb-4 flex flex-wrap items-center gap-2">
             {[0, 15, 18, 20].map((pct) => {
-              const amt = pct === 0 ? 0 : Math.round((price ?? 0) * pct) / 100
+              const amt = pct === 0 ? 0 : Math.round(visitTotal * pct) / 100
               const active = pct === 0 ? !tip : tip === amt.toFixed(2)
               return (
                 <button
@@ -1399,7 +1338,7 @@ export function BookingFlow({
               onClick={() => submit("deposit")}
               className="h-12 flex-1 rounded-xl border border-[#101217] bg-white text-sm font-bold uppercase tracking-wide text-[#101217] disabled:opacity-40"
             >
-              {createBooking.isPending ? "…" : `Pay deposit $${depositEstimate.toFixed(2)}`}
+              {createBooking.isPending ? "…" : `Pay deposit ${formatMoney(depositEstimate)}`}
             </button>
             <button
               type="button"
@@ -1407,7 +1346,7 @@ export function BookingFlow({
               onClick={() => submit("full")}
               className="h-12 flex-1 rounded-xl bg-[#101217] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
             >
-              {createBooking.isPending ? "…" : `Pay full $${(price ?? 0).toFixed(2)}`}
+              {createBooking.isPending ? "…" : `Pay full ${formatMoney(visitTotal)}`}
             </button>
           </div>
         ) : (
@@ -1419,7 +1358,7 @@ export function BookingFlow({
             onClick={() => submit("pay_now")}
             className="h-12 flex-1 rounded-xl bg-[#c96c83] text-sm font-bold uppercase tracking-wide text-white disabled:opacity-40"
           >
-            {createBooking.isPending ? "…" : `Pay now $${((price ?? 0) + addonTotal + (Number(tip) || 0)).toFixed(2)}`}
+            {createBooking.isPending ? "…" : `Pay now ${formatMoney((visitTotal + (Number(tip) || 0)))}`}
           </button>
         )}
       </div>
@@ -1496,36 +1435,34 @@ function CategoryChip({
   )
 }
 
-function StaffOption({
-  label, hint, photo, active, onClick,
-}: { label: string; hint?: string; photo?: string; active: boolean; onClick: () => void }) {
+// Who does what at the picked time, so the customer sees every tech before booking.
+function VisitPlan({ lines }: { lines: VisitPlanLine[] }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 text-left transition-colors",
-        active ? "border-[#c96c83] bg-[#c96c83]/10" : "border-black/10 bg-white hover:border-black/25",
-      )}
-    >
-      <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-[#f0ece4] text-[#c96c83]">
-        {photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={assetUrl(photo)} alt={label} className="size-full object-cover" />
-        ) : (
-          <User className="size-5" />
-        )}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-bold text-[#101217]">{label}</span>
-        {hint ? <span className="block truncate text-xs font-medium text-[#8a8d93]">{hint}</span> : null}
-      </span>
-      {active ? (
-        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#c96c83] text-white">
-          <Check className="size-4" />
-        </span>
-      ) : null}
-    </button>
+    <div className="mt-4 rounded-xl border border-black/10 bg-[#f7f4ef] p-3">
+      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#6b6f76]">
+        {new Set(lines.map((l) => l.employee_id)).size > 1 ? "Your technicians" : "Your technician"}
+      </p>
+      <ul className="grid gap-2">
+        {lines.map((l) => (
+          <li key={`${l.service_id}-${l.start_time}`} className="flex items-center gap-3">
+            <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-white text-[#c96c83]">
+              {l.photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={assetUrl(l.photo_url)} alt={l.name ?? "Technician"} className="size-full object-cover" />
+              ) : (
+                <User className="size-4" />
+              )}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold text-[#101217]">{l.service_name}</span>
+              <span className="block text-xs font-medium text-[#5f6268]">
+                {formatTime(l.start_time)} – {formatTime(l.end_time)} · with {l.name ?? "a technician"}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 

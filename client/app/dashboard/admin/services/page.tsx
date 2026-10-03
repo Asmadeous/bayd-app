@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/select"
 import api from "@/lib/api"
 import { adminServicesSteps } from "@/lib/tours/admin-services-tour"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 interface Service {
   id: number
@@ -510,11 +511,11 @@ export default function AdminServicesPage() {
                   </DataTableCell>
                   <DataTableCell>{service.service_category?.name}</DataTableCell>
                   <DataTableCell className="font-semibold text-[#101217]">
-                    ${service.price}
+                    {formatMoney(service.price)}
                     {service.tier_prices && Object.keys(service.tier_prices).length > 0 ? (
                       <span className="mt-1 block text-[11px] font-semibold text-[#8a8d93]">
                         {TIER_FIELDS.filter((tier) => service.tier_prices?.[tier.key] != null)
-                          .map((tier) => `${tier.key}: $${service.tier_prices?.[tier.key]}`)
+                          .map((tier) => `${tier.key}: ${formatMoney(service.tier_prices?.[tier.key])}`)
                           .join(" / ")}
                       </span>
                     ) : null}

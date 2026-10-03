@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { CalendarDays, ChevronDown, Pencil, Sparkles, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 export type SummaryLine = { name: string; detail?: string; price: number | null }
 // `short` is the one-line form for the phone bar ("Mon, Sep 28 · 9:15 AM - 10:45 AM").
@@ -59,7 +60,7 @@ export function AppointmentSummary({
                   <p className="text-sm font-bold">{line.name}</p>
                   {line.detail ? <p className="text-sm font-medium text-[#8a8d93]">{line.detail}</p> : null}
                 </div>
-                <span className="text-sm font-bold">{line.price == null ? "Quote" : `$${line.price.toFixed(2)}`}</span>
+                <span className="text-sm font-bold">{line.price == null ? "Quote" : `${formatMoney(line.price)}`}</span>
                 {/* Other rows keep the pencil's space so the prices line up. */}
                 {onEditService ? (
                   i === 0 ? (
@@ -81,7 +82,7 @@ export function AppointmentSummary({
 
           <div className="mt-4 flex items-center justify-between border-t border-black/10 pt-4">
             <span className="text-sm font-bold">Total</span>
-            <span className="text-base font-black">{quote ? "Quote" : `$${total.toFixed(2)}`}</span>
+            <span className="text-base font-black">{quote ? "Quote" : `${formatMoney(total)}`}</span>
           </div>
           <p className="mt-1 text-sm font-medium text-[#8a8d93]">Taxes included.</p>
         </>
@@ -130,7 +131,7 @@ export function SummaryBar({
             {when ? (when.short ?? `${when.date} · ${when.time}`) : "No time picked yet"}
           </span>
         </span>
-        <span className="text-sm font-black">{quote ? "Quote" : `$${total.toFixed(2)}`}</span>
+        <span className="text-sm font-black">{quote ? "Quote" : `${formatMoney(total)}`}</span>
         <ChevronDown className="size-4 shrink-0 rotate-180" aria-hidden />
       </button>
 

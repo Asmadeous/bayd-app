@@ -15,6 +15,7 @@ import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { customerOrdersSteps } from "@/lib/tours/customer-orders-tour"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 interface Order {
   id: number
@@ -144,5 +145,5 @@ function formatDate(value: string) {
 
 function formatCurrency(value: string | number) {
   const amount = Number(value)
-  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
+  return Number.isFinite(amount) ? `${formatMoney(amount)}` : "-"
 }

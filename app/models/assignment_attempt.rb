@@ -1,4 +1,6 @@
 class AssignmentAttempt < ApplicationRecord
+  include FranchiseScoped
+
   belongs_to :booking_request
   belongs_to :chosen_employee, class_name: "EmployeeProfile", optional: true
 

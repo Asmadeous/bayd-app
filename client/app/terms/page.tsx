@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms of Service" updated="September 29, 2026">
+    <LegalPage title="Terms of Service" updated="September 29, 2026" kind="terms">
       <p>
         These terms apply when you book or use Beauty @ Your Door (&quot;BAYD&quot;, &quot;we&quot;) services through
         our website or the BAYD app. By booking, you agree to them. Questions:{" "}

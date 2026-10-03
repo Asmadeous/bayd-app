@@ -30,7 +30,7 @@ class EmployeeProfileSerializer < Blueprinter::Base
   # Only rendered to the tech themselves or an admin, never to a customer.
   view :full do
     fields :bio, :on_shift, :active, :dispatchable,
-           :base_latitude, :base_longitude, :service_fsas, :partner_id
+           :base_latitude, :base_longitude, :service_fsas, :service_radius_km, :partner_id
 
     field :partner_name do |profile|
       profile.partner&.name

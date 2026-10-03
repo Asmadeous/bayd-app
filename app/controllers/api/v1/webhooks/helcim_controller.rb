@@ -4,7 +4,7 @@ module Api
       # Helcim payment webhook — authoritative confirmation for online-shopping
       # orders. Idempotent via sync_events.
       class HelcimController < ApplicationController
-        skip_before_action :authenticate_user!
+        include WebhookFranchise
 
         def receive
           raw = request.raw_post

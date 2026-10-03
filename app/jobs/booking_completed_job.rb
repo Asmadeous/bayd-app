@@ -16,7 +16,7 @@ class BookingCompletedJob < ApplicationJob
     award_loyalty(booking)
     request_review(booking)
     handle_referral(booking)
-    Invoice.generate_for(booking)
+    booking.visit ? booking.visit.issue_invoice_if_finished : Invoice.generate_for(booking)
 
     # Only nudge non-subscription bookings; subscription bookings recur on their own.
     nudge_rebook(booking) unless booking.subscription_id

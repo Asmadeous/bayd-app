@@ -40,11 +40,12 @@ import {
   type Subscription,
 } from "@/lib/hooks/use-subscriptions"
 import { customerSubscriptionsSteps } from "@/lib/tours/customer-subscriptions-tour"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 const money = (v: string | number | null) => {
   if (v == null) return "-"
   const amount = Number(v)
-  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
+  return Number.isFinite(amount) ? `${formatMoney(amount)}` : "-"
 }
 const dt = (s: string | null) => {
   if (!s) return "-"

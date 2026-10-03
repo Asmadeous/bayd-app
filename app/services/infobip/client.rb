@@ -39,6 +39,6 @@ module Infobip
 
     def base_url = ENV["INFOBIP_BASE_URL"].presence
     def api_key  = ENV["INFOBIP_API_KEY"].presence
-    def sender   = ENV["INFOBIP_SENDER"].presence
+    def sender   = Current.franchise&.sms_sender.presence || ENV["INFOBIP_SENDER"].presence
   end
 end

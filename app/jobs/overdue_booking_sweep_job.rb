@@ -19,11 +19,15 @@ class OverdueBookingSweepJob < ApplicationJob
 
   def perform
     cutoff = Time.current - TimeClock::GRACE_MIN.minutes
-    overdue_bookings(cutoff).find_each { |booking| flag(booking) }
-    overdue_bookings(cutoff).where(ends_at: ...(Time.current - AUTO_MISS_AFTER)).find_each { |booking| mark_missed(booking) }
+    overdue_bookings(cutoff).find_each { |booking| in_franchise(booking) { flag(booking) } }
+    overdue_bookings(cutoff).where(ends_at: ...(Time.current - AUTO_MISS_AFTER)).find_each do |booking|
+      in_franchise(booking) { mark_missed(booking) }
+    end
   end
 
   private
+
+  def in_franchise(booking, &) = Current.set(franchise: booking.franchise, &)
 
   # Confirmed bookings whose start is past the grace window and that have NO
   # shift (a tech who clocked in has a shift; one who never did has none).
@@ -63,7 +67,7 @@ class OverdueBookingSweepJob < ApplicationJob
   end
 
   def notify_admins(booking)
-    User.where(role: :admin).find_each do |admin|
+    User.franchise_admins(booking.franchise).find_each do |admin|
       next if already_notified?(admin, booking)
 
       tech_name = booking.employee_profile&.user&.first_name || "A technician"

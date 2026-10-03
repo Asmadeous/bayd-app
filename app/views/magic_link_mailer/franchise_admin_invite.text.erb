@@ -1,0 +1,13 @@
+Hi<%= @user.first_name.present? ? " #{@user.first_name}" : "" %>,
+
+You've been added as an admin of <%= @franchise.name %>. You'll sign in with:
+
+<%= @user.email %>
+
+First, choose your password. This link works once and expires in <%= @expires_in_days %> days:
+
+<%= @reset_url %>
+
+Then sign in at <%= @sign_in_url %> to set up your team, services and hours.
+
+If the link has expired, use "Forgot password" on the sign-in page with the email above.

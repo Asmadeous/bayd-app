@@ -42,4 +42,16 @@ class MagicLinkMailer < ApplicationMailer
 
     mail(to: to, subject: "Welcome to the Beauty @ Your Door team")
   end
+
+  # A new franchise admin's first email: the franchise they'll run and a link
+  # to choose their password (the reset flow, with a longer-lived token).
+  def franchise_admin_invite(user, raw_token)
+    @user = user
+    @franchise = user.franchise
+    @reset_url = "#{ENV.fetch('APP_URL', 'http://localhost:3001')}/reset-password?token=#{raw_token}"
+    @expires_in_days = (FranchiseAdminInvite::LINK_TTL / 1.day).to_i
+    @sign_in_url = "#{ENV.fetch('APP_URL', 'http://localhost:3001')}/signin"
+
+    mail(to: user.email, subject: "You're invited to run #{@franchise.name}")
+  end
 end

@@ -1,9 +1,9 @@
 import type { ReactNode } from "react"
 
 import type { Invoice, InvoiceAddress } from "@/lib/hooks/use-invoices"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
-const cad = (value: string | number | undefined) =>
-  new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(Number(value ?? 0))
+const cad = (value: string | number | null | undefined) => formatMoney(value)
 
 function addressLines(a: InvoiceAddress) {
   return [

@@ -8,14 +8,16 @@ import { CalendarDays, ChevronRight, Clock3, MapPin, ReceiptText, Repeat, User }
 import { BubbleLoader } from "@/components/bubble-loader"
 import { assetUrl } from "@/lib/asset-url"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
-import { useBooking } from "@/lib/hooks/use-bookings"
+import { useBooking, useVisit } from "@/lib/hooks/use-bookings"
+import { isVisit, visitEnd, visitLines, visitStart, visitTitle, visitTotal } from "@/lib/visits"
 import { paymentMethodLabel } from "@/lib/payment-methods"
 import { cardClass, eyebrowClass, mutedClass } from "../../app-theme"
 import { EmptyState } from "../../empty-state"
 import { SectionScreen } from "../../section-screen"
 import { ACTIVE, AppointmentActions, statusStyle } from "../page"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
-const money = (v: string | number | null | undefined) => `$${Number(v ?? 0).toFixed(2)}`
+const money = (v: string | number | null | undefined) => `${formatMoney(Number(v ?? 0))}`
 
 // One appointment, from the customer's side: when, the actions (message and track
 // the tech, join the call, reschedule, cancel, rate), who is coming, where,
@@ -33,6 +35,9 @@ export default function AppointmentScreen() {
 function Appointment() {
   const id = Number(useSearchParams().get("id"))
   const { data: booking, isLoading } = useBooking(id)
+  // A multi-service visit: every service, its tech, and the visit's money.
+  const wholeVisit = booking != null && isVisit(booking)
+  const { data: visit } = useVisit(wholeVisit ? booking?.visit_id : null)
   const [now] = useState(() => Date.now())
 
   if (isLoading) {
@@ -51,13 +56,16 @@ function Appointment() {
   }
 
   const upcoming = ACTIVE.includes(booking.status) && new Date(booking.starts_at).getTime() >= now
-  const minutes = Math.round((new Date(booking.ends_at).getTime() - new Date(booking.starts_at).getTime()) / 60000)
+  const startsAt = wholeVisit ? visitStart(booking) : booking.starts_at
+  const endsAt = wholeVisit ? visitEnd(booking) : booking.ends_at
+  const minutes = Math.round((new Date(endsAt).getTime() - new Date(startsAt).getTime()) / 60000)
   const tech = booking.employee_profile
   const address = booking.address
   const addressText = address ? [address.line1, address.line2, address.city, address.province, address.postal_code].filter(Boolean).join(", ") : null
   const addonsTotal = booking.addons.reduce((s, a) => s + Number(a.price), 0)
-  const balance = Number(booking.outstanding_balance)
-  const paidSoFar = Number(booking.total) - balance
+  const total = wholeVisit ? Number(visit?.total ?? visitTotal(booking)) : Number(booking.total)
+  const balance = wholeVisit ? Number(visit?.outstanding_balance ?? total) : Number(booking.outstanding_balance)
+  const paidSoFar = total - balance
 
   return (
     <SectionScreen title="Appointment">
@@ -68,17 +76,17 @@ function Appointment() {
             <span className={`rounded-full px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.1em] ${statusStyle(booking.status)}`}>
               {booking.status.replace("_", " ")}
             </span>
-            <span className="text-base font-black">{money(booking.total)}</span>
+            <span className="text-base font-black">{money(total)}</span>
           </div>
-          <h2 className="mt-3 text-2xl font-black leading-tight tracking-tight">{booking.service.name}</h2>
+          <h2 className="mt-3 text-2xl font-black leading-tight tracking-tight">{wholeVisit ? visitTitle(booking) : booking.service.name}</h2>
           <div className={`mt-2 space-y-1.5 text-sm ${mutedClass}`}>
             <p className="flex items-center gap-2">
               <CalendarDays className="size-4 text-[#C96C83]" aria-hidden />
-              {formatBookingDate(booking.starts_at, { weekday: "long", month: "long", day: "numeric" })}
+              {formatBookingDate(startsAt, { weekday: "long", month: "long", day: "numeric" })}
             </p>
             <p className="flex items-center gap-2">
               <Clock3 className="size-4 text-[#C96C83]" aria-hidden />
-              {formatBookingTime(booking.starts_at)} – {formatBookingTime(booking.ends_at)} · {minutes} min
+              {formatBookingTime(startsAt)} – {formatBookingTime(endsAt)} · {minutes} min
             </p>
             {booking.client_type === "group" && booking.party_size > 1 ? (
               <p className="flex items-center gap-2">
@@ -99,7 +107,32 @@ function Appointment() {
           <AppointmentActions booking={booking} cancellable={upcoming} now={now} />
         </section>
 
-        {/* Who's coming */}
+        {/* Who's coming: on a visit, each service's tech in order */}
+        {wholeVisit ? (
+          <section className={`${cardClass} p-4`}>
+            <p className={eyebrowClass}>Your technicians</p>
+            <ul className="mt-2 space-y-3">
+              {visitLines(booking).map((l) => (
+                <li key={l.bookingId} className="flex items-center gap-3">
+                  {l.tech.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={assetUrl(l.tech.photoUrl)} alt="" className="size-12 shrink-0 rounded-full object-cover" />
+                  ) : (
+                    <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#C96C83]/12 text-lg font-black text-[#9E4A60]">
+                      {(l.tech.name ?? "?").charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-extrabold">{l.tech.name ?? "Your technician"}</p>
+                    <p className={`truncate text-sm ${mutedClass}`}>
+                      {l.serviceName} · {formatBookingTime(l.startsAt)} – {formatBookingTime(l.endsAt)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : (
         <section className={`${cardClass} p-4`}>
           <p className={eyebrowClass}>Your technician</p>
           <div className="mt-2 flex items-center gap-3">
@@ -117,6 +150,7 @@ function Appointment() {
             </div>
           </div>
         </section>
+        )}
 
         {/* Where */}
         {addressText ? (
@@ -138,7 +172,13 @@ function Appointment() {
         <section className={`${cardClass} p-4`}>
           <p className={eyebrowClass}>Services</p>
           <ul className="mt-2 space-y-2 text-sm">
+            {wholeVisit ? (
+              visitLines(booking).map((l) => (
+                <Line key={l.bookingId} label={l.serviceName} hint={`with ${l.tech.name ?? "your technician"}`} value={money(l.total)} />
+              ))
+            ) : (
             <Line label={booking.service.name} hint={`${booking.service.duration_minutes} min`} value={money(Number(booking.subtotal) - addonsTotal)} />
+            )}
             {booking.addons.map((a) => (
               <Line key={a.id} label={a.name} hint={`Add-on · ${a.duration} min`} value={money(a.price)} />
             ))}
@@ -147,7 +187,7 @@ function Appointment() {
           </ul>
           <div className="mt-3 flex items-center justify-between border-t border-black/10 pt-3">
             <span className="text-sm font-bold">Total</span>
-            <span className="text-base font-black">{money(booking.total)}</span>
+            <span className="text-base font-black">{money(total)}</span>
           </div>
           <p className={`mt-1 text-sm ${mutedClass}`}>Taxes included.</p>
         </section>

@@ -173,6 +173,20 @@ module Api
           return render json: { error: "That time has already passed. Pick a later time." }, status: :unprocessable_entity
         end
 
+        visit = booking.visit
+        if visit && visit.bookings.size > 1
+          # A shared visit is moved by the customer or the office; a visit that's
+          # all this tech's moves together, keeping them on every service.
+          if visit.shared?
+            others = visit.bookings.reject { |b| b.employee_profile_id == profile.id || b.cancelled? }
+            names = others.map { |b| "#{b.employee_profile&.user&.first_name} (#{b.service&.name})" }.join(", ")
+            return render json: { error: "This appointment is shared with #{names}. Ask the office to move it so everyone moves together.", code: :shared_visit },
+                          status: :unprocessable_entity
+          end
+          visit.reschedule!(new_start: new_start - (booking.starts_at - visit.starts_at), keep_techs: true)
+          return render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
+        end
+
         booking.reschedule!(new_start: new_start, by_customer: false)
         render json: BookingSerializer.render_as_hash(booking.reload, view: :full)
       rescue Booking::RescheduleError => e
@@ -306,7 +320,7 @@ module Api
         end
         return render json: { error: "This booking is already paid." }, status: :unprocessable_entity unless due.positive?
         unless amount.positive? && amount <= due
-          return render json: { error: "Enter an amount up to the #{ActiveSupport::NumberHelper.number_to_currency(due)} due." }, status: :unprocessable_entity
+          return render json: { error: "Enter an amount up to the #{Franchise.current.money(due)} due." }, status: :unprocessable_entity
         end
 
         booking.mark_paid!(processor: "manual", method: method, amount: amount,
@@ -343,6 +357,8 @@ module Api
       # Defaults to the acting tech; an admin/tech may target another tech via
       # employee_id.
       def create_booking
+        return create_staff_visit if params[:service_ids].present?
+
         svc = Service.active.find(params.require(:service_id))
         target = booking_target_employee
         return forbidden if target.nil?
@@ -371,7 +387,7 @@ module Api
           total:            price,
           service_latitude:  address&.latitude,
           service_longitude: address&.longitude,
-          notes:            [ "Booked by #{current_user.first_name || 'staff'}", params[:notes].presence ].compact.join(" — ")
+          notes:            staff_booking_notes
         )
 
         # Add-ons: extra services the SAME tech performs in this visit. AddonBooker
@@ -434,6 +450,59 @@ module Api
 
       private
 
+      # Several services in one visit, all on the target tech's schedule back-to-
+      # back, each its own booking. Same force-book rules as a single service:
+      # no coverage/hours/travel gates, but no_double_booking still applies.
+      def create_staff_visit
+        services = Service.active_in_order(params[:service_ids])
+        if services.blank? || services.size > VisitPlanner::MAX_SERVICES
+          return render json: { error: "Choose up to #{VisitPlanner::MAX_SERVICES} services." }, status: :unprocessable_entity
+        end
+        target = booking_target_employee
+        return forbidden if target.nil?
+
+        starts_at = parse_start(params[:starts_at])
+        return render json: { error: "A valid start time is required." }, status: :unprocessable_entity if starts_at.nil?
+
+        client_type = params[:client_type].presence_in(Service::CLIENT_TYPES) || "adult"
+        qty = client_type == "group" ? params[:party_size].to_i.clamp(2, Service::GROUP_SIZE) : 1
+        client = find_or_create_customer(params.require(:customer))
+        address = build_manual_address(client)
+
+        visit = ActiveRecord::Base.transaction do
+          v = Visit.create!(user: client, address: address, client_type: client_type, party_size: qty,
+                            notes: params[:notes].presence, starts_at: starts_at, ends_at: starts_at,
+                            service_latitude: address&.latitude, service_longitude: address&.longitude)
+          cursor = starts_at
+          services.each_with_index do |svc, position|
+            price = svc.price_for(client_type) * qty
+            finish = cursor + (svc.duration_minutes * qty).minutes
+            v.bookings.create!(
+              user: client, employee_profile: target, partner_id: target.partner_id, service: svc,
+              address: address, visit_position: position, client_type: client_type, party_size: qty,
+              status: "confirmed", starts_at: cursor, ends_at: finish,
+              subtotal: price, travel_fee: 0, total: price, notes: staff_booking_notes,
+              service_latitude: address&.latitude, service_longitude: address&.longitude
+            )
+            cursor = finish
+          end
+          v.update!(ends_at: cursor)
+          v
+        end
+
+        render json: BookingSerializer.render_as_hash(visit.bookings.first, view: :full).merge(visit_id: visit.id),
+               status: :created
+      rescue ManualAddressError => e
+        render json: { error: e.message }, status: :unprocessable_entity
+      rescue ActiveRecord::RecordNotUnique, ActiveRecord::StatementInvalid => e
+        raise unless e.is_a?(ActiveRecord::RecordNotUnique) || e.cause.is_a?(PG::ExclusionViolation)
+        render json: { error: "That technician already has a booking at that time." }, status: :conflict
+      end
+
+      def staff_booking_notes
+        [ "Booked by #{current_user.first_name || 'staff'}", params[:notes].presence ].compact.join(" — ")
+      end
+
       def client_json(user)
         address = user.addresses.min_by { |a| [ a.default ? 0 : 1, -a.created_at.to_i ] }
         {
@@ -487,13 +556,14 @@ module Api
 
       # A Square payment is a valid POS settlement when it exists, has cleared,
       # and its amount matches what the tech is recording (guards against a
-      # spoofed or wrong-amount payment id). Square amounts are in cents.
+      # spoofed or wrong-amount payment id). Square amounts are in the
+      # currency's smallest unit.
       def pos_payment_valid?(payment, amount)
         return false if payment.blank?
         return false unless %w[COMPLETED APPROVED CAPTURED].include?(payment["status"].to_s.upcase)
 
         paid_cents = payment.dig("amount_money", "amount").to_i
-        paid_cents == (amount * 100).round
+        paid_cents == Franchise.current.minor_units(amount)
       end
 
       def location_params
@@ -525,8 +595,8 @@ module Api
       def notify_admins_of_staff_cancel(booking, reason)
         tech = current_user.first_name.presence || "A technician"
         when_str = booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%b %-d at %-l:%M %p")
-        paid = booking.amount_paid.positive? ? " #{ActiveSupport::NumberHelper.number_to_currency(booking.amount_paid)} was paid; refund it if due." : ""
-        User.where(role: :admin).find_each do |admin|
+        paid = booking.amount_paid.positive? ? " #{Franchise.current.money(booking.amount_paid)} was paid; refund it if due." : ""
+        User.franchise_admins(booking.franchise).find_each do |admin|
           NotificationService.deliver(
             user: admin, kind: :booking_cancelled,
             title: "#{tech} cancelled a booking",
@@ -543,7 +613,7 @@ module Api
       def notify_admins_of_missed(booking)
         tech = current_user.first_name.presence || "A technician"
         when_str = booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%b %-d at %-l:%M %p")
-        User.where(role: :admin).find_each do |admin|
+        User.franchise_admins(booking.franchise).find_each do |admin|
           NotificationService.deliver(
             user: admin, kind: :booking_missed,
             title: "#{tech} can't attend a booking",

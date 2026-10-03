@@ -1,4 +1,6 @@
 class EmployeeProfile < ApplicationRecord
+  include FranchiseScoped
+
   has_one_attached :photo
   belongs_to :user
   belongs_to :partner, optional: true
@@ -39,21 +41,18 @@ class EmployeeProfile < ApplicationRecord
 
   # ── Coverage (per-provider FSA lists) ──────────────────────────────────────
 
-  # Has any provider defined the FSAs they serve yet?
+  # Has any provider defined where they work yet (postal prefixes or a radius)?
   def self.coverage_configured?
-    where("array_length(service_fsas, 1) > 0").exists?
+    where("array_length(service_fsas, 1) > 0").or(where.not(service_radius_km: nil)).exists?
   end
 
-  # Does the company serve this postal code / FSA?
-  # Fails closed once coverage is configured: an unknown FSA is not served.
-  # Unrestricted only when no provider has any FSAs set yet.
-  def self.covers?(postal_or_fsa)
+  # Does the franchise serve this address? Fails closed once coverage is
+  # configured: an unknown place is not served. Unrestricted only when no
+  # provider has set any coverage yet.
+  def self.covers?(postal_code, latitude: nil, longitude: nil)
     return true unless coverage_configured?
 
-    fsa = PostalCode.fsa(postal_or_fsa)
-    return false if fsa.blank?
-
-    active.serving_fsa(fsa).exists?
+    active.any? { |ep| ep.serves_location?(postal_code: postal_code, latitude: latitude, longitude: longitude) }
   end
 
   # FSAs served by any active provider (the company's coverage map).
@@ -61,9 +60,23 @@ class EmployeeProfile < ApplicationRecord
     active.flat_map(&:service_fsas).uniq.sort
   end
 
-  def serves_fsa?(postal_or_fsa)
-    fsa = PostalCode.fsa(postal_or_fsa)
-    fsa.present? && service_fsas.include?(fsa)
+  # The postal code starts with one of this tech's prefixes (in Canada, its FSA
+  # is one of theirs).
+  def serves_postal?(postal_code)
+    code = PostalCode.area(postal_code, franchise&.country_code || PostalCode.current_country)
+    code.present? && service_fsas.any? { |prefix| code.start_with?(prefix) }
+  end
+  alias_method :serves_fsa?, :serves_postal?
+
+  # Within the tech's radius of their base (when they work by radius).
+  def serves_point?(latitude, longitude)
+    return false if service_radius_km.blank? || latitude.blank? || longitude.blank?
+
+    Geo.haversine_km(base_latitude, base_longitude, latitude, longitude) <= service_radius_km.to_f
+  end
+
+  def serves_location?(postal_code:, latitude: nil, longitude: nil)
+    serves_postal?(postal_code) || serves_point?(latitude, longitude)
   end
 
   def available_at?(starts_at, ends_at)
@@ -121,6 +134,6 @@ class EmployeeProfile < ApplicationRecord
   private
 
   def normalize_service_fsas
-    self.service_fsas = PostalCode.normalize_fsa_list(service_fsas)
+    self.service_fsas = PostalCode.normalize_area_list(service_fsas, franchise&.country_code || PostalCode.current_country)
   end
 end

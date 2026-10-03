@@ -1,6 +1,8 @@
 module Api
   module V1
     class BookingRequestsController < ApplicationController
+      include BookingIntake
+
       # Booking is available to guests — no login required to book a service.
       skip_before_action :authenticate_user!, only: :create
 
@@ -70,74 +72,6 @@ module Api
 
       private
 
-      # A guest (not logged in) who supplied no email. Their booking can't be
-      # booked online (it's email-keyed), so it becomes an admin follow-up instead.
-      def guest_without_email?
-        return false if current_user
-
-        params.dig(:customer, :email).to_s.strip.blank?
-      end
-
-      # Phone-only guest booking → capture a CallbackRequest with EVERYTHING the
-      # admin needs to book manually (date/time, address, party, notes all go in
-      # the free-text notes since CallbackRequest has no columns for them), then
-      # notify the team by email + in-app. Renders a follow-up status the
-      # frontend uses to show "we'll call you to confirm".
-      def create_follow_up_request
-        cust = params[:customer] || {}
-        cr = CallbackRequest.create!(
-          service_id:    params.dig(:booking_request, :service_id).presence,
-          postal_code:   params.dig(:address, :postal_code).presence || cust[:postal_code].presence,
-          contact_name:  [ cust[:first_name], cust[:last_name] ].compact_blank.join(" ").presence,
-          contact_phone: cust[:phone].presence,
-          notes:         follow_up_notes,
-          status:        "new"
-        )
-        notify_admin_follow_up(cr)
-        render json: { status: "follow_up", callback_request_id: cr.id }, status: :created
-      end
-
-      # Everything the admin needs to book manually, formatted into one text
-      # block (CallbackRequest has no date/time/address columns).
-      def follow_up_notes
-        br = params[:booking_request] || {}
-        ad = params[:address] || {}
-        addr = [ ad[:line1], ad[:line2], ad[:city], ad[:province], ad[:postal_code] ].compact_blank.join(", ")
-        lines = [
-          "PHONE BOOKING — needs manual entry (no email given).",
-          ("Service ID: #{br[:service_id]}" if br[:service_id].present?),
-          ("Requested: #{br[:requested_start]}" if br[:requested_start].present?),
-          ("Client type: #{br[:client_type]}" if br[:client_type].present?),
-          ("Party size: #{br[:party_size]}" if br[:party_size].to_i > 1),
-          ("Address: #{addr}" if addr.present?),
-          (("Apartment — buzz #{ad[:buzz_code]}") if ActiveModel::Type::Boolean.new.cast(ad[:is_apartment])),
-          ("Customer notes: #{br[:notes]}" if br[:notes].present?)
-        ].compact
-        lines.join("\n")
-      end
-
-      # Best-effort admin notify: in-app Notification to every admin AND an email
-      # to the team inbox. A failure here never breaks the customer's request.
-      def notify_admin_follow_up(callback_request)
-        title = "Phone booking follow-up — #{callback_request.contact_name.presence || callback_request.contact_phone}"
-        body  = "A customer booked by phone (no email) and needs a callback to confirm + manual booking.\n#{callback_request.notes}"
-        User.where(role: :admin).find_each do |admin|
-          Notification.create!(user: admin, kind: "booking_follow_up", title: title, body: body)
-        end
-        AdminMailer.booking_follow_up(callback_request).deliver_later
-      rescue StandardError => e
-        Rails.logger.warn("[BookingRequests] follow-up admin notify failed: #{e.message}")
-      end
-
-      # Location captured at booking, incl. apartment unit (line2) + buzz code.
-      def build_address!(user)
-        ap = params.require(:address).permit(
-          :label, :line1, :line2, :city, :province, :postal_code,
-          :latitude, :longitude, :is_apartment, :buzz_code
-        )
-        user.addresses.create!(ap.merge(default: user.addresses.none?))
-      end
-
       # Persist the customer's payment choice + "booking for a loved one" details.
       # The customer's pay-now vs pay-later choice, normalized. Read before
       # assignment (to decide whether the booking waits for payment) AND when
@@ -205,7 +139,7 @@ module Api
       end
 
       def notify_admin_pending_payment(booking)
-        User.where(role: :admin).find_each do |admin|
+        User.franchise_admins.find_each do |admin|
           Notification.create!(
             user: admin, kind: "payment_pending",
             title: "Payment pending — booking ##{booking.id}",
@@ -248,6 +182,9 @@ module Api
       end
 
       def scoped_request = current_user.booking_requests.find(params[:id])
+
+      def intake_params = params[:booking_request] || {}
+      def intake_service_ids = [ intake_params[:service_id] ].compact_blank
 
       def booking_request_params
         params.require(:booking_request).permit(

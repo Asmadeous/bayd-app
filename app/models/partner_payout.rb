@@ -1,4 +1,6 @@
 class PartnerPayout < ApplicationRecord
+  include FranchiseScoped
+
   belongs_to :partner
   has_many :bookings, dependent: :nullify
 

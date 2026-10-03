@@ -51,7 +51,7 @@ class InvoicePdf
       end
       text biz["name"], size: 11, style: :bold if File.exist?(LOGO)
       muted [ biz["tagline"], biz["address"], biz["phone"], biz["email"], biz["website"] ]
-      muted [ "GST/HST #{biz['hst_number']}" ] if biz["hst_number"]
+      muted [ "#{biz['tax_name'] || 'Tax'} #{biz['hst_number']}" ] if biz["hst_number"]
     end
     header_bottom = pdf.cursor
 
@@ -214,7 +214,8 @@ class InvoicePdf
   # ── Helpers ────────────────────────────────────────────────────────────────
 
   def business
-    { "name" => InvoiceBuilder::BUSINESS["name"], "email" => ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca") }
+    franchise = @invoice.try(:franchise) || Franchise.current
+    { "name" => franchise.display_name, "email" => franchise.contact_email.presence || ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca") }
       .merge(@d["business"] || {})
   end
 
@@ -294,7 +295,11 @@ class InvoicePdf
     date ? " - #{date}" : ""
   end
 
-  def tax_name = @invoice.tax_rate.to_f.positive? ? "HST (#{(@invoice.tax_rate.to_f * 100).round}%)" : "tax"
+  def tax_name
+    return "tax" unless @invoice.tax_rate.to_f.positive?
+
+    "#{business['tax_name'] || 'Tax'} (#{(@invoice.tax_rate.to_f * 100).round}%)"
+  end
 
   def tax_label
     @invoice.tax_rate.to_f.positive? ? "#{tax_name}, included" : "Tax"

@@ -52,8 +52,9 @@ import {
   type PartnerInput,
 } from "@/lib/hooks/use-partners"
 import { adminPartnersSteps } from "@/lib/tours/admin-partners-tour"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
-const cad = (v: string | number) => `$${Number(v).toFixed(2)}`
+const cad = (v: string | number) => `${formatMoney(Number(v))}`
 const dt = (s: string | null) => (s ? new Date(s).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" }) : "—")
 const BLANK: PartnerInput = { name: "", email: "", phone: "", platform_fee_pct: "20", status: "active", payout_notes: "", password: "" }
 type PartnerFormErrors = Partial<Record<keyof PartnerInput | "base", string>>

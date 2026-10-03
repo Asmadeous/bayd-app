@@ -62,13 +62,18 @@ import {
 } from "@/lib/hooks/use-admin"
 import { useAdminPartners, type Partner } from "@/lib/hooks/use-partners"
 import { adminEmployeesSteps } from "@/lib/tours/admin-employees-tour"
+import { formatMoney, franchiseConfig, staffEmailDomain } from "@/lib/stores/franchise-store"
 
-const cad = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 })
+// Whole amounts in the franchise's currency.
+const cad = { format: (value: number) => formatMoney(value, { maximumFractionDigits: 0 }) }
 
 const FSA_PATTERN = /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z]$/
+// Outside Canada a tech lists postal-code prefixes ("SW1A", "M1", "100").
+const PREFIX_PATTERN = /^[A-Z0-9]{1,8}$/
 
-function parseFsaInput(text: string): { fsas: string[]; invalid: string[] } {
+function parseFsaInput(text: string, canada = franchiseConfig().country_code === "CA"): { fsas: string[]; invalid: string[] } {
   const invalid: string[] = []
+  const pattern = canada ? FSA_PATTERN : PREFIX_PATTERN
   const fsas = Array.from(
     new Set(
       text
@@ -76,11 +81,12 @@ function parseFsaInput(text: string): { fsas: string[]; invalid: string[] } {
         .map((token) => token.trim())
         .filter(Boolean)
         .map((token) => {
-          const fsa = token.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 3)
-          if (!FSA_PATTERN.test(fsa)) invalid.push(token)
+          const cleaned = token.replace(/[^A-Za-z0-9]/g, "").toUpperCase()
+          const fsa = canada ? cleaned.slice(0, 3) : cleaned
+          if (!pattern.test(fsa)) invalid.push(token)
           return fsa
         })
-        .filter((fsa) => FSA_PATTERN.test(fsa))
+        .filter((fsa) => pattern.test(fsa))
     )
   )
   return { fsas, invalid }
@@ -125,7 +131,9 @@ const staffSchema = z.object({
     .trim()
     .min(1, "Email is required.")
     .email("Enter a valid email address.")
-    .refine((value) => value.toLowerCase().endsWith("@baydspa.ca"), "Employee email must use @baydspa.ca."),
+    .refine((value) => value.toLowerCase().endsWith(`@${staffEmailDomain()}`), {
+      error: () => `Employee email must use @${staffEmailDomain()}.`,
+    }),
   phone: z.string().trim().optional(),
   password: z.string().optional().refine((value) => !value || value.length >= 8, "Password must be at least 8 characters."),
   title: z.string().trim().optional(),
@@ -250,6 +258,7 @@ interface Employee {
   base_latitude: string | null
   base_longitude: string | null
   service_fsas: string[]
+  service_radius_km?: string | null
   partner_id: number | null
   partner_name: string | null
   user: { first_name: string | null; last_name: string | null; email: string; phone: string | null }
@@ -263,20 +272,28 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
   const name = [employee.user?.first_name, employee.user?.last_name].filter(Boolean).join(" ")
   const [editingFsas, setEditingFsas] = useState(false)
   const [fsaText, setFsaText] = useState((employee.service_fsas ?? []).join(" "))
+  const [radiusText, setRadiusText] = useState(employee.service_radius_km ? String(Number(employee.service_radius_km)) : "")
+  const canada = franchiseConfig().country_code === "CA"
+  const areaWord = canada ? "FSA" : "postal prefix"
   const [fsaError, setFsaError] = useState<string | null>(null)
   const [hoursOpen, setHoursOpen] = useState(false)
 
   function saveFsas() {
     const parsed = parseFsaInput(fsaText)
     if (parsed.invalid.length > 0) {
-      const message = `Invalid FSA ${parsed.invalid.length === 1 ? "entry" : "entries"}: ${parsed.invalid.join(", ")}.`
+      const message = `Invalid ${areaWord} ${parsed.invalid.length === 1 ? "entry" : "entries"}: ${parsed.invalid.join(", ")}.`
       setFsaError(message)
       toast({ title: "Coverage not saved", description: message, variant: "error" })
       return
     }
+    const radius = radiusText.trim() === "" ? null : Number(radiusText)
+    if (radius != null && (!Number.isFinite(radius) || radius <= 0)) {
+      setFsaError("The radius must be a number of kilometres above 0.")
+      return
+    }
     setFsaError(null)
     updateEmployee.mutate(
-      { service_fsas: parsed.fsas },
+      { service_fsas: parsed.fsas, service_radius_km: radius },
       {
         onSuccess: () => {
           setEditingFsas(false)
@@ -422,7 +439,8 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
         <div className="mt-3 border-t border-black/8 pt-3">
           <div className="flex items-center justify-between">
             <p className="text-[10px] uppercase tracking-wide text-[#5f6268]">
-              Service areas · {employee.service_fsas?.length ?? 0} FSA
+              Service areas · {employee.service_fsas?.length ?? 0} {areaWord}
+              {employee.service_radius_km ? ` · ${Number(employee.service_radius_km)} km radius` : ""}
             </p>
             {!editingFsas && (
               <button className="text-[11px] font-semibold text-[#c96c83] hover:underline" onClick={() => setEditingFsas(true)}>
@@ -444,14 +462,26 @@ function EmployeeCard({ employee, kpi, partners, onEdit }: { employee: Employee;
                 aria-invalid={Boolean(fsaError)}
                 className={`w-full border px-2.5 py-2 text-xs font-mono uppercase focus:outline-none ${fsaError ? "border-[#b75c68] focus:border-[#b75c68]" : "border-black/15 focus:border-[#c96c83]"}`}
               />
-              <p className="text-[10px] text-[#8a8d93]">Use Canadian FSA format, space or comma separated. {parseFsaInput(fsaText).fsas.length} valid.</p>
+              <p className="text-[10px] text-[#8a8d93]">
+                {canada ? "Use Canadian FSA format" : "Postal-code prefixes"}, space or comma separated. {parseFsaInput(fsaText).fsas.length} valid.
+              </p>
+              <label className="block text-[10px] uppercase tracking-wide text-[#5f6268]">
+                Or a radius around their base (km)
+                <input
+                  value={radiusText}
+                  onChange={(e) => { setRadiusText(e.target.value); setFsaError(null) }}
+                  inputMode="decimal"
+                  placeholder="e.g. 15"
+                  className="mt-1 w-full border border-black/15 px-2.5 py-1.5 text-xs focus:border-[#c96c83] focus:outline-none"
+                />
+              </label>
               {fsaError ? <p className="text-xs font-semibold text-[#b75c68]">{fsaError}</p> : null}
               <div className="flex gap-2">
                 <Button size="xs" disabled={updateEmployee.isPending} onClick={saveFsas} style={{ background: "#c96c83", border: "none", color: "#fff" }}>Save</Button>
-                <Button size="xs" variant="ghost" onClick={() => { setFsaText((employee.service_fsas ?? []).join(" ")); setFsaError(null); setEditingFsas(false) }}>Cancel</Button>
+                <Button size="xs" variant="ghost" onClick={() => { setFsaText((employee.service_fsas ?? []).join(" ")); setRadiusText(employee.service_radius_km ? String(Number(employee.service_radius_km)) : ""); setFsaError(null); setEditingFsas(false) }}>Cancel</Button>
               </div>
             </div>
-          ) : (employee.service_fsas?.length ?? 0) > 0 ? (
+          ) : (employee.service_fsas?.length ?? 0) > 0 || employee.service_radius_km ? (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {employee.service_fsas.map((f) => (
                 <span key={f} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/5 text-[#101217]">{f}</span>
@@ -708,7 +738,7 @@ function StaffModal({ mode, partners, onClose }: { mode: "create" | Employee; pa
               <input type="checkbox" checked={!!form.dispatchable} onChange={(e) => set({ dispatchable: e.target.checked })} className="accent-[#c96c83]" /> Dispatchable
             </label>
           </div>
-          {isCreate && <p className="mt-4 text-[11px] text-[#8a8d93]">Coverage FSAs are set on the staff card after creating.</p>}
+          {isCreate && <p className="mt-4 text-[11px] text-[#8a8d93]">Coverage areas are set on the staff card after creating.</p>}
         </DialogBody>
 
         <DialogFooter>

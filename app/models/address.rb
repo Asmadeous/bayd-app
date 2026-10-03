@@ -3,6 +3,7 @@ class Address < ApplicationRecord
 
   has_many :booking_requests, dependent: :nullify
   has_many :bookings, dependent: :nullify
+  has_many :visits, dependent: :nullify
   has_many :orders, foreign_key: :shipping_address_id, dependent: :nullify
 
   validates :line1, presence: true

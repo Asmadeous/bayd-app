@@ -1,4 +1,6 @@
 class GiftCard < ApplicationRecord
+  include FranchiseScoped
+
   belongs_to :purchaser, class_name: "User", optional: true
   has_many :gift_card_transactions, dependent: :restrict_with_error
   has_one  :invoice, as: :invoiceable, dependent: :nullify

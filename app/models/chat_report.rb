@@ -1,6 +1,8 @@
 # A user reported the other person in a conversation. Admins are alerted and
 # review it from the conversation (Apple guideline 1.2 asks for this).
 class ChatReport < ApplicationRecord
+  include FranchiseScoped
+
   REASONS = [
     "Harassment or abuse",
     "Inappropriate or sexual content",

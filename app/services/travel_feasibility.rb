@@ -12,11 +12,14 @@ class TravelFeasibility
   #                    feasible, we don't block on unknown location)
   # next_buffer_min  — extra margin to leave before the tech's NEXT job (dispatch
   #                    uses this for on-demand; scheduled bookings pass 0)
-  def initialize(employee:, customer_lat:, customer_lng:, next_buffer_min: 0)
+  # exclude_ids      - bookings to ignore as neighbours (a visit being re-planned
+  #                    must not be judged against its own current lines)
+  def initialize(employee:, customer_lat:, customer_lng:, next_buffer_min: 0, exclude_ids: [])
     @employee = employee
     @customer_lat = customer_lat
     @customer_lng = customer_lng
     @next_buffer_min = next_buffer_min
+    @exclude_ids = exclude_ids
   end
 
   # True if the tech can reach [starts_at, ends_at) from their previous booking
@@ -30,7 +33,7 @@ class TravelFeasibility
   private
 
   def active_bookings
-    @active_bookings ||= @employee.bookings.where(status: %w[confirmed in_progress])
+    @active_bookings ||= @employee.bookings.where(status: %w[confirmed in_progress]).where.not(id: @exclude_ids)
   end
 
   def reachable_from_previous?(starts_at)

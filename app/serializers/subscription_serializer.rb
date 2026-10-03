@@ -6,7 +6,7 @@ class SubscriptionSerializer < Blueprinter::Base
   field :frequency_label, &:frequency_label
 
   field :service_name do |sub|
-    sub.service&.name
+    sub.visit? ? sub.service_names : sub.service&.name
   end
 
   field :address_label do |sub|

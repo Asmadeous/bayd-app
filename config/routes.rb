@@ -45,6 +45,14 @@ Rails.application.routes.draw do
 
       # Booking flow
       resources :booking_requests, only: %i[index show create]
+      # Multi-service visits: one booking per service, each with its own tech.
+      resources :visits, only: %i[index show create] do
+        member do
+          post :pay
+          post :reschedule
+          post :cancel
+        end
+      end
       resources :bookings, only: %i[index show] do
         member do
           post :cancel
@@ -124,6 +132,14 @@ Rails.application.routes.draw do
       # Every eligible tech's open times for a service+date, so the booking form
       # can auto-shift to another available tech when the chosen one is full.
       get "availability/any", to: "availability#any"
+      # The franchise this request is in (public config for formatting).
+      get "franchise", to: "franchises#current"
+      get "franchise/resolve", to: "franchises#resolve"
+      get "franchise/legal", to: "franchises#legal"
+      get "franchises", to: "franchises#index"
+
+      # Combined open times for a multi-service visit (every service staffed).
+      get "availability/visit", to: "availability#visit"
 
       # Address verification (public — geocode the typed address and confirm it's
       # a real Canadian address before letting the booking form proceed).
@@ -240,8 +256,27 @@ Rails.application.routes.draw do
       # Webhooks
       namespace :webhooks do
         # Path must NOT contain "helcim" — Helcim rejects such webhook URLs (400).
-        post "hpay",       to: "helcim#receive"
-        post "square",     to: "square#receive"
+        post "hpay(/:franchise)",   to: "helcim#receive"
+        post "square(/:franchise)", to: "square#receive"
+      end
+
+      # Super admin: every franchise
+      namespace :super do
+        resources :franchises, only: %i[index show create update] do
+          member do
+            post :credentials
+            post :test_payments
+            post :copy_catalog
+            post :go_live
+            post :suspend
+          end
+          resources :admins, only: %i[create destroy], controller: "franchise_admins"
+          resources :royalty_statements, only: %i[create]
+        end
+        resources :royalty_statements, only: %i[index] do
+          member { post :mark_paid }
+        end
+        get "analytics", to: "analytics#show"
       end
 
       # Admin
@@ -283,6 +318,13 @@ Rails.application.routes.draw do
             get   :candidates      # eligible staff ranked by proximity
             patch :assign          # (re)assign to a technician
             post  :reschedule      # move to a new time (no cutoff, optional tech move)
+          end
+        end
+        resources :royalty_statements,  only: %i[index]
+        resources :visits,              only: %i[show] do
+          member do
+            post :reschedule       # whole visit; keep_techs or re-plan
+            post :cancel
           end
         end
         resources :booking_requests,    only: %i[index show]

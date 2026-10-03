@@ -15,7 +15,10 @@ module Api
       # activated + delivered by the payment webhook (GC-<id>).
       def create
         amount = params[:amount].to_i
-        return render json: { error: "Choose $25, $50, $75, $100, or $150." }, status: :unprocessable_entity unless AMOUNTS.include?(amount)
+        unless AMOUNTS.include?(amount)
+          choices = AMOUNTS.map { |a| Franchise.current.money(a) }
+          return render json: { error: "Choose #{choices[0..-2].join(', ')}, or #{choices.last}." }, status: :unprocessable_entity
+        end
 
         card = current_user.gift_cards.create!(
           initial_balance: amount, current_balance: amount, active: false,
@@ -25,7 +28,7 @@ module Api
           message:         params[:message].presence
         )
 
-        payment = start_payment("GC-#{card.id}", amount, "Gift Card (#{ActiveSupport::NumberHelper.number_to_currency(amount)})")
+        payment = start_payment("GC-#{card.id}", amount, "Gift Card (#{Franchise.current.money(amount)})")
         if payment[:error]
           card.destroy
           render json: { error: payment[:error] }, status: :unprocessable_entity
@@ -73,7 +76,7 @@ module Api
         if params[:gateway].to_s == "square"
           link = SquareService.create_reference_link(
             reference: reference,
-            line_items: [ { name: description, quantity: 1, price_cents: (amount * 100).to_i } ],
+            line_items: [ { name: description, quantity: 1, price_cents: Franchise.current.minor_units(amount) } ],
             redirect_url: "#{ENV.fetch('APP_URL', 'http://localhost:3001')}/app/gift-cards"
           )
           return { error: link[:error] || "Could not start payment." } unless link[:success] && link[:url].present?

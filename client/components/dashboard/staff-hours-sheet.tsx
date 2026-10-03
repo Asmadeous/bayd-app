@@ -24,6 +24,7 @@ import {
   wallClock,
   type WeeklyHours,
 } from "@/lib/hooks/use-staff-availability"
+import { bookingZoneLabel } from "@/lib/booking-time"
 
 // Monday first, the way the team plans a week. day_of_week is 0 = Sunday.
 const DAYS = [
@@ -66,7 +67,7 @@ export function StaffHoursSheet({
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">Hours</p>
           <SheetTitle className="text-xl font-extrabold leading-tight text-[#101217]">{name || "Staff member"}</SheetTitle>
           <SheetDescription className="text-sm leading-6 text-[#5f6268]">
-            Customers can only book this technician inside these hours (Eastern time).
+            Customers can only book this technician inside these hours ({bookingZoneLabel()} time).
           </SheetDescription>
         </SheetHeader>
         {open ? (

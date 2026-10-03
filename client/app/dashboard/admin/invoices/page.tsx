@@ -55,8 +55,9 @@ import {
 import { adminInvoicesSteps } from "@/lib/tours/admin-invoices-tour"
 import { downloadInvoice, type Invoice } from "@/lib/hooks/use-invoices"
 import { InvoiceBreakdown } from "@/components/invoice/invoice-breakdown"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
-const cad = (v: string | number) => `$${Number(v).toFixed(2)}`
+const cad = (v: string | number) => `${formatMoney(Number(v))}`
 const STATUSES = ["issued", "paid", "void", "refunded"]
 const KINDS = ["booking", "order", "gift_card", "manual"]
 const PAYMENT_METHODS = ["card", "cash", "etransfer", "manual"]

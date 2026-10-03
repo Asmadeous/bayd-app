@@ -9,10 +9,11 @@ import { formatTime, TimeGroups } from "@/components/booking/time-groups"
 import { BubbleLoader } from "@/components/bubble-loader"
 import api from "@/lib/api"
 import { useToast } from "@/lib/app-ui/app-ui-provider"
-import { bookingDateKey, formatBookingDate, formatBookingTime, formatDateKey, todayKey } from "@/lib/booking-time"
+import { bookingDateKey, formatBookingDate, formatBookingTime, formatDateKey, todayKey, bookingZoneLabel } from "@/lib/booking-time"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import { useStaffCancel, useStaffReschedule } from "@/lib/hooks/use-employee"
 import { cardClass, mutedClass } from "../staff-theme"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 export function apiError(e: unknown) {
   const d = e as { response?: { data?: { error?: string } }; message?: string }
@@ -107,7 +108,7 @@ export function StaffRescheduleSheet({ booking, onClose }: { booking: Booking; o
       </p>
 
       <DateStrip value={date} onChange={pickDate} />
-      <p className={`mt-1 text-center text-sm ${mutedClass}`}>Times are shown in Eastern time.</p>
+      <p className={`mt-1 text-center text-sm ${mutedClass}`}>Times are shown in {bookingZoneLabel()} time.</p>
 
       <h3 className="mt-4 border-t border-black/10 pt-4 text-base font-black tracking-tight">
         {date === todayKey() ? "Today, " : ""}
@@ -182,7 +183,7 @@ export function StaffCancelSheet({ booking, onClose }: { booking: Booking; onClo
       <p className={`mb-2 text-sm ${mutedClass}`}>
         {booking.service.name}, {formatBookingDate(booking.starts_at)} at {formatBookingTime(booking.starts_at)}. It comes
         off your schedule and {client} and the office are told why.
-        {paid > 0 ? ` ${client} has paid $${paid.toFixed(2)}; the office decides on any refund.` : ""}
+        {paid > 0 ? ` ${client} has paid ${formatMoney(paid)}; the office decides on any refund.` : ""}
       </p>
       <p className={`mb-4 rounded-xl bg-black/[0.04] px-3 py-2 text-sm ${mutedClass}`}>
         Just can&apos;t make it yourself? Use &quot;Can&apos;t attend&quot; instead, so {client} is offered a new time.

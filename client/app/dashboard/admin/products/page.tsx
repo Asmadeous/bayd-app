@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/select"
 import api from "@/lib/api"
 import { adminProductsSteps } from "@/lib/tours/admin-products-tour"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 interface Product {
   id: number
@@ -442,7 +443,7 @@ export default function AdminProductsPage() {
                 <DataTableRow key={product.id}>
                   <DataTableCell className="font-bold text-[#101217]">{product.name}</DataTableCell>
                   <DataTableCell>{product.product_category?.name}</DataTableCell>
-                  <DataTableCell className="font-semibold text-[#101217]">${product.price}</DataTableCell>
+                  <DataTableCell className="font-semibold text-[#101217]">{formatMoney(product.price)}</DataTableCell>
                   <DataTableCell>{product.stock_quantity}</DataTableCell>
                   <DataTableCell>
                     <StatusBadgeFor status={product.active ? "active" : "inactive"} />

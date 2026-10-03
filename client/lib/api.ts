@@ -1,6 +1,7 @@
 import axios from "axios"
 import { API_BASE_URL } from "@/lib/config"
 import { useAuthStore } from "@/lib/stores/auth-store"
+import { useFranchiseStore } from "@/lib/stores/franchise-store"
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,6 +11,10 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token
   if (token) config.headers.Authorization = `Bearer ${token}`
+  // The franchise this device chose (the API ignores it for staff, who always
+  // work in their own).
+  const franchise = useFranchiseStore.getState().slug
+  if (franchise) config.headers["X-Franchise"] = franchise
   return config
 })
 

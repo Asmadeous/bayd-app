@@ -1,4 +1,6 @@
 class Order < ApplicationRecord
+  include FranchiseScoped
+
   belongs_to :user
   belongs_to :shipping_address, class_name: "Address", optional: true
 

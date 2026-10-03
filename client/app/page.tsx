@@ -3,6 +3,7 @@ import { API_BASE_URL } from "@/lib/config";
 import { JsonLd } from "@/components/seo/json-ld";
 import { siteConfig } from "@/lib/site";
 import type { Benefit, Service } from "@/features/home/types/home-content";
+import { DEFAULT_FRANCHISE, formatMoneyIn } from "@/lib/franchise-config"
 
 interface ApiService {
   id: number;
@@ -43,7 +44,7 @@ function mapApiService(s: ApiService): Service {
     id: String(s.id),
     title: s.name,
     description: s.description ?? "",
-    price: `$${Number(s.price).toFixed(0)}+`,
+    price: `${formatMoneyIn(DEFAULT_FRANCHISE, s.price, { maximumFractionDigits: 0 })}+`,
     duration: `${s.duration_minutes}min`,
     image: {
       src: imageSrc,

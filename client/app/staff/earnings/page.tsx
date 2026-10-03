@@ -5,9 +5,10 @@ import { CreditCard, Fuel, HandCoins, Users } from "lucide-react"
 import { useEmployeeEarnings } from "@/lib/hooks/use-employee"
 import { staffScreenClass, cardClass, eyebrowClass, mutedClass, staffTheme } from "../staff-theme"
 import { StaffHeader } from "../staff-header"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 function money(v: string | number | undefined | null) {
-  return `$${Number(v ?? 0).toFixed(2)}`
+  return `${formatMoney(Number(v ?? 0))}`
 }
 
 export default function StaffEarningsScreen() {

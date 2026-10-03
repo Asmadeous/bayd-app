@@ -8,6 +8,7 @@ import { appScreenClass, cardClass, mutedClass } from "../app-theme"
 import { ShoppingBag } from "lucide-react"
 import { EmptyState } from "../empty-state"
 import { AppHeader } from "../app-header"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 interface Order {
   id: number
@@ -45,7 +46,7 @@ export function OrdersList() {
                   <span className="rounded-full bg-[#c96c83]/12 px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.1em] text-[#c96c83]">
                     {o.status}
                   </span>
-                  <span className="text-sm font-extrabold">${Number(o.total).toFixed(2)}</span>
+                  <span className="text-sm font-extrabold">{formatMoney(Number(o.total))}</span>
                 </div>
                 <p className={`mt-2 text-sm ${mutedClass}`}>
                   {when.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} · Order #{o.id}
@@ -54,7 +55,7 @@ export function OrdersList() {
                   {o.order_items.map((it) => (
                     <li key={it.id} className="flex justify-between">
                       <span className="truncate">{it.quantity}× {it.name}</span>
-                      <span className={mutedClass}>${Number(it.price).toFixed(2)}</span>
+                      <span className={mutedClass}>{formatMoney(Number(it.price))}</span>
                     </li>
                   ))}
                 </ul>

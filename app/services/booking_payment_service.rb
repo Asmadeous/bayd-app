@@ -73,12 +73,13 @@ class BookingPaymentService
   end
 
   def auto_charge(amount, tip, note)
-    return Result.new(success: false, error: "no_card_on_file") unless @user.card_on_file?
+    profile = @user.payment_profile
+    return Result.new(success: false, error: "no_card_on_file") unless profile&.card_on_file?
 
     result = SquareService.charge_card(
-      customer_id:  @user.square_customer_id,
-      card_id:      @user.square_card_id,
-      amount_cents: ((amount + tip) * 100).round,
+      customer_id:  profile.customer_ref,
+      card_id:      profile.card_ref,
+      amount_cents: Franchise.current.minor_units(amount + tip),
       note:         note || "BKG-#{@booking.id}"
     )
     return Result.new(success: false, error: result[:error]) unless result[:success]
@@ -89,8 +90,9 @@ class BookingPaymentService
   end
 
   def payment_link(amount, tip)
-    line_items = [ { name: line_name, quantity: 1, price_cents: (amount * 100).round } ]
-    line_items << { name: "Gratuity", quantity: 1, price_cents: (tip * 100).round } if tip.positive?
+    franchise = Franchise.current
+    line_items = [ { name: line_name, quantity: 1, price_cents: franchise.minor_units(amount) } ]
+    line_items << { name: "Gratuity", quantity: 1, price_cents: franchise.minor_units(tip) } if tip.positive?
 
     result = SquareService.create_booking_link(
       booking_id: @booking.id,

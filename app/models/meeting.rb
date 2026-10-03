@@ -2,6 +2,8 @@
 # the scope of work before service. Uses Jitsi Meet (open-source, no API key) —
 # the room is just a hard-to-guess URL shared with both parties.
 class Meeting < ApplicationRecord
+  include FranchiseScoped
+
   # The call is set for a time both people know: the room opens JOIN_LEAD_MIN
   # before it, so neither sits in an empty room waiting for the other.
   JOIN_LEAD_MIN = 10

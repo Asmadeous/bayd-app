@@ -6,8 +6,8 @@ declare module "lucide-react" {
   export const ArrowLeft: LucideIcon
   export const ArrowRight: LucideIcon
   export const ArrowUpRight: LucideIcon
-  export const Ban: LucideIcon
   export const BadgeCheck: LucideIcon
+  export const Ban: LucideIcon
   export const BarChart3: LucideIcon
   export const Bell: LucideIcon
   export const BellRing: LucideIcon
@@ -23,18 +23,20 @@ declare module "lucide-react" {
   export const ChevronRight: LucideIcon
   export const Clock: LucideIcon
   export const Clock3: LucideIcon
+  export const Coins: LucideIcon
   export const Copy: LucideIcon
   export const CreditCard: LucideIcon
   export const Download: LucideIcon
-  export const Eye: LucideIcon
-  export const EyeOff: LucideIcon
   export const EllipsisVertical: LucideIcon
   export const Expand: LucideIcon
-  export const FileText: LucideIcon
   export const ExternalLink: LucideIcon
+  export const Eye: LucideIcon
+  export const EyeOff: LucideIcon
+  export const FileText: LucideIcon
   export const Flag: LucideIcon
   export const Fuel: LucideIcon
   export const Gift: LucideIcon
+  export const Globe2: LucideIcon
   export const HandCoins: LucideIcon
   export const Handshake: LucideIcon
   export const History: LucideIcon
@@ -43,6 +45,7 @@ declare module "lucide-react" {
   export const Images: LucideIcon
   export const Inbox: LucideIcon
   export const KeyRound: LucideIcon
+  export const LayoutGrid: LucideIcon
   export const List: LucideIcon
   export const Lock: LucideIcon
   export const LogOut: LucideIcon
@@ -61,8 +64,8 @@ declare module "lucide-react" {
   export const Power: LucideIcon
   export const ReceiptText: LucideIcon
   export const Repeat: LucideIcon
-  export const Route: LucideIcon
   export const Repeat2: LucideIcon
+  export const Route: LucideIcon
   export const Scissors: LucideIcon
   export const Search: LucideIcon
   export const Send: LucideIcon

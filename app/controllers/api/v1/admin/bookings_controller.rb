@@ -133,7 +133,7 @@ module Api
           NotificationService.deliver(
             user: booking.user, kind: :payment_requested, booking: booking, action_url: url,
             title: "Payment requested",
-            body: "#{ActiveSupport::NumberHelper.number_to_currency(amount)} for your #{booking.service&.name || 'appointment'} on #{when_str}. Tap to pay securely.",
+            body: "#{Franchise.current.money(amount)} for your #{booking.service&.name || 'appointment'} on #{when_str}. Tap to pay securely.",
             metadata: { cta: "Pay now" }
           )
         end

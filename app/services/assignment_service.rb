@@ -1,9 +1,5 @@
 class AssignmentService
   STALENESS_THRESHOLD   = 5.minutes
-  # Company timezone + open hours (single source of truth in BusinessHours).
-  TZ                    = BusinessHours.zone
-  OPEN_HOUR             = BusinessHours::OPEN_HOUR   # 9:00 AM local
-  CLOSE_HOUR            = BusinessHours::CLOSE_HOUR  # 7:00 PM local
   AVG_SPEED_KMH         = 35
   MIN_TURNAROUND_MIN    = 15
   # Pre-booking priority: an on-demand job must leave this much extra margin
@@ -96,17 +92,11 @@ class AssignmentService
     end
   end
 
-  # Scheduled times are stored as naive wall-clock (the ET time the customer
-  # picked); on-demand uses the current ET time. We compare wall-clock minutes
-  # so the appointment both starts at/after open and *finishes* at/before close.
+  # The appointment must start at/after open and *finish* at/before close, in
+  # the franchise's local wall clock (BusinessHours).
   def within_operating_hours?
-    # requested_start is stored in UTC; business hours (OPEN/CLOSE_HOUR) are in
-    # the company timezone — so compare against the LOCAL (Toronto) wall clock.
-    ls = (@booking_request.requested_start || Time.current).in_time_zone(TZ)
-    le = ls + total_duration_minutes.minutes
-    (ls.hour * 60 + ls.min) >= OPEN_HOUR * 60 &&
-      (le.hour * 60 + le.min) <= CLOSE_HOUR * 60 &&
-      le.to_date == ls.to_date
+    start = @booking_request.requested_start || Time.current
+    BusinessHours.open_for?(start, start + total_duration_minutes.minutes)
   end
 
   # ── Candidate selection ───────────────────────────────────────────────────
@@ -164,14 +154,13 @@ class AssignmentService
       travel_feasible?(ep)
   end
 
-  # FSA restriction: the provider must list the customer's FSA. Strict once any
-  # provider has configured coverage — an unknown FSA makes no tech eligible (no
-  # distance fallback). Unrestricted only when no provider has FSAs set yet.
+  # Coverage: the provider must list the customer's postal prefix (FSA in
+  # Canada) or have them inside their radius. Strict once any provider has
+  # configured coverage; unrestricted only when none has yet.
   def serves_customer_postal?(employee)
     return true unless EmployeeProfile.coverage_configured?
-    return false if customer_fsa.blank?
 
-    employee.serves_fsa?(customer_fsa)
+    employee.serves_location?(postal_code: @booking_request.address&.postal_code, latitude: customer_lat, longitude: customer_lng)
   end
 
   # Can the tech physically get here from their previous job, and on to the next?
@@ -286,15 +275,7 @@ class AssignmentService
 
   # ── Geo helpers ───────────────────────────────────────────────────────────
   def within_service_area?
-    EmployeeProfile.covers?(@booking_request.address&.postal_code)
-  end
-
-  # FSA of the customer's address. Coverage matches on the FSA (first 3 chars);
-  # live GPS is never used for it (that's for staff tracking). nil (no/invalid
-  # postal on the address) means "unknown" and the gates reject.
-  def customer_fsa
-    return @customer_fsa if defined?(@customer_fsa)
-    @customer_fsa = PostalCode.fsa(@booking_request.address&.postal_code)
+    EmployeeProfile.covers?(@booking_request.address&.postal_code, latitude: customer_lat, longitude: customer_lng)
   end
 
   def customer_lat

@@ -16,12 +16,23 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { usePaymentMethod, useRemoveCard, useSaveCard } from "@/lib/hooks/use-account"
+import { franchiseConfig } from "@/lib/stores/franchise-store"
 
-const APP_ID = process.env.NEXT_PUBLIC_SQUARE_APP_ID ?? ""
-const LOCATION_ID = process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID ?? ""
-const SDK_URL = APP_ID.startsWith("sandbox-")
-  ? "https://sandbox.web.squarecdn.com/v1/square.js"
-  : "https://web.squarecdn.com/v1/square.js"
+// The franchise's own Square account (its ids come with the franchise config;
+// the build's env ids are the default franchise's fallback).
+function squareIds() {
+  const { payments } = franchiseConfig()
+  return {
+    appId: payments.square_application_id || process.env.NEXT_PUBLIC_SQUARE_APP_ID || "",
+    locationId: payments.square_location_id || process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID || "",
+  }
+}
+
+function sdkUrl(appId: string) {
+  return appId.startsWith("sandbox-")
+    ? "https://sandbox.web.squarecdn.com/v1/square.js"
+    : "https://web.squarecdn.com/v1/square.js"
+}
 
 type SquareCard = {
   attach: (selector: string) => Promise<void>
@@ -34,17 +45,17 @@ declare global {
   }
 }
 
-function loadSquareSdk(): Promise<void> {
+function loadSquareSdk(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.Square) return resolve()
-    const existing = document.querySelector<HTMLScriptElement>(`script[src="${SDK_URL}"]`)
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${url}"]`)
     if (existing) {
       existing.addEventListener("load", () => resolve())
       existing.addEventListener("error", () => reject(new Error("Could not load Square.")))
       return
     }
     const s = document.createElement("script")
-    s.src = SDK_URL
+    s.src = url
     s.async = true
     s.onload = () => resolve()
     s.onerror = () => reject(new Error("Could not load Square."))
@@ -70,10 +81,11 @@ export function CardOnFile() {
     let cancelled = false
     ;(async () => {
       try {
-        if (!APP_ID || !LOCATION_ID) throw new Error("Card payments aren't configured.")
-        await loadSquareSdk()
+        const { appId, locationId } = squareIds()
+        if (!appId || !locationId) throw new Error("Card payments aren't configured.")
+        await loadSquareSdk(sdkUrl(appId))
         if (cancelled || !window.Square) return
-        const payments = window.Square.payments(APP_ID, LOCATION_ID)
+        const payments = window.Square.payments(appId, locationId)
         const card = await payments.card()
         await card.attach("#sq-card")
         if (cancelled) return card.destroy?.()

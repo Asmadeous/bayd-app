@@ -19,8 +19,10 @@ and adding native mobile apps for customers and staff.
   available time slot.
 - **Technicians / staff** (password login) - see jobs, clock in/out, share live
   location, charge customers (NFC POS), track earnings/tips/fuel, set availability.
-- **Admins** (password login) - dispatch, oversee all bookings + staff, analytics,
+- **Admins** (password login, becoming franchise admins in Phase 10) - dispatch, oversee all bookings + staff, analytics,
   content, configuration.
+- **Super admins** (Phase 10) - manage franchises and franchise admins across
+  countries, cross-franchise analytics, royalties.
 
 ## Features
 
@@ -93,6 +95,24 @@ the SimplyBook.me integration (being removed).
      Play Data safety notes (`deploy/mobile/STORE_REVIEW.md`). Only the
      customer app goes to store review; staff app stays on TestFlight / Play
      internal.
+9. **Multi-service bookings** - book any services together; each service is
+   its own `Booking` with its own tech, grouped in a new `Visit`. Flow:
+   Details → Service → Add-on services → Time → Checkout (no Staff step).
+   `VisitPlanner` gives the whole visit to one tech when they can do it all,
+   else splits it back-to-back across the nearest eligible techs; booking is
+   all-or-nothing; one charge split into a payment per booking. Every tech shows
+   on the customer's card; each tech gets their own job. Build before 7b.
+   Sub-features 9a-9f in the build plan; full plan in
+   `docs/FRANCHISE_AND_MULTI_SERVICE_PLAN.md`.
+10. **Franchising** - branches in other countries on the one API and database
+   (row-level `franchise_id`, `Current.franchise` from host / header / account).
+   Adding a country is self-serve: the super admin fills in a "New franchise"
+   setup in the console (no code, no deploy).
+   `super_admin` manages franchises + franchise admins; `admin` is scoped to one
+   franchise; customers keep one login worldwide. Per-franchise time zone,
+   hours, currency, tax, country-agnostic coverage, staff email domain, settings, payment
+   gateway + card on file, legal pages, royalties. Today's data becomes the
+   Canada franchise. Sub-features 10a-10g; same plan doc.
 
 ## Data model
 
@@ -125,6 +145,18 @@ Phase 1 introduces. Existing schema is authoritative in `db/schema.rb`.
 - `card_on_file?` is true when `square_card_id` is present.
 - Phase 7b adds a timestamped no-show/late-cancel policy consent (field shape
   locked in the 7b spec).
+
+### Visit (NEW - Phase 9)
+- belongs_to `user`, `address`; has_many `bookings` (`bookings.visit_id`,
+  `bookings.sequence`), one per service, each with its own tech
+- visit-level totals, payment timing/status, booked-for, client type, party size
+- `parent_booking_id` stays the recurring chain; not reused for visits
+
+### Franchise (NEW - Phase 10)
+- country, currency, time zone, hours, tax, postal format, staff email domain,
+  domains, payment gateway + encrypted credentials, royalty %
+- `franchise_id` on every franchise-owned table; customers and brand content
+  stay shared
 
 ### Shift (exists - attendance, NOT bookable hours)
 - clock-in/out timestamps + GPS + distance + fuel reimbursement. Records that a

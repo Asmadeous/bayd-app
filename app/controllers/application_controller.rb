@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::API
   before_action :authenticate_user!
+  before_action :set_current_franchise
 
   rescue_from ActiveRecord::RecordNotFound,       with: :not_found
   rescue_from ActiveRecord::RecordInvalid,        with: :unprocessable
@@ -30,6 +31,49 @@ class ApplicationController < ActionController::API
   end
 
   attr_reader :current_user
+
+  # Which franchise this request works in. Staff and franchise admins are always
+  # in their own; a super admin picks one with X-Franchise (none = every
+  # franchise, the global console); customers and visitors get the X-Franchise
+  # they ask for, else the site they're on (Origin), else the default.
+  def set_current_franchise
+    user = current_user || optional_current_user
+    Current.franchise =
+      if user&.super_admin?
+        requested_franchise(live_only: false)
+      elsif user && !user.customer? && user.franchise
+        user.franchise
+      else
+        requested_franchise(live_only: true) || Franchise.for_host(origin_host) || Franchise.default
+      end
+  end
+
+  def requested_franchise(live_only:)
+    slug = request.headers["X-Franchise"].to_s.strip.downcase
+    return if slug.blank?
+
+    scope = live_only ? Franchise.status_live : Franchise.all
+    scope.find_by(slug: slug)
+  end
+
+  def origin_host
+    URI.parse(request.headers["Origin"].to_s).host
+  rescue URI::InvalidURIError
+    nil
+  end
+
+  # The signed-in user on a public endpoint, or nil. Never renders 401.
+  def optional_current_user
+    return @current_user if defined?(@current_user) && @current_user
+
+    token = request.headers["Authorization"]&.split(" ")&.last
+    return unless token
+
+    payload = JWT.decode(token, jwt_secret, true, algorithm: "HS256").first
+    @current_user = User.where(deleted_at: nil).find_by(id: payload["sub"])
+  rescue JWT::DecodeError
+    nil
+  end
 
   # The one way a not-logged-in customer is resolved from public input:
   # find-or-create by email OR phone (passwordless, at least one required).
@@ -65,6 +109,10 @@ class ApplicationController < ActionController::API
 
   def require_admin!
     forbidden unless current_user&.admin?
+  end
+
+  def require_super_admin!
+    forbidden unless current_user&.super_admin?
   end
 
   # Partners are external providers that behave like employees: they reach the

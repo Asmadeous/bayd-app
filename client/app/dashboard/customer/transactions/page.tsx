@@ -20,10 +20,11 @@ import { Button } from "@/components/ui/button"
 import { downloadInvoice, useInvoices, type Invoice } from "@/lib/hooks/use-invoices"
 import { InvoiceBreakdown } from "@/components/invoice/invoice-breakdown"
 import { customerTransactionsSteps } from "@/lib/tours/customer-transactions-tour"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 const cad = (value: string | number) => {
   const amount = Number(value)
-  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
+  return Number.isFinite(amount) ? `${formatMoney(amount)}` : "-"
 }
 
 const KIND_FILTERS: { value: string; label: string }[] = [

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="September 27, 2026">
+    <LegalPage title="Privacy Policy" updated="September 27, 2026" kind="privacy">
       <p>
         Beauty @ Your Door (&quot;BAYD&quot;, &quot;we&quot;) provides at-home beauty services in the Greater Toronto
         Area through our website, the BAYD app and the BAYD Staff app. This policy explains what personal information

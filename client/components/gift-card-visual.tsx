@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 interface GiftCardVisualProps {
   code: string
@@ -38,7 +39,7 @@ export function GiftCardVisual({ code, balance, expiresAt, recipientName, active
 
       <div className="mt-5">
         <div className="text-4xl font-extrabold leading-none">
-          ${Number(balance).toFixed(2)}
+          {formatMoney(Number(balance))}
         </div>
         <div className="mt-1 text-xs opacity-85">value{!active && " · inactive"}</div>
       </div>

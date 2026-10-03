@@ -2,7 +2,9 @@
 # accessors (e.g. group_deposit_pct) coerce as needed. Falls back to DEFAULTS
 # when a key hasn't been set yet.
 class Setting < ApplicationRecord
-  validates :key, presence: true, uniqueness: true
+  include FranchiseScoped
+
+  validates :key, presence: true, uniqueness: { scope: :franchise_id }
 
   DEFAULTS = {
     "group_deposit_pct" => "25", # % of the total collected upfront for group bookings

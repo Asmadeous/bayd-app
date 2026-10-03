@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 
-import { bookingDateKey, bookingLocalMinutes, nowLocalMinutes, todayKey } from "@/lib/booking-time"
+import { bookingDateKey, bookingLocalMinutes, nowLocalMinutes, todayKey, bookingZoneLabel } from "@/lib/booking-time"
 import type { CallTime } from "@/lib/hooks/use-meetings"
 
 const EARLIEST = 8 * 60 // 8:00 AM
@@ -71,7 +71,7 @@ export function CallTimeForm({
           />
         </label>
         <label className="block">
-          <span className="mb-1 block text-xs font-bold text-[#6b6f76]">Time (Eastern)</span>
+          <span className="mb-1 block text-xs font-bold text-[#6b6f76]">Time ({bookingZoneLabel()})</span>
           <select className={field} value={time} onChange={(e) => setTime(e.target.value)} disabled={slots.length === 0}>
             <option value="">{slots.length ? "Choose" : "No times left"}</option>
             {slots.map((m) => (

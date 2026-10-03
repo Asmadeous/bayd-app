@@ -5,6 +5,7 @@ import { cardClass, mutedClass } from "../app-theme"
 import { Repeat } from "lucide-react"
 import { EmptyState } from "../empty-state"
 import { SectionScreen } from "../section-screen"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 const STATUS_STYLE: Record<string, string> = {
   active: "bg-[#c96c83]/12 text-[#c96c83]",
@@ -29,14 +30,14 @@ export default function AppSubscriptionsScreen() {
                 <span className={`rounded-full px-2.5 py-1 text-[0.8125rem] font-bold uppercase tracking-[0.1em] ${STATUS_STYLE[s.status] ?? "bg-black/8 text-[#101217]/60"}`}>
                   {s.status}
                 </span>
-                {s.price && <span className="text-sm font-extrabold">${Number(s.price).toFixed(2)}</span>}
+                {s.price && <span className="text-sm font-extrabold">{formatMoney(Number(s.price))}</span>}
               </div>
               <p className="mt-2 text-sm font-bold">{s.service_name ?? "Subscription"}</p>
               <p className={`mt-0.5 text-sm ${mutedClass}`}>{s.frequency_label}</p>
               {s.next_charge?.on && (
                 <p className={`mt-1 text-sm ${mutedClass}`}>
                   Next: {new Date(s.next_charge.on).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                  {s.next_charge.amount ? ` · $${Number(s.next_charge.amount).toFixed(2)}` : ""}
+                  {s.next_charge.amount ? ` · ${formatMoney(Number(s.next_charge.amount))}` : ""}
                 </p>
               )}
             </li>

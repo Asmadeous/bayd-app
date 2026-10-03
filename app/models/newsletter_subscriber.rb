@@ -1,9 +1,11 @@
 class NewsletterSubscriber < ApplicationRecord
+  include FranchiseScoped
+
   belongs_to :user, optional: true
 
   enum :status, { subscribed: "subscribed", unsubscribed: "unsubscribed", bounced: "bounced" }
 
-  validates :email, presence: true, uniqueness: { case_sensitive: false },
+  validates :email, presence: true, uniqueness: { case_sensitive: false, scope: :franchise_id },
                     format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :unsubscribe_token, presence: true, uniqueness: true
 

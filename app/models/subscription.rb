@@ -1,4 +1,6 @@
 class Subscription < ApplicationRecord
+  include FranchiseScoped
+
   LEAD_DAYS = 5 # create the next booking up to this many days before it's due
   UNITS = %w[day week month year].freeze
 
@@ -13,6 +15,13 @@ class Subscription < ApplicationRecord
   validates :interval_count, numericality: { only_integer: true, greater_than: 0 }
   validates :next_run_at, presence: true
   validates :client_type, inclusion: { in: Service::CLIENT_TYPES }
+
+  def visit? = service_ids.size > 1
+
+  # The services each cycle books, in visit order.
+  def visit_services = visit? ? Service.active_in_order(service_ids).to_a : [ service ]
+
+  def service_names = visit_services.map(&:name).join(" + ")
 
   # Active subscriptions whose next appointment falls within the lead window.
   scope :due, -> { status_active.where("next_run_at <= ?", Time.current + LEAD_DAYS.days) }
@@ -31,6 +40,21 @@ class Subscription < ApplicationRecord
       next_run_at: booking.starts_at + duration_for(interval_unit, interval_count)
     )
     booking.update!(subscription: sub)
+    sub
+  end
+
+  # Start a subscription from a just-booked multi-service visit: every cycle
+  # re-plans the whole visit (techs may differ each time).
+  def self.start_from_visit(visit, interval_unit:, interval_count:, auto_charge:)
+    lines = visit.bookings.to_a
+    sub = create!(
+      user: visit.user, service: lines.first.service, service_ids: lines.map(&:service_id),
+      address: visit.address, client_type: visit.client_type, party_size: visit.party_size,
+      interval_unit: interval_unit, interval_count: interval_count, auto_charge: auto_charge,
+      price: visit.total, status: "active", started_at: Time.current,
+      next_run_at: visit.starts_at + duration_for(interval_unit, interval_count)
+    )
+    visit.bookings.update_all(subscription_id: sub.id)
     sub
   end
 
@@ -80,6 +104,7 @@ class Subscription < ApplicationRecord
   # Creates the next appointment, charges per-appointment, advances the cadence.
   def generate_next_booking!
     return unless status_active?
+    return generate_next_visit! if visit?
 
     roll_forward_until_future
     request = user.booking_requests.create!(
@@ -109,6 +134,31 @@ class Subscription < ApplicationRecord
     booking
   end
 
+  def generate_next_visit!
+    roll_forward_until_future
+    services = visit_services
+    result = VisitBooker.new(user: user, services: services, starts_at: next_run_at, address: address,
+                             client_type: client_type, party_size: party_size).call
+    unless services.size == service_ids.size && result.success?
+      Rails.logger.warn("[Subscription #{id}] visit scheduling failed: #{result.error || 'service retired'}")
+      advance!
+      return
+    end
+
+    visit = result.visit
+    visit.bookings.update_all(subscription_id: id)
+    charge_for_visit(visit)
+    advance!
+
+    NotificationService.deliver(
+      user: user, kind: :recurring_booked, booking: visit.bookings.first,
+      title: "Your next #{service_names} is booked",
+      body: "We scheduled your subscription appointment for #{visit.starts_at.in_time_zone(BusinessHours.zone).strftime('%b %-d at %-l:%M %p')}.",
+      action_url: "#{app_url}/dashboard/customer/bookings"
+    )
+    visit
+  end
+
   private
 
   def advance!
@@ -127,12 +177,13 @@ class Subscription < ApplicationRecord
   # Per-appointment charge via the Square card on file. On failure the appointment is
   # cancelled and the customer is asked to update their card.
   def charge_for(booking)
-    return unless auto_charge && user.card_on_file?
+    return unless auto_charge && user.card_on_file?(franchise)
 
-    result = SquareService.charge_card(
-      customer_id: user.square_customer_id, card_id: user.square_card_id,
-      amount_cents: (booking.total.to_f * 100).round, note: "SUB-#{id}-#{booking.id}"
-    )
+    profile = user.payment_profile(franchise)
+    result = Current.set(franchise: franchise) do
+      SquareService.charge_card(customer_id: profile.customer_ref, card_id: profile.card_ref,
+                                amount_cents: franchise.minor_units(booking.total), note: "SUB-#{id}-#{booking.id}")
+    end
 
     if result[:success]
       booking.payments.create!(
@@ -148,6 +199,30 @@ class Subscription < ApplicationRecord
         action_url: "#{app_url}/dashboard/customer/settings"
       )
     end
+  end
+
+  # One charge for the whole visit, split per line; on failure every line is
+  # cancelled and the customer asked to update their card (told once).
+  def charge_for_visit(visit)
+    return unless auto_charge && user.card_on_file?(franchise)
+
+    profile = user.payment_profile(franchise)
+    result = Current.set(franchise: franchise) do
+      SquareService.charge_card(customer_id: profile.customer_ref, card_id: profile.card_ref,
+                                amount_cents: franchise.minor_units(visit.total), note: "SUB-#{id}-VST-#{visit.id}")
+    end
+    return visit.mark_paid!(processor: "square", reference: result[:payment_id]) if result[:success]
+
+    visit.live_lines.each do |b|
+      b.quiet_customer_cancel = true
+      b.update!(status: "cancelled", cancellation_reason: "Subscription auto-payment failed")
+    end
+    NotificationService.deliver(
+      user: user, kind: :charge_failed, booking: visit.bookings.first,
+      title: "We couldn't process your subscription payment",
+      body: "Your card on file couldn't be charged for your #{service_names} subscription. Please update your payment method.",
+      action_url: "#{app_url}/dashboard/customer/settings"
+    )
   end
 
   def app_url = ENV.fetch("APP_URL", "http://localhost:3001")

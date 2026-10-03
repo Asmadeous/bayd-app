@@ -13,7 +13,9 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
                       "http://localhost,https://localhost,capacitor://localhost,ionic://localhost," \
                       "https://m-customer.baydspa.ca,https://m-staff.baydspa.ca,https://m-admin.baydspa.ca," \
                       "capacitor://m-customer.baydspa.ca,capacitor://m-staff.baydspa.ca,capacitor://m-admin.baydspa.ca"
-    origins ENV.fetch("ALLOWED_ORIGINS", default_origins).split(",").map(&:strip)
+    # Plus every live franchise's site (FranchiseOrigins), read from the database.
+    origins(*ENV.fetch("ALLOWED_ORIGINS", default_origins).split(",").map(&:strip),
+            ->(source, _env) { FranchiseOrigins.allowed?(source) })
     resource "*",
              headers: :any,
              methods: %i[get post put patch delete options head],

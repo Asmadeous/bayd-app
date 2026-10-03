@@ -1,4 +1,6 @@
 class LoyaltyAccount < ApplicationRecord
+  include FranchiseScoped
+
   belongs_to :user
   has_many :loyalty_transactions, dependent: :destroy
 

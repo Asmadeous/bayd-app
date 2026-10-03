@@ -8,6 +8,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { useFleet, type FleetPosition } from "@/lib/cable/use-fleet"
 import { adminStaffLocationsSteps } from "@/lib/tours/admin-staff-locations-tour"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 // Leaflet touches window; load the map client-only.
 const FleetMap = dynamic(() => import("@/components/dashboard/fleet-map").then((m) => m.FleetMap), {
@@ -105,7 +106,7 @@ export default function AdminStaffLocationsPage() {
                     {r.recorded_at ? new Date(r.recorded_at).toLocaleString() : "—"}
                   </td>
                   <td className="px-4 py-3 text-[#101217]">{Number(r.distance_km).toFixed(2)} km</td>
-                  <td className="px-4 py-3 text-[#101217]">${Number(r.fuel_reimbursement).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-[#101217]">{formatMoney(Number(r.fuel_reimbursement))}</td>
                 </tr>
               ))
             )}
@@ -114,7 +115,7 @@ export default function AdminStaffLocationsPage() {
             <tfoot>
               <tr className="border-t border-black/10 font-semibold">
                 <td className="px-4 py-3 text-[#101217]" colSpan={4}>Total fuel compensation</td>
-                <td className="px-4 py-3 text-[#101217]">${fuelTotal.toFixed(2)}</td>
+                <td className="px-4 py-3 text-[#101217]">{formatMoney(fuelTotal)}</td>
               </tr>
             </tfoot>
           )}

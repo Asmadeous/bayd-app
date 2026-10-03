@@ -9,6 +9,9 @@ import {
   BriefcaseBusiness,
   CalendarDays,
   ChevronRight,
+  Coins,
+  Globe2,
+  LayoutGrid,
   Clock3,
   FileText,
   Flag,
@@ -42,6 +45,7 @@ import { useAuthStore } from "@/lib/stores/auth-store"
 import { useAuth } from "@/lib/hooks/use-auth"
 import { useConfirm } from "@/components/confirm-provider"
 import { useNavBadges, type NavBadge } from "@/lib/hooks/use-nav-badges"
+import { FranchiseSwitcher } from "@/components/dashboard/franchise-switcher"
 
 type NavItem = { label: string; href: string; icon: LucideIcon; badge?: NavBadge }
 type NavGroup = { group: string; items: NavItem[] }
@@ -73,6 +77,16 @@ const employeeNav: NavItem[] = [
   { label: "Profile", href: "/dashboard/employee/profile", icon: User },
   { label: "Reviews", href: "/dashboard/employee/reviews", icon: Star },
 ]
+
+// Only for super admins: every franchise.
+const superNavGroup: NavGroup = {
+  group: "Franchises",
+  items: [
+    { label: "Franchises", href: "/dashboard/admin/franchises", icon: Globe2 },
+    { label: "All branches", href: "/dashboard/admin/branches", icon: LayoutGrid },
+    { label: "Royalties", href: "/dashboard/admin/royalties", icon: Coins },
+  ],
+}
 
 const adminNavGroups: NavGroup[] = [
   {
@@ -146,6 +160,7 @@ const adminNavGroups: NavGroup[] = [
       { label: "Inquiries", href: "/dashboard/admin/inquiries", icon: Inbox },
       { label: "Callbacks", href: "/dashboard/admin/callbacks", icon: Inbox },
       { label: "Payments", href: "/dashboard/admin/settings", icon: Settings },
+      { label: "Royalties", href: "/dashboard/admin/royalties", icon: Coins },
     ],
   },
 ]
@@ -157,10 +172,12 @@ export function Sidebar() {
   const confirm = useConfirm()
   const [isOpen, setIsOpen] = useState(false)
 
-  const isAdmin = user?.role === "admin"
+  const isSuperAdmin = user?.role === "super_admin"
+  const isAdmin = user?.role === "admin" || isSuperAdmin
   const badges = useNavBadges(isAdmin)
-  const roleLabel =
-    user?.role === "admin" ? "Admin" : user?.role === "employee" ? "Employee" : "Customer"
+  const roleLabel = isSuperAdmin
+    ? "Super admin"
+    : user?.role === "admin" ? "Admin" : user?.role === "employee" ? "Employee" : "Customer"
   const fullName = user?.first_name
     ? `${user.first_name} ${user.last_name ?? ""}`.trim()
     : user?.email ?? "Account"
@@ -255,6 +272,8 @@ export function Sidebar() {
           </div>
         </div>
 
+        {isSuperAdmin ? <FranchiseSwitcher /> : null}
+
         <nav
           data-tour="sidebar-nav"
           className={cn(
@@ -263,7 +282,7 @@ export function Sidebar() {
           )}
         >
           {isAdmin ? (
-            adminNavGroups.map((group) => (
+            (isSuperAdmin ? [superNavGroup, ...adminNavGroups] : adminNavGroups).map((group) => (
               <div key={group.group} className="mb-5">
                 <p className="mb-2 px-3 text-[0.65rem] font-bold uppercase tracking-[0.22em] text-[#f0c8d3]/55">
                   {group.group}

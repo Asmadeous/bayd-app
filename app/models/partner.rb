@@ -1,4 +1,6 @@
 class Partner < ApplicationRecord
+  include FranchiseScoped
+
   has_many :employee_profiles, dependent: :nullify
   has_many :bookings, dependent: :nullify
   has_many :partner_payouts, dependent: :destroy
@@ -9,7 +11,7 @@ class Partner < ApplicationRecord
   # Email is the partner's provider login (staff_login), so it's required and
   # must be unique across all users — surfaced clearly at create time.
   validates :email, presence: true
-  validates :slug, presence: true, uniqueness: true
+  validates :slug, presence: true, uniqueness: { scope: :franchise_id }
   validates :platform_fee_pct, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }
 
   before_validation :assign_slug, on: :create

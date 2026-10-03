@@ -74,7 +74,7 @@ module Api
       def alert_admins_of_report(report)
         who = report.reported_user
         name = [ who.first_name, who.last_name ].compact_blank.join(" ").presence || "a user"
-        User.where(role: :admin, deleted_at: nil).find_each do |admin|
+        User.franchise_admins.find_each do |admin|
           NotificationService.deliver(
             user: admin, kind: :chat_reported,
             title: "Chat report: #{name}",

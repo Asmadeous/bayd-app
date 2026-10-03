@@ -15,6 +15,7 @@ import { TutorialButton } from "@/components/dashboard/tutorial-button"
 import { Button } from "@/components/ui/button"
 import { useShifts, type Shift } from "@/lib/hooks/use-time-clock"
 import { employeeShiftsSteps } from "@/lib/tours/employee-tour"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
 function dt(s: string | null) {
   if (!s) return "-"
@@ -171,5 +172,5 @@ function formatDistance(value: unknown) {
 
 function formatCurrency(value: unknown) {
   const amount = Number(value ?? 0)
-  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
+  return Number.isFinite(amount) ? `${formatMoney(amount)}` : "-"
 }

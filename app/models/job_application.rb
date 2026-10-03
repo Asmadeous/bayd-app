@@ -1,4 +1,6 @@
 class JobApplication < ApplicationRecord
+  include FranchiseScoped
+
   MAX_DOC_BYTES   = 5.megabytes
   ALLOWED_TYPES   = %w[application/pdf].freeze
   MAX_DOCUMENTS   = 3

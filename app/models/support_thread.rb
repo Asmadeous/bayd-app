@@ -3,6 +3,8 @@
 # browser), so a thread is never looked up by email. A signed-in customer's
 # thread is also linked to their user. Admins answer from the support inbox.
 class SupportThread < ApplicationRecord
+  include FranchiseScoped
+
   belongs_to :user, optional: true
   has_many :messages, -> { order(:created_at) }, class_name: "SupportMessage", dependent: :destroy
 
