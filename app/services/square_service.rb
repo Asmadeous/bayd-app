@@ -1,8 +1,6 @@
 require "openssl"
 require "base64"
 
-# Square for the current franchise: its own account keys (Franchise#credential;
-# the default franchise falls back to the deploy's env keys) and its currency.
 class SquareService
   SQUARE_VERSION = "2024-11-20"
 
@@ -19,7 +17,7 @@ class SquareService
       {
         name: i.name.to_s,
         quantity: i.quantity.to_s,
-        base_price_money: { amount: Franchise.current.minor_units(i.price), currency: currency }
+        base_price_money: { amount: (i.price.to_f * 100).round, currency: "CAD" }
       }
     end
 
@@ -29,7 +27,7 @@ class SquareService
         order: { location_id: location_id, reference_id: "ORD-#{order.id}", line_items: line_items },
         checkout_options: {
           redirect_url: redirect_url,
-          merchant_support_email: support_email
+          merchant_support_email: ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca")
         }
       }
     end
@@ -65,7 +63,7 @@ class SquareService
   # Verify a Square webhook: HMAC-SHA256 of (notification_url + raw_body) with
   # the webhook signature key, base64. Lenient when no key configured (dev).
   def self.verify_webhook(raw_body, signature, notification_url)
-    key = credential("webhook_signature_key")
+    key = ENV["SQUARE_WEBHOOK_SIGNATURE_KEY"].presence
     return false if key.blank? || signature.blank?
 
     expected = Base64.strict_encode64(OpenSSL::HMAC.digest("SHA256", key, "#{notification_url}#{raw_body}"))
@@ -78,7 +76,7 @@ class SquareService
       {
         name: item[:name].to_s,
         quantity: item[:quantity].to_s,
-        base_price_money: { amount: item[:price_cents].to_i, currency: currency }
+        base_price_money: { amount: item[:price_cents].to_i, currency: "CAD" }
       }
     end
 
@@ -88,7 +86,7 @@ class SquareService
         order: { location_id: location_id, line_items: line_items },
         checkout_options: {
           redirect_url: redirect_url,
-          merchant_support_email: support_email
+          merchant_support_email: ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca")
         }
       }
     end
@@ -116,7 +114,7 @@ class SquareService
       {
         name: i[:name].to_s,
         quantity: (i[:quantity] || 1).to_s,
-        base_price_money: { amount: i[:price_cents].to_i, currency: currency }
+        base_price_money: { amount: i[:price_cents].to_i, currency: "CAD" }
       }
     end
 
@@ -126,7 +124,7 @@ class SquareService
         order: { location_id: location_id, reference_id: reference, line_items: items },
         checkout_options: {
           redirect_url: redirect_url,
-          merchant_support_email: support_email
+          merchant_support_email: ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca")
         }
       }
     end
@@ -198,7 +196,7 @@ class SquareService
         source_id:   card_id,
         customer_id: customer_id,
         location_id: location_id,
-        amount_money: { amount: amount_cents.to_i, currency: currency },
+        amount_money: { amount: amount_cents.to_i, currency: "CAD" },
         note: note
       }.compact
     end
@@ -228,42 +226,28 @@ class SquareService
       "Square request failed (#{response.status})"
   end
 
-  def self.credential(key) = Franchise.current.credential("square", key)
-
-  def self.currency = Franchise.current.currency
-
-  def self.support_email = Franchise.current.contact_email.presence || ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca")
-
   def self.base_url
-    if Franchise.current.is_default && ENV["SQUARE_BASE_URL"].present? && Franchise.current.credentials["square"].blank?
-      return ENV["SQUARE_BASE_URL"]
-    end
-
-    environment == "production" ? "https://connect.squareup.com" : "https://connect.squareupsandbox.com"
+    ENV.fetch("SQUARE_BASE_URL", "https://connect.squareupsandbox.com")
   end
 
-  def self.access_token = credential("access_token").to_s
+  def self.access_token
+    ENV.fetch("SQUARE_ACCESS_TOKEN", "")
+  end
 
-  def self.location_id = credential("location_id").to_s
+  def self.location_id
+    ENV.fetch("SQUARE_LOCATION_ID", "")
+  end
 
   # Client-safe values the native Mobile Payments SDK (Tap to Pay) needs to
   # initialize on-device. The application id and location id are NOT secrets
   # (they ship in mobile apps by design); the access token never leaves the
   # server. environment drives which Square backend the SDK talks to.
-  def self.application_id = credential("application_id").to_s
+  def self.application_id
+    ENV.fetch("SQUARE_APPLICATION_ID", "")
+  end
 
-  def self.environment = credential("environment").presence || "sandbox"
-
-  # The keys work: Square answers for this franchise's location.
-  def self.test_connection
-    return { ok: false, message: "Add the access token and location ID first." } unless configured?
-
-    response = connection.get("/v2/locations/#{location_id}")
-    return { ok: true, message: "Connected to Square (#{response.body.dig('location', 'name')})." } if response.status == 200
-
-    { ok: false, message: error_message(response) }
-  rescue Faraday::Error => e
-    { ok: false, message: e.message }
+  def self.environment
+    ENV.fetch("SQUARE_ENVIRONMENT", "sandbox")
   end
 
   # Whether Tap to Pay can be initialized at all (needs an app id on top of the

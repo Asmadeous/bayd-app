@@ -11,7 +11,7 @@ class SupportMessageNotifyJob < ApplicationJob
     return unless starts_a_turn?(message)
 
     thread = message.support_thread
-    User.franchise_admins(thread.franchise).find_each do |admin|
+    User.where(role: :admin).find_each do |admin|
       NotificationService.deliver(
         user: admin, kind: :support_message,
         title: "New support chat message",

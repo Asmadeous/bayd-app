@@ -11,7 +11,6 @@ class BookingReminderJob < ApplicationJob
 
   REMINDERS = {
     "confirmed"    => { kind: "booking_confirmed",           audience: :customer },
-    "assigned"     => { kind: "booking_assigned",            audience: :staff },
     "day_before"   => { kind: "booking_reminder_day_before", audience: :customer },
     "day_of"       => { kind: "booking_reminder_day_of",     audience: :customer },
     "dispatch"     => { kind: "booking_dispatch",            audience: :staff },
@@ -28,9 +27,6 @@ class BookingReminderJob < ApplicationJob
 
     spec = REMINDERS.fetch(reminder)
     return unless still_relevant?(booking, reminder) # reschedule may have moved the time
-
-    # A visit's customer hears once, from its first live line, about every service.
-    return if spec[:audience] == :customer && !visit_lead?(booking)
 
     recipient = spec[:audience] == :staff ? booking.employee_profile&.user : booking.user
     return unless recipient
@@ -60,7 +56,7 @@ class BookingReminderJob < ApplicationJob
   #   day_of/dispatch -> booking is TODAY (company zone)
   def still_relevant?(booking, reminder)
     case reminder
-    when "confirmed", "assigned"
+    when "confirmed"
       true
     when "day_before"
       booking.starts_at > Time.current && booking.starts_at <= 26.hours.from_now
@@ -77,31 +73,9 @@ class BookingReminderJob < ApplicationJob
     end
   end
 
-  def visit_lead?(booking)
-    return true unless booking.visit
-
-    booking.visit.bookings.find { |b| b.status.in?(%w[confirmed in_progress]) }&.id == booking.id
-  end
-
-  # "Lash Lift + Pedicure" for a visit, nil for a standalone booking.
-  def visit_services(booking)
-    return unless booking.visit
-
-    booking.visit.bookings.reject(&:cancelled?).filter_map { |b| b.service&.name }.join(" + ")
-  end
-
-  # Who else is on the visit, so the tech knows they're sharing the appointment.
-  def shared_note(booking)
-    others = booking.visit&.bookings&.reject { |b| b.id == booking.id || b.cancelled? || b.employee_profile_id == booking.employee_profile_id }
-    return "" if others.blank?
-
-    " Shared visit with " + others.map { |b| "#{b.employee_profile&.user&.first_name} (#{b.service&.name})" }.join(", ") + "."
-  end
-
   def title_for(reminder, _booking)
     case reminder
     when "confirmed"    then "Your appointment is confirmed"
-    when "assigned"     then "New booking"
     when "day_before"   then "Your appointment is tomorrow"
     when "day_of"       then "Your appointment is today"
     when "dispatch"     then "You have a job today"
@@ -111,12 +85,10 @@ class BookingReminderJob < ApplicationJob
   end
 
   def body_for(reminder, booking)
-    own = booking.service&.name || "Your appointment"
-    svc = REMINDERS.fetch(reminder)[:audience] == :customer ? visit_services(booking) || own : own
+    svc = booking.service&.name || "Your appointment"
     when_local = booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%b %-d at %-l:%M %p")
     case reminder
     when "confirmed"    then "#{svc} is booked for #{when_local}. We'll remind you before."
-    when "assigned"     then "#{svc} for #{booking.booked_for_name.presence || booking.user&.first_name} on #{when_local}.#{shared_note(booking)}"
     when "day_before"   then "#{svc} is tomorrow, #{when_local}."
     when "day_of"       then "#{svc} is today at #{when_local}."
     when "dispatch"     then "#{svc} at #{when_local}. Check your schedule."

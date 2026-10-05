@@ -1,15 +1,9 @@
 class Booking < ApplicationRecord
-  include FranchiseScoped
-
   belongs_to :user
   belongs_to :employee_profile
   belongs_to :service
   belongs_to :booking_request, optional: true
   belongs_to :address, optional: true
-  belongs_to :visit, optional: true, inverse_of: :bookings
-
-  # Set by Visit#cancel!, which tells the customer once for the whole visit.
-  attr_accessor :quiet_customer_cancel
 
   has_many :payments, as: :payable, dependent: :destroy
   has_many :shifts, dependent: :nullify
@@ -79,11 +73,6 @@ class Booking < ApplicationRecord
   # Tell the customer and the tech, whichever path cancelled it (customer, admin,
   # subscription failure).
   after_update_commit :on_cancelled, if: -> { saved_change_to_status? && cancelled? }
-
-  # A visit is invoiced once, when its last line finishes. A completed line gets
-  # there through BookingCompletedJob; any other ending is caught here.
-  after_update_commit :close_out_visit,
-                      if: -> { visit_id && saved_change_to_status? && status.in?(%w[cancelled no_show missed]) }
 
   scope :upcoming,  -> { where(status: %w[confirmed]).where("starts_at > ?", Time.current) }
   # The tech's working list: in-progress jobs, plus confirmed jobs that haven't
@@ -290,19 +279,21 @@ class Booking < ApplicationRecord
   end
 
   def on_cancelled
-    quiet_customer_cancel ? BookingCancelledJob.perform_later(id, false) : BookingCancelledJob.perform_later(id)
+    BookingCancelledJob.perform_later(id)
   end
 
-  def close_out_visit
-    visit&.issue_invoice_if_finished
-  rescue StandardError => e
-    Rails.logger.warn("[Booking##{id}] visit invoice failed: #{e.message}")
-  end
-
-  # Both ends must fall within the franchise's open hours (local zone), and the
-  # whole service must finish before close, on the same day.
+  # Both ends must fall within the business's open hours (local zone), and the
+  # whole service must finish before close.
   def within_business_hours?(new_start, new_end)
-    BusinessHours.open_for?(new_start, new_end)
+    zone = BusinessHours.zone
+    local_start = new_start.in_time_zone(zone)
+    local_end   = new_end.in_time_zone(zone)
+    return false unless new_end > new_start
+    return false if local_start.hour < BusinessHours::OPEN_HOUR
+    # end must be on the same day and not past close
+    local_end.to_date == local_start.to_date &&
+      (local_end.hour < BusinessHours::CLOSE_HOUR ||
+       (local_end.hour == BusinessHours::CLOSE_HOUR && local_end.min.zero? && local_end.sec.zero?))
   end
 
   # Notify the customer (in-app + email via NotificationService) and the tech

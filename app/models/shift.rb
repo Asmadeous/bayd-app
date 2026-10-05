@@ -1,6 +1,4 @@
 class Shift < ApplicationRecord
-  include FranchiseScoped
-
   belongs_to :employee_profile
   # A shift is the clock-in/out for one booking. Optional so any legacy
   # day-level shift rows (pre per-booking clock) remain valid.

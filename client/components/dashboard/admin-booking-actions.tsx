@@ -3,7 +3,6 @@
 import { useState } from "react"
 
 import { useToast } from "@/components/bayd-toast-provider"
-import { AdminVisitActions } from "@/components/dashboard/admin-visit-actions"
 import { CollectPaymentButton } from "@/components/dashboard/collect-payment-button"
 import { ReassignControl } from "@/components/dashboard/reassign-control"
 import { RescheduleDialog } from "@/components/dashboard/reschedule-dialog"
@@ -30,7 +29,6 @@ import {
 } from "@/components/ui/dialog"
 import { useUpdateBooking } from "@/lib/hooks/use-admin"
 import type { Booking } from "@/lib/hooks/use-bookings"
-import { isVisit } from "@/lib/visits"
 
 // Everything an admin can do to one booking: reassign, reschedule, start,
 // complete, collect payment, and cancel with a recorded reason. Used on the
@@ -105,10 +103,9 @@ export function AdminBookingActions({ booking }: { booking: Booking }) {
       <CollectPaymentButton booking={booking} />
       {open && (
         <Button disabled={update.isPending} onClick={() => setCancelOpen(true)} size="xs" variant="destructive">
-          {isVisit(booking) ? "Cancel this service" : "Cancel"}
+          Cancel
         </Button>
       )}
-      {open && isVisit(booking) && <AdminVisitActions booking={booking} />}
 
       <Dialog open={cancelOpen} onOpenChange={(next) => { if (!next) closeCancel() }}>
         <DialogContent className="max-w-lg">

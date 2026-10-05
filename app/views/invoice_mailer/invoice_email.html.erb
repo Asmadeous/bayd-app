@@ -6,7 +6,7 @@
 
 <p style="font-size:15px; line-height:1.6; color:#4f535a;">
   Hi <%= @user.first_name.presence || "there" %>, thank you for choosing Beauty @ Your Door.
-  Your invoice for <strong><%= @invoice.franchise.money(@invoice.total) %> <%= @invoice.currency %></strong>
+  Your invoice for <strong><%= number_to_currency(@invoice.total) %> <%= @invoice.currency %></strong>
   is attached as a PDF.
 </p>
 
@@ -33,14 +33,14 @@
   <% @invoice.line_items.each do |li| %>
     <tr>
       <td style="padding:6px 0;"><%= li["description"] %><%= " x#{li['quantity']}" if li["quantity"].to_i > 1 %></td>
-      <td style="padding:6px 0; text-align:right;"><%= @invoice.franchise.money(li["amount"]) %></td>
+      <td style="padding:6px 0; text-align:right;"><%= number_to_currency(li["amount"]) %></td>
     </tr>
   <% end %>
-  <tr><td style="padding:6px 0; color:#5f6268; border-top:1px solid #e6e2dc;"><%= @invoice.details&.dig("business", "tax_name") || "Tax" %> included</td><td style="padding:6px 0; text-align:right; color:#5f6268; border-top:1px solid #e6e2dc;"><%= @invoice.franchise.money(@invoice.tax) %></td></tr>
-  <tr><td style="padding:6px 0; font-weight:bold;">Total</td><td style="padding:6px 0; text-align:right; font-weight:bold;"><%= @invoice.franchise.money(@invoice.total) %> <%= @invoice.currency %></td></tr>
+  <tr><td style="padding:6px 0; color:#5f6268; border-top:1px solid #e6e2dc;">HST included</td><td style="padding:6px 0; text-align:right; color:#5f6268; border-top:1px solid #e6e2dc;"><%= number_to_currency(@invoice.tax) %></td></tr>
+  <tr><td style="padding:6px 0; font-weight:bold;">Total</td><td style="padding:6px 0; text-align:right; font-weight:bold;"><%= number_to_currency(@invoice.total) %> <%= @invoice.currency %></td></tr>
   <% if d.key?("balance_due") %>
-    <tr><td style="padding:6px 0; color:#5f6268;">Paid<%= " (#{@invoice.payment_method})" if @invoice.payment_method.present? %></td><td style="padding:6px 0; text-align:right; color:#5f6268;"><%= @invoice.franchise.money(d["amount_paid"]) %></td></tr>
-    <tr><td style="padding:6px 0; font-weight:bold; color:<%= d["balance_due"].to_f.positive? ? "#c96c83" : "#3f7e47" %>;">Balance due</td><td style="padding:6px 0; text-align:right; font-weight:bold;"><%= @invoice.franchise.money(d["balance_due"]) %></td></tr>
+    <tr><td style="padding:6px 0; color:#5f6268;">Paid<%= " (#{@invoice.payment_method})" if @invoice.payment_method.present? %></td><td style="padding:6px 0; text-align:right; color:#5f6268;"><%= number_to_currency(d["amount_paid"]) %></td></tr>
+    <tr><td style="padding:6px 0; font-weight:bold; color:<%= d["balance_due"].to_f.positive? ? "#c96c83" : "#3f7e47" %>;">Balance due</td><td style="padding:6px 0; text-align:right; font-weight:bold;"><%= number_to_currency(d["balance_due"]) %></td></tr>
   <% end %>
 </table>
 

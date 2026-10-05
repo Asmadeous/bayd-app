@@ -5,7 +5,6 @@ import { Gift } from "lucide-react"
 import { EmptyState } from "../empty-state"
 import { AppHeader } from "../app-header"
 import { appScreenClass } from "../app-theme"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 export function GiftCardsList() {
   const { data: cards = [], isLoading } = useGiftCards()
@@ -30,9 +29,9 @@ export function GiftCardsList() {
               <div className="mt-3 flex items-end justify-between">
                 <div>
                   <p className="text-[0.8125rem] uppercase tracking-wide text-white/60">Balance</p>
-                  <p className="text-2xl font-extrabold">{formatMoney(Number(c.current_balance))}</p>
+                  <p className="text-2xl font-extrabold">${Number(c.current_balance).toFixed(2)}</p>
                 </div>
-                <p className="text-sm text-white/70">of {formatMoney(Number(c.initial_balance))}</p>
+                <p className="text-sm text-white/70">of ${Number(c.initial_balance).toFixed(2)}</p>
               </div>
               {c.expires_at && (
                 <p className="mt-2 text-sm text-white/60">

@@ -4,7 +4,7 @@ No-show not collected
 couldn't be charged. It is still owed and needs collecting by hand.
 
 Reason:     <%= @reason %>
-Still owed: <%= Franchise.current.money(@owed) %>
+Still owed: <%= number_to_currency(@owed) %>
 
 Booking:    #<%= @booking.id %>
 Service:    <%= @booking.service.name %>

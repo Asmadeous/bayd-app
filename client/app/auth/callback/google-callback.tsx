@@ -7,7 +7,7 @@ import api from "@/lib/api";
 import { useAuthStore, type AuthUser } from "@/lib/stores/auth-store";
 
 function roleDashboard(role: string) {
-  if (role === "admin" || role === "super_admin") return "/dashboard/admin";
+  if (role === "admin") return "/dashboard/admin";
   if (role === "employee") return "/dashboard/employee";
   return "/dashboard/customer";
 }

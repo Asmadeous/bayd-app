@@ -74,58 +74,7 @@ module Api
         render json: { date: date.to_s, mapped: false, providers: [], by_time: {}, error: "availability_unavailable" }
       end
 
-      # Open times for a multi-service visit: every chosen service staffed,
-      # back-to-back in the order given (VisitPlanner picks the techs).
-      #   { date:, by_time: { "HH:MM": { single_tech:, lines: [...] } }, next_available_date: }
-      def visit
-        services = ordered_services
-        date = parse_date(params[:date])
-        if services.nil? || date.nil?
-          return render json: { error: "1-#{VisitPlanner::MAX_SERVICES} active service_ids and a valid date are required" },
-                        status: :bad_request
-        end
-
-        lat, lng = customer_coords
-        opts = { services: services, customer_lat: lat, customer_lng: lng,
-                 postal_code: params[:postal_code].presence, party_size: party_size,
-                 ignore_booking_ids: own_visit_booking_ids }
-        planner = VisitPlanner.new(date: date, **opts)
-        by_time = planner.slots.transform_values do |plan|
-          { single_tech: planner.single_tech?(plan), lines: plan.map { |line| visit_line_json(line) } }
-        end
-        next_date = VisitPlanner.first_available_date(from: date + 1, **opts) if by_time.empty?
-
-        render json: { date: date.to_s, by_time: by_time, next_available_date: next_date&.to_s }
-      rescue StandardError => e
-        Rails.logger.warn("[AvailabilityController#visit] #{e.class}: #{e.message}")
-        render json: { date: date.to_s, by_time: {}, error: "availability_unavailable" }
-      end
-
       private
-
-      # The requested services in the customer's order, or nil when any is
-      # missing/inactive or there are none / too many.
-      def ordered_services
-        services = Service.active_in_order(params[:service_ids])
-        services if services.present? && services.size <= VisitPlanner::MAX_SERVICES
-      end
-
-      # Rescheduling: the signed-in customer's own visit doesn't block itself.
-      def own_visit_booking_ids
-        return [] if params[:visit_id].blank? || optional_current_user.nil?
-
-        optional_current_user.visits.find_by(id: params[:visit_id])&.bookings&.pluck(:id) || []
-      end
-
-      def visit_line_json(line)
-        zone = BusinessHours.zone
-        ep = line.employee
-        { service_id: line.service.id, service_name: line.service.name,
-          employee_id: ep.id, name: ep.user&.first_name, title: ep.title, photo_url: ep.photo_url,
-          starts_at: line.starts_at.iso8601, ends_at: line.ends_at.iso8601,
-          start_time: line.starts_at.in_time_zone(zone).strftime("%H:%M"),
-          end_time: line.ends_at.in_time_zone(zone).strftime("%H:%M") }
-      end
 
       # This tech's open "HH:MM" starts for the visit, from our engine. Travel is
       # filtered when the customer's coordinates are known (sent once the address
@@ -185,11 +134,10 @@ module Api
       # the booking gate still enforces coverage on submit.
       def serves_customer_fsa?(employee)
         postal = params[:postal_code].presence
-        lat, lng = customer_coords
-        return true if postal.blank? && (lat.nil? || employee.service_radius_km.blank?)
+        return true if postal.blank?
         return true unless EmployeeProfile.coverage_configured?
 
-        employee.serves_location?(postal_code: postal, latitude: lat, longitude: lng)
+        employee.serves_fsa?(postal)
       end
 
       def parse_date(raw)

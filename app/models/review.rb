@@ -1,6 +1,4 @@
 class Review < ApplicationRecord
-  include FranchiseScoped
-
   belongs_to :user
   belongs_to :booking, optional: true
   belongs_to :employee_profile, optional: true

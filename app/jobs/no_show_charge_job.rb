@@ -32,18 +32,14 @@ class NoShowChargeJob < ApplicationJob
 
     amount = booking.outstanding_balance
     return [ nil, nil ] if amount <= 0
+    return [ nil, "No card on file" ] unless user.card_on_file? && user.square_customer_id.present?
 
-    profile = user.payment_profile(booking.franchise)
-    return [ nil, "No card on file" ] unless profile&.card_on_file? && profile.customer_ref.present?
-
-    result = Current.set(franchise: booking.franchise) do
-      SquareService.charge_card(
-        customer_id: profile.customer_ref,
-        card_id: profile.card_ref,
-        amount_cents: booking.franchise.minor_units(amount),
-        note: "#{NOTE_PREFIX} - #{booking.service.name} ##{booking.id}"
-      )
-    end
+    result = SquareService.charge_card(
+      customer_id: user.square_customer_id,
+      card_id: user.square_card_id,
+      amount_cents: (amount * 100).round.to_i,
+      note: "#{NOTE_PREFIX} - #{booking.service.name} ##{booking.id}"
+    )
 
     unless result[:success]
       Rails.logger.warn("[NoShowChargeJob] booking #{booking.id} charge failed: #{result[:error]}")
@@ -85,7 +81,7 @@ class NoShowChargeJob < ApplicationJob
     customer = booking.user.first_name.presence || "A customer"
     owed = money(booking.outstanding_balance)
 
-    User.franchise_admins(booking.franchise).find_each do |admin|
+    User.where(role: :admin).find_each do |admin|
       next if Notification.exists?(user: admin, booking: booking, kind: :booking_no_show_uncollected)
 
       NotificationService.deliver(
@@ -100,7 +96,7 @@ class NoShowChargeJob < ApplicationJob
     AdminMailer.no_show_uncollected(booking, failure).deliver_later if first_alert
   end
 
-  def money(amount) = Franchise.current.money(amount)
+  def money(amount) = ActiveSupport::NumberHelper.number_to_currency(amount)
 
   def local_time(booking)
     booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%b %-d at %-l:%M %p")

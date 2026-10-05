@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import type { GiftCard } from "@/lib/hooks/use-gift-cards"
 import { employeeGiftCardsSteps } from "@/lib/tours/employee-tour"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 const inputCls =
   "h-10 rounded-lg border border-black/15 px-3 text-sm text-[#101217] focus:border-[#c96c83] focus:outline-none"
@@ -153,7 +152,7 @@ export default function EmployeeGiftCardsPage() {
 
 function formatCurrency(value: unknown) {
   const amount = Number(value)
-  return Number.isFinite(amount) ? `${formatMoney(amount)}` : "-"
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
 }
 
 function getApiErrorMessage(error: unknown, fallback: string) {

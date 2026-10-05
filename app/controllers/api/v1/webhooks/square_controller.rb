@@ -4,11 +4,11 @@ module Api
       # Square payment webhook — authoritative confirmation for Square-gateway
       # online-shopping orders. Idempotent via sync_events.
       class SquareController < ApplicationController
-        include WebhookFranchise
+        skip_before_action :authenticate_user!
 
         def receive
           raw = request.raw_post
-          notification_url = Current.franchise.is_default ? ENV.fetch("SQUARE_WEBHOOK_NOTIFICATION_URL", request.original_url) : request.original_url
+          notification_url = ENV.fetch("SQUARE_WEBHOOK_NOTIFICATION_URL", request.original_url)
           verified = SquareService.verify_webhook(raw, request.headers["x-square-hmacsha256-signature"], notification_url)
           return head :unauthorized if signature_configured? && !verified
 
@@ -34,7 +34,7 @@ module Api
         end
 
         def signature_configured?
-          SquareService.credential("webhook_signature_key").present?
+          ENV["SQUARE_WEBHOOK_SIGNATURE_KEY"].present?
         end
       end
     end

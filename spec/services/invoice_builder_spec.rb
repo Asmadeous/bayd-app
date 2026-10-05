@@ -38,7 +38,6 @@ RSpec.describe InvoiceBuilder do
   end
 
   it "snapshots the client, address, appointment, technician, and payments" do
-    Franchise.default.update!(contact_phone: "+1 (647) 970-8259")
     invoice = described_class.new(booking(payments: [ { amount: 220, method: "cash" } ])).build
     d = invoice.details
 

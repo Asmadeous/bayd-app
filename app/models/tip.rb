@@ -2,8 +2,6 @@
 # (via Square) and therefore OWED to the tech — tracked here for payout. Cash
 # tips are logged for the record only (the tech already has the money).
 class Tip < ApplicationRecord
-  include FranchiseScoped
-
   belongs_to :booking
   belongs_to :employee_profile
 

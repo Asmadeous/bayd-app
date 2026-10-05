@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dialog"
 import api from "@/lib/api"
 import type { AdminJobApplication } from "@/lib/hooks/use-admin"
-import { staffEmailDomain } from "@/lib/stores/franchise-store"
 
 const inputClass =
   "h-10 w-full border border-black/15 bg-white px-3 text-sm text-[#101217] outline-none focus:border-[#c96c83]"
@@ -27,11 +26,10 @@ function splitName(name: string) {
   return { first, last: rest.join(" ") }
 }
 
-// Staff sign in with a first-name company address (e.g. maria@baydspa.ca),
-// on their franchise's staff domain.
+// Staff sign in with a first-name company address (e.g. maria@baydspa.ca).
 function suggestedEmail(first: string) {
   const local = first.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "")
-  return local ? `${local}@${staffEmailDomain()}` : ""
+  return local ? `${local}@baydspa.ca` : ""
 }
 
 // Hire an applicant: confirm their details, pick their staff sign-in email,
@@ -129,7 +127,7 @@ export function HireApplicantButton({ application }: { application: AdminJobAppl
                   </label>
                 </div>
                 <label className="block">
-                  <span className="mb-1 block text-xs font-bold text-[#6b6f76]">Staff sign-in email (@{staffEmailDomain()})</span>
+                  <span className="mb-1 block text-xs font-bold text-[#6b6f76]">Staff sign-in email (@baydspa.ca)</span>
                   <input className={inputClass} value={form.email} onChange={(e) => set({ email: e.target.value })} />
                 </label>
                 <div className="grid gap-3 sm:grid-cols-2">

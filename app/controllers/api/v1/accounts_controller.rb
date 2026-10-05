@@ -56,9 +56,9 @@ module Api
 
         lines = paid.map do |b|
           "##{b.id} #{b.service&.name} on #{b.starts_at.in_time_zone(BusinessHours.zone).strftime('%b %-d')} " \
-            "(#{Franchise.current.money(b.amount_paid)} paid)"
+            "(#{ActiveSupport::NumberHelper.number_to_currency(b.amount_paid)} paid)"
         end
-        User.franchise_admins.find_each do |admin|
+        User.where(role: :admin, deleted_at: nil).find_each do |admin|
           NotificationService.deliver(
             user: admin, kind: :booking_cancelled,
             title: "A customer deleted their account",

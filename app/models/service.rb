@@ -1,6 +1,4 @@
 class Service < ApplicationRecord
-  include FranchiseScoped
-
   # Uploaded image (Active Storage), preferred over the legacy image_url string.
   has_one_attached :image
 
@@ -21,14 +19,6 @@ class Service < ApplicationRecord
   validates :price, numericality: { greater_than_or_equal_to: 0 }
 
   scope :active, -> { where(active: true) }
-
-  # Active services for `ids` in the caller's order (a visit's line order), or
-  # nil when any is missing or inactive.
-  def self.active_in_order(ids)
-    ids = Array(ids).map(&:to_i).reject(&:zero?).uniq
-    found = active.where(id: ids).index_by(&:id)
-    found.size == ids.size ? found.values_at(*ids) : nil
-  end
 
   # Price for a given client type, falling back to the base price when no
   # override is set (or the type is unknown / "adult").

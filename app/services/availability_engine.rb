@@ -27,9 +27,7 @@ class AvailabilityEngine
   # party_size — a group is ONE long visit; duration scales by this (default 1)
   # extra_minutes — add-on time done in the same visit (per visit, not × party)
   # customer_lat/lng — appointment location for travel feasibility (nil = not judged)
-  # exclude_booking_ids - bookings to treat as gone (re-planning a visit's own lines)
-  def initialize(employee:, service:, date:, party_size: 1, extra_minutes: 0, customer_lat: nil, customer_lng: nil,
-                 exclude_booking_ids: [])
+  def initialize(employee:, service:, date:, party_size: 1, extra_minutes: 0, customer_lat: nil, customer_lng: nil)
     @employee   = employee
     @service    = service
     @date       = date
@@ -37,7 +35,6 @@ class AvailabilityEngine
     @extra_minutes = [ extra_minutes.to_i, 0 ].max
     @customer_lat = customer_lat
     @customer_lng = customer_lng
-    @exclude_booking_ids = exclude_booking_ids
   end
 
   # Array of "HH:MM" slot starts the tech is free for this visit.
@@ -45,8 +42,7 @@ class AvailabilityEngine
     windows = bookable_windows
     return [] if windows.empty?
 
-    tf = TravelFeasibility.new(employee: @employee, customer_lat: @customer_lat, customer_lng: @customer_lng,
-                               exclude_ids: @exclude_booking_ids)
+    tf = TravelFeasibility.new(employee: @employee, customer_lat: @customer_lat, customer_lng: @customer_lng)
     duration = (@service.duration_minutes * @party_size) + @extra_minutes
 
     windows.flat_map { |ws, we| candidate_starts(ws, we, duration) }
@@ -114,7 +110,6 @@ class AvailabilityEngine
     @existing_windows ||=
       @employee.bookings
                .where(status: %w[pending confirmed in_progress])
-               .where.not(id: @exclude_booking_ids)
                .where("ends_at > ? AND starts_at < ?", day_start, day_end)
                .pluck(:starts_at, :ends_at)
   end

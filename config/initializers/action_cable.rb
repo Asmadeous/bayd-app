@@ -17,7 +17,4 @@ capacitor_origins = %w[
   ionic://localhost
 ]
 
-# A Proc matches with ===, so live franchises' sites are allowed too.
-franchise_origins = ->(origin) { FranchiseOrigins.allowed?(origin) }
-
-Rails.application.config.action_cable.allowed_request_origins = (cors_origins + capacitor_origins).uniq + [ franchise_origins ]
+Rails.application.config.action_cable.allowed_request_origins = (cors_origins + capacitor_origins).uniq

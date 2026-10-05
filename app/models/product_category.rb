@@ -1,6 +1,4 @@
 class ProductCategory < ApplicationRecord
-  include FranchiseScoped
-
   belongs_to :parent, class_name: "ProductCategory", optional: true
   has_many :subcategories, class_name: "ProductCategory", foreign_key: :parent_id, dependent: :nullify, inverse_of: :parent
   has_many :products, dependent: :nullify
@@ -9,7 +7,7 @@ class ProductCategory < ApplicationRecord
   has_one_attached :image
 
   validates :name, :slug, presence: true
-  validates :slug, uniqueness: { scope: :franchise_id }
+  validates :slug, uniqueness: true
 
   scope :active, -> { where(active: true) }
   scope :roots,  -> { where(parent_id: nil) }

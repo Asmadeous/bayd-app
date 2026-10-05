@@ -6,8 +6,7 @@ import { useState } from "react"
 import { History, Lock, MessageCircle, Navigation, Star, Video } from "lucide-react"
 
 import api from "@/lib/api"
-import { useBookingsList, useBookingsRange, useCancelBooking, useCancelVisit, type Booking } from "@/lib/hooks/use-bookings"
-import { collapseVisits, isVisit, visitLines, visitTechNames, visitTechs, visitTitle } from "@/lib/visits"
+import { useBookingsList, useBookingsRange, useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
 import { useBookingAccess, windowNotStartedMessage } from "@/lib/booking-access"
 import { BookingRow } from "@/components/calendar/booking-row"
 import { LoadMore } from "@/components/load-more"
@@ -50,11 +49,9 @@ export function BookingsPanel({
   action?: React.ReactNode
 }) {
   const [view, setView] = useState<BookingView>("list")
-  const { items, isLoading, hasMore, loadingMore, loadMore } = useBookingsList(tab, {
+  const { items: list, isLoading, hasMore, loadingMore, loadMore } = useBookingsList(tab, {
     enabled: tab === "past" || view === "list",
   })
-  // A multi-service visit is one row naming every service and tech.
-  const list = collapseVisits(items)
 
   return (
     <div>
@@ -79,13 +76,7 @@ export function BookingsPanel({
           <>
             <ul className="space-y-3">
               {list.map((b) => (
-                <BookingRow
-                  key={b.id}
-                  booking={b}
-                  title={visitTitle(b)}
-                  who={visitTechNames(b)}
-                  href={`/app/bookings/view?id=${b.id}`}
-                />
+                <BookingRow key={b.id} booking={b} who={b.employee_profile.name} href={`/app/bookings/view?id=${b.id}`} />
               ))}
             </ul>
             <LoadMore className="mt-3" hasMore={hasMore} loading={loadingMore} onLoad={loadMore} />
@@ -150,12 +141,7 @@ export function AppointmentActions({ booking, cancellable, now }: { booking: Boo
   const confirm = useConfirm()
   const [rescheduling, setRescheduling] = useState(false)
   const [reviewing, setReviewing] = useState(false)
-  const cancelOne = useCancelBooking()
-  const cancelVisit = useCancelVisit()
-  // A multi-service visit is cancelled as a whole; each tech is messaged and
-  // tracked separately.
-  const wholeVisit = isVisit(booking) && booking.visit_id != null
-  const cancelBooking = wholeVisit ? cancelVisit : cancelOne
+  const cancelBooking = useCancelBooking()
   const access = useBookingAccess(booking)
   // Self-reschedule is capped at 2 per booking (backend enforces; hide when spent).
   const canReschedule = booking.reschedule_count < 2 && ["pending", "confirmed"].includes(booking.status)
@@ -170,15 +156,14 @@ export function AppointmentActions({ booking, cancellable, now }: { booking: Boo
     // Dangerous, irreversible -> real modal confirmation, not an inline toggle.
     const ok = await confirm({
       title: "Cancel appointment?",
-      message: `Your ${wholeVisit ? visitTitle(booking) : booking.service.name} on ${formatBookingDate(booking.starts_at)} will be cancelled. This can't be undone.`,
+      message: `Your ${booking.service.name} on ${formatBookingDate(booking.starts_at)} will be cancelled. This can't be undone.`,
       confirmLabel: "Cancel appointment",
       cancelLabel: "Keep it",
       tone: "danger",
     })
     if (!ok) return
     try {
-      if (wholeVisit && booking.visit_id != null) await cancelVisit.mutateAsync({ visitId: booking.visit_id })
-      else await cancelOne.mutateAsync({ id: booking.id })
+      await cancelBooking.mutateAsync({ id: booking.id })
       toast({ title: "Appointment cancelled", variant: "success" })
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error
@@ -208,27 +193,9 @@ export function AppointmentActions({ booking, cancellable, now }: { booking: Boo
         </button>
       ) : null}
 
-      {wholeVisit
-        ? visitTechs(booking).map((t) =>
-            t.userId ? <MessageTechAction key={t.userId} techUserId={t.userId} name={t.name} /> : null,
-          )
-        : booking.employee_profile.user_id ? <MessageTechAction techUserId={booking.employee_profile.user_id} /> : null}
+      {booking.employee_profile.user_id ? <MessageTechAction techUserId={booking.employee_profile.user_id} /> : null}
 
-      {cancellable && access.open && wholeVisit
-        ? visitLines(booking)
-            .filter((l) => ["confirmed", "in_progress"].includes(l.status))
-            .map((l) => (
-              <Link
-                key={l.bookingId}
-                href={`/app/bookings/track?id=${l.bookingId}`}
-                className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-[#101217] py-2.5 text-sm font-bold text-white"
-              >
-                <Navigation className="size-4" aria-hidden />
-                Track {l.tech.name ?? "your tech"} ({l.serviceName})
-              </Link>
-            ))
-        : null}
-      {cancellable && access.open && !wholeVisit && ["confirmed", "in_progress"].includes(booking.status) && (
+      {cancellable && access.open && ["confirmed", "in_progress"].includes(booking.status) && (
         <Link
           href={`/app/bookings/track?id=${booking.id}`}
           className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-[#101217] py-2.5 text-sm font-bold text-white"
@@ -347,7 +314,7 @@ function MeetAction({ booking }: { booking: Booking }) {
 // Opens (or reuses) the conversation with this booking's technician, then jumps
 // to the live thread. Mirrors the desktop MessageTechButton on the shared
 // find-or-create POST /conversations { user_id } contract.
-function MessageTechAction({ techUserId, name }: { techUserId: number; name?: string | null }) {
+function MessageTechAction({ techUserId }: { techUserId: number }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
@@ -372,7 +339,7 @@ function MessageTechAction({ techUserId, name }: { techUserId: number; name?: st
       className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-black/15 py-2.5 text-sm font-semibold text-[#101217] disabled:opacity-50"
     >
       <MessageCircle className="size-4 text-[#c96c83]" aria-hidden />
-      {loading ? "Opening…" : name ? `Message ${name}` : "Message your tech"}
+      {loading ? "Opening…" : "Message your tech"}
     </button>
   )
 }

@@ -34,7 +34,6 @@ import { useBookingsRange, type Booking } from "@/lib/hooks/use-bookings"
 import { useCalendarState } from "@/lib/hooks/use-calendar-state"
 import { useEmployeeScheduleRange } from "@/lib/hooks/use-employee"
 import { paymentMethodLabel } from "@/lib/payment-methods"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 // One calendar per role. Each loads exactly the visible range, opens a detail
 // sheet with that role's existing actions, and sends empty future slots to that
@@ -278,7 +277,7 @@ function BookingDetailSheet({
   if (booking.addons?.length) rows.push({ label: "Add-ons", value: booking.addons.map((a) => a.name).join(", ") })
   rows.push({
     label: "Total",
-    value: `${formatMoney(Number(booking.total))}${due > 0 ? ` · ${formatMoney(due)} due` : booking.paid_methods?.length ? ` · paid by ${booking.paid_methods.map(paymentMethodLabel).join(" + ")}` : ""}`,
+    value: `$${Number(booking.total).toFixed(2)}${due > 0 ? ` · $${due.toFixed(2)} due` : booking.paid_methods?.length ? ` · paid by ${booking.paid_methods.map(paymentMethodLabel).join(" + ")}` : ""}`,
   })
   if (booking.notes) rows.push({ label: "Notes", value: booking.notes })
   if (booking.status === "cancelled" && booking.cancellation_reason) {

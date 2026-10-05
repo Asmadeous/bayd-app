@@ -5,7 +5,6 @@
 # need to hunt down and cancel the old jobs).
 #
 #   confirmed    -> now (on book)
-#   assigned     -> staff, now (the tech hears about their new job)
 #   day_before   -> 24h before starts_at (skipped if that's already past)
 #   day_of       -> that morning, 9am company-zone (skipped if past)
 #   dispatch     -> staff, that morning 8am company-zone (skipped if past)
@@ -24,7 +23,6 @@ class BookingReminders
     return unless @booking&.starts_at
 
     enqueue_now("confirmed")
-    enqueue_now("assigned")
     enqueue_at("day_before", 24.hours.before(@booking.starts_at))
     enqueue_at("day_of", morning_of(@booking.starts_at, hour: 9))
     enqueue_at("dispatch", morning_of(@booking.starts_at, hour: 8))

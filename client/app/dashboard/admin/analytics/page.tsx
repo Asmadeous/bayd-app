@@ -18,7 +18,6 @@ import {
   type AnalyticsEmployee,
 } from "@/lib/hooks/use-admin"
 import { adminAnalyticsSteps } from "@/lib/tours/admin-analytics-tour"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 const PERIODS: { key: AnalyticsPeriod; label: string }[] = [
   { key: "7d", label: "7 days" },
@@ -28,8 +27,11 @@ const PERIODS: { key: AnalyticsPeriod; label: string }[] = [
   { key: "all", label: "All time" },
 ]
 
-// Whole amounts in the franchise's currency.
-const cad = { format: (value: number) => formatMoney(value, { maximumFractionDigits: 0 }) }
+const cad = new Intl.NumberFormat("en-CA", {
+  style: "currency",
+  currency: "CAD",
+  maximumFractionDigits: 0,
+})
 
 export default function AdminAnalyticsPage() {
   const [period, setPeriod] = useState<AnalyticsPeriod>("30d")

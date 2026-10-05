@@ -11,17 +11,10 @@ import type { Booking } from "@/lib/hooks/use-bookings"
 
 // Opens (or reuses) a conversation with the booking's technician and jumps to the
 // messages page. Uses the 2b POST /conversations { user_id } find-or-create.
-// On a multi-service visit, `tech` picks which of its technicians to message.
-export function MessageTechButton({
-  booking,
-  tech,
-}: {
-  booking: Booking
-  tech?: { userId: number | null; name: string | null }
-}) {
+export function MessageTechButton({ booking }: { booking: Booking }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const techUserId = tech ? tech.userId : booking.employee_profile?.user_id
+  const techUserId = booking.employee_profile?.user_id
 
   if (!techUserId) return null
 
@@ -41,7 +34,7 @@ export function MessageTechButton({
   return (
     <Button type="button" variant="secondary" size="xs" onClick={open} disabled={loading}>
       <Mail className="mr-1 size-3.5" />
-      {tech?.name ? `Message ${tech.name}` : "Message"}
+      Message
     </Button>
   )
 }

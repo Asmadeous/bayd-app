@@ -19,7 +19,6 @@ import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
 import { hapticSuccess, hapticTap, hapticError } from "@/lib/native/haptics"
 import { appScreenClass } from "../app-theme"
 import { AppHeader } from "../app-header"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 interface ApiVariant {
   id: number
@@ -213,9 +212,9 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
 function priceLabel(product: ApiProduct): string {
   if (product.has_variants && product.variants.length > 0) {
     const min = Math.min(...product.variants.map((v) => Number(v.price)))
-    return `from ${formatMoney(min)}`
+    return `from $${min.toFixed(2)}`
   }
-  return `${formatMoney(Number(product.price))}`
+  return `$${Number(product.price).toFixed(2)}`
 }
 
 function ProductCard({ product, onOpen }: { product: ApiProduct; onOpen: () => void }) {
@@ -267,7 +266,7 @@ function ProductDetailSheet({
       variantLabel: variant?.label,
       name: product.name,
       category: product.category ?? "Beauty",
-      price: `${formatMoney(priceValue)}`,
+      price: `$${priceValue.toFixed(2)}`,
       priceValue,
       imageUrl: assetUrl(activeImg) ?? "",
       description: product.description ?? "",
@@ -306,7 +305,7 @@ function ProductDetailSheet({
           )}
 
           <h2 className="text-xl font-extrabold">{product.name}</h2>
-          <p className="mt-1 text-lg font-bold text-[#c96c83]">{formatMoney(priceValue)}</p>
+          <p className="mt-1 text-lg font-bold text-[#c96c83]">${priceValue.toFixed(2)}</p>
           {product.description && (
             <p className="mt-3 text-sm leading-relaxed text-[#101217]/70">{product.description}</p>
           )}
@@ -495,7 +494,7 @@ function CartSheet({ onClose }: { onClose: () => void }) {
           <div className="px-5 pt-4">
             <div className="mb-3 flex items-center justify-between">
               <span className="font-bold">Total</span>
-              <span className="text-lg font-extrabold">{formatMoney(total)}</span>
+              <span className="text-lg font-extrabold">${total.toFixed(2)}</span>
             </div>
             <button
               type="button"
@@ -569,7 +568,7 @@ function GiftCardTab() {
     <div className="px-5 pb-8">
       <div className="rounded-3xl bg-gradient-to-br from-[#c96c83] to-[#a9526a] p-6 text-white shadow-[0_12px_30px_-14px_rgba(201,108,131,0.7)]">
         <p className="text-sm font-bold uppercase tracking-[0.16em] text-white/70">BAYD Gift Card</p>
-        <p className="mt-2 text-4xl font-extrabold">{formatMoney(amount)}</p>
+        <p className="mt-2 text-4xl font-extrabold">${amount}</p>
       </div>
 
       <p className="mb-2 mt-5 text-sm font-bold uppercase tracking-[0.14em] text-[#101217]/45">Amount</p>
@@ -583,7 +582,7 @@ function GiftCardTab() {
               amount === a ? "border-[#c96c83] bg-[#c96c83] text-white" : "border-black/15 bg-white text-[#101217]/70"
             }`}
           >
-            {formatMoney(a, { maximumFractionDigits: 0 })}
+            ${a}
           </button>
         ))}
       </div>
@@ -618,7 +617,7 @@ function GiftCardTab() {
         disabled={busy}
         className="mt-4 w-full rounded-xl bg-[#101217] py-3.5 text-base font-bold text-white disabled:opacity-50"
       >
-        {busy ? "Starting…" : `Buy ${formatMoney(amount)} gift card`}
+        {busy ? "Starting…" : `Buy $${amount} gift card`}
       </button>
     </div>
   )

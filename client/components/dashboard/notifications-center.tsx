@@ -259,7 +259,6 @@ function NotificationRow({
 
 const KIND_LABELS: Record<string, string> = {
   booking_confirmed: "Confirmed",
-  booking_assigned: "New booking",
   booking_reminder_day_before: "Reminder",
   booking_reminder_day_of: "Reminder",
   booking_rescheduled: "Rescheduled",

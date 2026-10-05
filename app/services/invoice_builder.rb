@@ -1,4 +1,4 @@
-# Builds an Invoice record from a source: Booking, Visit, Order, or GiftCard. Amounts
+# Builds an Invoice record from a source: Booking, Order, or GiftCard. Amounts
 # charged are treated as tax-inclusive; HST is shown as a derived breakdown. Gift
 # cards are not taxed at purchase.
 #
@@ -7,32 +7,32 @@
 # performed it, each payment and how it was made), so an issued invoice never
 # changes if the booking is edited afterwards.
 class InvoiceBuilder
-  TAGLINE = "Mobile beauty services".freeze
+  BUSINESS = {
+    "name"    => "Beauty @ Your Door",
+    "tagline" => "Mobile beauty services",
+    "phone"   => "+1 (647) 970-8259",
+    "website" => "baydspa.ca"
+  }.freeze
 
   def initialize(source)
     @source = source
   end
 
-  # The franchise the source belongs to: its name, contacts, currency and tax.
-  def franchise = @franchise ||= @source.try(:franchise) || Franchise.current
-
   def build
     case @source
     when Booking  then invoice_for(@source.user, "booking", booking_lines, @source.total, taxable: true)
-    when Visit    then invoice_for(@source.user, "booking", visit_lines, visit_gross, taxable: true)
     when Order    then invoice_for(@source.user, "order", order_lines, @source.total, taxable: true)
     when GiftCard then invoice_for(@source.purchaser, "gift_card", gift_card_lines, @source.initial_balance, taxable: false)
     end
   end
 
-  # Re-snapshot an existing booking (or visit) invoice after money lands on it
+  # Re-snapshot an existing booking invoice after money lands on the booking
   # (a staff charge, a webhook, an overtime charge): payments, amount paid,
   # balance due, method and paid/unpaid status. Keeps the invoice number.
   def refresh(invoice)
-    case @source
-    when Booking then invoice.update!(invoice_attributes(@source.user, booking_lines, @source.total, taxable: true))
-    when Visit   then invoice.update!(invoice_attributes(@source.user, visit_lines, visit_gross, taxable: true))
-    end
+    return unless @source.is_a?(Booking)
+
+    invoice.update!(invoice_attributes(@source.user, booking_lines, @source.total, taxable: true))
   end
 
   private
@@ -50,16 +50,15 @@ class InvoiceBuilder
 
   def invoice_attributes(user, lines, gross, taxable:)
     gross = gross.to_f.round(2)
-    rate = franchise.tax_rate.to_f
-    tax = taxable ? (gross - gross / (1 + rate)).round(2) : 0.0
+    tax = taxable ? (gross - gross / (1 + Invoice::HST_RATE)).round(2) : 0.0
     paid_in_full = balance_due(gross) <= 0
 
     {
       subtotal: (gross - tax).round(2),
       tax: tax,
       total: gross,
-      tax_rate: taxable ? rate : 0,
-      currency: franchise.currency,
+      tax_rate: taxable ? Invoice::HST_RATE : 0,
+      currency: "CAD",
       payment_method: payment_method_label,
       status: paid_in_full ? "paid" : "issued",
       paid_at: paid_in_full ? (last_paid_at || Time.current) : nil,
@@ -73,7 +72,8 @@ class InvoiceBuilder
   # The service (per person for a group), each add-on, then any travel fee and
   # overtime. These sum to the booking total: subtotal already includes add-ons
   # (AddonBooker folds them in), travel and overtime sit on top of it.
-  def booking_lines(b = @source, with_tech: false)
+  def booking_lines
+    b = @source
     addons = Array(b.raw.is_a?(Hash) ? b.raw["addons"] : nil)
     addons_total = addons.sum { |a| a["price"].to_d }
     service_amount = b.subtotal.to_d - addons_total
@@ -82,8 +82,7 @@ class InvoiceBuilder
 
     lines = [
       line(
-        [ b.service&.name, duration && "#{duration} min", client_type_label(b),
-          (with_tech && b.employee_profile&.user&.first_name).presence&.then { |n| "with #{n}" } ].compact.join(" · "),
+        [ b.service&.name, duration && "#{duration} min", client_type_label(b) ].compact.join(" · "),
         qty, service_amount / qty, service_amount,
         kind: "service"
       )
@@ -96,15 +95,6 @@ class InvoiceBuilder
     lines << line("Overtime", 1, b.overtime_amount, b.overtime_amount, kind: "overtime") if b.overtime_amount.to_d.positive?
     lines
   end
-
-  # A visit bills every line that was performed or charged as a no-show; a
-  # cancelled or tech-missed line is never billed.
-  def invoiced_bookings
-    @invoiced_bookings ||= @source.bookings.select { |b| b.completed? || b.no_show? }
-  end
-
-  def visit_lines = invoiced_bookings.flat_map { |b| booking_lines(b, with_tech: true) }
-  def visit_gross = invoiced_bookings.sum { |b| b.total.to_d }
 
   def order_lines
     @source.order_items.map { |i| line(i.name, i.quantity, i.price, i.price.to_f * i.quantity, kind: "product") }
@@ -144,16 +134,11 @@ class InvoiceBuilder
   end
 
   def business
-    {
-      "name"       => franchise.display_name,
-      "tagline"    => TAGLINE,
-      "phone"      => franchise.contact_phone.presence,
-      "website"    => franchise.website,
-      "email"      => franchise.contact_email.presence || ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca"),
-      "address"    => franchise.business_address.presence || Setting.get("invoice_business_address").presence,
-      "tax_name"   => franchise.tax_name.presence,
-      "hst_number" => franchise.tax_registration_number.presence || Setting.get("invoice_hst_number").presence
-    }.compact
+    BUSINESS.merge(
+      "email"      => ENV.fetch("SUPPORT_EMAIL", "Bookings@baydspa.ca"),
+      "address"    => Setting.get("invoice_business_address").presence,
+      "hst_number" => Setting.get("invoice_hst_number").presence
+    ).compact
   end
 
   def bill_to(user)
@@ -167,7 +152,6 @@ class InvoiceBuilder
   def source_details
     case @source
     when Booking then booking_details
-    when Visit   then visit_details
     when Order   then { "shipping_address" => address_hash(@source.shipping_address) }.compact
     else {}
     end
@@ -202,34 +186,6 @@ class InvoiceBuilder
     }.compact
   end
 
-  def visit_details
-    v = @source
-    lines = invoiced_bookings.presence || v.bookings.to_a
-    zone = BusinessHours.zone
-    starts = lines.map(&:starts_at).min&.in_time_zone(zone)
-    ends = lines.map(&:ends_at).max&.in_time_zone(zone)
-    tips = lines.sum { |b| b.tips.sum(:amount) }
-
-    {
-      "booked_for" => booked_for(v),
-      "service_address" => address_hash(v.address),
-      "appointment" => {
-        "reference"        => "VST-#{v.id}",
-        "service"          => lines.filter_map { |b| b.service&.name }.join(" + "),
-        "date"             => starts&.strftime("%A, %B %-d, %Y"),
-        "start_time"       => starts&.strftime("%-l:%M %p"),
-        "end_time"         => ends&.strftime("%-l:%M %p"),
-        "duration_minutes" => (starts && ends ? ((ends - starts) / 60).round : nil),
-        "timezone"         => starts&.strftime("%Z"),
-        "technician"       => lines.filter_map { |b| b.employee_profile&.user&.first_name }.uniq.join(", "),
-        "client_type"      => v.client_type,
-        "party_size"       => v.party_size,
-        "status"           => v.status
-      }.compact_blank,
-      "tip" => (tips.to_f.round(2) if tips.positive?)
-    }.compact
-  end
-
   # The person the appointment was for, when it isn't the account holder.
   def booked_for(booking)
     return if booking.booked_for_name.blank? && booking.booked_for_phone.blank?
@@ -253,14 +209,9 @@ class InvoiceBuilder
   # ── Payments ────────────────────────────────────────────────────────────────
 
   def paid_payments
-    scope = if @source.is_a?(Visit)
-      Payment.where(payable_type: "Booking", payable_id: invoiced_bookings.map(&:id))
-    elsif @source.respond_to?(:payments)
-      @source.payments
-    else
-      Payment.none
-    end
-    scope.where(status: "paid").order(:paid_at, :created_at)
+    return Payment.none unless @source.respond_to?(:payments)
+
+    @source.payments.where(status: "paid").order(:paid_at, :created_at)
   end
 
   def payments
@@ -279,7 +230,7 @@ class InvoiceBuilder
   # Orders and gift cards are only invoiced once paid; a booking can be invoiced
   # with money still owing (pay-after-service), and the invoice says so.
   def balance_due(gross)
-    return 0.to_d unless appointment?
+    return 0.to_d unless @source.is_a?(Booking)
 
     [ gross.to_d - amount_paid, 0.to_d ].max
   end
@@ -295,11 +246,9 @@ class InvoiceBuilder
 
   def payment_method_label
     methods = paid_payments.filter_map(&:method).uniq
-    return "card" if methods.empty? && !appointment?
+    return "card" if methods.empty? && !@source.is_a?(Booking)
     return if methods.empty?
 
     methods.map { |m| payment_method_name(m) }.join(" + ")
   end
-
-  def appointment? = @source.is_a?(Booking) || @source.is_a?(Visit)
 end

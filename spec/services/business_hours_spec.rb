@@ -26,12 +26,12 @@ RSpec.describe BusinessHours do
     # stored instant's LOCAL hour is what matters.
     it "a 1 PM local booking falls INSIDE 10:00-19:00 local hours" do
       local = described_class.parse_local("2026-08-20T13:00:00").in_time_zone(described_class.zone)
-      expect(local.hour).to be_between(described_class.open_hour, described_class.close_hour - 1)
+      expect(local.hour).to be_between(described_class::OPEN_HOUR, described_class::CLOSE_HOUR - 1)
     end
 
     it "a 1 AM local booking falls OUTSIDE business hours" do
       local = described_class.parse_local("2026-08-20T01:00:00").in_time_zone(described_class.zone)
-      expect(local.hour).to be < described_class.open_hour
+      expect(local.hour).to be < described_class::OPEN_HOUR
     end
   end
 end

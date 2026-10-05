@@ -7,10 +7,9 @@ import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"
 import { MetricCard } from "@/components/dashboard/metric-card"
 import { useEmployeeEarnings } from "@/lib/hooks/use-employee"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 function money(v: string | number | undefined | null) {
-  return `${formatMoney(Number(v ?? 0))}`
+  return `$${Number(v ?? 0).toFixed(2)}`
 }
 
 // The staff app's Earnings screen for the web: tips held and paid plus fuel for

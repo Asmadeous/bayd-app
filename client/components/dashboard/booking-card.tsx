@@ -5,8 +5,6 @@ import { StatusBadgeFor } from "@/components/dashboard/status-badge"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
 import { cn } from "@/lib/utils"
 import type { Booking } from "@/lib/hooks/use-bookings"
-import { isVisit, visitLines, visitTechNames, visitTitle, visitTotal } from "@/lib/visits"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 const STATUS_COLORS: Record<Booking["status"], string> = {
   pending: "#d4a843",
@@ -37,21 +35,13 @@ interface BookingCardProps {
   booking: Booking
   actions?: ReactNode
   className?: string
-  // Customer views: show the booking's whole multi-service visit (every service
-  // and tech). Staff/admin cards stay one line and note who shares the visit.
-  asVisit?: boolean
 }
 
-export function BookingCard({ booking, actions, className, asVisit = false }: BookingCardProps) {
-  const wholeVisit = asVisit && isVisit(booking)
-  const employeeName = wholeVisit ? visitTechNames(booking) : booking.employee_profile?.name ?? ""
-  const title = wholeVisit ? visitTitle(booking) : booking.service?.name
-  const sharedWith = !asVisit && isVisit(booking)
-    ? visitLines(booking).filter((l) => l.bookingId !== booking.id && l.tech.id !== booking.employee_profile?.id)
-    : []
+export function BookingCard({ booking, actions, className }: BookingCardProps) {
+  const employeeName = booking.employee_profile?.name ?? ""
 
-  const dateLabel = formatBookingDateTime(wholeVisit ? visitLines(booking)[0].startsAt : booking.starts_at)
-  const total = formatCurrency(wholeVisit ? visitTotal(booking) : booking.total)
+  const dateLabel = formatBookingDateTime(booking.starts_at)
+  const total = formatCurrency(booking.total)
   const color = STATUS_COLORS[booking.status]
 
   return (
@@ -67,7 +57,7 @@ export function BookingCard({ booking, actions, className, asVisit = false }: Bo
         <div className="min-w-0 flex-1 pl-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-base font-extrabold leading-tight text-[#101217]">
-              {title}
+              {booking.service?.name}
             </span>
             <StatusBadgeFor status={booking.status} />
             {booking.client_type ? (
@@ -91,25 +81,6 @@ export function BookingCard({ booking, actions, className, asVisit = false }: Bo
             <span className="font-bold text-[#101217]">{total}</span>
           </div>
 
-          {wholeVisit ? (
-            <ul className="mt-3 space-y-1 border-l-2 border-[#c96c83]/30 pl-3 text-xs leading-5 text-[#5f6268]">
-              {visitLines(booking).map((l) => (
-                <li key={l.bookingId}>
-                  <span className="font-bold text-[#101217]">{l.serviceName}</span>
-                  {" · "}
-                  {formatBookingTime(l.startsAt, { hour: "numeric", minute: "2-digit" })}
-                  {l.tech.name ? ` · with ${l.tech.name}` : ""}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          {sharedWith.length ? (
-            <p className="mt-3 text-xs font-semibold text-[#8a5738]">
-              Shared visit with {sharedWith.map((l) => `${l.tech.name ?? "another tech"} (${l.serviceName})`).join(", ")}
-            </p>
-          ) : null}
-
           {booking.recurrence_active && booking.recurrence_interval_weeks && (
             <span
               className="mt-3 inline-flex min-h-6 items-center gap-1.5 bg-[#c96c83]/12 px-2.5 py-1 text-xs font-bold text-[#b95f76]"
@@ -131,7 +102,7 @@ export function BookingCard({ booking, actions, className, asVisit = false }: Bo
   )
 }
 
-// Always the franchise's clock, whatever timezone the viewer is in:
+// Always the business's clock (Toronto), whatever timezone the viewer is in:
 // the appointment happens there.
 function formatBookingDateTime(value: string) {
   const date = new Date(value)
@@ -144,5 +115,5 @@ function formatBookingDateTime(value: string) {
 
 function formatCurrency(value: string | number) {
   const amount = Number(value)
-  return Number.isFinite(amount) ? `${formatMoney(amount)}` : "-"
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
 }

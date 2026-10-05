@@ -4,8 +4,7 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 
 import api from "@/lib/api"
-import { useRescheduleBooking, useRescheduleVisit, type Booking } from "@/lib/hooks/use-bookings"
-import { isVisit, visitLines, visitTitle } from "@/lib/visits"
+import { useRescheduleBooking, type Booking } from "@/lib/hooks/use-bookings"
 import { useAdminRescheduleBooking } from "@/lib/hooks/use-admin"
 import { useStaffReschedule } from "@/lib/hooks/use-employee"
 import { Button } from "@/components/ui/button"
@@ -23,10 +22,6 @@ import {
 interface AvailabilityResult {
   slots: string[]
   mapped: boolean
-}
-
-interface VisitAvailabilityResult {
-  by_time: Record<string, unknown>
 }
 
 const TODAY = new Date().toISOString().split("T")[0]
@@ -60,25 +55,11 @@ export function RescheduleDialog({
       opts: { onSuccess: () => void; onError: (err: unknown) => void },
     ) => staffReschedule.mutate({ bookingId: vars.id, startsAt: vars.starts_at }, opts),
   }
-  const visitReschedule = useRescheduleVisit()
-  // A customer moves a multi-service visit as a whole: open times are when every
-  // service is staffed again (techs may change to whoever is free then).
-  const wholeVisit = !admin && !staff && isVisit(booking) && booking.visit_id != null
-  const visitAsCommon = {
-    isPending: visitReschedule.isPending,
-    mutate: (
-      vars: { id: number; starts_at: string },
-      opts: { onSuccess: () => void; onError: (err: unknown) => void },
-    ) => visitReschedule.mutate({ visitId: booking.visit_id ?? 0, starts_at: vars.starts_at }, opts),
-  }
-  const reschedule = staff ? staffAsCommon : admin ? adminReschedule : wholeVisit ? visitAsCommon : customerReschedule
-  // A tech can't move a visit shared with other techs; the office moves it.
-  const sharedForStaff =
-    staff && isVisit(booking) && visitLines(booking).some((l) => l.tech.id !== booking.employee_profile?.id)
+  const reschedule = staff ? staffAsCommon : admin ? adminReschedule : customerReschedule
 
   const availability = useQuery<AvailabilityResult>({
     queryKey: ["availability", booking.service.id, booking.employee_profile.id, date],
-    enabled: open && !!date && !wholeVisit,
+    enabled: open && !!date,
     queryFn: () =>
       api
         .get<AvailabilityResult>("/availability", {
@@ -86,26 +67,7 @@ export function RescheduleDialog({
         })
         .then((r) => r.data),
   })
-  const visitAvailability = useQuery<VisitAvailabilityResult>({
-    queryKey: ["availability-visit", "reschedule", booking.visit_id, date],
-    enabled: open && !!date && wholeVisit,
-    queryFn: () =>
-      api
-        .get<VisitAvailabilityResult>("/availability/visit", {
-          params: {
-            service_ids: visitLines(booking).map((l) => l.serviceId),
-            date,
-            count: booking.client_type === "group" ? booking.party_size : 1,
-            latitude: booking.service_latitude ?? undefined,
-            longitude: booking.service_longitude ?? undefined,
-            postal_code: booking.address?.postal_code ?? undefined,
-            visit_id: booking.visit_id,
-          },
-        })
-        .then((r) => r.data),
-  })
-  const slots = wholeVisit ? Object.keys(visitAvailability.data?.by_time ?? {}) : availability.data?.slots ?? []
-  const slotsLoading = wholeVisit ? visitAvailability.isLoading : availability.isLoading
+  const slots = availability.data?.slots ?? []
 
   function submit() {
     if (!date || !time) return
@@ -131,10 +93,6 @@ export function RescheduleDialog({
   const remaining = uncapped ? Infinity : Math.max(0, 2 - booking.reschedule_count)
   const capReached = !uncapped && remaining === 0
 
-  if (sharedForStaff) {
-    return <span className="text-xs font-semibold text-[#5f6268]">Shared visit - the office moves it</span>
-  }
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -146,9 +104,7 @@ export function RescheduleDialog({
         <DialogHeader>
           <DialogTitle>Reschedule appointment</DialogTitle>
           <DialogDescription>
-            {wholeVisit
-              ? `Pick a new open time for ${visitTitle(booking)}. Each service is matched to a technician who's free then.`
-              : `Pick a new open time for ${booking.service?.name ?? "this service"} with the same technician.`}
+            Pick a new open time for {booking.service?.name ?? "this service"} with the same technician.
             {uncapped ? null : ` You can reschedule ${remaining} more time${remaining === 1 ? "" : "s"}.`}
           </DialogDescription>
         </DialogHeader>
@@ -171,7 +127,7 @@ export function RescheduleDialog({
           {date ? (
             <div className="mt-4">
               <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">Open times</label>
-              {slotsLoading ? (
+              {availability.isLoading ? (
                 <p className="text-sm text-[#8a8d93]">Loading open times…</p>
               ) : slots.length === 0 ? (
                 <p className="text-sm text-[#8a8d93]">No open times that day — try another date.</p>

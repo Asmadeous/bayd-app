@@ -4,8 +4,6 @@
 # via an admin payment link. The automatic FSA travel-fee logic does NOT apply
 # to these — the fee is negotiated by phone.
 class CallbackRequest < ApplicationRecord
-  include FranchiseScoped
-
   belongs_to :user, optional: true
   belongs_to :service, optional: true
 

@@ -1,6 +1,4 @@
 class Product < ApplicationRecord
-  include FranchiseScoped
-
   belongs_to :product_category, optional: true
   has_many :order_items, dependent: :restrict_with_error
   has_many :product_variants, -> { order(:position) }, dependent: :destroy
@@ -12,7 +10,7 @@ class Product < ApplicationRecord
   validates :name, presence: true
   validates :price, numericality: { greater_than_or_equal_to: 0 }
   validates :stock_quantity, numericality: { greater_than_or_equal_to: 0 }
-  validates :sku, uniqueness: { scope: :franchise_id }, allow_nil: true
+  validates :sku, uniqueness: true, allow_nil: true
 
   scope :active,   -> { where(active: true) }
   scope :in_stock, -> { where("stock_quantity > 0") }

@@ -1,6 +1,4 @@
 class JobPosting < ApplicationRecord
-  include FranchiseScoped
-
   has_many :job_applications, dependent: :nullify
 
   EMPLOYMENT_TYPES = %w[full_time part_time contract temporary internship].freeze
@@ -9,7 +7,7 @@ class JobPosting < ApplicationRecord
   enum :status, { draft: "draft", published: "published", closed: "closed" }, prefix: true
 
   validates :title, presence: true
-  validates :slug, presence: true, uniqueness: { scope: :franchise_id }
+  validates :slug, presence: true, uniqueness: true
   validates :employment_type, inclusion: { in: EMPLOYMENT_TYPES }
 
   before_validation :generate_slug, if: -> { slug.blank? && title.present? }

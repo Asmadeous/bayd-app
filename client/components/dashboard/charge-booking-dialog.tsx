@@ -20,7 +20,6 @@ import type { Booking } from "@/lib/hooks/use-bookings"
 import { useChargeBooking, useRecordPayment } from "@/lib/hooks/use-employee"
 import { CHARGE_METHODS, paymentMethodLabel } from "@/lib/payment-methods"
 import { cn } from "@/lib/utils"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 type ChargeMethod = (typeof CHARGE_METHODS)[number]["value"]
 
@@ -76,7 +75,7 @@ export function ChargeBookingDialog({ booking }: { booking: Booking }) {
       }
       await record.mutateAsync({ bookingId: booking.id, method })
       setOpen(false)
-      toast({ title: "Marked paid", description: `${formatMoney(due)} by ${paymentMethodLabel(method)}.`, variant: "success" })
+      toast({ title: "Marked paid", description: `$${due.toFixed(2)} by ${paymentMethodLabel(method)}.`, variant: "success" })
     } catch (e: unknown) {
       cardTab?.close()
       const d = e as { response?: { data?: { error?: string } } }
@@ -88,12 +87,12 @@ export function ChargeBookingDialog({ booking }: { booking: Booking }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="xs">
-          <CreditCard className="size-3.5" aria-hidden /> Charge · {formatMoney(due)}
+          <CreditCard className="size-3.5" aria-hidden /> Charge · ${due.toFixed(2)}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Charge {formatMoney(due)}</DialogTitle>
+          <DialogTitle>Charge ${due.toFixed(2)}</DialogTitle>
           <DialogDescription>
             How is the client paying for {booking.service?.name ?? "this booking"}?
           </DialogDescription>

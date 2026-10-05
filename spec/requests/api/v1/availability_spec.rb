@@ -83,15 +83,6 @@ RSpec.describe "GET /api/v1/availability", type: :request do
     expect(json["slots"]).not_to be_empty
   end
 
-  it "still offers slots for an FSA tech when only coordinates are supplied" do
-    schedule!
-    employee.update!(service_fsas: [ "M5V" ])
-    create(:employee_profile).update!(service_fsas: [ "L5L" ])
-
-    json = get_availability(service_id: service.id, employee_id: employee.id, date: date, latitude: 43.80, longitude: -79.80)
-    expect(json["slots"]).not_to be_empty
-  end
-
   it "400s on a missing/invalid date" do
     json = get_availability(service_id: service.id, employee_id: employee.id, date: "not-a-date")
     expect(response).to have_http_status(:bad_request)

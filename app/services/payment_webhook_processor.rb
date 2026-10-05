@@ -26,7 +26,7 @@ class PaymentWebhookProcessor
     end
 
     cents = payment.dig("amount_money", "amount").to_i
-    settle(ref, processor: "square", txn_ref: payment["id"], amount: Franchise.current.from_minor_units(cents))
+    settle(ref, processor: "square", txn_ref: payment["id"], amount: cents / 100.0)
     event.mark_processed!
   rescue StandardError => e
     Rails.logger.error("[PaymentWebhookProcessor] square: #{e.message}")
@@ -34,15 +34,13 @@ class PaymentWebhookProcessor
 
   # Route a confirmed payment to the right record + action.
   #   GCT-<id>            → credit a gift-card top-up
-  #   GC-/BKG-/VST-/ORD-<id> → mark the purchase/booking/visit/order paid
+  #   GC-/BKG-/ORD-<id>   → mark the purchase/booking/order paid
   def self.settle(reference, processor:, txn_ref:, amount:)
     ref = reference.to_s
     if ref.start_with?("GCT-")
-      card = GiftCard.find_by(id: ref.delete_prefix("GCT-"))
-      Current.set(franchise: card&.franchise) { card&.topup!(amount, method: processor) }
+      GiftCard.find_by(id: ref.delete_prefix("GCT-"))&.topup!(amount, method: processor)
     else
-      record = payable_for(ref)
-      Current.set(franchise: record.try(:franchise)) { record&.mark_paid!(processor: processor, reference: txn_ref, amount: amount) }
+      payable_for(ref)&.mark_paid!(processor: processor, reference: txn_ref, amount: amount)
     end
   end
 
@@ -52,13 +50,11 @@ class PaymentWebhookProcessor
   end
 
   # A payment reference points at an Order ("ORD-<id>"), Booking ("BKG-<id>"),
-  # Visit ("VST-<id>"), or GiftCard purchase ("GC-<id>"). All respond to mark_paid!.
+  # or GiftCard purchase ("GC-<id>"). All three respond to mark_paid!.
   def self.payable_for(reference)
     ref = reference.to_s
     if ref.start_with?("BKG-")
       Booking.find_by(id: ref.delete_prefix("BKG-"))
-    elsif ref.start_with?("VST-")
-      Visit.find_by(id: ref.delete_prefix("VST-"))
     elsif ref.start_with?("GC-")
       GiftCard.find_by(id: ref.delete_prefix("GC-"))
     else

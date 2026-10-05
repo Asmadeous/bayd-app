@@ -18,7 +18,6 @@ class Notification < ApplicationRecord
     booking_rescheduled: "booking_rescheduled",
     booking_cancelled: "booking_cancelled",
     booking_confirmed: "booking_confirmed",
-    booking_assigned: "booking_assigned",              # tech: a new job (incl. their part of a shared visit)
     booking_reminder_day_before: "booking_reminder_day_before",
     booking_reminder_day_of: "booking_reminder_day_of",
     booking_dispatch: "booking_dispatch",

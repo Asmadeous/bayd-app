@@ -20,9 +20,6 @@ Android via Capacitor) are being built for customers and for staff/admin.
   charge customers (NFC POS), track earnings/tips/fuel, manage their availability.
 - **Admins** — dispatch, oversee all bookings and staff, analytics, content
   (blog/products/gallery), and configuration.
-- **Super admins** - manage franchises and franchise admins across countries,
-  cross-franchise analytics and royalties. (Today's admin becomes the
-  franchise admin, scoped to one franchise.)
 
 ## 3. Features — What exists / what the MVP needs
 
@@ -54,14 +51,6 @@ Android via Capacitor) are being built for customers and for staff/admin.
 - Store readiness: in-app account deletion (personal data erased, financial
   records kept anonymized), privacy policy + terms, staff location disclosure;
   customer app to store review; staff app stays on TestFlight / Play internal.
-- Multi-service bookings: book any services together; each service is its own
-  booking with its own tech, grouped in a Visit; flow Details → Service →
-  Add-on services → Time → Checkout; every tech shows on the customer's card
-  and each tech gets their own job.
-- Franchising: branches in other countries on the one API (row-level
-  `franchise_id`), a super admin over franchise admins, per-franchise zone,
-  currency, tax, postal coverage, payments and royalties.
-  Plan: `docs/FRANCHISE_AND_MULTI_SERVICE_PLAN.md`.
 
 ## 4. Data — What are the core entities?
 

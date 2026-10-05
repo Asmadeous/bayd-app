@@ -18,9 +18,7 @@ import { openPaymentUrl } from "@/lib/native/open-external"
 import { useToast, useConfirm } from "@/lib/app-ui/app-ui-provider"
 import { useRouter } from "next/navigation"
 import { apiError, StaffCancelSheet, StaffRescheduleSheet } from "./schedule/job-edit-sheets"
-import { SharedVisitNote, sharedWithOtherTech } from "./shared-visit-note"
 import { cardClass, bookingStatusStyle, mutedClass, staffTheme } from "./staff-theme"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 // A technician's booking as a purpose-built mobile card. Carries every action the
 // desktop StaffBookingActions had: join the work-scope call, navigate to the
@@ -43,7 +41,7 @@ export function StaffBookingCard({ booking, history = false }: { booking: Bookin
         >
           {booking.status.replace("_", " ")}
         </span>
-        <span className="text-sm font-extrabold">{formatMoney(Number(booking.total))}</span>
+        <span className="text-sm font-extrabold">${Number(booking.total).toFixed(2)}</span>
       </div>
 
       <p className="mt-3 text-lg font-extrabold leading-tight">{booking.service?.name}</p>
@@ -64,8 +62,6 @@ export function StaffBookingCard({ booking, history = false }: { booking: Bookin
           them, and any special requests. */}
       <ClientDetails booking={booking} />
 
-      <SharedVisitNote booking={booking} />
-
       {/* Add-ons: extra services the same tech does this visit (note-only). */}
       {booking.addons?.length > 0 && (
         <div className="mt-2 rounded-lg bg-[#C96C83]/8 px-3 py-2">
@@ -74,7 +70,7 @@ export function StaffBookingCard({ booking, history = false }: { booking: Bookin
             {booking.addons.map((a) => (
               <li key={a.id} className="flex items-center justify-between text-sm">
                 <span className="truncate text-[#14100F]">{a.name}</span>
-                <span className="shrink-0 font-semibold text-[#14100F]">{formatMoney(Number(a.price))}</span>
+                <span className="shrink-0 font-semibold text-[#14100F]">${Number(a.price).toFixed(2)}</span>
               </li>
             ))}
           </ul>
@@ -239,7 +235,7 @@ function ClientDetails({ booking }: { booking: Booking }) {
 function PastFinancials({ booking }: { booking: Booking }) {
   const f = booking.financials
   if (!f) return null
-  const money = (v: string) => `${formatMoney(Number(v))}`
+  const money = (v: string) => `$${Number(v).toFixed(2)}`
   const rows: { label: string; value: string }[] =
     f.account_type === "partner"
       ? [
@@ -324,7 +320,7 @@ function ChargeButton({ booking }: { booking: Booking }) {
     const label = paymentMethodLabel(method)
     const ok = await confirm({
       title: `Paid by ${label}?`,
-      message: `Only confirm once you have the ${formatMoney(due)}. The booking will be marked paid by ${label}.`,
+      message: `Only confirm once you have the $${due.toFixed(2)}. The booking will be marked paid by ${label}.`,
       confirmLabel: `Mark paid · ${label}`,
       cancelLabel: "Back",
     })
@@ -332,7 +328,7 @@ function ChargeButton({ booking }: { booking: Booking }) {
     try {
       await record.mutateAsync({ bookingId: booking.id, method })
       setStep("closed")
-      toast({ title: "Marked paid", description: `${formatMoney(due)} by ${label}.`, variant: "success" })
+      toast({ title: "Marked paid", description: `$${due.toFixed(2)} by ${label}.`, variant: "success" })
     } catch (e: unknown) {
       toast({ title: "Couldn't mark paid", description: apiError(e), variant: "error" })
     }
@@ -376,7 +372,7 @@ function ChargeButton({ booking }: { booking: Booking }) {
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#14100F] py-3 text-sm font-bold text-white"
         >
           <CreditCard className="size-4" aria-hidden />
-          Charge · {formatMoney(due)}
+          Charge · ${due.toFixed(2)}
         </button>
       ) : (
         <div className="rounded-xl bg-black/[0.04] p-3">
@@ -429,7 +425,7 @@ function ChargeButton({ booking }: { booking: Booking }) {
             </>
           ) : (
             <>
-              <p className="text-sm font-bold">How is the client paying {formatMoney(due)}?</p>
+              <p className="text-sm font-bold">How is the client paying ${due.toFixed(2)}?</p>
               <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label="Payment method">
                 {CHARGE_METHODS.map((m) => (
                   <button
@@ -553,17 +549,10 @@ function ClockButton({ booking }: { booking: Booking }) {
 // "we missed your appointment" notification and a reschedule prompt. Never charges.
 function ChangeJobButtons({ booking, started }: { booking: Booking; started: boolean }) {
   const [sheet, setSheet] = useState<"reschedule" | "cancel" | null>(null)
-  // Another tech is on this visit: everyone moves together, so the office does it.
-  const shared = sharedWithOtherTech(booking)
 
   return (
     <>
       <div className="mt-2 grid grid-cols-2 gap-2">
-        {shared ? (
-          <p className="inline-flex items-center justify-center rounded-lg bg-black/[0.03] px-3 py-2.5 text-center text-xs font-semibold text-[#14100F]/60">
-            Shared visit: the office moves it
-          </p>
-        ) : (
         <button
           type="button"
           onClick={() => setSheet("reschedule")}
@@ -571,7 +560,6 @@ function ChangeJobButtons({ booking, started }: { booking: Booking; started: boo
         >
           <CalendarClock className="size-4" aria-hidden /> Reschedule
         </button>
-        )}
         {started ? (
           <MarkNoShowButton booking={booking} inRow />
         ) : (
@@ -645,7 +633,7 @@ function MarkNoShowButton({ booking, inRow = false }: { booking: Booking; inRow?
     const owed = Number(booking.outstanding_balance)
     const charge =
       owed > 0
-        ? `The ${formatMoney(owed)} still owed for the booking is charged to their card on file (the office follows up if it can't be).`
+        ? `The $${owed.toFixed(2)} still owed for the booking is charged to their card on file (the office follows up if it can't be).`
         : "The booking is already paid, so nothing more is charged."
     const ok = await confirm({
       title: "Client didn't show?",

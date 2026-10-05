@@ -7,9 +7,7 @@ class AccountDeletion
   CANCEL_REASON = "Account deleted".freeze
 
   # Returns the upcoming bookings that were cancelled.
-  # Runs outside any one franchise: a customer's bookings, subscriptions and
-  # cards may be spread across several.
-  def self.call(user) = Current.set(franchise: nil) { new(user).call }
+  def self.call(user) = new(user).call
 
   def initialize(user)
     @user = user
@@ -17,7 +15,7 @@ class AccountDeletion
 
   def call
     cancelled = []
-    cards = saved_cards
+    card_id = @user.square_card_id
 
     ActiveRecord::Base.transaction do
       cancelled = cancel_upcoming_bookings
@@ -27,18 +25,8 @@ class AccountDeletion
       erase_profile
     end
 
-    cards.each do |franchise, card_id|
-      Current.set(franchise: franchise) { SquareService.disable_card(card_id) }
-    end
+    SquareService.disable_card(card_id) if card_id.present?
     cancelled
-  end
-
-  # Every franchise's saved card, to remove at the provider once the account is gone.
-  def saved_cards
-    cards = @user.payment_profiles.includes(:franchise).filter_map { |p| [ p.franchise, p.card_ref ] if p.card_ref.present? }
-    legacy = @user.payment_profile(Franchise.default)
-    cards << [ Franchise.default, legacy.card_ref ] if legacy&.new_record? && legacy.card_ref.present?
-    cards
   end
 
   private
@@ -66,9 +54,8 @@ class AccountDeletion
     @user.magic_link_tokens.destroy_all
     @user.notifications.destroy_all
     @user.sent_messages.destroy_all
-    NewsletterSubscriber.where(user: @user).destroy_all
-    LoyaltyAccount.where(user: @user).destroy_all
-    @user.payment_profiles.destroy_all
+    @user.newsletter_subscriber&.destroy!
+    @user.loyalty_account&.destroy!
     @user.avatar.purge_later if @user.avatar.attached?
   end
 

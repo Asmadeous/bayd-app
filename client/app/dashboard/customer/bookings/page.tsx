@@ -30,7 +30,6 @@ import { MeetingButton } from "@/components/dashboard/meeting-button"
 import { TechEta } from "@/components/dashboard/tech-eta"
 import { useBookingAccess } from "@/lib/booking-access"
 import { customerBookingsSteps } from "@/lib/tours/customer-bookings-tour"
-import { collapseVisits, isVisit, visitLines, visitTechs, type VisitLineView } from "@/lib/visits"
 
 // Only subscribe to live tracking for a booking happening today.
 function isToday(iso: string): boolean {
@@ -40,33 +39,8 @@ function isToday(iso: string): boolean {
 }
 
 // The tech's live map, from 30 minutes before the appointment (the API refuses
-// tracking earlier); before that, when it will open. A visit tracks each tech.
+// tracking earlier); before that, when it will open.
 function LiveTracking({ booking }: { booking: Booking }) {
-  if (isVisit(booking)) {
-    return (
-      <>
-        {visitLines(booking)
-          .filter((l) => l.status === "confirmed")
-          .map((l) => <LineTracking key={l.bookingId} line={l} destination={destinationOf(booking)} />)}
-      </>
-    )
-  }
-  return <SingleTracking booking={booking} />
-}
-
-function LineTracking({ line, destination }: { line: VisitLineView; destination: { lat: number; lng: number } | null }) {
-  const access = useBookingAccess({ status: line.status, access_opens_at: null, starts_at: line.startsAt })
-  if (!access.open) {
-    return (
-      <p className="mt-2 text-xs text-[#5f6268]">
-        Live tracking of {line.tech.name ?? "your technician"} opens at {access.opensLabel}.
-      </p>
-    )
-  }
-  return <TechEta bookingId={line.bookingId} enabled destination={destination} />
-}
-
-function SingleTracking({ booking }: { booking: Booking }) {
   const access = useBookingAccess(booking)
   if (!access.open) {
     return <p className="mt-2 text-xs text-[#5f6268]">Live tracking of your technician opens at {access.opensLabel}.</p>
@@ -99,8 +73,7 @@ export default function CustomerBookingsPage() {
   const upcoming = useBookingsList("upcoming")
   const past = useBookingsList("past", { enabled: tab === "past" })
   const list = tab === "upcoming" ? upcoming : past
-  // A multi-service visit shows once, with every service and tech inside.
-  const bookings = collapseVisits(list.items)
+  const bookings = list.items
   const isLoading = list.isLoading
   const isError = upcoming.isError || past.isError
   const details = [...upcoming.items, ...past.items].find((b) => b.id === detailsId) ?? null
@@ -109,11 +82,7 @@ export default function CustomerBookingsPage() {
     if (b.status === "pending" || b.status === "confirmed") {
       return (
         <div className="flex flex-wrap items-center gap-2">
-          {isVisit(b)
-            ? visitTechs(b).map((t) => (
-                <MessageTechButton key={t.id ?? t.name} booking={b} tech={{ userId: t.userId, name: t.name }} />
-              ))
-            : <MessageTechButton booking={b} />}
+          <MessageTechButton booking={b} />
           <MeetingButton booking={b} />
           <RescheduleDialog booking={b} />
           <CancelBookingButton booking={b} />
@@ -226,7 +195,6 @@ export default function CustomerBookingsPage() {
               {bookings.map((b) => (
                 <div key={b.id}>
                 <BookingCard
-                  asVisit
                   booking={b}
                   actions={
                     <div className="flex flex-wrap items-center gap-2">

@@ -2,7 +2,7 @@ module Api
   module V1
     # Public address helpers for the booking form: verify, autocomplete and
     # place details. Where the visitor is doesn't matter; the service address
-    # is what must be in the franchise's country.
+    # is what must be in Canada.
     class GeoController < ApplicationController
       skip_before_action :authenticate_user!, only: %i[verify_address autocomplete place_details]
 
@@ -11,8 +11,6 @@ module Api
       # Canadian postal code: "A1A 1A1" (space optional). Excludes letters that
       # Canada Post never uses (D, F, I, O, Q, U in the first letter; W, Z lead).
       CA_POSTAL = /\A[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][ ]?\d[ABCEGHJ-NPRSTV-Z]\d\z/i
-      # Anywhere else: a plausible postal code (letters, digits, a space or dash).
-      ANY_POSTAL = /\A[A-Z0-9][A-Z0-9 -]{1,9}\z/i
 
       # Geocode the typed address and confirm it's a real Canadian address before
       # the booking form lets the user proceed. Returns:
@@ -24,20 +22,17 @@ module Api
         query  = [ params[:line1], params[:city], params[:province], postal ]
                  .map { |v| v.to_s.strip.presence }.compact.join(", ")
 
-        postal_ok = (country == "CA" ? CA_POSTAL : ANY_POSTAL).match?(postal)
+        postal_ok = CA_POSTAL.match?(postal)
 
-        result     = query.present? ? Geocoder.search(query).first : nil
-        in_country = result.present? && country_code_of(result) == country
+        result    = query.present? ? Geocoder.search(query).first : nil
+        in_canada = result.present? && country_code_of(result) == "CA"
 
-        coords = in_country ? (result.coordinates rescue nil) : nil
+        coords = in_canada ? (result.coordinates rescue nil) : nil
         render json: {
-          valid:            postal_ok && in_country,
-          in_country:       in_country,
-          # Kept for app builds that read the old name; it means "in the franchise's country".
-          in_canada:        in_country,
-          country_code:     country,
+          valid:            postal_ok && in_canada,
+          in_canada:        in_canada,
           postal_format_ok: postal_ok,
-          formatted:        (result&.address if in_country),
+          formatted:        (result&.address if in_canada),
           city:             (result&.city rescue nil),
           # Geocoded coordinates — the booking form feeds these back to the
           # availability query so travel-infeasible slots are filtered out.
@@ -48,7 +43,7 @@ module Api
         Rails.logger.warn("[GeoController#verify_address] #{e.class}: #{e.message}")
         # Geocoder unreachable → don't hard-block the customer; let the postal
         # format alone gate, and the backend still enforces Canada on create.
-        render json: { valid: postal_ok, in_country: false, in_canada: false, postal_format_ok: postal_ok, error: "geocode_unavailable" }
+        render json: { valid: postal_ok, in_canada: false, postal_format_ok: postal_ok, error: "geocode_unavailable" }
       end
 
       # Address autocomplete: proxy Google Places Autocomplete so the Maps key
@@ -62,7 +57,7 @@ module Api
         resp = places_conn.get("/maps/api/place/autocomplete/json") do |req|
           req.params["input"]        = input
           req.params["key"]          = google_key
-          req.params["components"]   = "country:#{country.downcase}"
+          req.params["components"]   = "country:ca"
           req.params["types"]        = "address"
           req.params["sessiontoken"] = params[:session].presence
         end
@@ -97,8 +92,6 @@ module Api
       end
 
       private
-
-      def country = Franchise.current.country_code
 
       def google_key = ENV["GOOGLE_MAPS_API_KEY"].presence
 

@@ -8,7 +8,6 @@ import { useNotifications } from "@/lib/hooks/use-notifications"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { hapticTap } from "@/lib/native/haptics"
 import { formatBookingDate, formatBookingTime } from "@/lib/booking-time"
-import { collapseVisits, isVisit, visitEnd, visitStart, visitTechNames, visitTitle } from "@/lib/visits"
 import { BookingsPanel } from "../bookings/page"
 import { HeaderAvatar } from "@/components/account/header-avatar"
 import { appScreenClass, cardClass, displayClass, eyebrowClass, mutedClass } from "../app-theme"
@@ -17,7 +16,7 @@ export default function HomeScreen() {
   const { user } = useAuthStore()
   // The soonest upcoming booking (the server sorts upcoming soonest first).
   const { items, isLoading } = useBookingsList("upcoming")
-  const upcoming = collapseVisits(items)[0] ?? null
+  const upcoming = items[0] ?? null
 
   const firstName = user?.first_name?.trim() || "there"
 
@@ -102,9 +101,7 @@ function NotificationBell() {
 }
 
 function NextBookingCard({ booking }: { booking: Booking }) {
-  // A multi-service visit names every service and everyone coming.
-  const techName = visitTechNames(booking) || "your technician"
-  const minutes = Math.round((new Date(visitEnd(booking)).getTime() - new Date(visitStart(booking)).getTime()) / 60000)
+  const techName = booking.employee_profile.name || "your technician"
 
   return (
     <Link
@@ -118,7 +115,7 @@ function NextBookingCard({ booking }: { booking: Booking }) {
         </span>
         <ArrowRight className="size-4 text-[#F6F1EC]/50" aria-hidden />
       </div>
-      <p className={`${displayClass} mt-4 text-2xl leading-tight`}>{visitTitle(booking)}</p>
+      <p className={`${displayClass} mt-4 text-2xl leading-tight`}>{booking.service.name}</p>
       <div className="mt-3 space-y-1.5 text-sm text-[#F6F1EC]/75">
         <p className="flex items-center gap-2.5">
           <CalendarDays className="size-[1.05rem] text-[#F0C8D3]" aria-hidden />
@@ -126,8 +123,7 @@ function NextBookingCard({ booking }: { booking: Booking }) {
         </p>
         <p className="flex items-center gap-2.5">
           <Clock3 className="size-[1.05rem] text-[#F0C8D3]" aria-hidden />
-          {formatBookingTime(visitStart(booking))} · {minutes} min with {techName}
-          {isVisit(booking) ? " (back-to-back)" : ""}
+          {formatBookingTime(booking.starts_at)} · {booking.service.duration_minutes} min with {techName}
         </p>
       </div>
     </Link>

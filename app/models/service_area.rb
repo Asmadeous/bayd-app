@@ -1,11 +1,9 @@
 class ServiceArea < ApplicationRecord
-  include FranchiseScoped
-
   has_many :employee_service_areas, dependent: :destroy
   has_many :employee_profiles, through: :employee_service_areas
 
   validates :name, :slug, presence: true
-  validates :slug, uniqueness: { scope: :franchise_id }
+  validates :slug, uniqueness: true
   validates :travel_fee, numericality: { greater_than_or_equal_to: 0 }
   validates :radius_meters, numericality: { greater_than: 0 }, allow_nil: true
 

@@ -16,19 +16,8 @@ const BADGE: Record<Booking["status"], string> = {
 }
 
 // A booking in a list: what, when, and with whom. Tap it for the appointment
-// screen, which holds the full details and every action. `title` overrides the
-// service name (a multi-service visit lists every service).
-export function BookingRow({
-  booking,
-  who,
-  href,
-  title,
-}: {
-  booking: Booking
-  who?: string | null
-  href: string
-  title?: string
-}) {
+// screen, which holds the full details and every action.
+export function BookingRow({ booking, who, href }: { booking: Booking; who?: string | null; href: string }) {
   return (
     <li>
       <Link
@@ -39,7 +28,7 @@ export function BookingRow({
           <span className={cn("rounded-full px-2 py-0.5 text-[0.8125rem] font-bold uppercase tracking-[0.08em]", BADGE[booking.status])}>
             {booking.status.replace("_", " ")}
           </span>
-          <p className="mt-1.5 truncate text-base font-extrabold">{title ?? booking.service?.name}</p>
+          <p className="mt-1.5 truncate text-base font-extrabold">{booking.service?.name}</p>
           <p className="truncate text-sm text-[#14100F]/60">
             {formatBookingDate(booking.starts_at)} · {formatBookingTime(booking.starts_at)}
             {who ? ` · ${who}` : ""}

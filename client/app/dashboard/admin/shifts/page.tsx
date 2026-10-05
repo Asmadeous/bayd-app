@@ -43,7 +43,6 @@ import {
 import { useAdminEmployees } from "@/lib/hooks/use-admin"
 import { useAdminShifts, useDeleteShift, type AdminShiftFilters, type Shift } from "@/lib/hooks/use-time-clock"
 import { adminShiftsSteps } from "@/lib/tours/admin-shifts-tour"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 const dt = (s: string | null) =>
   formatDate(s)
@@ -182,7 +181,7 @@ export default function AdminShiftsPage() {
       <div className="grid gap-4 md:grid-cols-3" data-tour="admin-shifts-stats">
         <StatCard label="Shifts" value={totals?.shifts ?? 0} />
         <StatCard label="Total Distance" value={`${(totals?.distance_km ?? 0).toFixed(1)} km`} />
-        <StatCard label="Total Owed" value={`${formatMoney((totals?.fuel_reimbursement ?? 0))}`} accent />
+        <StatCard label="Total Owed" value={`$${(totals?.fuel_reimbursement ?? 0).toFixed(2)}`} accent />
       </div>
 
       {isLoading ? (
@@ -338,7 +337,7 @@ function formatKm(value: unknown) {
 
 function formatCurrency(value: unknown) {
   const amount = Number(value)
-  return Number.isFinite(amount) ? `${formatMoney(amount)}` : "-"
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
 }
 
 function getApiErrorMessage(error: unknown, fallback: string) {

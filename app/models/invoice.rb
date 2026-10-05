@@ -1,5 +1,5 @@
 class Invoice < ApplicationRecord
-  include FranchiseScoped
+  HST_RATE = 0.13
 
   belongs_to :user
   belongs_to :invoiceable, polymorphic: true, optional: true

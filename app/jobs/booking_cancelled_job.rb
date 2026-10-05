@@ -6,16 +6,14 @@
 class BookingCancelledJob < ApplicationJob
   queue_as :default
 
-  # notify_customer is false when Visit#cancel! already told the customer once
-  # for the whole visit.
-  def perform(booking_id, notify_customer = true)
+  def perform(booking_id)
     booking = Booking.includes(:service, :user, employee_profile: :user).find_by(id: booking_id)
     return unless booking&.cancelled?
 
     svc = booking.service&.name || "appointment"
     when_str = booking.starts_at.in_time_zone(BusinessHours.zone).strftime("%A, %b %-d at %-l:%M %p")
 
-    notify_customer(booking, svc, when_str) if notify_customer
+    notify_customer(booking, svc, when_str)
     notify_tech(booking, svc, when_str)
   rescue StandardError => e
     Rails.logger.warn("[BookingCancelledJob] booking #{booking_id} failed: #{e.message}")

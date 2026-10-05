@@ -5,7 +5,7 @@
 </p>
 <table style="font-family:Arial,sans-serif;font-size:14px;color:#101217;border-collapse:collapse;margin-bottom:16px;">
   <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Reason</td><td style="padding:4px 0;"><%= @reason %></td></tr>
-  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Still owed</td><td style="padding:4px 0;"><%= Franchise.current.money(@owed) %></td></tr>
+  <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Still owed</td><td style="padding:4px 0;"><%= number_to_currency(@owed) %></td></tr>
   <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Booking</td><td style="padding:4px 0;">#<%= @booking.id %></td></tr>
   <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Service</td><td style="padding:4px 0;"><%= @booking.service.name %></td></tr>
   <tr><td style="padding:4px 12px 4px 0;font-weight:bold;">Technician</td><td style="padding:4px 0;"><%= @technician_name %></td></tr>

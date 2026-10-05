@@ -9,7 +9,6 @@ import { LoadMore } from "@/components/load-more"
 import { appScreenClass, cardClass, mutedClass } from "../app-theme"
 import { EmptyState } from "../empty-state"
 import { AppHeader } from "../app-header"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 const STATUS_STYLE: Record<string, string> = {
   paid: "bg-[#c96c83]/12 text-[#c96c83]",
@@ -44,7 +43,7 @@ export function TransactionsList() {
                   >
                     {inv.status}
                   </span>
-                  <span className="text-sm font-extrabold">{formatMoney(Number(inv.total))}</span>
+                  <span className="text-sm font-extrabold">${Number(inv.total).toFixed(2)}</span>
                 </div>
                 <p className="mt-2 text-sm font-bold">{invoiceTitle(inv)}</p>
                 <p className={`mt-0.5 text-sm ${mutedClass}`}>

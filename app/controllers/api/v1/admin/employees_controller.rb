@@ -113,7 +113,7 @@ module Api
         def employee_params
           params.require(:employee).permit(
             :title, :bio, :photo_url, :years_experience,
-            :base_latitude, :base_longitude, :service_radius_km,
+            :base_latitude, :base_longitude,
             :on_shift, :dispatchable, :active, :partner_id,
             service_fsas: []
           )

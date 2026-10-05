@@ -6,7 +6,7 @@ class SubscriptionSchedulerJob < ApplicationJob
 
   def perform
     Subscription.due.find_each do |subscription|
-      Current.set(franchise: subscription.franchise) { subscription.generate_next_booking! }
+      subscription.generate_next_booking!
     rescue StandardError => e
       Rails.logger.error("[SubscriptionSchedulerJob] subscription #{subscription.id}: #{e.message}")
     end

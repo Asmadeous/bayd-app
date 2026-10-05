@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/select"
 import api from "@/lib/api"
 import { adminOrdersSteps } from "@/lib/tours/admin-orders-tour"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 interface Order {
   id: number
@@ -225,7 +224,7 @@ function formatDate(value: string) {
 
 function formatCurrency(value: unknown) {
   const amount = Number(value)
-  return Number.isFinite(amount) ? `${formatMoney(amount)}` : "-"
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
 }
 
 function getApiErrorMessage(error: unknown, fallback: string) {

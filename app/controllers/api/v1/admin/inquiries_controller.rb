@@ -2,9 +2,6 @@ module Api
   module V1
     module Admin
       class InquiriesController < BaseController
-        # People asking to open a franchise are the super admin's business.
-        before_action :require_super_admin!, only: %i[franchise update_franchise]
-
         def franchise
           records, meta = paginate(FranchiseInquiry.order(created_at: :desc))
           render json: { data: records.as_json, pagination: meta }

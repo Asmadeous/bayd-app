@@ -12,10 +12,8 @@ import { paymentMethodLabel } from "@/lib/payment-methods"
 import { JobActions } from "../../staff-booking-card"
 import { StaffHeader } from "../../staff-header"
 import { bookingStatusStyle, cardClass, eyebrowClass, mutedClass, staffScreenClass } from "../../staff-theme"
-import { SharedVisitNote } from "../../shared-visit-note"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
-const money = (v: string | number | null | undefined) => `${formatMoney(Number(v ?? 0))}`
+const money = (v: string | number | null | undefined) => `$${Number(v ?? 0).toFixed(2)}`
 
 const PAYMENT: Record<string, { label: string; style: string }> = {
   paid: { label: "Paid", style: "bg-[#4E9A57]/15 text-[#3f7e47]" },
@@ -108,7 +106,6 @@ function JobDetails({ job, history }: { job: EmployeeJob; history: boolean }) {
             </p>
           ) : null}
         </div>
-        <SharedVisitNote booking={job} />
         <JobActions booking={job} history={history} showFinancials={false} clientUserId={job.client?.user_id} />
       </section>
 

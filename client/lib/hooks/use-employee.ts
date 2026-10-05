@@ -230,9 +230,8 @@ export function useUpdateProfile() {
   })
 }
 
-// One service (service_id), or several done back-to-back on the tech's own
-// schedule as one visit (service_ids, each its own booking).
-export type StaffBookingInput = ({ service_id: number; service_ids?: never } | { service_ids: number[]; service_id?: never }) & {
+export interface StaffBookingInput {
+  service_id: number
   starts_at: string // ISO datetime
   customer: { email?: string; first_name?: string; last_name?: string; phone?: string }
   client_type?: string

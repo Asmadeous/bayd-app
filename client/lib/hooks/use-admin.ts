@@ -138,26 +138,6 @@ export function useAdminRescheduleBooking() {
   })
 }
 
-// Move a whole multi-service visit (keep_techs keeps every service with its tech;
-// otherwise each is re-matched to whoever is free) or cancel all of it.
-export function useAdminRescheduleVisit() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ visitId, starts_at, keep_techs }: { visitId: number; starts_at: string; keep_techs: boolean }) =>
-      api.post(`/admin/visits/${visitId}/reschedule`, { starts_at, keep_techs }).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-bookings"] }),
-  })
-}
-
-export function useAdminCancelVisit() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ visitId, reason }: { visitId: number; reason?: string }) =>
-      api.post(`/admin/visits/${visitId}/cancel`, { reason }).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-bookings"] }),
-  })
-}
-
 // A tech's bookable hours per company-zone day ("HH:MM" pairs; [] = off or
 // blacked out), for shading the admin calendar.
 export type BookableWindows = Record<string, { start: string; end: string }[]>
@@ -206,7 +186,6 @@ export interface EmployeeInput {
   base_latitude?: string | null
   base_longitude?: string | null
   service_fsas?: string[]
-  service_radius_km?: number | null
 }
 
 export function useUpdateEmployee(id: number) {

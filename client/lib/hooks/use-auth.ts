@@ -200,7 +200,7 @@ export function useAuth(redirect?: { afterAuth?: string; afterLogout?: string })
 }
 
 function roleDashboard(role: string) {
-  if (role === "admin" || role === "super_admin") return "/dashboard/admin"
+  if (role === "admin") return "/dashboard/admin"
   if (role === "employee") return "/dashboard/employee"
   return "/dashboard/customer"
 }

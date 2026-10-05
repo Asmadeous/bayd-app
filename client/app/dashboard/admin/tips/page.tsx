@@ -32,7 +32,6 @@ import {
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { adminTipsSteps } from "@/lib/tours/admin-tips-tour"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 interface TipOwed {
   employee_profile_id: number
@@ -156,7 +155,7 @@ export default function AdminTipsPage() {
 
 function formatCurrency(value: unknown) {
   const amount = Number(value)
-  return Number.isFinite(amount) ? `${formatMoney(amount)}` : "-"
+  return Number.isFinite(amount) ? `$${amount.toFixed(2)}` : "-"
 }
 
 function getApiErrorMessage(error: unknown, fallback: string) {

@@ -8,7 +8,6 @@ import { RecommendPopup } from "@/components/recommend-popup"
 import { useNativeShell } from "@/lib/native/use-native-shell"
 import { usePushRegistration } from "@/lib/native/use-push-registration"
 import { AnimatedSplash } from "@/lib/native/animated-splash"
-import { FranchiseProvider } from "@/lib/franchise-provider"
 
 // Runs native shell setup (status bar, splash, back button) + push registration.
 // No-ops on the web.
@@ -35,7 +34,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <FranchiseProvider />
       <NativeShell />
       <AnimatedSplash />
       {children}

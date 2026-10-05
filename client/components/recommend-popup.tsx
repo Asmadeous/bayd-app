@@ -8,7 +8,6 @@ import { ShoppingBag, X } from "lucide-react";
 
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 // "Out of sight, out of mind" — a small dismissible card that slides in from the
 // bottom corner and rotates through top-selling products to nudge shoppers while
@@ -100,7 +99,7 @@ export function RecommendPopup() {
             <h3 className="mt-1 truncate text-sm font-extrabold text-[#101217]">
               {product.name}
             </h3>
-            <p className="mt-1 text-sm font-extrabold">{formatMoney(Number(product.price))}</p>
+            <p className="mt-1 text-sm font-extrabold">${Number(product.price).toFixed(2)}</p>
             <span className="mt-2 inline-flex w-fit items-center gap-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[#c96c83]">
               <ShoppingBag aria-hidden="true" className="size-3" />
               Shop now

@@ -17,10 +17,6 @@ production:
     class: SubscriptionSchedulerJob
     queue: low
     schedule: every day at 6am
-  monthly_royalties:
-    class: MonthlyRoyaltyJob
-    queue: low
-    schedule: "0 7 1 * *"
   overdue_booking_sweep:
     class: OverdueBookingSweepJob
     queue: default

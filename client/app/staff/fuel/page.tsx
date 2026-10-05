@@ -6,9 +6,8 @@ import { LoadMore } from "@/components/load-more"
 import { useShiftsList, type Shift } from "@/lib/hooks/use-time-clock"
 import { StaffHeader } from "../staff-header"
 import { cardClass, eyebrowClass, mutedClass, staffScreenClass } from "../staff-theme"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
-const money = (v: string | number | null | undefined) => `${formatMoney(Number(v ?? 0))}`
+const money = (v: string | number | null | undefined) => `$${Number(v ?? 0).toFixed(2)}`
 const km = (v: string | number | null | undefined) => `${Number(v ?? 0).toFixed(1)} km`
 
 // Fuel and mileage from the tech's shift records: the totals, then each shift's

@@ -13,8 +13,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { useCancelBooking, useCancelVisit, type Booking } from "@/lib/hooks/use-bookings"
-import { isVisit, visitTitle } from "@/lib/visits"
+import { useCancelBooking, type Booking } from "@/lib/hooks/use-bookings"
 
 // Mirrors BookingsController::CANCEL_CUTOFF_HOURS so the button never offers a
 // cancel the API will refuse.
@@ -28,14 +27,10 @@ export function canSelfCancel(booking: Booking, now = Date.now()) {
 }
 
 // Customer self-cancel with a confirm step. Inside the 24h window it shows a
-// "call us" hint instead, matching the app. A multi-service visit is cancelled
-// as a whole.
+// "call us" hint instead, matching the app.
 export function CancelBookingButton({ booking }: { booking: Booking }) {
   const { toast } = useToast()
-  const cancelBooking = useCancelBooking()
-  const cancelVisit = useCancelVisit()
-  const wholeVisit = isVisit(booking) && booking.visit_id != null
-  const cancel = wholeVisit ? cancelVisit : cancelBooking
+  const cancel = useCancelBooking()
 
   if (booking.status !== "pending" && booking.status !== "confirmed") return null
   if (!canSelfCancel(booking)) {
@@ -43,19 +38,20 @@ export function CancelBookingButton({ booking }: { booking: Booking }) {
   }
 
   function confirmCancel() {
-    const handlers = {
-      onSuccess: () => toast({ title: "Booking cancelled", variant: "success" }),
-      onError: (error: unknown) => {
-        const data = (error as { response?: { data?: { error?: string } } })?.response?.data
-        toast({
-          title: "Booking not cancelled",
-          description: data?.error ?? "Could not cancel this booking.",
-          variant: "error",
-        })
+    cancel.mutate(
+      { id: booking.id },
+      {
+        onSuccess: () => toast({ title: "Booking cancelled", variant: "success" }),
+        onError: (error) => {
+          const data = (error as { response?: { data?: { error?: string } } })?.response?.data
+          toast({
+            title: "Booking not cancelled",
+            description: data?.error ?? "Could not cancel this booking.",
+            variant: "error",
+          })
+        },
       },
-    }
-    if (wholeVisit && booking.visit_id != null) cancelVisit.mutate({ visitId: booking.visit_id }, handlers)
-    else cancelBooking.mutate({ id: booking.id }, handlers)
+    )
   }
 
   return (
@@ -69,8 +65,7 @@ export function CancelBookingButton({ booking }: { booking: Booking }) {
         <AlertDialogHeader>
           <AlertDialogTitle>Cancel booking?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will cancel {wholeVisit ? visitTitle(booking) : booking.service?.name ?? "this appointment"}
-            {wholeVisit ? ", every service in this visit" : ""}. You may need to book again if you change your mind.
+            This will cancel {booking.service?.name ?? "this appointment"}. You may need to book again if you change your mind.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

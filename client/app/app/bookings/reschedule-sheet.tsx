@@ -8,9 +8,8 @@ import { DateStrip } from "@/components/booking/date-strip"
 import { TimeGroups } from "@/components/booking/time-groups"
 import { BubbleLoader } from "@/components/bubble-loader"
 import api from "@/lib/api"
-import { formatDateKey, todayKey, bookingZoneLabel } from "@/lib/booking-time"
-import { useRescheduleBooking, useRescheduleVisit, type Booking } from "@/lib/hooks/use-bookings"
-import { isVisit, visitLines, visitTitle } from "@/lib/visits"
+import { formatDateKey, todayKey } from "@/lib/booking-time"
+import { useRescheduleBooking, type Booking } from "@/lib/hooks/use-bookings"
 import { cardClass, mutedClass } from "../app-theme"
 
 interface AvailabilityResult {
@@ -27,16 +26,11 @@ export function RescheduleSheet({ booking, onClose }: { booking: Booking; onClos
   const [date, setDate] = useState(() => todayKey())
   const [time, setTime] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const rescheduleOne = useRescheduleBooking()
-  const rescheduleVisit = useRescheduleVisit()
-  // A multi-service visit moves as a whole: open times are when every service is
-  // staffed again (techs may change to whoever is free then).
-  const wholeVisit = isVisit(booking) && booking.visit_id != null
-  const reschedule = wholeVisit ? rescheduleVisit : rescheduleOne
+  const reschedule = useRescheduleBooking()
 
   const availability = useQuery<AvailabilityResult>({
     queryKey: ["availability", booking.service.id, booking.employee_profile.id, date],
-    enabled: !!date && !wholeVisit,
+    enabled: !!date,
     queryFn: () =>
       api
         .get<AvailabilityResult>("/availability", {
@@ -44,42 +38,23 @@ export function RescheduleSheet({ booking, onClose }: { booking: Booking; onClos
         })
         .then((r) => r.data),
   })
-  const visitAvailability = useQuery<{ by_time: Record<string, unknown> }>({
-    queryKey: ["availability-visit", "reschedule", booking.visit_id, date],
-    enabled: !!date && wholeVisit,
-    queryFn: () =>
-      api
-        .get<{ by_time: Record<string, unknown> }>("/availability/visit", {
-          params: {
-            service_ids: visitLines(booking).map((l) => l.serviceId),
-            date,
-            count: booking.client_type === "group" ? booking.party_size : 1,
-            latitude: booking.service_latitude ?? undefined,
-            longitude: booking.service_longitude ?? undefined,
-            postal_code: booking.address?.postal_code ?? undefined,
-            visit_id: booking.visit_id,
-          },
-        })
-        .then((r) => r.data),
-  })
-  const slots = wholeVisit ? Object.keys(visitAvailability.data?.by_time ?? {}) : availability.data?.slots ?? []
-  const slotsLoading = wholeVisit ? visitAvailability.isLoading : availability.isLoading
+  const slots = availability.data?.slots ?? []
 
   const remaining = Math.max(0, 2 - booking.reschedule_count)
 
   function submit() {
     if (!date || !time) return
     setError(null)
-    const handlers = {
-      onSuccess: () => onClose(),
-      onError: (err: unknown) => {
-        const data = (err as { response?: { data?: { error?: string } } })?.response?.data
-        setError(data?.error ?? "Couldn't reschedule. Please try again.")
+    reschedule.mutate(
+      { id: booking.id, starts_at: `${date}T${time}:00` },
+      {
+        onSuccess: () => onClose(),
+        onError: (err: unknown) => {
+          const data = (err as { response?: { data?: { error?: string } } })?.response?.data
+          setError(data?.error ?? "Couldn't reschedule. Please try again.")
+        },
       },
-    }
-    const startsAt = `${date}T${time}:00`
-    if (wholeVisit && booking.visit_id != null) rescheduleVisit.mutate({ visitId: booking.visit_id, starts_at: startsAt }, handlers)
-    else rescheduleOne.mutate({ id: booking.id, starts_at: startsAt }, handlers)
+    )
   }
 
   return (
@@ -95,10 +70,8 @@ export function RescheduleSheet({ booking, onClose }: { booking: Booking; onClos
           </button>
         </div>
         <p className={`mb-4 text-sm ${mutedClass}`}>
-          {wholeVisit
-            ? `Pick a new open time for ${visitTitle(booking)}. Each service is matched to a technician who's free then.`
-            : `Pick a new open time for ${booking.service?.name ?? "this service"} with the same technician.`}{" "}
-          You can reschedule {remaining} more time{remaining === 1 ? "" : "s"}.
+          Pick a new open time for {booking.service?.name ?? "this service"} with the same technician. You can
+          reschedule {remaining} more time{remaining === 1 ? "" : "s"}.
         </p>
 
         {error ? (
@@ -108,14 +81,14 @@ export function RescheduleSheet({ booking, onClose }: { booking: Booking; onClos
         ) : null}
 
         <DateStrip value={date} onChange={(d) => { setDate(d); setTime("") }} />
-        <p className={`mt-1 text-center text-sm ${mutedClass}`}>Times are shown in {bookingZoneLabel()} time.</p>
+        <p className={`mt-1 text-center text-sm ${mutedClass}`}>Times are shown in Eastern time.</p>
 
         <h3 className="mt-4 border-t border-black/10 pt-4 text-base font-black tracking-tight">
           {date === todayKey() ? "Today, " : ""}
           {formatDateKey(date, { weekday: "long", month: "short", day: "numeric" })}
         </h3>
         <div className="mt-3">
-          {slotsLoading ? (
+          {availability.isLoading ? (
             <BubbleLoader className="py-4" label="Finding open times" />
           ) : slots.length === 0 ? (
             <p className={`text-sm ${mutedClass}`}>No open times that day. Try another date.</p>

@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dialog"
 import api from "@/lib/api"
 import type { Booking } from "@/lib/hooks/use-bookings"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 type Mode = "link" | "charge"
 
@@ -53,7 +52,7 @@ export function CollectPaymentButton({ booking }: { booking: Booking }) {
         setLink(data.url)
         toast({ title: notify ? "Payment link sent to the client" : "Payment link ready", variant: "success" })
       } else {
-        toast({ title: "Card charged", description: `${formatMoney(Number(amount))} was charged.`, variant: "success" })
+        toast({ title: "Card charged", description: `$${Number(amount).toFixed(2)} was charged.`, variant: "success" })
         close()
       }
     },
@@ -74,7 +73,7 @@ export function CollectPaymentButton({ booking }: { booking: Booking }) {
   return (
     <>
       <Button size="xs" variant="outline" onClick={() => setOpen(true)}>
-        Collect {formatMoney(balance)}
+        Collect ${balance.toFixed(2)}
       </Button>
 
       <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
@@ -83,7 +82,7 @@ export function CollectPaymentButton({ booking }: { booking: Booking }) {
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#a36f4d]">Payment</p>
             <DialogTitle>Collect payment</DialogTitle>
             <DialogDescription>
-              {booking.customer_name || "The client"} owes {formatMoney(balance)} for this booking.
+              {booking.customer_name || "The client"} owes ${balance.toFixed(2)} for this booking.
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="space-y-4">
@@ -132,7 +131,7 @@ export function CollectPaymentButton({ booking }: { booking: Booking }) {
                 </label>
                 {confirmCharge ? (
                   <p className="border border-[#b75c68]/25 bg-[#fff5f6] px-3 py-2 text-sm font-semibold text-[#8f3f4b]">
-                    Charge {formatMoney(Number(amount))} to the client&apos;s saved card now? Press Charge again to confirm.
+                    Charge ${Number(amount).toFixed(2)} to the client&apos;s saved card now? Press Charge again to confirm.
                   </p>
                 ) : null}
               </>

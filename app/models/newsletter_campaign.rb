@@ -1,8 +1,6 @@
 # A newsletter written in the dashboard and emailed to every subscriber. Sent
 # once; the record keeps what went out and to how many people.
 class NewsletterCampaign < ApplicationRecord
-  include FranchiseScoped
-
   belongs_to :sent_by, class_name: "User", optional: true
 
   validates :subject, presence: true, length: { maximum: 150 }

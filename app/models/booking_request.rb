@@ -1,6 +1,4 @@
 class BookingRequest < ApplicationRecord
-  include FranchiseScoped
-
   belongs_to :user
   belongs_to :service
   belongs_to :address, optional: true

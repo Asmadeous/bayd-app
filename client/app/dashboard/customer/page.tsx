@@ -20,13 +20,11 @@ import { Button } from "@/components/ui/button"
 import { useBookings } from "@/lib/hooks/use-bookings"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import { customerDashboardSteps } from "@/lib/tours/customer-tour"
-import { collapseVisits, isVisit, visitTechNames, visitTitle } from "@/lib/visits"
 
 export default function CustomerDashboardPage() {
   const { toast } = useToast()
   const { data, isError, isLoading } = useBookings(1)
-  // A multi-service visit shows once, with every service and tech inside.
-  const bookings = useMemo(() => collapseVisits(data?.data ?? []), [data?.data])
+  const bookings = useMemo(() => data?.data ?? [], [data?.data])
   const [selectedDate, setSelectedDate] = useState(() => new Date())
   const selectedDateKey = formatDateKey(selectedDate)
   const bookServiceHref = `/dashboard/customer/book?date=${selectedDateKey}`
@@ -72,16 +70,10 @@ export default function CustomerDashboardPage() {
             </p>
             {nextBooking ? (
               <div className="mt-3">
-                <p className="text-lg font-extrabold text-white">{visitTitle(nextBooking)}</p>
+                <p className="text-lg font-extrabold text-white">{nextBooking.service?.name}</p>
                 <p className="mt-2 text-sm leading-6 text-white/68">
                   {formatBookingDate(nextBooking.starts_at)}
                 </p>
-                {visitTechNames(nextBooking) ? (
-                  <p className="mt-1 text-sm font-semibold text-white/80">
-                    with {visitTechNames(nextBooking)}
-                    {isVisit(nextBooking) ? " (back-to-back)" : ""}
-                  </p>
-                ) : null}
               </div>
             ) : (
               <p className="mt-3 text-sm leading-6 text-white/68">
@@ -170,7 +162,6 @@ export default function CustomerDashboardPage() {
               <div className="space-y-3">
                 {upcoming.slice(0, 4).map((booking) => (
                   <BookingCard
-                    asVisit
                     booking={booking}
                     key={booking.id}
                     actions={
@@ -245,7 +236,7 @@ function SelectedDayAppointments({
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-extrabold text-[#101217]">
-                  {visitTitle(booking) || "Beauty appointment"}
+                  {booking.service?.name ?? "Beauty appointment"}
                 </p>
                 <p className="mt-1 text-xs font-medium text-[#5f6268]">
                   {formatBookingTime(booking.starts_at)}

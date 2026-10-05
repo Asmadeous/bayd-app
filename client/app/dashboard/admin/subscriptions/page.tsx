@@ -42,7 +42,6 @@ import {
 } from "@/lib/hooks/use-admin"
 import type { Subscription } from "@/lib/hooks/use-subscriptions"
 import { adminSubscriptionsSteps } from "@/lib/tours/admin-subscriptions-tour"
-import { formatMoney } from "@/lib/stores/franchise-store"
 
 const STATUSES = ["active", "paused", "cancelled"]
 const UNITS = ["day", "week", "month", "year"]
@@ -205,7 +204,7 @@ function Row({ subscription: s, busy, onSaveFreq, onStatus, onCancel, onDelete }
           </div>
           <p className="text-xs text-[#5f6268] mt-0.5">
             {s.frequency_label} · next {dt(s.next_run_at)}
-            {s.auto_charge ? ` · auto-pay${s.price ? ` ${formatMoney(Number(s.price))}` : ""}` : " · pay per visit"}
+            {s.auto_charge ? ` · auto-pay${s.price ? ` $${Number(s.price).toFixed(2)}` : ""}` : " · pay per visit"}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">

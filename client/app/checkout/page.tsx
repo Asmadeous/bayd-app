@@ -15,7 +15,6 @@ import { useCartStore } from "@/lib/stores/cart-store";
 import api from "@/lib/api";
 import { openHelcimPay } from "@/lib/helcim-pay";
 import { cn } from "@/lib/utils";
-import { formatMoney, useFranchiseStore, DEFAULT_FRANCHISE } from "@/lib/stores/franchise-store";
 
 // The backend creates the order + payment session. Depending on the gateway it
 // returns either a Helcim checkout_token (we open the HelcimPay.js modal on this
@@ -36,10 +35,6 @@ export default function CheckoutPage() {
   const [payError, setPayError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
 
-  // The franchise's sales tax, added on top of shop prices.
-  const franchise = useFranchiseStore((st) => st.config) ?? DEFAULT_FRANCHISE;
-  const taxRate = Number(franchise.tax_rate) || 0;
-  const taxName = franchise.tax_name;
   const subtotal = items.reduce(
     (total, item) => total + item.product.priceValue * item.quantity,
     0,
@@ -165,7 +160,8 @@ export default function CheckoutPage() {
                         </p>
                       </div>
                       <p className="shrink-0 text-base font-extrabold text-[#101217]">
-                        {formatMoney(item.product.priceValue * item.quantity)}
+                        CA$
+                        {(item.product.priceValue * item.quantity).toFixed(2)}
                       </p>
                     </div>
                   </article>
@@ -184,19 +180,19 @@ export default function CheckoutPage() {
               <div className="flex justify-between">
                 <span className="text-[#5f6268]">Subtotal</span>
                 <span className="font-extrabold text-[#101217]">
-                  {formatMoney(subtotal)}
+                  CA${subtotal.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-[#5f6268]">Tax{taxName ? ` (${taxName})` : ""}</span>
+                <span className="text-[#5f6268]">Tax (HST)</span>
                 <span className="font-extrabold text-[#101217]">
-                  {formatMoney(subtotal * taxRate)}
+                  CA${(subtotal * 0.13).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between border-t border-black/10 pt-3 text-base">
                 <span className="font-extrabold text-[#101217]">Total</span>
                 <span className="font-extrabold text-[#101217]">
-                  {formatMoney(subtotal * (1 + taxRate))}
+                  CA${(subtotal * 1.13).toFixed(2)}
                 </span>
               </div>
             </div>

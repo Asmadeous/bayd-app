@@ -5,8 +5,7 @@ class BookingSerializer < Blueprinter::Base
          :recurrence_active, :recurrence_interval_weeks, :auto_charge,
          :payment_timing, :payment_status, :deposit_amount,
          :booked_for_name, :booked_for_phone, :overtime_amount,
-         :service_latitude, :service_longitude, :reschedule_count, :parent_booking_id,
-         :visit_id, :visit_position
+         :service_latitude, :service_longitude, :reschedule_count, :parent_booking_id
 
   # When messaging, live tracking, clock-in and navigation open for this booking
   # (Booking::ACCESS_LEAD_MIN before the start). The apps lock those actions
@@ -30,19 +29,6 @@ class BookingSerializer < Blueprinter::Base
   # as [{ id, name, price, duration }]. Empty when none.
   field :addons do |booking|
     booking.raw["addons"] || []
-  end
-
-  # The OTHER services on the same visit and who does them, so the customer card
-  # shows every tech and a tech sees who they share the appointment with.
-  # Empty for a standalone booking.
-  field :visit_lines do |booking|
-    next [] unless booking.visit
-
-    booking.visit.bookings.reject { |b| b.id == booking.id }.map do |b|
-      ep = b.employee_profile
-      { id: b.id, service_id: b.service_id, service_name: b.service&.name, starts_at: b.starts_at, ends_at: b.ends_at,
-        status: b.status, total: b.total, employee: { id: ep&.id, user_id: ep&.user_id, name: ep&.user&.first_name, photo_url: ep&.photo_image_url } }
-    end
   end
 
   field :has_review do |booking|
