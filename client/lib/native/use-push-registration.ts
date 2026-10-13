@@ -98,7 +98,7 @@ export function usePushRegistration() {
       // (e.g. the chat thread). Covers both the system banner (app in background
       // or closed) and the local re-display above (app in foreground).
       const openPath = (path: unknown) => {
-        if (typeof path === "string" && path.startsWith("/")) routerRef.current.push(path)
+        if (typeof path === "string" && path.startsWith("/")) routerRef.current.push(inThisApp(path))
       }
       const tapListener = await PushNotifications.addListener("pushNotificationActionPerformed", (action) =>
         openPath(action.notification.data?.path),
@@ -132,7 +132,17 @@ export function usePushRegistration() {
   }, [isAuthenticated])
 }
 
+// Device tokens don't say which app they belong to, so the backend links every
+// staff or admin booking alert to the staff job screen, and their chat messages
+// to the staff thread. In BAYD Admin those open the admin's own screens.
+function inThisApp(path: string) {
+  if (typeof window === "undefined" || !window.location.pathname.startsWith("/admin")) return path
+  const job = path.match(/^\/staff\/schedule\/job\?id=(\d+)/)
+  if (job) return `/admin/bookings/view?id=${job[1]}`
+  return path.replace(/^\/staff\/messages\/thread/, "/admin/messages/thread")
+}
+
 function isCurrentPath(path: unknown) {
   if (typeof path !== "string" || typeof window === "undefined") return false
-  return `${window.location.pathname}${window.location.search}` === path
+  return `${window.location.pathname}${window.location.search}` === inThisApp(path)
 }

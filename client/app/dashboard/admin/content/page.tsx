@@ -27,7 +27,7 @@ export default function AdminContentPage() {
   const [page, setPage] = useState(1)
   const { data, isLoading } = useQuery<PagedResponse<BlogPost>>({
     queryKey: ["admin-blog-posts", page],
-    queryFn: () => api.get<PagedResponse<BlogPost>>("/admin/content/blog_posts", { params: { page } }).then((r) => r.data),
+    queryFn: () => api.get<PagedResponse<BlogPost>>("/admin/blog_posts", { params: { page } }).then((r) => r.data),
   })
 
   const posts = data?.data ?? []

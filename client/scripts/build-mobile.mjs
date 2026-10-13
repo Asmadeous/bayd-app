@@ -32,7 +32,7 @@ if (!VALID.includes(which)) {
 const APP_ROUTES = {
   customer: { dir: "app", entry: "/app/home", reusesBook: true },
   employee: { dir: "staff", entry: "/staff/schedule", reusesBook: true },
-  admin: { dir: "admin", entry: "/admin", reusesBook: false },
+  admin: { dir: "admin", entry: "/admin/home", reusesBook: false },
 };
 const appRoute = APP_ROUTES[which];
 

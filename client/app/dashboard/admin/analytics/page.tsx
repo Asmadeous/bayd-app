@@ -18,7 +18,7 @@ import {
   type AnalyticsEmployee,
 } from "@/lib/hooks/use-admin"
 import { adminAnalyticsSteps } from "@/lib/tours/admin-analytics-tour"
-import { formatMoney } from "@/lib/stores/franchise-store"
+import { formatMoney, useFranchiseStore } from "@/lib/stores/franchise-store"
 
 const PERIODS: { key: AnalyticsPeriod; label: string }[] = [
   { key: "7d", label: "7 days" },
@@ -117,13 +117,14 @@ export default function AdminAnalyticsPage() {
 function InvoicesPanel({ invoices }: { invoices: import("@/lib/hooks/use-admin").AnalyticsInvoices }) {
   const KIND_LABEL: Record<string, string> = { booking: "Bookings", order: "Products", gift_card: "Gift cards", manual: "Manual" }
   const kinds = Object.entries(invoices.by_kind)
+  const taxName = useFranchiseStore((s) => s.config?.tax_name) ?? "Tax"
   return (
     <DashboardPanel>
       <h2 className="text-sm font-semibold text-[#101217] mb-4">Transactions / Invoices</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <MetricCard label="Invoiced" value={cad.format(invoices.total_invoiced)} accent />
         <MetricCard label="Invoices" value={invoices.count} />
-        <MetricCard label="HST Collected" value={cad.format(invoices.tax_collected)} />
+        <MetricCard label={`${taxName} Collected`} value={cad.format(invoices.tax_collected)} />
       </div>
       {kinds.length > 0 && (
         <div className="mt-4 space-y-1.5">

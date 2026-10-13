@@ -14,7 +14,7 @@ export function NotificationList({
   cardClassName,
   empty,
 }: {
-  app: "customer" | "staff"
+  app: "customer" | "staff" | "admin"
   cardClassName: string
   empty: React.ReactNode
 }) {

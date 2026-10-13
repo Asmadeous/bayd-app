@@ -46,6 +46,9 @@ interface NewBookingFormProps {
   initialDate?: string
   initialTime?: string
   initialEmployeeId?: number
+  // The admin app supplies its own screen and header around the form.
+  embedded?: boolean
+  backHref?: string
 }
 
 const COPY = {
@@ -63,10 +66,18 @@ const COPY = {
 
 // Manual (force) booking by staff or an admin. Skips assignment eligibility, but
 // the database still rejects a clash with the tech's other bookings.
-export function NewBookingForm({ mode, initialDate = "", initialTime = "10:00", initialEmployeeId }: NewBookingFormProps) {
+export function NewBookingForm({
+  mode,
+  initialDate = "",
+  initialTime = "10:00",
+  initialEmployeeId,
+  embedded = false,
+  backHref,
+}: NewBookingFormProps) {
   const { toast } = useToast()
   const qc = useQueryClient()
   const copy = COPY[mode]
+  const back = backHref ?? copy.backHref
   const { data: employees } = useAdminEmployees(1, mode === "admin")
   const [employeeId, setEmployeeId] = useState(initialEmployeeId ? String(initialEmployeeId) : "")
   const { data: services = [], isError: isServicesError } = useQuery<ApiService[]>({
@@ -188,7 +199,7 @@ export function NewBookingForm({ mode, initialDate = "", initialTime = "10:00", 
 
   if (done) {
     return (
-      <DashboardPage maxWidth="narrow">
+      <FormFrame embedded={embedded}>
         <DashboardPanel>
           <div className="py-8 text-center">
             <CheckCircle2 className="mx-auto mb-3 size-9 text-emerald-600" />
@@ -198,7 +209,7 @@ export function NewBookingForm({ mode, initialDate = "", initialTime = "10:00", 
               <span className="font-bold text-[#101217]">{name || email}</span>.
             </p>
             <div className="mt-5 flex justify-center gap-2">
-              <Link href={copy.backHref} className="inline-flex h-10 items-center bg-[#101217] px-4 text-sm font-bold text-white">
+              <Link href={back} className="inline-flex h-10 items-center bg-[#101217] px-4 text-sm font-bold text-white">
                 Back
               </Link>
               <button
@@ -211,23 +222,25 @@ export function NewBookingForm({ mode, initialDate = "", initialTime = "10:00", 
             </div>
           </div>
         </DashboardPanel>
-      </DashboardPage>
+      </FormFrame>
     )
   }
 
   return (
-    <DashboardPage maxWidth="narrow">
-      <div data-tour="new-booking-header">
-        <DashboardHeader
-          title="New booking"
-          subtitle={copy.subtitle}
-          actions={
-            <Link href={copy.backHref} className="inline-flex h-10 items-center gap-1 border border-black/15 bg-white px-4 text-sm font-bold text-[#101217]">
-              <ChevronLeft className="size-4" /> Back
-            </Link>
-          }
-        />
-      </div>
+    <FormFrame embedded={embedded}>
+      {embedded ? null : (
+        <div data-tour="new-booking-header">
+          <DashboardHeader
+            title="New booking"
+            subtitle={copy.subtitle}
+            actions={
+              <Link href={back} className="inline-flex h-10 items-center gap-1 border border-black/15 bg-white px-4 text-sm font-bold text-[#101217]">
+                <ChevronLeft className="size-4" /> Back
+              </Link>
+            }
+          />
+        </div>
+      )}
 
       <DashboardPanel data-tour="new-booking-form">
         <div className="grid gap-5">
@@ -453,8 +466,12 @@ export function NewBookingForm({ mode, initialDate = "", initialTime = "10:00", 
       </DashboardPanel>
 
       {mode === "staff" ? <TutorialButton steps={employeeNewBookingSteps} pageKey="employee-new-booking" /> : null}
-    </DashboardPage>
+    </FormFrame>
   )
+}
+
+function FormFrame({ embedded, children }: { embedded: boolean; children: React.ReactNode }) {
+  return embedded ? <div className="space-y-4">{children}</div> : <DashboardPage maxWidth="narrow">{children}</DashboardPage>
 }
 
 function getApiErrorMessage(error: unknown, fallback: string) {

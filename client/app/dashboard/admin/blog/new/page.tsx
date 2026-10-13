@@ -2,7 +2,7 @@
 
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
-import { BlogPostForm } from "@/app/dashboard/admin/blog/_components/blog-post-form"
+import { BlogPostForm } from "@/components/dashboard/blog-post-form"
 
 export default function NewBlogPostPage() {
   return (

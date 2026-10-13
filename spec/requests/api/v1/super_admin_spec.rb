@@ -82,6 +82,22 @@ RSpec.describe "Super admin console", type: :request do
     expect(seen).to eq(uk)
   end
 
+  it "needs a branch picked before making admin changes" do
+    category = create(:service_category)
+    params = { name: "Manicure", duration_minutes: 30, price: 40, service_category_id: category.id }
+
+    post "/api/v1/admin/services", headers: auth, params: params
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(json["error"]).to include("Working in")
+
+    get "/api/v1/admin/services", headers: auth
+    expect(response).to have_http_status(:ok)
+
+    post "/api/v1/admin/services", headers: auth.merge("X-Franchise" => "canada"), params: params
+    expect(response).to have_http_status(:created)
+    expect(Service.unscoped.find(json["id"]).franchise_id).to eq(canada.id)
+  end
+
   it "won't suspend the default franchise" do
     post "/api/v1/super/franchises/#{canada.id}/suspend", headers: auth
     expect(response).to have_http_status(:unprocessable_content)

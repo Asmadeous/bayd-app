@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ShoppingBag, X } from "lucide-react";
@@ -25,7 +26,17 @@ interface TopSeller {
 const ROTATE_MS = 22_000; // swap to a new product every ~22s
 const FIRST_SHOW_MS = 8_000; // wait a bit before the first appearance
 
+// Shop promotion for the public site only, never over the dashboards or the
+// staff and admin apps.
+const HIDDEN_ON = ["/dashboard", "/staff", "/admin"];
+
 export function RecommendPopup() {
+  const pathname = usePathname();
+  if (HIDDEN_ON.some((prefix) => pathname?.startsWith(prefix))) return null;
+  return <TopSellerPopup />;
+}
+
+function TopSellerPopup() {
   const { data } = useQuery<{ data: TopSeller[] }>({
     queryKey: ["top-sellers"],
     queryFn: () =>

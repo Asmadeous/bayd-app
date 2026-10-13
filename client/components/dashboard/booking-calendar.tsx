@@ -16,6 +16,7 @@ import { gridHours, layoutDay } from "@/lib/calendar-layout"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import type { CalendarState, CalendarView } from "@/lib/hooks/use-calendar-state"
 import { cn } from "@/lib/utils"
+import { UnavailableShading } from "@/components/calendar/unavailable-shading"
 
 export interface CalendarSlot {
   date: DateKey
@@ -48,11 +49,6 @@ interface DragProps {
 }
 
 const DRAG_TYPE = "application/x-bayd-booking"
-
-function toMinutes(hhmm: string) {
-  const [h, m] = hhmm.split(":").map(Number)
-  return h * 60 + m
-}
 
 // Read the dragged booking from a drop event and hand it to onMoveBooking.
 function dropHandlers(bookings: Map<number, Booking>, slot: CalendarSlot, onMove?: BookingCalendarProps["onMoveBooking"]) {
@@ -459,6 +455,7 @@ function TimeGrid({
                   windows={drag.availability[day] ?? []}
                   startHour={startHour}
                   endHour={endHour}
+                  hourPx={HOUR_PX}
                 />
               ) : null}
               {placedByDay[di].map((p) => {
@@ -492,44 +489,5 @@ function TimeGrid({
         </div>
       </div>
     </div>
-  )
-}
-
-// Greys out the parts of a day column outside the tech's bookable windows.
-// Sits under the slot buttons' hover and never catches clicks.
-function UnavailableShading({
-  windows,
-  startHour,
-  endHour,
-}: {
-  windows: { start: string; end: string }[]
-  startHour: number
-  endHour: number
-}) {
-  const gridStart = startHour * 60
-  const gridEnd = endHour * 60
-  const open = windows
-    .map((w) => [Math.max(gridStart, toMinutes(w.start)), Math.min(gridEnd, toMinutes(w.end))] as const)
-    .filter(([a, b]) => b > a)
-    .sort((a, b) => a[0] - b[0])
-  const closed: [number, number][] = []
-  let cursor = gridStart
-  for (const [a, b] of open) {
-    if (a > cursor) closed.push([cursor, a])
-    cursor = Math.max(cursor, b)
-  }
-  if (cursor < gridEnd) closed.push([cursor, gridEnd])
-
-  return (
-    <>
-      {closed.map(([a, b]) => (
-        <div
-          key={a}
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bg-[repeating-linear-gradient(135deg,rgba(16,18,23,0.035),rgba(16,18,23,0.035)_6px,transparent_6px,transparent_12px)]"
-          style={{ top: (a - gridStart) * (HOUR_PX / 60), height: (b - a) * (HOUR_PX / 60) }}
-        />
-      ))}
-    </>
   )
 }

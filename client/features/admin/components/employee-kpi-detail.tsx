@@ -9,8 +9,10 @@ import {
   useAdminEmployeeAnalytics,
   type AnalyticsPeriod,
 } from "@/lib/hooks/use-admin"
+import { formatMoney } from "@/lib/stores/franchise-store"
 
-const cad = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 })
+// Whole amounts in the franchise's currency.
+const cad = { format: (value: number) => formatMoney(value, { maximumFractionDigits: 0 }) }
 
 const PERIODS: { key: AnalyticsPeriod; label: string }[] = [
   { key: "7d", label: "7 days" },

@@ -24,9 +24,6 @@ class AddFranchiseToTenantTables < ActiveRecord::Migration[8.1]
       add_reference table, :franchise, foreign_key: true
       execute "UPDATE #{table} SET franchise_id = #{default_id.to_i}"
       change_column_null table, :franchise_id, false
-      # The old release keeps serving while this deploy boots; rows it saves
-      # without a franchise_id land in Canada instead of failing.
-      change_column_default table, :franchise_id, default_id.to_i
     end
 
     PER_FRANCHISE_UNIQUE.each do |table, columns|

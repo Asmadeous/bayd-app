@@ -26,6 +26,14 @@ function countryName(code: string) {
 }
 
 export default function FranchisesPage() {
+  return (
+    <SuperOnly>
+      <Franchises />
+    </SuperOnly>
+  )
+}
+
+function Franchises() {
   const { data: franchises = [], isLoading } = useFranchises()
 
   return (
@@ -41,35 +49,33 @@ export default function FranchisesPage() {
           </Link>
         }
       />
-      <SuperOnly>
-        {isLoading ? (
-          <DashboardPanel><p className="text-sm text-[#5f6268]">Loading franchises…</p></DashboardPanel>
-        ) : franchises.length === 0 ? (
-          <EmptyState icon={MapPin} title="No franchises yet" description="Create the first branch to get started." />
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {franchises.map((f) => {
-              const ready = Object.values(f.readiness).filter(Boolean).length
-              const total = Object.keys(f.readiness).length
-              return (
-                <Link key={f.id} href={`/dashboard/admin/franchises/view?id=${f.id}`} className="block border border-black/10 bg-white p-4 hover:border-[#c96c83]">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-base font-extrabold text-[#101217]">{f.name}</p>
-                    <span className={`shrink-0 px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${STATUS_STYLE[f.status]}`}>{f.status}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-[#5f6268]">
-                    {countryName(f.country_code)} · {f.currency} · {f.time_zone.replace(/_/g, " ")}
-                    {f.is_default ? " · default" : ""}
-                  </p>
-                  <p className="mt-3 text-xs font-semibold text-[#5f6268]">
-                    {f.admins.length} admin{f.admins.length === 1 ? "" : "s"} · ready {ready}/{total}
-                  </p>
-                </Link>
-              )
-            })}
-          </div>
-        )}
-      </SuperOnly>
+      {isLoading ? (
+        <DashboardPanel><p className="text-sm text-[#5f6268]">Loading franchises…</p></DashboardPanel>
+      ) : franchises.length === 0 ? (
+        <EmptyState icon={MapPin} title="No franchises yet" description="Create the first branch to get started." />
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {franchises.map((f) => {
+            const ready = Object.values(f.readiness).filter(Boolean).length
+            const total = Object.keys(f.readiness).length
+            return (
+              <Link key={f.id} href={`/dashboard/admin/franchises/view?id=${f.id}`} className="block border border-black/10 bg-white p-4 hover:border-[#c96c83]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-base font-extrabold text-[#101217]">{f.name}</p>
+                  <span className={`shrink-0 px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${STATUS_STYLE[f.status]}`}>{f.status}</span>
+                </div>
+                <p className="mt-1 text-sm text-[#5f6268]">
+                  {countryName(f.country_code)} · {f.currency} · {f.time_zone.replace(/_/g, " ")}
+                  {f.is_default ? " · default" : ""}
+                </p>
+                <p className="mt-3 text-xs font-semibold text-[#5f6268]">
+                  {f.admins.length} admin{f.admins.length === 1 ? "" : "s"} · ready {ready}/{total}
+                </p>
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </DashboardPage>
   )
 }

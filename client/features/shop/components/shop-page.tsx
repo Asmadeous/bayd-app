@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+
+import { formatMoney } from "@/lib/stores/franchise-store";
 import Link from "next/link";
 import type { CSSProperties, MouseEvent } from "react";
 import { useMemo, useState } from "react";
@@ -83,13 +85,13 @@ function mapApiProduct(p: ApiProduct, index: number): ShopProduct {
     inStock: v.in_stock,
   }));
   const base = Number(p.price);
-  // Variant products can differ in price (e.g. the bonnet), so show "from $min".
+  // Variant products can differ in price (e.g. the bonnet), so show "from <min>".
   const priceValue = variants.length
     ? Math.min(...variants.map((v) => v.price))
     : base;
   const price = variants.length
-    ? `from $${priceValue.toFixed(2)}`
-    : `$${base.toFixed(2)}`;
+    ? `from ${formatMoney(priceValue)}`
+    : formatMoney(base);
   return {
     id: String(p.id),
     name: p.name,
@@ -124,7 +126,7 @@ function toCartProduct(product: ShopProduct, variant?: ShopVariant): CartProduct
     variantLabel: variant?.label,
     name: product.name,
     category: product.category,
-    price: `$${priceValue.toFixed(2)}`,
+    price: formatMoney(priceValue),
     priceValue,
     imageUrl,
     description: product.description,
@@ -772,7 +774,7 @@ function ProductModal({
   const displayImage =
     selectedVariant?.imageUrl ?? activePhoto ?? product.image.src;
   const displayPrice = selectedVariant
-    ? `$${selectedVariant.price.toFixed(2)}`
+    ? formatMoney(selectedVariant.price)
     : product.price;
 
   const panelStyle = {
@@ -1156,7 +1158,7 @@ function CartDialog({
         <div className="border-t border-black/10 bg-white/75 p-5">
           <div className="flex items-center justify-between text-lg font-extrabold text-[#101217]">
             <span>Subtotal</span>
-            <span>CA${subtotal.toFixed(2)}</span>
+            <span>{formatMoney(subtotal)}</span>
           </div>
           <p className="mt-2 text-xs leading-5 text-[#5f6268]">
             Tax and any delivery fees will be calculated at checkout.

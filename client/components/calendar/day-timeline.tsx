@@ -7,6 +7,7 @@ import { formatBookingTime, nowLocalMinutes, todayKey, type DateKey } from "@/li
 import { gridHours, layoutDay } from "@/lib/calendar-layout"
 import type { Booking } from "@/lib/hooks/use-bookings"
 import { cn } from "@/lib/utils"
+import { UnavailableShading } from "./unavailable-shading"
 
 const HOUR_PX = 64
 
@@ -35,6 +36,8 @@ type Drag = { id: number; startY: number; deltaMin: number; active: boolean }
 // past) is tappable too, for booking that time. With onMove, a pending or
 // confirmed block can be pressed and held, then dragged to a new time on the same
 // day (snapping to 15 minutes); onMove decides whether it really moves.
+// With availability (a tech's bookable windows that day), the hours outside them
+// are shaded, as on the web calendar.
 export function DayTimeline({
   day,
   bookings,
@@ -42,6 +45,7 @@ export function DayTimeline({
   onOpen,
   onSlot,
   onMove,
+  availability,
 }: {
   day: DateKey
   bookings: Booking[]
@@ -49,6 +53,7 @@ export function DayTimeline({
   onOpen: (booking: Booking) => void
   onSlot?: (time: string) => void
   onMove?: (booking: Booking, newStart: string) => Promise<void>
+  availability?: { start: string; end: string }[]
 }) {
   const [nowMin] = useState(() => nowLocalMinutes())
   const [drag, setDrag] = useState<Drag | null>(null)
@@ -166,6 +171,9 @@ export function DayTimeline({
       ))}
 
       <div className="absolute bottom-2 left-14 right-2 top-2">
+        {availability ? (
+          <UnavailableShading windows={availability} startHour={startHour} endHour={endHour} hourPx={HOUR_PX} />
+        ) : null}
         {slotStarts.map((min) => (
           <button
             key={min}

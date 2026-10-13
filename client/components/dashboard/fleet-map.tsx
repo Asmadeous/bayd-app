@@ -10,7 +10,7 @@ import type { FleetPosition } from "@/lib/cable/use-fleet"
 // with a valid position; on-shift techs are brand-pink, off-shift are grey. Pins
 // move as poll + AdminFleetChannel updates arrive. Loaded client-only (Leaflet
 // touches window) via next/dynamic in the page.
-export function FleetMap({ techs }: { techs: FleetPosition[] }) {
+export function FleetMap({ techs, heightClass = "h-[70vh]" }: { techs: FleetPosition[]; heightClass?: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<LeafletMap | null>(null)
   const markersRef = useRef<Map<number, Marker>>(new Map())
@@ -81,5 +81,5 @@ export function FleetMap({ techs }: { techs: FleetPosition[] }) {
     })()
   }, [located])
 
-  return <div ref={containerRef} className="h-[70vh] w-full overflow-hidden rounded-xl" />
+  return <div ref={containerRef} className={`${heightClass} w-full overflow-hidden rounded-xl`} />
 }

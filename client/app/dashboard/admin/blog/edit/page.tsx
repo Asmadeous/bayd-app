@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 
-import { BlogPostForm, type BlogPostFormPost } from "@/app/dashboard/admin/blog/_components/blog-post-form"
+import { BlogPostForm, type BlogPostFormPost } from "@/components/dashboard/blog-post-form"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardPage } from "@/components/dashboard/dashboard-page"
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel"

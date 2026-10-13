@@ -69,7 +69,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.jsonb "candidates", default: {}, null: false
     t.bigint "chosen_employee_id"
     t.datetime "created_at", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "reason"
     t.datetime "updated_at", null: false
     t.index ["booking_request_id"], name: "index_assignment_attempts_on_booking_request_id"
@@ -140,7 +140,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.datetime "created_at", null: false
     t.decimal "customer_latitude", precision: 10, scale: 6
     t.decimal "customer_longitude", precision: 10, scale: 6
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "kind", null: false
     t.string "location_source"
     t.integer "party_size", default: 1, null: false
@@ -175,7 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.decimal "deposit_amount", precision: 10, scale: 2, default: "0.0", null: false
     t.bigint "employee_profile_id", null: false
     t.datetime "ends_at", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.text "notes"
     t.decimal "overtime_amount", precision: 10, scale: 2, default: "0.0", null: false
     t.bigint "parent_booking_id"
@@ -222,7 +222,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.string "contact_name"
     t.string "contact_phone"
     t.datetime "created_at", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.text "notes"
     t.string "postal_code"
     t.bigint "service_id"
@@ -239,7 +239,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.bigint "conversation_id", null: false
     t.datetime "created_at", null: false
     t.text "details"
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "reason", null: false
     t.bigint "reported_user_id", null: false
     t.bigint "reporter_id", null: false
@@ -258,7 +258,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
   create_table "contact_messages", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email"
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.text "message"
     t.string "name"
     t.string "status", default: "new", null: false
@@ -317,7 +317,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.text "bio"
     t.datetime "created_at", null: false
     t.boolean "dispatchable", default: true, null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.boolean "on_shift", default: false, null: false
     t.bigint "partner_id"
     t.string "photo_url"
@@ -479,7 +479,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.decimal "current_balance", precision: 10, scale: 2, null: false
     t.datetime "delivered_at"
     t.datetime "expires_at"
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.decimal "initial_balance", precision: 10, scale: 2, null: false
     t.text "message"
     t.bigint "purchaser_id"
@@ -496,7 +496,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.datetime "created_at", null: false
     t.string "currency", default: "CAD", null: false
     t.jsonb "details", default: {}, null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "invoice_number", null: false
     t.bigint "invoiceable_id"
     t.string "invoiceable_type"
@@ -526,7 +526,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.datetime "created_at", null: false
     t.string "email"
     t.bigint "employee_profile_id"
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.bigint "job_posting_id"
     t.text "message"
     t.string "name"
@@ -546,7 +546,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.string "department"
     t.text "description"
     t.string "employment_type", default: "full_time", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "location"
     t.datetime "posted_at"
     t.text "requirements"
@@ -577,7 +577,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
 
   create_table "loyalty_accounts", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.integer "points_balance", default: 0, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
@@ -614,7 +614,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.bigint "booking_id", null: false
     t.datetime "created_at", null: false
     t.datetime "ended_at"
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "provider", default: "jitsi", null: false
     t.string "room_name", null: false
     t.datetime "scheduled_at"
@@ -642,7 +642,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
   create_table "newsletter_campaigns", force: :cascade do |t|
     t.text "body", null: false
     t.datetime "created_at", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.integer "recipients_count", default: 0, null: false
     t.datetime "sent_at"
     t.bigint "sent_by_id"
@@ -656,7 +656,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.datetime "confirmed_at"
     t.datetime "created_at", null: false
     t.string "email", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "source"
     t.string "status", default: "subscribed", null: false
     t.string "unsubscribe_token", null: false
@@ -701,7 +701,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
   create_table "orders", force: :cascade do |t|
     t.string "carrier"
     t.datetime "created_at", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.datetime "shipped_at"
     t.bigint "shipping_address_id"
     t.string "status", default: "pending", null: false
@@ -719,7 +719,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.integer "booking_count", default: 0, null: false
     t.datetime "created_at", null: false
     t.decimal "fee_amount", precision: 10, scale: 2, default: "0.0", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.decimal "gross", precision: 10, scale: 2, default: "0.0", null: false
     t.text "notes"
     t.datetime "paid_at"
@@ -734,7 +734,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
   create_table "partners", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email"
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "name", null: false
     t.text "payout_notes"
     t.string "phone"
@@ -790,7 +790,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.text "description"
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "image_url"
     t.string "name", null: false
     t.bigint "parent_id"
@@ -825,7 +825,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.datetime "created_at", null: false
     t.text "description"
     t.boolean "featured", default: false, null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.jsonb "gallery_urls", default: [], null: false
     t.string "image_url"
     t.string "name", null: false
@@ -848,7 +848,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.datetime "created_at", null: false
     t.bigint "employee_profile_id"
     t.boolean "featured", default: false, null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.integer "rating", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
@@ -880,7 +880,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.decimal "center_latitude", precision: 10, scale: 6
     t.decimal "center_longitude", precision: 10, scale: 6
     t.datetime "created_at", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "name", null: false
     t.text "postal_codes", default: [], null: false, array: true
     t.integer "radius_meters"
@@ -895,7 +895,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
 
   create_table "service_categories", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "name", null: false
     t.integer "position", default: 0, null: false
     t.string "slug", null: false
@@ -909,7 +909,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.datetime "created_at", null: false
     t.text "description"
     t.integer "duration_minutes", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "image_url"
     t.boolean "kids_only", default: false, null: false
     t.string "name", null: false
@@ -924,7 +924,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
 
   create_table "settings", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "key", null: false
     t.datetime "updated_at", null: false
     t.string "value"
@@ -944,7 +944,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.datetime "created_at", null: false
     t.decimal "distance_km", precision: 10, scale: 3, default: "0.0", null: false
     t.bigint "employee_profile_id", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.decimal "fuel_rate_per_km", precision: 10, scale: 4
     t.decimal "fuel_reimbursement", precision: 10, scale: 2, default: "0.0", null: false
     t.text "notes"
@@ -963,7 +963,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.datetime "cancelled_at"
     t.string "client_type", default: "adult", null: false
     t.datetime "created_at", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.integer "interval_count", default: 1, null: false
     t.string "interval_unit", default: "week", null: false
     t.datetime "last_booking_at"
@@ -1000,7 +1000,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
   create_table "support_threads", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.datetime "last_message_at"
     t.string "name", null: false
     t.string "status", default: "open", null: false
@@ -1030,7 +1030,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.bigint "booking_id", null: false
     t.datetime "created_at", null: false
     t.bigint "employee_profile_id", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.string "method", default: "card", null: false
     t.datetime "paid_out_at"
     t.string "processor_ref"
@@ -1099,7 +1099,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_03_114556) do
     t.string "client_type", default: "adult", null: false
     t.datetime "created_at", null: false
     t.datetime "ends_at", null: false
-    t.bigint "franchise_id", default: 1, null: false
+    t.bigint "franchise_id", null: false
     t.text "notes"
     t.integer "party_size", default: 1, null: false
     t.string "payment_timing", default: "pay_after", null: false

@@ -105,6 +105,16 @@ export function useAdminBookings(params?: { status?: string; employee_id?: numbe
   })
 }
 
+// One booking (the admin app's booking screen). Shares the "admin-bookings"
+// key, so every booking action refreshes it.
+export function useAdminBooking(id: number) {
+  return useQuery({
+    queryKey: ["admin-bookings", "one", id],
+    queryFn: () => api.get<Booking>(`/admin/bookings/${id}`).then((r) => r.data),
+    enabled: id > 0,
+  })
+}
+
 // Calendar: every booking in [from, to], optionally one tech's.
 export function useAdminBookingsRange(from: string, to: string, employeeId?: number) {
   return useQuery({
@@ -181,6 +191,16 @@ export function useAdminEmployees(page = 1, enabled = true) {
     queryKey: ["admin-employees", page],
     enabled,
     queryFn: () => api.get<PagedResponse<EmployeeProfile>>("/admin/employees", { params: { page } }).then((r) => r.data),
+  })
+}
+
+// One staff member (the admin app's staff screen). Shares the "admin-employees"
+// key, so every employee action refreshes it.
+export function useAdminEmployee(id: number) {
+  return useQuery({
+    queryKey: ["admin-employees", "one", id],
+    queryFn: () => api.get<EmployeeProfile>(`/admin/employees/${id}`).then((r) => r.data),
+    enabled: id > 0,
   })
 }
 

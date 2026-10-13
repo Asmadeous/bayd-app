@@ -244,3 +244,36 @@ franchise admin, scoped to one franchise. Customers keep one login worldwide.
         formatting, legal pages + contact from the console.
   - [x] 10g. Royalties - `royalty_pct` per franchise, monthly statements,
         super admin reporting (grouped by currency).
+
+## Roadmap - Phase 11: Admin mobile app
+
+Full plan: `docs/ADMIN_MOBILE_APP_PLAN.md`. BAYD Admin is the web admin
+dashboard on a phone: every section, action and permission the dashboard has,
+with a purpose-built phone layout (not the website wrapped). Admins and super
+admins share it; super admins also get the "Working in" switcher and the
+franchise console. Depends on Phases 9 and 10. After each sub-feature the web
+dashboard and the app (on the phone, local API) are compared side by side.
+
+- [ ] 11. Admin mobile app
+  - [x] 11a. Shell - `app/admin` route tree, staff-style password sign-in,
+        admins and super admins only, hamburger menu (no bottom tabs) with the
+        web sidebar's groups in the same order, "Working in" switcher for super
+        admins, app lock, push token registration and admin deep links,
+        debug-only cleartext for local testing.
+  - [x] 11b. Home and Bookings - overview, analytics, bookings list and
+        calendar, booking and visit pages with every action, new booking,
+        booking requests, subscriptions, work-scope calls.
+  - [x] 11c. People - customers, employees (detail, hours, add and edit staff),
+        partners, jobs and applications, staff map, fuel and shifts.
+  - [x] 11d. Inbox - messages, support chat, chat reports, notifications,
+        inquiries, callbacks.
+  - [x] 11e. Catalog and Commerce - services, products, orders, invoices, gift
+        cards, loyalty, tips.
+  - [x] 11f. Content and Settings - blog posts and comments, gallery, reviews,
+        newsletter, service areas, payments, royalties.
+  - [x] 11g. Franchise console (super admin) - franchises, new franchise,
+        setup, payment keys, catalog copy, admins, legal, go live and suspend,
+        all branches, royalties.
+  - [ ] 11h. Parity check and store - page-by-page web vs app sweep for both
+        roles, private distribution (Apple Business Manager, Managed Google
+        Play), review notes, screenshots, demo franchise and admin.

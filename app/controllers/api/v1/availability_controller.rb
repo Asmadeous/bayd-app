@@ -186,7 +186,7 @@ module Api
       def serves_customer_fsa?(employee)
         postal = params[:postal_code].presence
         lat, lng = customer_coords
-        return true if postal.blank? && (lat.nil? || employee.service_radius_km.blank?)
+        return true if postal.blank? && lat.nil?
         return true unless EmployeeProfile.coverage_configured?
 
         employee.serves_location?(postal_code: postal, latitude: lat, longitude: lng)

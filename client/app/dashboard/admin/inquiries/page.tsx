@@ -118,7 +118,7 @@ export default function AdminInquiriesPage() {
             <DashboardPanel key={typeof item.id === "number" ? item.id : index}>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {Object.entries(item)
-                  .filter(([key]) => !["id", "created_at", "updated_at", "status"].includes(key))
+                  .filter(([key]) => !["id", "created_at", "updated_at", "status", "franchise_id"].includes(key))
                   .map(([key, value]) => (
                     <div key={key}>
                       <span className="block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]">

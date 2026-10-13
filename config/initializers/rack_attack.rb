@@ -3,9 +3,37 @@ class Rack::Attack
   # shared store (Solid Cache / Redis / memcached), not :null_store.
   Rack::Attack.cache.store = Rails.cache
 
-  ### Global API ceiling — per IP ###
-  throttle("api/ip", limit: 60, period: 1.minute) do |req|
-    req.ip if req.path.start_with?("/api/")
+  class Request < ::Rack::Request
+    def api? = path.start_with?("/api/")
+
+    # The signed-in user from the bearer token (same secret and algorithm as
+    # ApplicationController), or nil when anonymous or the token is bad/expired.
+    def user_id
+      return @user_id if defined?(@user_id)
+
+      token = get_header("HTTP_AUTHORIZATION").to_s[/\ABearer (.+)\z/, 1]
+      secret = ENV["SECRET_KEY_BASE"].presence || Rails.application.secret_key_base
+      @user_id = token && JWT.decode(token, secret, true, algorithm: "HS256").first["sub"]
+    rescue JWT::DecodeError
+      @user_id = nil
+    end
+  end
+
+  ### Payment webhooks: signature-checked, from the providers' own servers ###
+  safelist("webhooks") { |req| req.path.start_with?("/api/v1/webhooks/") }
+
+  ### System-wide API limits ###
+  # Signed-in users per account, so staff behind one office IP don't share an
+  # allowance; the dashboards make several calls per page.
+  throttle("api/user", limit: 300, period: 1.minute) do |req|
+    req.user_id if req.api?
+  end
+  throttle("api/ip", limit: 120, period: 1.minute) do |req|
+    req.ip if req.api? && req.user_id.nil?
+  end
+  # Hard ceiling for any one IP, signed in or not.
+  throttle("api/ip/ceiling", limit: 1200, period: 1.minute) do |req|
+    req.ip if req.api?
   end
 
   ### Login / register — blunt brute force & credential stuffing ###

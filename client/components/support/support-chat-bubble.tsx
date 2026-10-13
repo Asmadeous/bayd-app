@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 
 // Signed-in areas and the native apps have their own messaging, so the bubble
 // only shows on the public website.
-const HIDDEN_PREFIXES = ["/dashboard", "/app", "/staff"]
+const HIDDEN_PREFIXES = ["/dashboard", "/app", "/staff", "/admin"]
 
 const input =
   "w-full rounded-xl border border-black/15 bg-white px-3 py-2.5 text-sm text-[#101217] outline-none placeholder:text-[#8a8d93] focus:border-[#c96c83] focus:ring-3 focus:ring-[#c96c83]/20"

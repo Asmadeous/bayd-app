@@ -26,7 +26,7 @@ export function FranchiseSwitcher() {
         onChange={(e) => choose(e.target.value)}
         className="h-9 w-full border border-white/15 bg-[#1b1d23] px-2 text-sm font-semibold text-white outline-none focus:border-[#c96c83]"
       >
-        <option value="">All franchises</option>
+        <option value="">All franchises (view only)</option>
         {franchises.map((f) => (
           <option key={f.id} value={f.slug}>{f.name}{f.status === "live" ? "" : ` (${f.status})`}</option>
         ))}

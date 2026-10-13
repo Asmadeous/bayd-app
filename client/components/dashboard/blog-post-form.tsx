@@ -13,6 +13,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import api from "@/lib/api"
 import { buildFormData } from "@/lib/build-form-data"
 import { ImagePicker } from "@/components/image-picker"
+import { assetUrl } from "@/lib/asset-url"
 
 export interface BlogPostFormPost {
   id: number
@@ -52,7 +53,17 @@ const errorInputClass =
   "border-[#b75c68] focus:border-[#b75c68] focus:ring-[#b75c68]/20"
 const labelClass = "mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-[#6b6f76]"
 
-export function BlogPostForm({ mode, post }: { mode: "create" | "edit"; post?: BlogPostFormPost }) {
+// `listHref` is where Save and Cancel return to (the web blog list, or the
+// BAYD Admin app's).
+export function BlogPostForm({
+  mode,
+  post,
+  listHref = "/dashboard/admin/blog",
+}: {
+  mode: "create" | "edit"
+  post?: BlogPostFormPost
+  listHref?: string
+}) {
   const router = useRouter()
   const qc = useQueryClient()
   const { toast } = useToast()
@@ -85,7 +96,7 @@ export function BlogPostForm({ mode, post }: { mode: "create" | "edit"; post?: B
         title: mode === "create" ? "Draft created" : "Post updated",
         description: mode === "create" ? "The blog post was saved as a draft." : "The blog post changes were saved.",
       })
-      router.push("/dashboard/admin/blog")
+      router.push(listHref)
     },
     onError: (error) => {
       const message = getApiErrorMessage(error, "Could not save this blog post.")
@@ -148,7 +159,7 @@ export function BlogPostForm({ mode, post }: { mode: "create" | "edit"; post?: B
                 aria-label={form.title || "Blog cover preview"}
                 className="size-full bg-cover bg-center"
                 role="img"
-                style={{ backgroundImage: `url(${form.cover_image_url})` }}
+                style={{ backgroundImage: `url(${assetUrl(form.cover_image_url)})` }}
               />
             ) : (
               <span className="flex w-full flex-col items-center justify-center gap-3 px-6 py-10 text-center text-[#5f6268]">
@@ -218,7 +229,7 @@ export function BlogPostForm({ mode, post }: { mode: "create" | "edit"; post?: B
         >
           {saveMutation.isPending ? "Saving..." : mode === "create" ? "Create draft" : "Save changes"}
         </Button>
-        <Link className={buttonVariants({ size: "sm", variant: "ghost" })} href="/dashboard/admin/blog">
+        <Link className={buttonVariants({ size: "sm", variant: "ghost" })} href={listHref}>
           <ArrowLeft className="size-3.5" /> Back to posts
         </Link>
       </div>
