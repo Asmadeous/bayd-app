@@ -370,6 +370,7 @@ function ProductDetailSheet({
 
 function CartSheet({ onClose }: { onClose: () => void }) {
   const router = useRouter()
+  const signedInOrAsk = useSignInPrompt()
   const { items, updateQuantity, clearCart } = useCartStore()
   const { toast } = useToast()
   const confirm = useConfirm()
@@ -392,6 +393,7 @@ function CartSheet({ onClose }: { onClose: () => void }) {
   }
 
   async function checkout() {
+    if (!(await signedInOrAsk("Sign in to check out", "Your cart is saved on this phone. Sign in or create an account to pay."))) return
     setCheckingOut(true)
     try {
       const email = useAuthStore.getState().user?.email
@@ -513,6 +515,7 @@ function CartSheet({ onClose }: { onClose: () => void }) {
 
 function GiftCardTab() {
   const { toast } = useToast()
+  const signedInOrAsk = useSignInPrompt()
   const [amount, setAmount] = useState(50)
   const [recipientName, setRecipientName] = useState("")
   const [recipientEmail, setRecipientEmail] = useState("")
@@ -522,6 +525,7 @@ function GiftCardTab() {
   const AMOUNTS = [25, 50, 75, 100, 150]
 
   async function purchase() {
+    if (!(await signedInOrAsk("Sign in to buy a gift card", "Sign in or create an account to pay for the gift card."))) return
     setBusy(true)
     try {
       const senderName = useAuthStore.getState().user?.first_name ?? undefined
@@ -621,4 +625,16 @@ function GiftCardTab() {
       </button>
     </div>
   )
+}
+
+// Browsing and the cart are open without an account (iOS guests); paying is an
+// account feature, so a signed-out customer is asked to sign in first.
+function useSignInPrompt() {
+  const router = useRouter()
+  const confirm = useConfirm()
+  return async (title: string, message: string) => {
+    if (useAuthStore.getState().isAuthenticated) return true
+    if (await confirm({ title, message, confirmLabel: "Sign in" })) router.push("/app/signin")
+    return false
+  }
 }
