@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, Bell, CalendarDays, Clock3, Plus } from "lucide-react"
+import { ArrowRight, Bell, CalendarDays, Clock3, Plus, ShoppingBag } from "lucide-react"
 
 import { useBookingsList, type Booking } from "@/lib/hooks/use-bookings"
 import { useNotifications } from "@/lib/hooks/use-notifications"
@@ -13,6 +13,11 @@ import { HeaderAvatar } from "@/components/account/header-avatar"
 import { appScreenClass, cardClass, displayClass, eyebrowClass, mutedClass } from "../app-theme"
 
 export default function HomeScreen() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  return isAuthenticated ? <SignedInHome /> : <GuestHome />
+}
+
+function SignedInHome() {
   const { user } = useAuthStore()
   // The soonest upcoming booking (the server sorts upcoming soonest first).
   const { items, isLoading } = useBookingsList("upcoming")
@@ -73,6 +78,65 @@ export default function HomeScreen() {
               </Link>
             }
           />
+        </section>
+      </div>
+    </div>
+  )
+}
+
+// Signed out (iOS keeps the app open without a login, see guest-browse): book a
+// visit or browse the shop; bookings need an account.
+function GuestHome() {
+  return (
+    <div className={appScreenClass}>
+      <div className="relative overflow-hidden px-5 pb-8 pt-[calc(2rem+var(--top-inset))]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 opacity-90"
+          style={{
+            background:
+              "radial-gradient(120% 80% at 100% 0%, rgba(240,200,211,0.55), transparent 55%), radial-gradient(90% 70% at 0% 0%, rgba(201,108,131,0.18), transparent 60%)",
+          }}
+        />
+        <p className={eyebrowClass}>Beauty, at your door</p>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <h1 className={`${displayClass} min-w-0 text-[2.2rem] leading-tight tracking-[-0.02em]`}>
+            Hello, <span className="text-[#C96C83]">there</span>
+          </h1>
+          <Link href="/app/signin" className="shrink-0 rounded-full bg-white px-4 py-2 text-sm font-bold shadow-sm">
+            Sign in
+          </Link>
+        </div>
+      </div>
+
+      <div className="space-y-4 px-5">
+        <Link href="/app/book" onClick={() => hapticTap()} className={`${cardClass} block p-5`}>
+          <CalendarDays className="size-6 text-[#C96C83]" aria-hidden />
+          <p className="mt-2 text-lg font-bold">Book a visit</p>
+          <p className={`mt-1 text-sm ${mutedClass}`}>Nails, lashes, waxing, massage and spa at your home. See services, prices and open times.</p>
+          <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-extrabold text-[#C96C83]">
+            Book now <ArrowRight className="size-4" aria-hidden />
+          </span>
+        </Link>
+        <Link href="/app/shop" onClick={() => hapticTap()} className={`${cardClass} block p-5`}>
+          <ShoppingBag className="size-6 text-[#C96C83]" aria-hidden />
+          <p className="mt-2 text-lg font-bold">Shop</p>
+          <p className={`mt-1 text-sm ${mutedClass}`}>Beauty products, aftercare and gift cards.</p>
+          <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-extrabold text-[#C96C83]">
+            Browse the shop <ArrowRight className="size-4" aria-hidden />
+          </span>
+        </Link>
+        <section className={`${cardClass} p-5`}>
+          <p className="text-base font-bold">My bookings</p>
+          <p className={`mt-1 text-sm ${mutedClass}`}>Sign in to see and manage your upcoming visits.</p>
+          <div className="mt-3 flex gap-2">
+            <Link href="/app/signin" className="flex h-11 flex-1 items-center justify-center rounded-xl bg-[#14100F] text-sm font-bold text-white">
+              Sign in
+            </Link>
+            <Link href="/app/signup" className="flex h-11 flex-1 items-center justify-center rounded-xl border border-black/10 bg-white text-sm font-bold">
+              Create an account
+            </Link>
+          </div>
         </section>
       </div>
     </div>

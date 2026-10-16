@@ -4,10 +4,13 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
+import { useGuestBrowsing } from "@/lib/native/guest-browse"
+
 // App entry: a landing screen that sends the customer to a DEDICATED sign-in or
 // sign-up page (separate screens, not a toggle). Purpose-built - full-bleed,
 // single column, no website chrome.
 export default function WelcomeScreen() {
+  const guestBrowsing = useGuestBrowsing()
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden bg-[#14100F] px-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(3.5rem+var(--top-inset))] text-[#F6F1EC]">
       {/* Soft blush glow anchoring the hero. */}
@@ -54,6 +57,11 @@ export default function WelcomeScreen() {
           >
             I already have an account
           </Link>
+          {guestBrowsing ? (
+            <Link href="/app/home" className="block w-full py-2 text-center text-base font-semibold text-white/70 underline underline-offset-4">
+              Continue without an account
+            </Link>
+          ) : null}
         </div>
       </div>
     </div>

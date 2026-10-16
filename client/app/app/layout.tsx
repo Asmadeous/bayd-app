@@ -7,13 +7,16 @@ import { Lock } from "lucide-react"
 import { useAuthStore } from "@/lib/stores/auth-store"
 import { biometricLockEnabled, verifyBiometric } from "@/lib/native/biometric"
 import { requestStatusBarSync } from "@/lib/native/use-native-shell"
+import { GUEST_ROUTES, guestBrowsingAllowed, useGuestBrowsing } from "@/lib/native/guest-browse"
 import { AppUIProvider } from "@/lib/app-ui/app-ui-provider"
 import { BottomNav } from "./bottom-nav"
+import { SignInPrompt } from "./sign-in-prompt"
 
 // Root layout for the purpose-built customer app. It gates on the persisted
 // auth store: while the store rehydrates we render nothing (avoids a flash),
-// then an unauthenticated user is sent to the app's own welcome screen and an
-// authenticated one sees the tabbed app. The welcome screen itself lives under
+// then an unauthenticated user is sent to the app's own welcome screen (on iOS
+// they get the open app instead, see guest-browse) and an authenticated one sees
+// the tabbed app. The welcome screen itself lives under
 // this group but opts out of the gate + tab bar (see PUBLIC_ROUTES).
 const PUBLIC_ROUTES = ["/app/welcome", "/app/signin", "/app/signup", "/app/verify"]
 // Full-screen routes that render their own pinned bottom UI (e.g. a chat
@@ -32,6 +35,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isPublic = PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
   const hideNav = HIDE_NAV_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
+  const guestBrowsing = useGuestBrowsing()
+  const isOpenScreen = GUEST_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
   // Decide the moment the store has hydrated OR we already have live auth in
   // memory (just logged in). Waiting only on _hasHydrated stranded iOS on a blank
   // screen after login (a fresh route's persist rehydrate can lag there).
@@ -39,7 +44,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!ready) return
-    if (!isAuthenticated && !isPublic) router.replace("/app/welcome")
+    // Signed out on iOS the app stays open (no login wall), so there is nothing
+    // to redirect. The platform is read here rather than from the hook: right
+    // after hydration the hook still reports the static build's value.
+    if (!isAuthenticated && !isPublic && !guestBrowsingAllowed()) router.replace("/app/welcome")
     if (isAuthenticated && isPublic) router.replace("/app/home")
   }, [ready, isAuthenticated, isPublic, router])
 
@@ -58,6 +66,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!ready) return null
 
   if (isPublic) return <AppUIProvider>{children}</AppUIProvider>
+
+  // Signed out on iOS: the whole app with its tabs. Home, Book and Shop work as
+  // usual; account screens show a sign-in prompt in place of their content.
+  if (!isAuthenticated && guestBrowsing) {
+    return (
+      <AppUIProvider>
+        <div className="min-h-dvh bg-[#f4f1eb]">
+          {isOpenScreen ? children : <SignInPrompt pathname={pathname} />}
+          {!hideNav && <BottomNav />}
+        </div>
+      </AppUIProvider>
+    )
+  }
 
   // Gate: an unauthenticated user is being redirected; render nothing meanwhile.
   if (!isAuthenticated) return null
