@@ -47,7 +47,9 @@ const isIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.
 function InstallWebAppButton() {
   const hidden = useSyncExternalStore(noSubscribe, runningAsApp, () => false)
   const prompt = useSyncExternalStore(subscribeInstall, () => installPrompt, () => null)
-  const [open, setOpen] = useState(false)
+  // Which steps to show; worked out on tap, since the page is also rendered
+  // on the server, where there is no browser to ask.
+  const [steps, setSteps] = useState<"ios" | "other" | null>(null)
   if (hidden) return null
 
   async function install() {
@@ -55,7 +57,7 @@ function InstallWebAppButton() {
       await prompt.prompt()
       return
     }
-    setOpen(true)
+    setSteps(isIos() ? "ios" : "other")
   }
 
   return (
@@ -72,14 +74,14 @@ function InstallWebAppButton() {
           <span className="block text-sm font-semibold">Home Screen</span>
         </span>
       </button>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={steps !== null} onOpenChange={(open) => { if (!open) setSteps(null) }}>
         <DialogContent className="max-w-md">
           <DialogHeader className="pr-14">
             <DialogTitle>Add BAYD to your Home Screen</DialogTitle>
             <DialogDescription>It opens like an app: book, chat with your technician and follow them on the day.</DialogDescription>
           </DialogHeader>
           <DialogBody>
-            {isIos() ? (
+            {steps === "ios" ? (
               <ol className="list-decimal space-y-2 pl-5 text-sm text-[#101217]">
                 <li>
                   In Safari, tap the Share button <Share aria-label="Share" className="inline size-4 align-text-bottom" /> at the bottom of the screen.
