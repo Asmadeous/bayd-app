@@ -21,5 +21,17 @@ RSpec.describe "Get the app block in customer emails" do
     expect(mail.html_part.body.to_s).to include("https://apps.apple.com/app/id6812065322")
     expect(mail.text_part.body.to_s).to include("iPhone: https://apps.apple.com/app/id6812065322")
     expect(mail.text_part.body.to_s).not_to include("Android:")
+    expect(mail.text_part.body.to_s).not_to include("Home Screen")
+  end
+
+  it "gives iPhone customers the Home Screen steps while the App Store listing is off" do
+    stub_const("AppLinks::APP_STORE", { live: false, url: "https://apps.apple.com/app/id6812065322" })
+    stub_const("AppLinks::GOOGLE_PLAY", { live: true, url: "https://play.google.com/store/apps/details?id=ca.baydspa.customer" })
+    mail = CustomerMailer.notify(notification)
+
+    expect(mail.text_part.body.to_s).to include("Android: https://play.google.com/store/apps/details?id=ca.baydspa.customer")
+    expect(mail.text_part.body.to_s).to include("On iPhone, add BAYD to your Home Screen")
+    expect(mail.html_part.body.to_s).to include("Add to Home Screen")
+    expect(mail.text_part.body.to_s).not_to include("apps.apple.com")
   end
 end

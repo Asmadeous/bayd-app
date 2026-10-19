@@ -8,3 +8,7 @@ iPhone: <%= AppLinks::APP_STORE[:url] %>
 Android: <%= AppLinks::GOOGLE_PLAY[:url] %>
 <% end -%>
 <% end -%>
+<% unless AppLinks::APP_STORE[:live] -%>
+
+On iPhone, add BAYD to your Home Screen: open <%= AppLinks.web_url %> in Safari, tap Share, then "Add to Home Screen".
+<% end -%>

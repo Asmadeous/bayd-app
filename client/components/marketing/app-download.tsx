@@ -2,17 +2,108 @@
 
 import { useState, useSyncExternalStore } from "react"
 import { Capacitor } from "@capacitor/core"
-import { Smartphone, X } from "lucide-react"
+import { Share, Smartphone, X } from "lucide-react"
 
-import { APP_STORE, GOOGLE_PLAY, anyAppLive } from "@/lib/app-links"
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { APP_STORE, GOOGLE_PLAY } from "@/lib/app-links"
 import { cn } from "@/lib/utils"
 
-// The stores' official badges (public/images/stores, from Apple's and Google's
-// badge pages). Google's PNG carries its own padding, hence the taller size and
-// negative margin to line it up with Apple's.
-export function AppStoreButtons({ className }: { className?: string }) {
-  if (!anyAppLive) return null
+// The browser's own install prompt (Chrome, Edge, Android), kept from the
+// moment it fires so the button can show it later. Safari never fires it.
+interface InstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+}
+let installPrompt: InstallPromptEvent | null = null
+const installListeners = new Set<() => void>()
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault()
+    installPrompt = e as InstallPromptEvent
+    installListeners.forEach((fn) => fn())
+  })
+  window.addEventListener("appinstalled", () => {
+    installPrompt = null
+    installListeners.forEach((fn) => fn())
+  })
+}
+const subscribeInstall = (fn: () => void) => {
+  installListeners.add(fn)
+  return () => installListeners.delete(fn)
+}
 
+// Already running as the installed web app, or inside the native apps.
+function runningAsApp() {
+  return (
+    Capacitor.isNativePlatform() ||
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true
+  )
+}
+
+const isIos = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+
+// Install the website as an app (Add to Home Screen). Stands in for the App
+// Store badge until Apple approves the iPhone app.
+function InstallWebAppButton() {
+  const hidden = useSyncExternalStore(noSubscribe, runningAsApp, () => false)
+  const prompt = useSyncExternalStore(subscribeInstall, () => installPrompt, () => null)
+  const [open, setOpen] = useState(false)
+  if (hidden) return null
+
+  async function install() {
+    if (prompt) {
+      await prompt.prompt()
+      return
+    }
+    setOpen(true)
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={install}
+        className="flex h-10 items-center gap-2 rounded-lg bg-black px-3 text-left text-white"
+        aria-label="Add BAYD to your Home Screen"
+      >
+        <Smartphone aria-hidden className="size-5" />
+        <span className="leading-none">
+          <span className="block text-[0.6rem] font-medium">Add to</span>
+          <span className="block text-sm font-semibold">Home Screen</span>
+        </span>
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader className="pr-14">
+            <DialogTitle>Add BAYD to your Home Screen</DialogTitle>
+            <DialogDescription>It opens like an app: book, chat with your technician and follow them on the day.</DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            {isIos() ? (
+              <ol className="list-decimal space-y-2 pl-5 text-sm text-[#101217]">
+                <li>
+                  In Safari, tap the Share button <Share aria-label="Share" className="inline size-4 align-text-bottom" /> at the bottom of the screen.
+                </li>
+                <li>Scroll down and tap &ldquo;Add to Home Screen&rdquo;.</li>
+                <li>Tap &ldquo;Add&rdquo;. BAYD appears on your Home Screen.</li>
+              </ol>
+            ) : (
+              <ol className="list-decimal space-y-2 pl-5 text-sm text-[#101217]">
+                <li>Open your browser&apos;s menu (the three dots or the Share button).</li>
+                <li>Choose &ldquo;Install app&rdquo; or &ldquo;Add to Home screen&rdquo;.</li>
+              </ol>
+            )}
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
+// The stores' official badges (public/images/stores, from Apple's and Google's
+// badge pages), plus the web app while the App Store listing is off. Google's
+// PNG carries its own padding, hence the taller size and negative margin.
+export function AppStoreButtons({ className }: { className?: string }) {
   return (
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
       {APP_STORE.live ? (
@@ -20,7 +111,9 @@ export function AppStoreButtons({ className }: { className?: string }) {
           {/* eslint-disable-next-line @next/next/no-img-element -- static SVG badge */}
           <img src="/images/stores/app-store-badge.svg" alt="Download on the App Store" className="h-10 w-auto" />
         </a>
-      ) : null}
+      ) : (
+        <InstallWebAppButton />
+      )}
       {GOOGLE_PLAY.live ? (
         <a href={GOOGLE_PLAY.url} rel="noreferrer" target="_blank" aria-label="Get it on Google Play" className="-my-[9px]">
           {/* eslint-disable-next-line @next/next/no-img-element -- static PNG badge */}
@@ -31,31 +124,8 @@ export function AppStoreButtons({ className }: { className?: string }) {
   )
 }
 
-// On a computer, scan with your phone's camera to open the store listing.
-function StoreQrCodes() {
-  const codes = [
-    APP_STORE.live && { src: "/images/stores/app-store-qr.svg", label: "iPhone" },
-    GOOGLE_PLAY.live && { src: "/images/stores/google-play-qr.svg", label: "Android" },
-  ].filter(Boolean) as { src: string; label: string }[]
-  if (codes.length === 0) return null
-
-  return (
-    <div className="mt-6 hidden gap-4 lg:flex">
-      {codes.map((code) => (
-        <figure key={code.label} className="border border-black/10 bg-white p-2 text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element -- static QR code */}
-          <img src={code.src} alt={`QR code for the ${code.label} app`} className="size-28" />
-          <figcaption className="mt-1 text-xs font-semibold text-[#5f6268]">Scan for {code.label}</figcaption>
-        </figure>
-      ))}
-    </div>
-  )
-}
-
 // Homepage section: what the app adds over booking on the website.
 export function GetTheAppSection() {
-  if (!anyAppLive) return null
-
   return (
     <section className="bg-[#f4f1eb] py-16 text-[#101217]">
       <div className="mx-auto grid w-full max-w-[1760px] gap-8 px-4 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:px-8 2xl:px-10">
@@ -67,7 +137,6 @@ export function GetTheAppSection() {
             receipt in one place.
           </p>
           <AppStoreButtons className="mt-6" />
-          <StoreQrCodes />
         </div>
         <ul className="grid gap-3 sm:grid-cols-2">
           {[
@@ -91,7 +160,7 @@ export function GetTheAppSection() {
 // Renders nothing inside the apps themselves, which share the booking screen.
 export function BookedAppPrompt() {
   // Only reached after a booking is made in the browser, never server-rendered.
-  if (!anyAppLive || Capacitor.isNativePlatform()) return null
+  if (Capacitor.isNativePlatform()) return null
 
   return (
     <div className="mx-auto mt-5 max-w-md border-t border-black/10 pt-4">

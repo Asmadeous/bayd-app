@@ -3,7 +3,6 @@ import Image from "next/image";
 
 import { NewsletterSignup } from "@/components/layout/newsletter-signup";
 import { AppStoreButtons } from "@/components/marketing/app-download";
-import { anyAppLive } from "@/lib/app-links";
 import { siteConfig } from "@/lib/site";
 
 // Accepted payment methods shown in the footer, from real logo/image assets in
@@ -45,12 +44,8 @@ export function SiteFooter() {
             Get new posts by email
           </p>
           <NewsletterSignup />
-          {anyAppLive ? (
-            <>
-              <p className="mt-8 text-xs font-bold uppercase tracking-[0.18em] text-white/55">Get the app</p>
-              <AppStoreButtons className="mt-3" />
-            </>
-          ) : null}
+          <p className="mt-8 text-xs font-bold uppercase tracking-[0.18em] text-white/55">Get the app</p>
+          <AppStoreButtons className="mt-3" />
         </div>
 
         <div className="text-sm text-white/62">

@@ -1,8 +1,12 @@
-<% if AppLinks.any_live? %>
-  <p style="font-size:14px; line-height:1.6; color:#4f535a; margin-top:24px;">
+<p style="font-size:14px; line-height:1.6; color:#4f535a; margin-top:24px;">
+  <% if AppLinks.any_live? %>
     Track your technician on the day, chat with them and rebook in a few taps with the BAYD app:
     <% if AppLinks::APP_STORE[:live] %><a href="<%= AppLinks::APP_STORE[:url] %>">iPhone</a><% end %>
     <% if AppLinks::APP_STORE[:live] && AppLinks::GOOGLE_PLAY[:live] %> · <% end %>
     <% if AppLinks::GOOGLE_PLAY[:live] %><a href="<%= AppLinks::GOOGLE_PLAY[:url] %>">Android</a><% end %>
-  </p>
-<% end %>
+  <% end %>
+  <% unless AppLinks::APP_STORE[:live] %>
+    <% if AppLinks.any_live? %><br><% end %>
+    On iPhone, add BAYD to your Home Screen: open <a href="<%= AppLinks.web_url %>"><%= AppLinks.web_host %></a> in Safari, tap Share, then &ldquo;Add to Home Screen&rdquo;.
+  <% end %>
+</p>
